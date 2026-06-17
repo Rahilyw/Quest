@@ -1,0 +1,135 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-06-17T00:00:00Z",
+  "title": "Design System: Kuest",
+  "extensions": {
+    "colorMeta": {
+      "after-hours-asphalt": { "role": "neutral", "displayName": "After-Hours Asphalt", "canonical": "#0B1120", "tonalRamp": ["#050810", "#0B1120", "#111a2e", "#1a2540", "#243050", "#2e3b60", "#3a4870", "#4d5d88"] },
+      "wet-concrete":        { "role": "neutral", "displayName": "Wet Concrete",        "canonical": "#1E293B", "tonalRamp": ["#0d141f", "#1E293B", "#253347", "#2d3e56", "#374a64", "#435772", "#576880", "#6e7d92"] },
+      "elevated-pavement":   { "role": "neutral", "displayName": "Elevated Pavement",   "canonical": "#273449", "tonalRamp": ["#111823", "#1c2535", "#273449", "#2f3e55", "#394961", "#44566e", "#53657e", "#6a7a90"] },
+      "fog-white":           { "role": "neutral", "displayName": "Fog White",           "canonical": "#F1F5F9", "tonalRamp": ["#94a3b8", "#b8c4d0", "#cbd5e0", "#d4dde7", "#dce5ee", "#e5ecf3", "#eaf0f6", "#F1F5F9"] },
+      "street-haze":         { "role": "neutral", "displayName": "Street Haze",         "canonical": "#94A3B8", "tonalRamp": ["#475569", "#566374", "#64748B", "#7a8a9e", "#94A3B8", "#aab5c6", "#bfc8d4", "#d4dae3"] },
+      "city-dust":           { "role": "neutral", "displayName": "City Dust",           "canonical": "#64748B", "tonalRamp": ["#334155", "#3f4f64", "#4e5e73", "#64748B", "#7a899f", "#8f9cb0", "#a5b0bf", "#c0c8d2"] },
+      "local-signal":        { "role": "primary", "displayName": "Local Signal",        "canonical": "#6366F1", "tonalRamp": ["#1e1b4b", "#2e2a80", "#3d3abf", "#4f52e0", "#6366F1", "#7c7ff5", "#9a9cf8", "#bbbcfb"] },
+      "signal-bloom":        { "role": "primary", "displayName": "Signal Bloom",        "canonical": "#312E81", "tonalRamp": ["#1a1740", "#231f60", "#312E81", "#3d3a9c", "#4b48b6", "#5e5cc8", "#7674d8", "#9290e6"] },
+      "signal-glow":         { "role": "primary", "displayName": "Signal Glow",        "canonical": "#A5B4FC", "tonalRamp": ["#6366F1", "#7c7ff5", "#9091f8", "#A5B4FC", "#b8c0fd", "#c8ccfe", "#d8dbfe", "#eaebff"] },
+      "market-amber":        { "role": "tertiary", "displayName": "Market Amber",       "canonical": "#F59E0B", "tonalRamp": ["#78350f", "#92400e", "#b45309", "#d97706", "#F59E0B", "#fbbf24", "#fcd34d", "#fde68a"] },
+      "trail-green":         { "role": "secondary", "displayName": "Trail Green",       "canonical": "#22C55E", "tonalRamp": ["#14532d", "#166534", "#15803d", "#16a34a", "#22C55E", "#4ade80", "#86efac", "#bbf7d0"] },
+      "social-purple":       { "role": "secondary", "displayName": "Social Purple",     "canonical": "#A855F7", "tonalRamp": ["#4a1d96", "#6b21a8", "#7e22ce", "#9333ea", "#A855F7", "#c084fc", "#d8b4fe", "#ede9fe"] },
+      "vendor-orange":       { "role": "secondary", "displayName": "Vendor Orange",     "canonical": "#F97316", "tonalRamp": ["#7c2d12", "#9a3412", "#c2410c", "#ea580c", "#F97316", "#fb923c", "#fdba74", "#fed7aa"] },
+      "community-blue":      { "role": "secondary", "displayName": "Community Blue",    "canonical": "#3B82F6", "tonalRamp": ["#1e3a8a", "#1d4ed8", "#2563eb", "#3B82F6", "#60a5fa", "#93c5fd", "#bfdbfe", "#dbeafe"] },
+      "harbour-teal":        { "role": "secondary", "displayName": "Harbour Teal",      "canonical": "#06B6D4", "tonalRamp": ["#164e63", "#155e75", "#0e7490", "#0891b2", "#06B6D4", "#22d3ee", "#67e8f9", "#a5f3fc"] }
+    },
+    "typographyMeta": {
+      "display":  { "displayName": "Display",  "purpose": "Kuest wordmark on auth screens only. Never inside the app." },
+      "title":    { "displayName": "Title",    "purpose": "One screen header per screen. Fog White, 800 weight." },
+      "headline": { "displayName": "Headline", "purpose": "Quest card titles, section headings, quest detail titles." },
+      "body":     { "displayName": "Body",     "purpose": "Quest descriptions, meta text. Max 60ch; truncate at 2 lines in cards." },
+      "label":    { "displayName": "Label",    "purpose": "Category chips, XP values, badge names, distance pills." }
+    },
+    "shadows": [
+      { "name": "earned-glow", "value": "shadowColor: #6366F1, shadowOpacity: 0.4, shadowRadius: 4, elevation: 2", "purpose": "XP bar fill only. Indigo bloom signals earned progress." },
+      { "name": "interactive-press", "value": "shadowColor: #0B1120, shadowOpacity: 0.15, shadowRadius: 2, elevation: 1", "purpose": "Subtle inward shadow on button/card press. Not yet implemented." }
+    ],
+    "motion": [
+      { "name": "state-transition", "value": "duration: 150ms, easing: ease-out-quart", "purpose": "Tab switches, chip selection, button state changes." },
+      { "name": "screen-enter", "value": "duration: 220ms, easing: ease-out-expo", "purpose": "Screen push transitions via Expo Router's default." }
+    ],
+    "breakpoints": []
+  },
+  "components": [
+    {
+      "name": "Primary Button",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "Full-width CTA in auth and quest detail screens. The only place Local Signal fills a large surface.",
+      "html": "<button class=\"ds-btn-primary\">Start Quest</button>",
+      "css": ".ds-btn-primary { background: #6366F1; color: #F1F5F9; font-size: 16px; font-weight: 700; padding: 16px; border-radius: 12px; border: none; width: 100%; cursor: pointer; transition: opacity 150ms ease-out; } .ds-btn-primary:hover { opacity: 0.9; } .ds-btn-primary:active { opacity: 0.75; } .ds-btn-primary:disabled { opacity: 0.4; cursor: default; }"
+    },
+    {
+      "name": "Ghost Button",
+      "kind": "button",
+      "refersTo": "button-ghost",
+      "description": "Sign-out and secondary destructive actions. Transparent with a City Dust border.",
+      "html": "<button class=\"ds-btn-ghost\">Sign Out</button>",
+      "css": ".ds-btn-ghost { background: transparent; color: #64748B; font-size: 15px; font-weight: 600; padding: 16px; border-radius: 12px; border: 1px solid #334155; width: 100%; cursor: pointer; transition: border-color 150ms ease-out, color 150ms ease-out; } .ds-btn-ghost:hover { border-color: #64748B; color: #94A3B8; }"
+    },
+    {
+      "name": "Category Chip (Active)",
+      "kind": "chip",
+      "refersTo": "category-chip-active",
+      "description": "Selected filter tab. Local Signal background. Only use of Local Signal on filter UI.",
+      "html": "<span class=\"ds-chip ds-chip--active\">🏃 Fitness</span>",
+      "css": ".ds-chip { display: inline-flex; align-items: center; gap: 4px; padding: 8px 14px; border-radius: 9999px; font-size: 13px; font-weight: 700; cursor: pointer; transition: background 120ms ease-out, color 120ms ease-out; } .ds-chip--active { background: #6366F1; color: #F1F5F9; } .ds-chip--inactive { background: #1E293B; color: #64748B; } .ds-chip--inactive:hover { color: #94A3B8; }"
+    },
+    {
+      "name": "Quest Card",
+      "kind": "card",
+      "refersTo": "quest-card",
+      "description": "Central repeating element. Category identified by icon-box tint and left-edge colour stripe (4px). XP value in Local Signal is the only accent on a resting card.",
+      "html": "<div class=\"ds-quest-card\"><div class=\"ds-quest-accent\" style=\"background:#22C55E\"></div><div class=\"ds-quest-icon\" style=\"background:#22C55E22\"><span>🏃</span></div><div class=\"ds-quest-info\"><p class=\"ds-quest-title\">Run Dallas Road</p><p class=\"ds-quest-desc\">Log a run along the Dallas Road oceanfront path.</p><div class=\"ds-quest-footer\"><span class=\"ds-quest-cat\" style=\"background:#22C55E22;color:#22C55E\">fitness</span><span class=\"ds-quest-xp\">+150 XP</span></div></div></div>",
+      "css": ".ds-quest-card { position: relative; display: flex; align-items: flex-start; gap: 14px; padding: 16px; background: #1E293B; border-radius: 16px; border: 1px solid #1E293B; overflow: hidden; margin-bottom: 12px; } .ds-quest-accent { position: absolute; left: 0; top: 0; bottom: 0; width: 4px; border-radius: 16px 0 0 16px; } .ds-quest-icon { width: 52px; height: 52px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 24px; flex-shrink: 0; margin-left: 8px; } .ds-quest-info { flex: 1; min-width: 0; } .ds-quest-title { color: #F1F5F9; font-weight: 700; font-size: 15px; margin: 0 0 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; } .ds-quest-desc { color: #64748B; font-size: 13px; line-height: 1.4; margin: 0 0 10px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; } .ds-quest-footer { display: flex; justify-content: space-between; align-items: center; } .ds-quest-cat { font-size: 11px; font-weight: 700; padding: 3px 10px; border-radius: 9999px; text-transform: capitalize; } .ds-quest-xp { color: #6366F1; font-weight: 800; font-size: 13px; }"
+    },
+    {
+      "name": "XP Bar",
+      "kind": "custom",
+      "refersTo": "xp-bar-fill",
+      "description": "Signature component. Progress from current level to next. The Earned Glow shadow makes this the only glowing element on the profile screen.",
+      "html": "<div class=\"ds-xp-wrap\"><div class=\"ds-xp-header\"><span class=\"ds-xp-level\">Level 4</span><span class=\"ds-xp-label\">750 / 1000 XP</span></div><div class=\"ds-xp-track\"><div class=\"ds-xp-fill\" style=\"width:75%\"><div class=\"ds-xp-sheen\"></div></div></div></div>",
+      "css": ".ds-xp-wrap { padding: 0 16px 24px; } .ds-xp-header { display: flex; justify-content: space-between; margin-bottom: 8px; } .ds-xp-level { color: #F1F5F9; font-weight: 700; font-size: 14px; } .ds-xp-label { color: #64748B; font-size: 12px; } .ds-xp-track { height: 10px; background: #273449; border-radius: 9999px; overflow: hidden; box-shadow: 0 0 4px rgba(99,102,241,0.4); } .ds-xp-fill { height: 100%; background: #6366F1; border-radius: 9999px; position: relative; overflow: hidden; transition: width 400ms cubic-bezier(0.16, 1, 0.3, 1); } .ds-xp-sheen { position: absolute; top: 0; left: 0; right: 0; height: 50%; background: rgba(255,255,255,0.3); border-radius: 9999px; }"
+    },
+    {
+      "name": "Text Input",
+      "kind": "input",
+      "refersTo": "input",
+      "description": "Undecorated field. No border at rest. Focus state and error state not yet implemented.",
+      "html": "<input class=\"ds-input\" placeholder=\"Email\" type=\"email\" />",
+      "css": ".ds-input { display: block; width: 100%; background: #1E293B; color: #F1F5F9; font-size: 16px; padding: 16px; border-radius: 12px; border: 1px solid transparent; box-sizing: border-box; outline: none; transition: border-color 150ms ease-out; } .ds-input::placeholder { color: #64748B; } .ds-input:focus { border-color: #6366F1; }"
+    },
+    {
+      "name": "Leaderboard Row (Your Rank)",
+      "kind": "custom",
+      "refersTo": null,
+      "description": "The viewer's own rank strip. Signal Bloom background, Local Signal border, Signal Glow username. Only earned moment on the leaderboard screen.",
+      "html": "<div class=\"ds-lb-myrow\"><div class=\"ds-lb-rank\">#4</div><span class=\"ds-lb-name\">@rahil</span><span class=\"ds-lb-xp\">420 XP</span></div>",
+      "css": ".ds-lb-myrow { display: flex; align-items: center; gap: 12px; padding: 12px 20px; background: #312E81; border: 1px solid #6366F1; } .ds-lb-rank { width: 36px; color: #A5B4FC; font-weight: 800; font-size: 18px; } .ds-lb-name { flex: 1; color: #A5B4FC; font-weight: 700; font-size: 14px; } .ds-lb-xp { color: #6366F1; font-weight: 700; }"
+    }
+  ],
+  "narrative": {
+    "northStar": "The Night Market",
+    "overview": "Kuest runs at the hour when the city stops pretending and starts being itself. The visual system lives after dark: deep asphalt backgrounds, surfaces that read like wet concrete under sodium light, and a single indigo signal that only lights up when something has been genuinely earned. The Night Market does not glow for its own sake. Colour comes from the stalls, from the categories, from the proof photos players submit, not from the chrome of the interface.\n\nThe system is built around one rule nobody ever says out loud: the interface should make you feel like you are standing on a real street, not looking at a points app. That means restraint in decoration, weight in typography, and colour used the way a city uses neon: rarely, purposefully, and only on things that actually matter.",
+    "keyCharacteristics": [
+      "Deep near-black background; surfaces step up by 4-6% lightness, never by hue shift",
+      "One accent colour (Local Signal indigo) held in reserve for earned, interactive, and ranked moments only",
+      "Category identity carried by five distinct semantic colours, never by indigo",
+      "Typography-heavy hierarchy; weight contrast does more work than size contrast",
+      "Flat at rest, faint ambient glow on interactive elements under press/focus",
+      "Imperfection is permitted; roughness where it serves realness"
+    ],
+    "rules": [
+      { "name": "The Local Signal Rule", "body": "Local Signal indigo (#6366F1) appears on at most 8% of any screen's visible area. It is reserved for XP values, active leaderboard position, the XP bar fill, active/selected interactive states, and primary CTA buttons. If you reach for it to add interest to a screen that feels flat, you are using it wrong.", "section": "colors" },
+      { "name": "The Category Independence Rule", "body": "Category colours carry identity, not status. They are never used as accent colours, never mixed with Local Signal, and never applied to text that isn't a category label.", "section": "colors" },
+      { "name": "The Weight-Over-Size Rule", "body": "Increase hierarchy by jumping weight before jumping size. A label at 13px/700 reads as more important than body text at 15px/400. Use this before reaching for a larger size step.", "section": "typography" },
+      { "name": "The Flat-By-Default Rule", "body": "No card, row, or container receives a shadow unless it is either interactive (and the shadow is a state, not decoration) or an earned-moment element (XP bar, rank strip). If a surface needs a shadow to read as a surface, fix the background colour step instead.", "section": "elevation" }
+    ],
+    "dos": [
+      "Do hold Local Signal (#6366F1) to under 8% of any screen's visible area. When in doubt, ask whether this moment was earned.",
+      "Do use category colours as identification signals: on map pins, icon box tints, and category chips. Never as emphasis or decoration.",
+      "Do step surfaces by background colour (Asphalt → Wet Concrete → Elevated Pavement) before reaching for a shadow.",
+      "Do write quest copy and empty states as if a person who lives in Victoria wrote them. Generic placeholder language fails the Local Signal Rule.",
+      "Do let system typography do its job. 800 weight at 28px reads like a title. Trust it.",
+      "Do keep the XP bar the only element on a screen that glows. It earns its glow; nothing else does."
+    ],
+    "donts": [
+      "Don't use gradient text or background-clip text tricks. Local Signal is already bold; making it a gradient cheapens what it signals.",
+      "Don't use border-left or border-right greater than 1px as a coloured card accent. The quest card's 4px left stripe is an existing pattern; avoid introducing it to new components.",
+      "Don't show confetti, completion animations, or XP counters before a submission is approved. Earned means approved.",
+      "Don't use the AR neon palette of Pokémon GO (cyan-on-black, floating orbs, creature silhouettes).",
+      "Don't use cartoon mascots, achievement sticker aesthetics, or Duolingo-style full-screen celebration moments.",
+      "Don't replicate fitness-tracker data density from Strava: segment breakdowns, pace charts, performance metrics.",
+      "Don't use punch-card or loyalty-points visual language for sponsored quests.",
+      "Don't add shadows to resting cards, list rows, or non-interactive containers.",
+      "Don't introduce a second accent colour for variety. If a screen feels flat, the problem is hierarchy or spacing, not colour count."
+    ]
+  }
+}
