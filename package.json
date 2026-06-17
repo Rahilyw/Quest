@@ -1,0 +1,12 @@
+{
+  "name": "kuest",
+  "private": true,
+  "workspaces": [
+    "apps/mobile",
+    "apps/admin"
+  ],
+  "scripts": {
+    "mobile": "yarn workspace mobile start",
+    "admin": "yarn workspace admin dev"
+  }
+}

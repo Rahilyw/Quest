@@ -1,0 +1,39 @@
+{
+  "expo": {
+    "name": "Kuest",
+    "slug": "kuest",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "automatic",
+    "scheme": "kuest",
+    "splash": {
+      "image": "./assets/splash.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#0F172A"
+    },
+    "ios": {
+      "supportsTablet": false,
+      "bundleIdentifier": "com.kuest.app",
+      "infoPlist": {
+        "NSLocationWhenInUseUsageDescription": "Kuest uses your location to verify quest completions.",
+        "NSCameraUsageDescription": "Kuest uses your camera to submit quest proof photos."
+      }
+    },
+    "android": {
+      "package": "com.kuest.app",
+      "permissions": [
+        "ACCESS_FINE_LOCATION",
+        "CAMERA"
+      ]
+    },
+    "plugins": [
+      "expo-router",
+      "expo-location",
+      [
+        "expo-camera",
+        { "cameraPermission": "Kuest uses your camera for quest proof photos." }
+      ]
+    ]
+  }
+}
