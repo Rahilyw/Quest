@@ -10,8 +10,18 @@ import { BadgeGrid } from '@/components/BadgeGrid'
 import { Avatar } from '@/components/Avatar'
 import { LevelChip } from '@/components/LevelChip'
 import { SectionHeader } from '@/components/SectionHeader'
+import { EmptyState } from '@/components/EmptyState'
+import { QuestHistoryItem } from '@/components/QuestHistoryItem'
 import { COLORS, SPACING, RADIUS } from '@/lib/constants'
 import type { UserBadge } from '@/lib/types'
+
+interface CompletedQuest {
+  id: string
+  title: string
+  category: string
+  xp_reward: number
+  completed_at: string
+}
 
 export default function Profile() {
   const insets = useSafeAreaInsets()
@@ -19,6 +29,7 @@ export default function Profile() {
   const { profile, signOut } = useAuth()
   const [badges, setBadges] = useState<UserBadge[]>([])
   const [completionCount, setCompletionCount] = useState(0)
+  const [completedQuests, setCompletedQuests] = useState<CompletedQuest[]>([])
 
   useEffect(() => {
     if (!profile) return
@@ -35,6 +46,29 @@ export default function Profile() {
       .eq('user_id', profile.id)
       .eq('status', 'approved')
       .then(({ count }) => setCompletionCount(count ?? 0))
+
+    supabase
+      .from('completions')
+      .select('id, completed_at, quest:quests(title, category, xp_reward)')
+      .eq('user_id', profile.id)
+      .eq('status', 'approved')
+      .order('completed_at', { ascending: false })
+      .limit(20)
+      .then(({ data }) => {
+        const mapped = (data ?? [])
+          .filter((item) => item.quest != null)
+          .map((item) => {
+            const quest = item.quest as { title: string; category: string; xp_reward: number }
+            return {
+              id: item.id,
+              title: quest.title,
+              category: quest.category,
+              xp_reward: quest.xp_reward,
+              completed_at: item.completed_at,
+            }
+          })
+        setCompletedQuests(mapped)
+      })
   }, [profile])
 
   if (!profile) return null
@@ -82,6 +116,29 @@ export default function Profile() {
       <SectionHeader title="Badges" trailing={badges.length > 0 ? `${badges.length}` : undefined} />
       <BadgeGrid badges={badges} />
 
+      <SectionHeader title="Quest History" />
+      {completedQuests.length === 0 ? (
+        <EmptyState
+          icon="📋"
+          title="No completed quests yet"
+          subtitle="Approved quests will appear here"
+        />
+      ) : (
+        <View style={styles.historyList}>
+          {completedQuests.map((quest, index) => (
+            <View key={quest.id}>
+              <QuestHistoryItem
+                title={quest.title}
+                category={quest.category}
+                xp_reward={quest.xp_reward}
+                completed_at={quest.completed_at}
+              />
+              {index < completedQuests.length - 1 && <View style={styles.historyDivider} />}
+            </View>
+          ))}
+        </View>
+      )}
+
       <TouchableOpacity style={styles.signOut} onPress={signOut} activeOpacity={0.8}>
         <Text style={styles.signOutText}>Sign Out</Text>
       </TouchableOpacity>
@@ -125,6 +182,16 @@ const styles = StyleSheet.create({
   statDivider: { width: 1, height: 36, backgroundColor: COLORS.border },
   statValue: { color: COLORS.accent, fontSize: 22, fontWeight: '800' },
   statLabel: { color: COLORS.textMuted, marginTop: 4, fontSize: 12 },
+  historyList: {
+    marginHorizontal: SPACING.lg,
+    marginBottom: SPACING.lg,
+    backgroundColor: COLORS.surface,
+    borderRadius: RADIUS.md,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    overflow: 'hidden',
+  },
+  historyDivider: { height: 1, backgroundColor: COLORS.border },
   signOut: {
     margin: SPACING.xl,
     padding: SPACING.lg,

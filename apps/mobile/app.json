@@ -3,10 +3,24 @@
     "name": "Kuest",
     "slug": "kuest",
     "version": "1.0.0",
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "automatic",
     "scheme": "kuest",
+    "extra": {
+      "eas": {
+        "projectId": "REPLACE_AFTER_RUNNING_eas_init"
+      },
+      "router": {
+        "origin": false
+      }
+    },
+    "updates": {
+      "url": "https://u.expo.dev/REPLACE_AFTER_RUNNING_eas_init"
+    },
     "splash": {
       "image": "./assets/splash.png",
       "resizeMode": "contain",

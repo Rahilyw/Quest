@@ -7,6 +7,7 @@ import { useAuth } from '@/hooks/useAuth'
 import { useLocation } from '@/hooks/useLocation'
 import { useQuest } from '@/hooks/useQuests'
 import { PROOF_GEOFENCE_RADIUS, COLORS } from '@/lib/constants'
+import CompletionCelebration from '@/components/CompletionCelebration'
 
 export default function Submit() {
   const { questId } = useLocalSearchParams<{ questId: string }>()
@@ -16,6 +17,7 @@ export default function Submit() {
   const { quest } = useQuest(questId)
   const [photo, setPhoto] = useState<string | null>(null)
   const [submitting, setSubmitting] = useState(false)
+  const [showCelebration, setShowCelebration] = useState(false)
 
   async function pickPhoto() {
     const result = await ImagePicker.launchCameraAsync({
@@ -69,11 +71,7 @@ export default function Submit() {
     if (insertError) {
       Alert.alert('Submission failed', insertError.message)
     } else {
-      Alert.alert(
-        'Submitted!',
-        'Your proof is under review. XP will be awarded once approved (usually within 2 hours).',
-        [{ text: 'Back to quests', onPress: () => router.replace('/(tabs)') }]
-      )
+      setShowCelebration(true)
     }
     setSubmitting(false)
   }
@@ -125,6 +123,16 @@ export default function Submit() {
           {submitting ? 'Submitting…' : `Submit for +${quest?.xp_reward ?? '?'} XP`}
         </Text>
       </TouchableOpacity>
+
+      <CompletionCelebration
+        visible={showCelebration}
+        questTitle={quest?.title ?? ''}
+        xpReward={quest?.xp_reward ?? 0}
+        onDone={() => {
+          setShowCelebration(false)
+          router.replace('/(tabs)')
+        }}
+      />
     </View>
   )
 }
