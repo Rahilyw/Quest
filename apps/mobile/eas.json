@@ -6,24 +6,24 @@
       "distribution": "internal",
       "ios": { "simulator": true },
       "env": {
-        "EXPO_PUBLIC_SUPABASE_URL": "REPLACE_WITH_REAL_VALUE",
-        "EXPO_PUBLIC_SUPABASE_ANON_KEY": "REPLACE_WITH_REAL_VALUE"
+        "EXPO_PUBLIC_SUPABASE_URL": "https://xuviwarpgvxzpouqesrv.supabase.co",
+        "EXPO_PUBLIC_SUPABASE_ANON_KEY": "sb_publishable_MkxfcKbIk2U5k88mF7QhtQ_NVlGH05Y"
       }
     },
     "preview": {
       "distribution": "internal",
       "channel": "preview",
       "env": {
-        "EXPO_PUBLIC_SUPABASE_URL": "REPLACE_WITH_REAL_VALUE",
-        "EXPO_PUBLIC_SUPABASE_ANON_KEY": "REPLACE_WITH_REAL_VALUE"
+        "EXPO_PUBLIC_SUPABASE_URL": "https://xuviwarpgvxzpouqesrv.supabase.co",
+        "EXPO_PUBLIC_SUPABASE_ANON_KEY": "sb_publishable_MkxfcKbIk2U5k88mF7QhtQ_NVlGH05Y"
       }
     },
     "production": {
       "channel": "production",
       "autoIncrement": true,
       "env": {
-        "EXPO_PUBLIC_SUPABASE_URL": "REPLACE_WITH_REAL_VALUE",
-        "EXPO_PUBLIC_SUPABASE_ANON_KEY": "REPLACE_WITH_REAL_VALUE"
+        "EXPO_PUBLIC_SUPABASE_URL": "https://xuviwarpgvxzpouqesrv.supabase.co",
+        "EXPO_PUBLIC_SUPABASE_ANON_KEY": "sb_publishable_MkxfcKbIk2U5k88mF7QhtQ_NVlGH05Y"
       }
     }
   },
