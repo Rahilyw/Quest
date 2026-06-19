@@ -11,15 +11,12 @@
     "userInterfaceStyle": "automatic",
     "scheme": "kuest",
     "extra": {
-      "eas": {
-        "projectId": "REPLACE_AFTER_RUNNING_eas_init"
-      },
       "router": {
         "origin": false
+      },
+      "eas": {
+        "projectId": "31903b75-d817-4713-9211-a0cd8a167921"
       }
-    },
-    "updates": {
-      "url": "https://u.expo.dev/REPLACE_AFTER_RUNNING_eas_init"
     },
     "splash": {
       "image": "./assets/splash.png",
@@ -38,7 +35,11 @@
       "package": "com.kuest.app",
       "permissions": [
         "ACCESS_FINE_LOCATION",
-        "CAMERA"
+        "CAMERA",
+        "android.permission.ACCESS_COARSE_LOCATION",
+        "android.permission.ACCESS_FINE_LOCATION",
+        "android.permission.CAMERA",
+        "android.permission.RECORD_AUDIO"
       ]
     },
     "plugins": [
@@ -46,7 +47,9 @@
       "expo-location",
       [
         "expo-camera",
-        { "cameraPermission": "Kuest uses your camera for quest proof photos." }
+        {
+          "cameraPermission": "Kuest uses your camera for quest proof photos."
+        }
       ],
       [
         "expo-notifications",
@@ -55,6 +58,7 @@
           "color": "#6366F1"
         }
       ]
-    ]
+    ],
+    "owner": "rahil1"
   }
 }
