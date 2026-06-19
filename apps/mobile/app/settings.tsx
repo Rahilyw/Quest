@@ -1,18 +1,60 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Switch } from 'react-native'
 import { useRouter } from 'expo-router'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { Ionicons } from '@expo/vector-icons'
+import AsyncStorage from '@react-native-async-storage/async-storage'
+import * as Notifications from 'expo-notifications'
 import { useAuth } from '@/hooks/useAuth'
 import { SectionHeader } from '@/components/SectionHeader'
 import { COLORS, SPACING, RADIUS } from '@/lib/constants'
+import { supabase } from '@/lib/supabase'
+import { registerForPushNotifications, clearPushToken } from '@/lib/notifications'
+
+const WEEKLY_DIGEST_KEY = 'pref_weekly_digest'
 
 export default function Settings(): JSX.Element {
   const insets = useSafeAreaInsets()
   const router = useRouter()
   const { session, profile, signOut } = useAuth()
-  const [questNearby, setQuestNearby] = useState<boolean>(true)
-  const [weeklyDigest, setWeeklyDigest] = useState<boolean>(true)
+  const [questNearby, setQuestNearby] = useState(false)
+  const [weeklyDigest, setWeeklyDigest] = useState(true)
+
+  useEffect(() => {
+    if (!session?.user?.id) return
+
+    // Derive questNearby from actual push token presence
+    supabase
+      .from('profiles')
+      .select('push_token')
+      .eq('id', session.user.id)
+      .single()
+      .then(({ data }) => {
+        setQuestNearby(!!data?.push_token)
+      })
+
+    // Restore weekly digest preference
+    AsyncStorage.getItem(WEEKLY_DIGEST_KEY).then((val) => {
+      if (val !== null) setWeeklyDigest(val === 'true')
+    })
+  }, [session?.user?.id])
+
+  async function handleQuestNearbyToggle(enabled: boolean) {
+    if (!session?.user?.id) return
+    if (enabled) {
+      const token = await registerForPushNotifications(session.user.id)
+      // Permission was denied — registerForPushNotifications returns null
+      setQuestNearby(token !== null)
+    } else {
+      await clearPushToken(session.user.id)
+      setQuestNearby(false)
+    }
+  }
+
+  async function handleWeeklyDigestToggle(enabled: boolean) {
+    setWeeklyDigest(enabled)
+    await AsyncStorage.setItem(WEEKLY_DIGEST_KEY, String(enabled))
+  }
 
   async function handleSignOut() {
     await signOut()
@@ -21,7 +63,6 @@ export default function Settings(): JSX.Element {
 
   return (
     <View style={styles.container}>
-      {/* Absolute back button */}
       <TouchableOpacity
         style={[styles.back, { top: insets.top + 12, left: SPACING.lg }]}
         onPress={() => router.back()}
@@ -32,15 +73,11 @@ export default function Settings(): JSX.Element {
         </View>
       </TouchableOpacity>
 
-      {/* Screen title */}
       <Text style={[styles.screenTitle, { paddingTop: insets.top + 18 }]}>Settings</Text>
 
       <ScrollView
         style={styles.scroll}
-        contentContainerStyle={[
-          styles.scrollContent,
-          { paddingTop: insets.top + 64 },
-        ]}
+        contentContainerStyle={[styles.scrollContent, { paddingTop: insets.top + 64 }]}
       >
         {/* ACCOUNT */}
         <SectionHeader title="Account" />
@@ -72,7 +109,7 @@ export default function Settings(): JSX.Element {
             <Text style={styles.rowLabel}>Quest Nearby</Text>
             <Switch
               value={questNearby}
-              onValueChange={setQuestNearby}
+              onValueChange={handleQuestNearbyToggle}
               thumbColor="#FFFFFF"
               trackColor={{ false: '#CBD5E1', true: COLORS.accent }}
               ios_backgroundColor="#CBD5E1"
@@ -82,7 +119,7 @@ export default function Settings(): JSX.Element {
             <Text style={styles.rowLabel}>Weekly Digest</Text>
             <Switch
               value={weeklyDigest}
-              onValueChange={setWeeklyDigest}
+              onValueChange={handleWeeklyDigestToggle}
               thumbColor="#FFFFFF"
               trackColor={{ false: '#CBD5E1', true: COLORS.accent }}
               ios_backgroundColor="#CBD5E1"
@@ -159,10 +196,7 @@ const styles = StyleSheet.create({
     zIndex: 9,
   },
   scroll: { flex: 1 },
-  scrollContent: {
-    padding: SPACING.md,
-    paddingBottom: 80,
-  },
+  scrollContent: { padding: SPACING.md, paddingBottom: 80 },
   sectionCard: {
     backgroundColor: COLORS.surface,
     borderRadius: RADIUS.md,
@@ -178,10 +212,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: SPACING.md,
     height: 52,
   },
-  rowBorder: {
-    borderTopWidth: 1,
-    borderTopColor: COLORS.border,
-  },
+  rowBorder: { borderTopWidth: 1, borderTopColor: COLORS.border },
   rowLabel: { color: COLORS.textPrimary, fontSize: 15, fontWeight: '500' },
   rowValue: {
     color: COLORS.textMuted,
