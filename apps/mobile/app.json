@@ -28,7 +28,8 @@
       "bundleIdentifier": "com.quest.app",
       "infoPlist": {
         "NSLocationWhenInUseUsageDescription": "Quest! uses your location to verify quest completions.",
-        "NSCameraUsageDescription": "Quest! uses your camera to submit quest proof photos."
+        "NSCameraUsageDescription": "Quest! uses your camera to submit quest proof photos.",
+        "NSPhotoLibraryUsageDescription": "Quest! uses your photo library to set your avatar."
       }
     },
     "android": {

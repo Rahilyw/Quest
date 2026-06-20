@@ -6,10 +6,17 @@ interface Props {
   visible: boolean
   questTitle: string
   xpReward: number
+  streakCount?: number
   onDone: () => void
 }
 
-export default function CompletionCelebration({ visible, questTitle, xpReward, onDone }: Props) {
+export default function CompletionCelebration({
+  visible,
+  questTitle,
+  xpReward,
+  streakCount = 0,
+  onDone,
+}: Props) {
   const scaleAnim = useRef(new Animated.Value(0)).current
 
   useEffect(() => {
@@ -39,6 +46,12 @@ export default function CompletionCelebration({ visible, questTitle, xpReward, o
           <View style={styles.xpPill}>
             <Text style={styles.xpText}>+{xpReward} XP pending approval</Text>
           </View>
+
+          {streakCount > 0 && (
+            <View style={styles.streakPill}>
+              <Text style={styles.streakText}>🔥 Week {streakCount} streak!</Text>
+            </View>
+          )}
 
           <Text style={styles.infoText}>
             {'Your submission is under review.\nYou\'ll be notified when it\'s approved.'}
@@ -103,6 +116,18 @@ const styles = StyleSheet.create({
   },
   xpText: {
     color: COLORS.success,
+    fontWeight: '700',
+    fontSize: 14,
+  },
+  streakPill: {
+    marginTop: 8,
+    backgroundColor: '#FEF3C7',
+    borderRadius: 999,
+    paddingVertical: 8,
+    paddingHorizontal: 20,
+  },
+  streakText: {
+    color: COLORS.warning,
     fontWeight: '700',
     fontSize: 14,
   },

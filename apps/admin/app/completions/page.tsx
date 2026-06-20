@@ -13,8 +13,8 @@ export default function CompletionsQueue() {
     })
   }, [])
 
-  async function handleUpdateStatus(id: string, status: 'approved' | 'rejected') {
-    await updateCompletionStatus(id, status)
+  async function handleUpdateStatus(id: string, status: 'approved' | 'rejected', isSponsored = false) {
+    await updateCompletionStatus(id, status, isSponsored)
     setCompletions((prev) => prev.filter((c) => c.id !== id))
   }
 
@@ -47,10 +47,15 @@ export default function CompletionsQueue() {
               <div style={{ color: '#64748B', fontSize: 12 }}>
                 GPS: {c.lat.toFixed(5)}, {c.lng.toFixed(5)}
               </div>
+              {c.quests?.is_sponsored && (
+                <div style={{ color: '#F59E0B', fontSize: 12, marginTop: 4 }}>
+                  ⭐ Sponsored quest — code will be generated on approval
+                </div>
+              )}
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
               <button
-                onClick={() => handleUpdateStatus(c.id, 'approved')}
+                onClick={() => handleUpdateStatus(c.id, 'approved', c.quests?.is_sponsored ?? false)}
                 style={{ background: '#22C55E', color: '#fff', border: 'none', borderRadius: 8, padding: '10px 20px', cursor: 'pointer', fontWeight: 700 }}
               >
                 Approve

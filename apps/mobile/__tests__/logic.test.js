@@ -15,23 +15,24 @@
 // ---------------------------------------------------------------------------
 
 const COLORS = {
-  bg: '#0B1120',
-  surface: '#1E293B',
-  surfaceElevated: '#273449',
-  border: '#1E293B',
-  textPrimary: '#F1F5F9',
-  textSecondary: '#94A3B8',
-  textMuted: '#64748B',
+  bg: '#F0F9FF',
+  bgWarm: '#FFF7ED',
+  surface: '#FFFFFF',
+  surfaceElevated: '#F8FAFF',
+  border: 'rgba(15, 23, 42, 0.06)',
+  textPrimary: '#0F172A',
+  textSecondary: '#475569',
+  textMuted: '#94A3B8',
   accent: '#6366F1',
-  accentSoft: '#312E81',
-  accentText: '#A5B4FC',
-  warning: '#F59E0B',
-  success: '#22C55E',
-  sponsor: '#F59E0B',
+  accentSoft: '#EEF2FF',
+  accentText: '#4338CA',
+  warning: '#D97706',
+  success: '#16A34A',
+  sponsor: '#EA580C',
 }
 
 const SPACING = { xs: 4, sm: 8, md: 12, lg: 16, xl: 20, xxl: 24 }
-const RADIUS = { sm: 8, md: 12, lg: 16, xl: 20, pill: 999 }
+const RADIUS = { sm: 8, md: 12, lg: 16, xl: 20, xxl: 28, pill: 999 }
 
 const XP_LEVELS = [
   { level: 1, minXp: 0 },
@@ -47,11 +48,11 @@ const XP_LEVELS = [
 ]
 
 const CATEGORY_COLORS = {
-  fitness: '#22C55E',
-  social: '#A855F7',
-  food: '#F97316',
-  community: '#3B82F6',
-  nature: '#06B6D4',
+  fitness: '#16A34A',
+  social: '#9333EA',
+  food: '#EA580C',
+  community: '#2563EB',
+  nature: '#0891B2',
 }
 
 const CATEGORY_ICONS = {
@@ -189,27 +190,27 @@ console.log('\n--- Section 1: constants.ts backward-compatibility exports ---')
 assertEqual(
   'CATEGORY_COLORS.fitness exists',
   CATEGORY_COLORS.fitness,
-  '#22C55E'
+  '#16A34A'
 )
 assertEqual(
   'CATEGORY_COLORS.social exists',
   CATEGORY_COLORS.social,
-  '#A855F7'
+  '#9333EA'
 )
 assertEqual(
   'CATEGORY_COLORS.food exists',
   CATEGORY_COLORS.food,
-  '#F97316'
+  '#EA580C'
 )
 assertEqual(
   'CATEGORY_COLORS.community exists',
   CATEGORY_COLORS.community,
-  '#3B82F6'
+  '#2563EB'
 )
 assertEqual(
   'CATEGORY_COLORS.nature exists',
   CATEGORY_COLORS.nature,
-  '#06B6D4'
+  '#0891B2'
 )
 assertTruthy(
   'CATEGORY_ICONS.fitness is emoji string',
@@ -243,19 +244,19 @@ assertTruthy(
 // ---------------------------------------------------------------------------
 console.log('\n--- Section 2: New COLORS / SPACING / RADIUS token exports ---')
 
-assertEqual('COLORS.bg is correct', COLORS.bg, '#0B1120')
-assertEqual('COLORS.surface is correct', COLORS.surface, '#1E293B')
-assertEqual('COLORS.surfaceElevated is correct', COLORS.surfaceElevated, '#273449')
-assertEqual('COLORS.border is correct', COLORS.border, '#1E293B')
-assertEqual('COLORS.textPrimary is correct', COLORS.textPrimary, '#F1F5F9')
-assertEqual('COLORS.textSecondary is correct', COLORS.textSecondary, '#94A3B8')
-assertEqual('COLORS.textMuted is correct', COLORS.textMuted, '#64748B')
+assertEqual('COLORS.bg is correct', COLORS.bg, '#F0F9FF')
+assertEqual('COLORS.surface is correct', COLORS.surface, '#FFFFFF')
+assertEqual('COLORS.surfaceElevated is correct', COLORS.surfaceElevated, '#F8FAFF')
+assertEqual('COLORS.border is correct', COLORS.border, 'rgba(15, 23, 42, 0.06)')
+assertEqual('COLORS.textPrimary is correct', COLORS.textPrimary, '#0F172A')
+assertEqual('COLORS.textSecondary is correct', COLORS.textSecondary, '#475569')
+assertEqual('COLORS.textMuted is correct', COLORS.textMuted, '#94A3B8')
 assertEqual('COLORS.accent is correct', COLORS.accent, '#6366F1')
-assertEqual('COLORS.accentSoft is correct', COLORS.accentSoft, '#312E81')
-assertEqual('COLORS.accentText is correct', COLORS.accentText, '#A5B4FC')
-assertEqual('COLORS.warning is correct', COLORS.warning, '#F59E0B')
-assertEqual('COLORS.success is correct', COLORS.success, '#22C55E')
-assertEqual('COLORS.sponsor is correct', COLORS.sponsor, '#F59E0B')
+assertEqual('COLORS.accentSoft is correct', COLORS.accentSoft, '#EEF2FF')
+assertEqual('COLORS.accentText is correct', COLORS.accentText, '#4338CA')
+assertEqual('COLORS.warning is correct', COLORS.warning, '#D97706')
+assertEqual('COLORS.success is correct', COLORS.success, '#16A34A')
+assertEqual('COLORS.sponsor is correct', COLORS.sponsor, '#EA580C')
 
 assertEqual('SPACING.xs is 4', SPACING.xs, 4)
 assertEqual('SPACING.sm is 8', SPACING.sm, 8)
@@ -268,6 +269,7 @@ assertEqual('RADIUS.sm is 8', RADIUS.sm, 8)
 assertEqual('RADIUS.md is 12', RADIUS.md, 12)
 assertEqual('RADIUS.lg is 16', RADIUS.lg, 16)
 assertEqual('RADIUS.xl is 20', RADIUS.xl, 20)
+assertEqual('RADIUS.xxl is 28', RADIUS.xxl, 28)
 assertEqual('RADIUS.pill is 999', RADIUS.pill, 999)
 
 // ---------------------------------------------------------------------------

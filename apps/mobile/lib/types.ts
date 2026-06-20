@@ -56,6 +56,9 @@ export interface UserProfile {
   level: number
   avatar_url: string | null
   push_token: string | null
+  current_streak: number
+  longest_streak: number
+  last_completion_week: string | null
   created_at: string
 }
 
@@ -73,7 +76,11 @@ export type Database = {
     Tables: {
       quests: { Row: Quest; Insert: Omit<Quest, 'id' | 'created_at'>; Update: Partial<Quest> }
       completions: { Row: Completion; Insert: Omit<Completion, 'id'>; Update: Partial<Completion> }
-      profiles: { Row: UserProfile; Insert: Omit<UserProfile, 'created_at' | 'push_token'> & { push_token?: string | null }; Update: Partial<UserProfile> }
+      profiles: {
+        Row: UserProfile
+        Insert: Omit<UserProfile, 'created_at' | 'push_token' | 'current_streak' | 'longest_streak' | 'last_completion_week'> & { push_token?: string | null }
+        Update: Partial<UserProfile>
+      }
       badges: { Row: Badge; Insert: Omit<Badge, 'id'>; Update: Partial<Badge> }
       user_badges: { Row: UserBadge; Insert: UserBadge; Update: never }
     }

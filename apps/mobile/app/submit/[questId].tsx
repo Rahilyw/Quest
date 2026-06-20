@@ -128,6 +128,7 @@ export default function Submit() {
         visible={showCelebration}
         questTitle={quest?.title ?? ''}
         xpReward={quest?.xp_reward ?? 0}
+        streakCount={0}
         onDone={() => {
           setShowCelebration(false)
           router.replace('/(tabs)')

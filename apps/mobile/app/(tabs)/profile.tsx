@@ -29,6 +29,8 @@ interface CompletedQuest {
   category: string
   xp_reward: number
   completed_at: string
+  redemption_code: string | null
+  is_sponsored: boolean
 }
 
 function formatMemberSince(dateStr: string): string {
@@ -65,7 +67,7 @@ export default function Profile() {
         .eq('status', 'approved'),
       supabase
         .from('completions')
-        .select('id, completed_at, quest:quests(title, category, xp_reward)')
+        .select('id, completed_at, redemption_code, quest:quests(title, category, xp_reward, is_sponsored)')
         .eq('user_id', profile.id)
         .eq('status', 'approved')
         .order('completed_at', { ascending: false })
@@ -83,13 +85,15 @@ export default function Profile() {
     const mapped = (historyResult.data ?? [])
       .filter((item) => item.quest != null)
       .map((item) => {
-        const quest = item.quest as { title: string; category: string; xp_reward: number }
+        const quest = item.quest as { title: string; category: string; xp_reward: number; is_sponsored: boolean }
         return {
           id: item.id,
           title: quest.title,
           category: quest.category,
           xp_reward: quest.xp_reward,
           completed_at: item.completed_at,
+          redemption_code: item.redemption_code as string | null,
+          is_sponsored: quest.is_sponsored ?? false,
         }
       })
     setCompletedQuests(mapped)
@@ -225,9 +229,26 @@ export default function Profile() {
           <Text style={styles.statValue}>Lv {profile.level}</Text>
           <Text style={styles.statLabel}>Level</Text>
         </View>
+        <View style={styles.statDivider} />
+        <View style={styles.stat}>
+          <Text style={styles.statValue}>
+            {profile.current_streak >= 2
+              ? `🔥${profile.current_streak}`
+              : profile.current_streak}
+          </Text>
+          <Text style={styles.statLabel}>Streak</Text>
+        </View>
       </View>
 
       <XPBar totalXp={profile.total_xp} />
+
+      {profile.longest_streak > 0 && profile.current_streak > 0 && (
+        <View style={styles.streakBestCard}>
+          <Text style={styles.streakBestText}>
+            Personal best: {profile.longest_streak} week streak
+          </Text>
+        </View>
+      )}
 
       {categoryBreakdown.length > 0 && (
         <>
@@ -283,6 +304,8 @@ export default function Profile() {
                 category={quest.category}
                 xp_reward={quest.xp_reward}
                 completed_at={quest.completed_at}
+                redemption_code={quest.redemption_code}
+                is_sponsored={quest.is_sponsored}
               />
               {index < completedQuests.length - 1 && <View style={styles.historyDivider} />}
             </View>
@@ -395,6 +418,16 @@ const styles = StyleSheet.create({
   statDivider: { width: 1, height: 36, backgroundColor: COLORS.border },
   statValue: { color: COLORS.accent, fontSize: 18, fontWeight: '800' },
   statLabel: { color: COLORS.textMuted, marginTop: 4, fontSize: 11 },
+  streakBestCard: {
+    marginHorizontal: SPACING.lg,
+    marginBottom: SPACING.lg,
+    padding: SPACING.lg,
+    backgroundColor: COLORS.accentSoft,
+    borderRadius: RADIUS.md,
+    borderWidth: 1,
+    borderColor: COLORS.accent,
+  },
+  streakBestText: { color: COLORS.accentText, fontWeight: '700', fontSize: 14 },
   categoryCard: {
     marginHorizontal: SPACING.lg,
     marginBottom: SPACING.lg,

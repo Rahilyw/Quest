@@ -11,8 +11,10 @@ import {
 } from 'react-native'
 import { useRouter } from 'expo-router'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
+import * as ImagePicker from 'expo-image-picker'
 import { useAuth } from '@/hooks/useAuth'
 import { supabase } from '@/lib/supabase'
+import { Avatar } from '@/components/Avatar'
 import { SectionHeader } from '@/components/SectionHeader'
 import { COLORS, SPACING, RADIUS } from '@/lib/constants'
 import { PILOT_CITIES } from '@/lib/onboarding'
@@ -23,9 +25,35 @@ export default function EditProfile() {
   const { profile, refreshProfile } = useAuth()
   const [username, setUsername] = useState(profile?.username ?? '')
   const [city, setCity] = useState(profile?.city ?? PILOT_CITIES[0])
+  const [avatarUri, setAvatarUri] = useState<string | null>(profile?.avatar_url ?? null)
   const [saving, setSaving] = useState(false)
 
   if (!profile) return null
+
+  async function uploadAvatar(uri: string): Promise<string | null> {
+    const response = await fetch(uri)
+    const blob = await response.blob()
+    const fileName = `avatars/${profile.id}.jpg`
+    const { error } = await supabase.storage
+      .from('avatars')
+      .upload(fileName, blob, { contentType: 'image/jpeg', upsert: true })
+    if (error) {
+      Alert.alert('Upload failed', error.message)
+      return null
+    }
+    const { data: { publicUrl } } = supabase.storage.from('avatars').getPublicUrl(fileName)
+    return publicUrl
+  }
+
+  async function pickAvatar() {
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsEditing: true,
+      aspect: [1, 1],
+      quality: 0.8,
+    })
+    if (!result.canceled) setAvatarUri(result.assets[0].uri)
+  }
 
   async function handleSave() {
     const trimmed = username.trim().toLowerCase()
@@ -39,9 +67,19 @@ export default function EditProfile() {
     }
 
     setSaving(true)
+
+    let newAvatarUrl = profile.avatar_url
+    if (avatarUri && avatarUri !== profile.avatar_url) {
+      newAvatarUrl = await uploadAvatar(avatarUri)
+      if (!newAvatarUrl) {
+        setSaving(false)
+        return
+      }
+    }
+
     const { error } = await supabase
       .from('profiles')
-      .update({ username: trimmed, city })
+      .update({ username: trimmed, city, avatar_url: newAvatarUrl })
       .eq('id', profile.id)
 
     setSaving(false)
@@ -78,6 +116,17 @@ export default function EditProfile() {
         contentContainerStyle={[styles.scrollContent, { paddingTop: insets.top + 64 }]}
         keyboardShouldPersistTaps="handled"
       >
+        <TouchableOpacity
+          style={styles.avatarSection}
+          onPress={pickAvatar}
+          activeOpacity={0.8}
+        >
+          <Avatar username={profile.username} uri={avatarUri} size={88} />
+          <View style={styles.avatarEditBadge}>
+            <Text style={styles.avatarEditText}>📷</Text>
+          </View>
+        </TouchableOpacity>
+
         <SectionHeader title="Public Info" />
         <View style={styles.sectionCard}>
           <View style={styles.field}>
@@ -163,6 +212,25 @@ const styles = StyleSheet.create({
   },
   scroll: { flex: 1 },
   scrollContent: { padding: SPACING.md, paddingBottom: 80 },
+  avatarSection: {
+    alignSelf: 'center',
+    marginBottom: SPACING.xxl,
+    position: 'relative',
+  },
+  avatarEditBadge: {
+    position: 'absolute',
+    bottom: 0,
+    right: 0,
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    backgroundColor: COLORS.surface,
+    borderWidth: 1.5,
+    borderColor: COLORS.accent,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  avatarEditText: { fontSize: 14 },
   sectionCard: {
     backgroundColor: COLORS.surface,
     borderRadius: RADIUS.md,

@@ -1,0 +1,44 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  logic-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Run logic tests
+        run: node apps/mobile/__tests__/logic.test.js
+
+  typescript-check-mobile:
+    name: typescript-check (mobile)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Install deps
+        run: cd apps/mobile && npm install --ignore-scripts
+      - name: TypeScript check
+        run: cd apps/mobile && npx tsc --noEmit
+
+  typescript-check-admin:
+    name: typescript-check (admin)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Install deps
+        run: cd apps/admin && npm install
+      - name: TypeScript check
+        run: cd apps/admin && npx tsc --noEmit
