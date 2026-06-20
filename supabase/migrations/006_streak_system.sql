@@ -36,7 +36,7 @@ begin
     end;
 
     current_week := to_char(now(), 'IYYY-"W"IW');
-    previous_week := to_char(now() - interval '7 days', 'IYYY-"W"IW');
+    previous_week := to_char(date_trunc('week', now())::date - interval '7 days', 'IYYY-"W"IW');
 
     select last_completion_week, current_streak, longest_streak
     into last_week, new_streak, new_longest

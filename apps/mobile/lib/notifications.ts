@@ -34,12 +34,14 @@ export async function registerForPushNotifications(userId: string): Promise<stri
   const existing = await Notifications.getPermissionsAsync()
   const hasPermission =
     existing.granted ||
+    existing.ios?.status === Notifications.IosAuthorizationStatus.AUTHORIZED ||
     existing.ios?.status === Notifications.IosAuthorizationStatus.PROVISIONAL
 
   if (!hasPermission) {
     const requested = await Notifications.requestPermissionsAsync()
     const granted =
       requested.granted ||
+      requested.ios?.status === Notifications.IosAuthorizationStatus.AUTHORIZED ||
       requested.ios?.status === Notifications.IosAuthorizationStatus.PROVISIONAL
     if (!granted) return null
   }

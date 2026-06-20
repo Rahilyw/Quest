@@ -19,4 +19,9 @@ create policy "Users can update own avatar"
     bucket_id = 'avatars'
     and auth.role() = 'authenticated'
     and name = 'avatars/' || auth.uid() || '.jpg'
+  )
+  with check (
+    bucket_id = 'avatars'
+    and auth.role() = 'authenticated'
+    and name = 'avatars/' || auth.uid() || '.jpg'
   );

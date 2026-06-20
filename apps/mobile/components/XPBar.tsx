@@ -1,4 +1,4 @@
-import { View, Text, StyleSheet } from 'react-native'
+import { View, Text, StyleSheet, type DimensionValue } from 'react-native'
 import { getLevelFromXp, getXpToNextLevel, XP_LEVELS, COLORS, SPACING, RADIUS } from '@/lib/constants'
 
 interface Props {
@@ -12,7 +12,7 @@ export function XPBar({ totalXp }: Props) {
   const currentLevelXp = XP_LEVELS.find((l) => l.level === level)?.minXp ?? 0
   const nextLevelXp = XP_LEVELS.find((l) => l.level === level + 1)?.minXp ?? currentLevelXp + 1
   const progress = isMaxLevel ? 1 : (totalXp - currentLevelXp) / (nextLevelXp - currentLevelXp)
-  const fillPct = `${Math.min(progress * 100, 100)}%`
+  const fillPct = `${Math.min(progress * 100, 100)}%` as DimensionValue
 
   const xpLabel = isMaxLevel
     ? 'Max level'

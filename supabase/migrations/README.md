@@ -10,6 +10,8 @@ Apply migrations in numeric/filename order:
 | `004_push_token.sql` | Adds `push_token` to profiles |
 | `20250618120000_add_push_token_to_profiles.sql` | Duplicate of 004 — skip if 004 already applied |
 | `005_align_badge_unlock_logic.sql` | Replaces 002 trigger; must run after 004 |
+| `006_streak_system.sql` | Weekly streak columns and XP trigger extension |
+| `007_avatar_bucket.sql` | Public `avatars` storage bucket and RLS policies |
 
 ## Env var naming drift
 

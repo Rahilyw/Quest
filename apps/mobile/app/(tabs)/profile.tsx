@@ -21,7 +21,7 @@ import { SectionHeader } from '@/components/SectionHeader'
 import { EmptyState } from '@/components/EmptyState'
 import { QuestHistoryItem } from '@/components/QuestHistoryItem'
 import { COLORS, SPACING, RADIUS, CATEGORY_ICONS, CATEGORY_COLORS } from '@/lib/constants'
-import type { UserBadge } from '@/lib/types'
+import type { UserBadgeWithBadge } from '@/lib/types'
 
 interface CompletedQuest {
   id: string
@@ -42,7 +42,7 @@ export default function Profile() {
   const insets = useSafeAreaInsets()
   const router = useRouter()
   const { profile, loading, refreshProfile } = useAuth()
-  const [badges, setBadges] = useState<UserBadge[]>([])
+  const [badges, setBadges] = useState<UserBadgeWithBadge[]>([])
   const [completionCount, setCompletionCount] = useState(0)
   const [completedQuests, setCompletedQuests] = useState<CompletedQuest[]>([])
   const [weeklyRank, setWeeklyRank] = useState<number | null>(null)
@@ -82,20 +82,24 @@ export default function Profile() {
     setBadges(badgesResult.data ?? [])
     setCompletionCount(countResult.count ?? 0)
 
-    const mapped = (historyResult.data ?? [])
+    type HistoryRow = {
+      id: string
+      completed_at: string
+      redemption_code: string | null
+      quest: { title: string; category: string; xp_reward: number; is_sponsored: boolean } | null
+    }
+
+    const mapped = ((historyResult.data ?? []) as unknown as HistoryRow[])
       .filter((item) => item.quest != null)
-      .map((item) => {
-        const quest = item.quest as { title: string; category: string; xp_reward: number; is_sponsored: boolean }
-        return {
-          id: item.id,
-          title: quest.title,
-          category: quest.category,
-          xp_reward: quest.xp_reward,
-          completed_at: item.completed_at,
-          redemption_code: item.redemption_code as string | null,
-          is_sponsored: quest.is_sponsored ?? false,
-        }
-      })
+      .map((item) => ({
+        id: item.id,
+        title: item.quest!.title,
+        category: item.quest!.category,
+        xp_reward: item.quest!.xp_reward,
+        completed_at: item.completed_at,
+        redemption_code: item.redemption_code,
+        is_sponsored: item.quest!.is_sponsored ?? false,
+      }))
     setCompletedQuests(mapped)
 
     const entries = leaderboardResult.data ?? []
@@ -130,6 +134,9 @@ export default function Profile() {
       .sort((a, b) => b[1] - a[1])
       .slice(0, 4)
   }, [completedQuests])
+
+  const currentStreak = profile?.current_streak ?? 0
+  const longestStreak = profile?.longest_streak ?? 0
 
   if (loading || !profile) {
     return (
@@ -232,9 +239,7 @@ export default function Profile() {
         <View style={styles.statDivider} />
         <View style={styles.stat}>
           <Text style={styles.statValue}>
-            {profile.current_streak >= 2
-              ? `🔥${profile.current_streak}`
-              : profile.current_streak}
+            {currentStreak >= 2 ? `🔥${currentStreak}` : currentStreak}
           </Text>
           <Text style={styles.statLabel}>Streak</Text>
         </View>
@@ -242,10 +247,10 @@ export default function Profile() {
 
       <XPBar totalXp={profile.total_xp} />
 
-      {profile.longest_streak > 0 && profile.current_streak > 0 && (
+      {longestStreak > 0 && currentStreak > 0 && (
         <View style={styles.streakBestCard}>
           <Text style={styles.streakBestText}>
-            Personal best: {profile.longest_streak} week streak
+            Personal best: {longestStreak} week streak
           </Text>
         </View>
       )}

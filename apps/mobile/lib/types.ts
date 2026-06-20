@@ -30,7 +30,6 @@ export interface Completion {
   completed_at: string
   status: CompletionStatus
   redemption_code: string | null
-  quest?: Quest
 }
 
 export interface Badge {
@@ -45,7 +44,14 @@ export interface UserBadge {
   user_id: string
   badge_id: string
   earned_at: string
+}
+
+export interface UserBadgeWithBadge extends UserBadge {
   badge?: Badge
+}
+
+export interface CompletionWithQuest extends Completion {
+  quest?: Pick<Quest, 'title' | 'category' | 'xp_reward' | 'is_sponsored'> | null
 }
 
 export interface UserProfile {
@@ -62,32 +68,67 @@ export interface UserProfile {
   created_at: string
 }
 
-export interface LeaderboardEntry {
+export interface LeaderboardRow {
   user_id: string
   username: string
   avatar_url: string | null
   weekly_xp: number
+}
+
+export interface LeaderboardEntry extends LeaderboardRow {
   rank: number
 }
 
-// Supabase generated types placeholder — replace with `supabase gen types` output
 export type Database = {
   public: {
     Tables: {
-      quests: { Row: Quest; Insert: Omit<Quest, 'id' | 'created_at'>; Update: Partial<Quest> }
-      completions: { Row: Completion; Insert: Omit<Completion, 'id'>; Update: Partial<Completion> }
+      quests: {
+        Row: Quest
+        Insert: Omit<Quest, 'id' | 'created_at'>
+        Update: Partial<Omit<Quest, 'id' | 'created_at'>>
+        Relationships: []
+      }
+      completions: {
+        Row: Completion
+        Insert: Omit<Completion, 'id'>
+        Update: Partial<Omit<Completion, 'id'>>
+        Relationships: []
+      }
       profiles: {
         Row: UserProfile
-        Insert: Omit<UserProfile, 'created_at' | 'push_token' | 'current_streak' | 'longest_streak' | 'last_completion_week'> & { push_token?: string | null }
-        Update: Partial<UserProfile>
+        Insert: {
+          id: string
+          username: string
+          city: string
+          total_xp?: number
+          level?: number
+          avatar_url?: string | null
+          push_token?: string | null
+        }
+        Update: Partial<Omit<UserProfile, 'id' | 'created_at'>>
+        Relationships: []
       }
-      badges: { Row: Badge; Insert: Omit<Badge, 'id'>; Update: Partial<Badge> }
-      user_badges: { Row: UserBadge; Insert: UserBadge; Update: never }
+      badges: {
+        Row: Badge
+        Insert: Omit<Badge, 'id'>
+        Update: Partial<Omit<Badge, 'id'>>
+        Relationships: []
+      }
+      user_badges: {
+        Row: UserBadge
+        Insert: UserBadge
+        Update: Partial<UserBadge>
+        Relationships: []
+      }
     }
     Views: {
-      leaderboard: { Row: LeaderboardEntry }
+      leaderboard: {
+        Row: LeaderboardRow
+        Relationships: []
+      }
     }
-    Functions: Record<string, never>
-    Enums: Record<string, never>
+    Functions: {
+      [_ in never]: never
+    }
   }
 }

@@ -1,9 +1,9 @@
 import { View, Text, StyleSheet } from 'react-native'
 import { COLORS, RADIUS, SPACING } from '@/lib/constants'
-import type { UserBadge } from '@/lib/types'
+import type { UserBadgeWithBadge } from '@/lib/types'
 
 interface Props {
-  badges: UserBadge[]
+  badges: UserBadgeWithBadge[]
 }
 
 export function BadgeGrid({ badges }: Props) {

@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import {
   View,
   Text,
@@ -19,6 +19,15 @@ import { SectionHeader } from '@/components/SectionHeader'
 import { COLORS, SPACING, RADIUS } from '@/lib/constants'
 import { PILOT_CITIES } from '@/lib/onboarding'
 
+function isLocalImageUri(uri: string): boolean {
+  return (
+    uri.startsWith('file:') ||
+    uri.startsWith('content:') ||
+    uri.startsWith('ph://') ||
+    uri.startsWith('assets-library://')
+  )
+}
+
 export default function EditProfile() {
   const insets = useSafeAreaInsets()
   const router = useRouter()
@@ -28,12 +37,22 @@ export default function EditProfile() {
   const [avatarUri, setAvatarUri] = useState<string | null>(profile?.avatar_url ?? null)
   const [saving, setSaving] = useState(false)
 
+  useEffect(() => {
+    if (!profile?.avatar_url) return
+    setAvatarUri((current) => {
+      if (current == null || !isLocalImageUri(current)) return profile.avatar_url
+      return current
+    })
+  }, [profile?.avatar_url])
+
   if (!profile) return null
+
+  const user = profile
 
   async function uploadAvatar(uri: string): Promise<string | null> {
     const response = await fetch(uri)
     const blob = await response.blob()
-    const fileName = `avatars/${profile.id}.jpg`
+    const fileName = `avatars/${user.id}.jpg`
     const { error } = await supabase.storage
       .from('avatars')
       .upload(fileName, blob, { contentType: 'image/jpeg', upsert: true })
@@ -42,10 +61,16 @@ export default function EditProfile() {
       return null
     }
     const { data: { publicUrl } } = supabase.storage.from('avatars').getPublicUrl(fileName)
-    return publicUrl
+    return `${publicUrl}?t=${Date.now()}`
   }
 
   async function pickAvatar() {
+    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync()
+    if (status !== 'granted') {
+      Alert.alert('Permission needed', 'Allow photo library access to set your avatar.')
+      return
+    }
+
     const result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ImagePicker.MediaTypeOptions.Images,
       allowsEditing: true,
@@ -68,8 +93,8 @@ export default function EditProfile() {
 
     setSaving(true)
 
-    let newAvatarUrl = profile.avatar_url
-    if (avatarUri && avatarUri !== profile.avatar_url) {
+    let newAvatarUrl = user.avatar_url
+    if (avatarUri && isLocalImageUri(avatarUri)) {
       newAvatarUrl = await uploadAvatar(avatarUri)
       if (!newAvatarUrl) {
         setSaving(false)
@@ -80,7 +105,7 @@ export default function EditProfile() {
     const { error } = await supabase
       .from('profiles')
       .update({ username: trimmed, city, avatar_url: newAvatarUrl })
-      .eq('id', profile.id)
+      .eq('id', user.id)
 
     setSaving(false)
 
@@ -121,7 +146,7 @@ export default function EditProfile() {
           onPress={pickAvatar}
           activeOpacity={0.8}
         >
-          <Avatar username={profile.username} uri={avatarUri} size={88} />
+          <Avatar username={user.username} uri={avatarUri} size={88} />
           <View style={styles.avatarEditBadge}>
             <Text style={styles.avatarEditText}>📷</Text>
           </View>
