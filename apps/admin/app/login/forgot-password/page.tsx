@@ -52,7 +52,7 @@ export default function ForgotPasswordPage() {
       }}
     >
       <div style={{ width: '100%', maxWidth: 400 }}>
-        <div style={{ fontSize: 28, fontWeight: 800, color: '#6366F1', marginBottom: 8, textAlign: 'center' }}>
+        <div style={{ fontSize: 28, fontWeight: 800, color: '#4364F7', marginBottom: 8, textAlign: 'center' }}>
           Quest! Admin
         </div>
         <p style={{ color: '#64748B', textAlign: 'center', marginBottom: 32 }}>Reset your password</p>
@@ -65,7 +65,7 @@ export default function ForgotPasswordPage() {
             <p style={{ color: '#64748B', fontSize: 13, marginBottom: 16, lineHeight: 1.5 }}>
               Open the link in this same browser so the reset can verify correctly.
             </p>
-            <Link href="/login" style={{ color: '#6366F1', fontWeight: 600 }}>
+            <Link href="/login" style={{ color: '#4364F7', fontWeight: 600 }}>
               Back to sign in
             </Link>
           </div>
@@ -96,7 +96,7 @@ export default function ForgotPasswordPage() {
               disabled={pending}
               style={{
                 width: '100%',
-                background: '#6366F1',
+                background: '#4364F7',
                 color: '#fff',
                 border: 'none',
                 borderRadius: 8,

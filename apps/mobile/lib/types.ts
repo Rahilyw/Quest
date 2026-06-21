@@ -18,6 +18,11 @@ export interface Quest {
   sponsor_reward: string | null
   status: QuestStatus
   created_at: string
+  cover_image_url?: string | null
+}
+
+export interface QuestWithBadges extends Quest {
+  badges: Badge[]
 }
 
 export interface Completion {

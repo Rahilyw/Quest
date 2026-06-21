@@ -11,10 +11,13 @@ If creating visual artifacts (slides, mocks, throwaway prototypes, etc), copy as
 If the user invokes this skill without any other guidance, ask them what they want to build or design, ask some questions, and act as an expert designer who outputs HTML artifacts _or_ production code, depending on the need.
 
 Key design decisions to always follow:
-- Background is always Saltwater Sky (#F0F9FF) — never dark mode unless building the admin dashboard
-- Local Signal indigo (#6366F1) is the earned/interactive accent — max 8% of any screen
-- Category colors (fitness green, social purple, food orange, community blue, nature teal) are identification only — never use for emphasis or status
-- System fonts only — -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, Roboto, sans-serif
-- Weight-driven hierarchy: 800 for titles, 700 for headlines, 400 for body — jump weight before size
+- Background is Quest Sky (#E8F3FF) — never dark mode unless building Rankings/Profile hero sections or the admin dashboard
+- Quest Blue (#4364F7) is the primary brand and interactive accent — CTAs, active tab pill, player card, XP badges on cards
+- City Orange (#FF6B35) is for city badge, notifications, and featured callouts — not interchangeable with Quest Blue
+- Category colors (fitness green, social purple, food orange, community blue, nature teal) are identification only
+- Poppins on web prototypes; system fonts on mobile with matching weights (900 brand, 800 titles, 700 labels)
+- Five-tab mobile IA: Explore · Quests (feed) · Rankings · Badges · Profile
+- Image-first quest cards on Explore; proof photos in the public activity feed
 - Voice: bold, local, slightly irreverent — like a friend who knows Victoria
-- Never: confetti, XP before approval, gradient backgrounds, dark mode, cartoon mascots
+- Never: confetti, XP before approval, cartoon mascots, Strava-style data density
+- Full spec: DESIGN.md (Harbour Electric, supersedes Saltwater Saturday)

@@ -13,6 +13,8 @@ Apply migrations in numeric/filename order:
 | `006_streak_system.sql` | Weekly streak columns and XP trigger extension |
 | `007_avatar_bucket.sql` | Public `avatars` storage bucket and RLS policies |
 | `008_public_feed_completions.sql` | RLS policy so activity feed can read approved completions |
+| `009_quest_cover_and_badges.sql` | `quests.cover_image_url` column + `quest_badges` junction table |
+| `010_quest_covers_bucket.sql` | Public `quest-covers` storage bucket for admin cover uploads |
 
 ## Env var naming drift
 

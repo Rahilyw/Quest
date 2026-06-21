@@ -1,31 +1,26 @@
-The central repeating content card. White glass, category icon box, glass specular highlight, XP in category color.
+The image-led quest card for the Explore tab. Full-width photo, gradient overlay, difficulty pill, START QUEST CTA.
 
 ```jsx
-<QuestCard
+<QuestHeroCard
   title="Run the Galloping Goose Trail"
-  description="Lace up and hit Victoria's iconic rail trail. Any distance counts."
+  description="Complete a 5km segment of Victoria's most iconic multi-use trail."
   category="fitness"
-  xpReward={150}
-  distance="0.8 km"
-/>
-<QuestCard
-  title="Morning Coffee at Habit"
-  description="Order something you've never tried. Bonus: chat with the barista."
-  category="food"
-  xpReward={75}
-  isSponsored
-  sponsorName="Habit Coffee"
-  distance="0.3 km"
+  xpReward={350}
+  difficulty="MEDIUM"
+  tag="TRAIL"
+  imageUrl="…"
 />
 ```
 
 **Visual anatomy:**
-1. Glass specular: 1px white line at top edge — light on glass
-2. Icon box: 52×52, category soft tint bg, large emoji
-3. Category pill OR sponsor pill (never both)
-4. Title: 15px/800 weight, single line truncated
-5. Description: 13px/400, max 2 lines
-6. Footer: distance pill (mist) + XP value (category color, 800 weight)
+1. Hero image (176px) with navy gradient overlay
+2. Tag pill top-left (category label, e.g. TRAIL)
+3. XP badge top-right (Quest Blue `#4364F7`)
+4. Title on image — white, 900 weight
+5. Body: description, difficulty pill (green/amber/red), START QUEST button
 
-**XP color rule:** XP on a quest card uses category color. XP earned (profile, celebration) uses indigo.
-**No side stripe** — removed in the Saltwater Saturday redesign.
+**Legacy compact card:** `QuestCard.tsx` remains for list-row contexts. Explore uses `QuestHeroCard.tsx`.
+
+**Images:** Category placeholders from `CATEGORY_IMAGES` in `constants.ts` until per-quest cover art exists in DB.
+
+**Design spec:** `DESIGN.md` § Quest hero card (Harbour Electric, June 2026)

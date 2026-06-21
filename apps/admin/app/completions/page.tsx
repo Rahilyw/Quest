@@ -1,6 +1,8 @@
 'use client'
+
 import { useEffect, useState } from 'react'
 import { getPendingCompletions, updateCompletionStatus, type Completion } from './actions'
+import { theme } from '@/lib/theme'
 
 export default function CompletionsQueue() {
   const [completions, setCompletions] = useState<Completion[]>([])
@@ -18,51 +20,58 @@ export default function CompletionsQueue() {
     setCompletions((prev) => prev.filter((c) => c.id !== id))
   }
 
-  if (loading) return <p style={{ color: '#64748B' }}>Loading…</p>
+  if (loading) return <p style={{ color: theme.textMuted }}>Loading…</p>
 
   return (
     <div>
-      <h1 style={{ fontSize: 28, fontWeight: 800, marginBottom: 32 }}>
-        Completions Queue ({completions.length} pending)
-      </h1>
+      <h1 className="admin-page-title">Completions Queue</h1>
+      <p className="admin-page-sub">{completions.length} pending review</p>
 
       {completions.length === 0 && (
-        <p style={{ color: '#64748B' }}>All caught up! No pending submissions.</p>
+        <div className="admin-card" style={{ color: theme.textMuted, textAlign: 'center', padding: 40 }}>
+          All caught up! No pending submissions.
+        </div>
       )}
 
       <div style={{ display: 'grid', gap: 16 }}>
         {completions.map((c) => (
-          <div key={c.id} style={{ background: '#1E293B', borderRadius: 16, padding: 20, display: 'flex', gap: 20 }}>
+          <div key={c.id} className="admin-card" style={{ display: 'flex', gap: 20, alignItems: 'flex-start' }}>
             <a href={c.photo_url} target="_blank" rel="noreferrer">
-              <img src={c.photo_url} alt="proof" style={{ width: 120, height: 120, objectFit: 'cover', borderRadius: 12 }} />
+              <img
+                src={c.photo_url}
+                alt="proof"
+                style={{ width: 120, height: 120, objectFit: 'cover', borderRadius: 12, border: `1px solid ${theme.border}` }}
+              />
             </a>
             <div style={{ flex: 1 }}>
-              <div style={{ fontWeight: 700, fontSize: 16, marginBottom: 4 }}>
-                {c.quests?.title ?? 'Unknown quest'}
+              <div style={{ fontWeight: 800, fontSize: 16, marginBottom: 4 }}>{c.quests?.title ?? 'Unknown quest'}</div>
+              <div style={{ color: theme.textMuted, marginBottom: 4 }}>by @{c.profiles?.username}</div>
+              <div style={{ color: theme.textDim, fontSize: 13, marginBottom: 4 }}>
+                {new Date(c.completed_at).toLocaleString()} · <span style={{ color: theme.primary, fontWeight: 700 }}>{c.quests?.xp_reward} XP</span>
               </div>
-              <div style={{ color: '#64748B', marginBottom: 4 }}>by @{c.profiles?.username}</div>
-              <div style={{ color: '#64748B', fontSize: 13, marginBottom: 4 }}>
-                {new Date(c.completed_at).toLocaleString()} · {c.quests?.xp_reward} XP
-              </div>
-              <div style={{ color: '#64748B', fontSize: 12 }}>
+              <div style={{ color: theme.textDim, fontSize: 12 }}>
                 GPS: {c.lat.toFixed(5)}, {c.lng.toFixed(5)}
               </div>
               {c.quests?.is_sponsored && (
-                <div style={{ color: '#F59E0B', fontSize: 12, marginTop: 4 }}>
-                  ⭐ Sponsored quest — code will be generated on approval
+                <div style={{ color: theme.highlight, fontSize: 12, marginTop: 6, fontWeight: 600 }}>
+                  ⭐ Sponsored — redemption code on approval
                 </div>
               )}
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
               <button
+                type="button"
                 onClick={() => handleUpdateStatus(c.id, 'approved', c.quests?.is_sponsored ?? false)}
-                style={{ background: '#22C55E', color: '#fff', border: 'none', borderRadius: 8, padding: '10px 20px', cursor: 'pointer', fontWeight: 700 }}
+                className="admin-btn"
+                style={{ background: theme.success, color: '#fff' }}
               >
                 Approve
               </button>
               <button
+                type="button"
                 onClick={() => handleUpdateStatus(c.id, 'rejected')}
-                style={{ background: '#EF4444', color: '#fff', border: 'none', borderRadius: 8, padding: '10px 20px', cursor: 'pointer', fontWeight: 700 }}
+                className="admin-btn"
+                style={{ background: theme.danger, color: '#fff' }}
               >
                 Reject
               </button>

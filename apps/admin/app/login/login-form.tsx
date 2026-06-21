@@ -50,13 +50,13 @@ export default function LoginForm({ initialError }: { initialError?: string }) {
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        background: '#0F172A',
+        background: '#0D1B3E',
         color: '#F1F5F9',
         padding: 24,
       }}
     >
       <div style={{ width: '100%', maxWidth: 400 }}>
-        <div style={{ fontSize: 28, fontWeight: 800, color: '#6366F1', marginBottom: 8, textAlign: 'center' }}>
+        <div style={{ fontSize: 28, fontWeight: 900, color: '#4364F7', marginBottom: 8, textAlign: 'center' }}>
           Quest! Admin
         </div>
         <p style={{ color: '#64748B', textAlign: 'center', marginBottom: 32 }}>Sign in to continue</p>
@@ -117,7 +117,7 @@ export default function LoginForm({ initialError }: { initialError?: string }) {
             disabled={pending}
             style={{
               width: '100%',
-              background: '#6366F1',
+              background: '#4364F7',
               color: '#fff',
               border: 'none',
               borderRadius: 8,

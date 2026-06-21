@@ -1,16 +1,15 @@
 {
   "schemaVersion": 2,
-  "generatedAt": "2026-06-17T00:00:00Z",
-  "title": "Design System: Quest!",
+  "generatedAt": "2026-06-21T00:00:00Z",
+  "title": "Design System: Quest! (Harbour Electric)",
   "extensions": {
     "colorMeta": {
-      "after-hours-asphalt": { "role": "neutral", "displayName": "After-Hours Asphalt", "canonical": "#0B1120", "tonalRamp": ["#050810", "#0B1120", "#111a2e", "#1a2540", "#243050", "#2e3b60", "#3a4870", "#4d5d88"] },
-      "wet-concrete":        { "role": "neutral", "displayName": "Wet Concrete",        "canonical": "#1E293B", "tonalRamp": ["#0d141f", "#1E293B", "#253347", "#2d3e56", "#374a64", "#435772", "#576880", "#6e7d92"] },
-      "elevated-pavement":   { "role": "neutral", "displayName": "Elevated Pavement",   "canonical": "#273449", "tonalRamp": ["#111823", "#1c2535", "#273449", "#2f3e55", "#394961", "#44566e", "#53657e", "#6a7a90"] },
-      "fog-white":           { "role": "neutral", "displayName": "Fog White",           "canonical": "#F1F5F9", "tonalRamp": ["#94a3b8", "#b8c4d0", "#cbd5e0", "#d4dde7", "#dce5ee", "#e5ecf3", "#eaf0f6", "#F1F5F9"] },
-      "street-haze":         { "role": "neutral", "displayName": "Street Haze",         "canonical": "#94A3B8", "tonalRamp": ["#475569", "#566374", "#64748B", "#7a8a9e", "#94A3B8", "#aab5c6", "#bfc8d4", "#d4dae3"] },
-      "city-dust":           { "role": "neutral", "displayName": "City Dust",           "canonical": "#64748B", "tonalRamp": ["#334155", "#3f4f64", "#4e5e73", "#64748B", "#7a899f", "#8f9cb0", "#a5b0bf", "#c0c8d2"] },
-      "local-signal":        { "role": "primary", "displayName": "Local Signal",        "canonical": "#6366F1", "tonalRamp": ["#1e1b4b", "#2e2a80", "#3d3abf", "#4f52e0", "#6366F1", "#7c7ff5", "#9a9cf8", "#bbbcfb"] },
+      "quest-sky":           { "role": "neutral", "displayName": "Quest Sky",           "canonical": "#E8F3FF", "tonalRamp": ["#C4DBFF", "#D6E9FF", "#E8F3FF", "#F0F5FF", "#F8FAFF"] },
+      "quest-blue":          { "role": "primary", "displayName": "Quest Blue",          "canonical": "#4364F7", "tonalRamp": ["#1a2d6d", "#2d4fc7", "#4364F7", "#6B8EFF", "#93a5ff"] },
+      "city-orange":         { "role": "accent",  "displayName": "City Orange",         "canonical": "#FF6B35", "tonalRamp": ["#9a3412", "#c2410c", "#FF6B35", "#fb923c", "#fdba74"] },
+      "navy":                { "role": "neutral", "displayName": "Navy",                "canonical": "#0D1B3E", "tonalRamp": ["#050810", "#0D1B3E", "#1a2d6d", "#243050", "#2e3b60"] },
+      "slate-muted":         { "role": "neutral", "displayName": "Slate Muted",         "canonical": "#6B7FA3", "tonalRamp": ["#475569", "#64748B", "#6B7FA3", "#94a3b8", "#cbd5e1"] },
+      "local-signal":        { "role": "primary", "displayName": "Local Signal (legacy)", "canonical": "#6366F1", "note": "Superseded by Quest Blue #4364F7 in mobile UI" },
       "signal-bloom":        { "role": "primary", "displayName": "Signal Bloom",        "canonical": "#312E81", "tonalRamp": ["#1a1740", "#231f60", "#312E81", "#3d3a9c", "#4b48b6", "#5e5cc8", "#7674d8", "#9290e6"] },
       "signal-glow":         { "role": "primary", "displayName": "Signal Glow",        "canonical": "#A5B4FC", "tonalRamp": ["#6366F1", "#7c7ff5", "#9091f8", "#A5B4FC", "#b8c0fd", "#c8ccfe", "#d8dbfe", "#eaebff"] },
       "market-amber":        { "role": "tertiary", "displayName": "Market Amber",       "canonical": "#F59E0B", "tonalRamp": ["#78350f", "#92400e", "#b45309", "#d97706", "#F59E0B", "#fbbf24", "#fcd34d", "#fde68a"] },
@@ -96,8 +95,8 @@
     }
   ],
   "narrative": {
-    "northStar": "The Night Market",
-    "overview": "Quest! runs at the hour when the city stops pretending and starts being itself. The visual system lives after dark: deep asphalt backgrounds, surfaces that read like wet concrete under sodium light, and a single indigo signal that only lights up when something has been genuinely earned. The Night Market does not glow for its own sake. Colour comes from the stalls, from the categories, from the proof photos players submit, not from the chrome of the interface.\n\nThe system is built around one rule nobody ever says out loud: the interface should make you feel like you are standing on a real street, not looking at a points app. That means restraint in decoration, weight in typography, and colour used the way a city uses neon: rarely, purposefully, and only on things that actually matter.",
+    "northStar": "Harbour Electric",
+    "overview": "Quest! on a Saturday in Victoria: sky-wide blue, photo proof in the feed, a podium that matters, and hero quest cards that sell the adventure. The June 2026 Figma reimagining replaces the prior Saltwater Saturday glass-minimal spec with an image-led, social-first layout. Quest Blue (#4364F7) is the brand; City Orange (#FF6B35) marks the city; Navy (#0D1B3E) anchors Rankings and Profile drama. Five tabs: Explore, Quests, Rankings, Badges, Profile.",
     "keyCharacteristics": [
       "Deep near-black background; surfaces step up by 4-6% lightness, never by hue shift",
       "One accent colour (Local Signal indigo) held in reserve for earned, interactive, and ranked moments only",

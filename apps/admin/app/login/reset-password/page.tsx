@@ -94,7 +94,7 @@ export default function ResetPasswordPage() {
       }}
     >
       <div style={{ width: '100%', maxWidth: 400 }}>
-        <div style={{ fontSize: 28, fontWeight: 800, color: '#6366F1', marginBottom: 8, textAlign: 'center' }}>
+        <div style={{ fontSize: 28, fontWeight: 800, color: '#4364F7', marginBottom: 8, textAlign: 'center' }}>
           Quest! Admin
         </div>
         <p style={{ color: '#64748B', textAlign: 'center', marginBottom: 32 }}>Choose a new password</p>
@@ -104,7 +104,7 @@ export default function ResetPasswordPage() {
         ) : done ? (
           <div style={{ textAlign: 'center' }}>
             <p style={{ marginBottom: 16 }}>Password updated. You can sign in now.</p>
-            <Link href="/login" style={{ color: '#6366F1', fontWeight: 600 }}>
+            <Link href="/login" style={{ color: '#4364F7', fontWeight: 600 }}>
               Go to sign in
             </Link>
           </div>
@@ -113,7 +113,7 @@ export default function ResetPasswordPage() {
             <p style={{ color: '#EF4444', marginBottom: 16, lineHeight: 1.5 }}>
               {error ?? 'This reset link is invalid or has expired.'}
             </p>
-            <Link href="/login/forgot-password" style={{ color: '#6366F1', fontWeight: 600 }}>
+            <Link href="/login/forgot-password" style={{ color: '#4364F7', fontWeight: 600 }}>
               Request a new reset link
             </Link>
           </div>
@@ -169,7 +169,7 @@ export default function ResetPasswordPage() {
               disabled={pending}
               style={{
                 width: '100%',
-                background: '#6366F1',
+                background: '#4364F7',
                 color: '#fff',
                 border: 'none',
                 borderRadius: 8,

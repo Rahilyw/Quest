@@ -1,4 +1,4 @@
-<!-- @dsCard group="Colors" viewport="700x180" name="Local Signal" subtitle="Indigo accent — earned moments & active states only. Max 8% of any screen." -->
+<!-- @dsCard group="Colors" viewport="700x180" name="Brand Accents" subtitle="Quest Blue + City Orange — brand and city identity" -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -10,41 +10,42 @@
   .row { display: flex; gap: 16px; align-items: flex-start; }
   .col { flex: 1; }
   .swatch { height: 72px; border-radius: 12px; margin-bottom: 10px; display: flex; align-items: center; justify-content: center; }
-  .pill { display: inline-flex; align-items: center; background: #6366F1; color: #fff; border-radius: 999px; padding: 4px 12px; font-size: 12px; font-weight: 800; box-shadow: 0 4px 12px rgba(99,102,241,0.28); }
-  .name  { font-size: 12px; font-weight: 700; color: #0F172A; }
-  .hex   { font-size: 11px; color: #475569; margin-top: 2px; }
-  .token { font-size: 10px; color: #94A3B8; margin-top: 2px; font-family: monospace; }
-  .desc  { font-size: 10px; color: #94A3B8; margin-top: 3px; line-height: 1.4; }
+  .pill { display: inline-flex; align-items: center; background: #4364F7; color: #fff; border-radius: 999px; padding: 4px 12px; font-size: 12px; font-weight: 800; box-shadow: 0 4px 12px rgba(67,100,247,0.28); }
+  .city { background: #FF6B35; color: #fff; border-radius: 999px; padding: 4px 10px; font-size: 11px; font-weight: 700; }
+  .name  { font-size: 12px; font-weight: 700; color: #0D1B3E; }
+  .hex   { font-size: 11px; color: #6B7FA3; margin-top: 2px; }
+  .token { font-size: 10px; color: #6B7FA3; margin-top: 2px; font-family: monospace; }
+  .desc  { font-size: 10px; color: #6B7FA3; margin-top: 3px; line-height: 1.4; }
 </style>
 </head>
 <body>
 <div class="row">
   <div class="col">
-    <div class="swatch" style="background: var(--color-accent); box-shadow: 0 4px 12px rgba(99,102,241,0.28);">
-      <div class="pill">Lv 4</div>
+    <div class="swatch" style="background: var(--color-primary); box-shadow: 0 4px 12px rgba(67,100,247,0.28);">
+      <div class="pill">+350 XP</div>
     </div>
-    <div class="name">Local Signal</div>
-    <div class="hex">#6366F1</div>
-    <div class="token">--color-accent</div>
-    <div class="desc">XP bar, active tab, CTA button, level chip</div>
+    <div class="name">Quest Blue</div>
+    <div class="hex">#4364F7</div>
+    <div class="token">--color-primary</div>
+    <div class="desc">Brand, CTAs, active tab pill, player card</div>
   </div>
   <div class="col">
-    <div class="swatch" style="background: var(--color-accent-soft); border: 1.5px solid #6366F1;">
-      <div style="font-size: 13px; font-weight: 700; color: #4338CA;">#7 on leaderboard</div>
+    <div class="swatch" style="background: var(--color-primary-soft); border: 1.5px solid #4364F7;">
+      <div style="font-size: 13px; font-weight: 700; color: #4364F7;">LV 4</div>
     </div>
-    <div class="name">Signal Soft</div>
-    <div class="hex">#EEF2FF</div>
-    <div class="token">--color-accent-soft</div>
-    <div class="desc">Your rank strip, XP chip bg, selected states</div>
+    <div class="name">Quest Sky Soft</div>
+    <div class="hex">#D6E9FF</div>
+    <div class="token">--color-primary-soft</div>
+    <div class="desc">Level chips, soft fills</div>
   </div>
   <div class="col">
-    <div class="swatch" style="background: var(--color-accent-soft); border: 1px solid rgba(99,102,241,0.2);">
-      <div style="font-size: 15px; font-weight: 800; color: var(--color-accent-text);">1,450 XP earned</div>
+    <div class="swatch" style="background: var(--color-bg); border: 1px solid var(--color-border);">
+      <div class="city">Victoria, BC</div>
     </div>
-    <div class="name">Signal Deep</div>
-    <div class="hex">#4338CA</div>
-    <div class="token">--color-accent-text</div>
-    <div class="desc">Text on Signal Soft backgrounds</div>
+    <div class="name">City Orange</div>
+    <div class="hex">#FF6B35</div>
+    <div class="token">--color-highlight</div>
+    <div class="desc">City badge, notifications, featured callouts</div>
   </div>
 </div>
 </body>

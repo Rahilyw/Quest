@@ -1,169 +1,134 @@
 'use client'
+
+import Link from 'next/link'
 import { useEffect, useState } from 'react'
-import { createQuest, getQuests, toggleQuestStatus, type Quest } from './actions'
+import { getQuests, toggleQuestStatus, type Quest } from './actions'
+import { theme } from '@/lib/theme'
 
 export default function QuestsPage() {
   const [quests, setQuests] = useState<Quest[]>([])
-  const [showForm, setShowForm] = useState(false)
-  const [form, setForm] = useState({
-    title: '', description: '', category: 'fitness', lat: '', lng: '',
-    radius_meters: '300', xp_reward: '100', is_sponsored: false,
-    sponsor_name: '', sponsor_reward: '',
-  })
+  const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    getQuests().then(setQuests)
+    getQuests().then((data) => {
+      setQuests(data)
+      setLoading(false)
+    })
   }, [])
 
-  async function handleCreate() {
-    if (form.is_sponsored) {
-      if (!form.sponsor_name.trim() || !form.sponsor_reward.trim()) {
-        alert('Please fill out all sponsor fields for a sponsored quest.')
-        return
-      }
-    }
-    const data = await createQuest(form)
-    if (data) {
-      setQuests((prev) => [data, ...prev])
-      setShowForm(false)
-      // Reset form to initial state
-      setForm({
-        title: '', description: '', category: 'fitness', lat: '', lng: '',
-        radius_meters: '300', xp_reward: '100', is_sponsored: false,
-        sponsor_name: '', sponsor_reward: '',
-      })
-    }
-  }
-
-  async function handleToggleStatus(id: string, current: string) {
-    const next = await toggleQuestStatus(id, current)
+  async function handleToggle(id: string, status: string) {
+    const next = await toggleQuestStatus(id, status)
     setQuests((prev) => prev.map((q) => (q.id === id ? { ...q, status: next } : q)))
   }
 
   return (
     <div>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 32 }}>
-        <h1 style={{ fontSize: 28, fontWeight: 800 }}>Quests ({quests.length})</h1>
-        <button
-          onClick={() => setShowForm(!showForm)}
-          style={{ background: '#6366F1', color: '#fff', border: 'none', borderRadius: 10, padding: '10px 20px', cursor: 'pointer', fontWeight: 700 }}
-        >
-          + New Quest
-        </button>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 28 }}>
+        <div>
+          <h1 className="admin-page-title">Quests</h1>
+          <p className="admin-page-sub">{quests.length} total · {quests.filter((q) => q.status === 'active').length} active</p>
+        </div>
+        <Link href="/quests/new" className="admin-btn admin-btn-primary" style={{ textDecoration: 'none' }}>
+          + Create Quest
+        </Link>
       </div>
 
-      {showForm && (
-        <div style={{ background: '#1E293B', borderRadius: 16, padding: 24, marginBottom: 24 }}>
-          <h2 style={{ marginBottom: 16 }}>Create Quest</h2>
-          {[
-            ['title', 'Title'], ['description', 'Description'], ['lat', 'Latitude'],
-            ['lng', 'Longitude'], ['xp_reward', 'XP Reward'], ['radius_meters', 'Radius (m)'],
-          ].map(([key, label]) => (
-            <div key={key} style={{ marginBottom: 12 }}>
-              <label style={{ color: '#64748B', fontSize: 12, display: 'block', marginBottom: 4 }}>{label}</label>
-              <input
-                value={form[key as keyof typeof form] as string}
-                onChange={(e) => setForm((f) => ({ ...f, [key]: e.target.value }))}
-                style={{ width: '100%', background: '#0F172A', color: '#F1F5F9', border: '1px solid #334155', borderRadius: 8, padding: 10 }}
-              />
-            </div>
-          ))}
-          
-          <div style={{ marginBottom: 12 }}>
-            <label style={{ color: '#64748B', fontSize: 12, display: 'block', marginBottom: 4 }}>Category</label>
-            <select
-              value={form.category}
-              onChange={(e) => setForm((f) => ({ ...f, category: e.target.value }))}
-              style={{ background: '#0F172A', color: '#F1F5F9', border: '1px solid #334155', borderRadius: 8, padding: 10, width: '100%' }}
-            >
-              {['fitness', 'social', 'food', 'community', 'nature'].map((c) => (
-                <option key={c} value={c}>{c}</option>
-              ))}
-            </select>
-          </div>
-
-          <div style={{ marginBottom: 16, display: 'flex', alignItems: 'center', gap: 8 }}>
-            <input
-              type="checkbox"
-              id="is_sponsored"
-              checked={form.is_sponsored}
-              onChange={(e) => setForm((f) => ({ ...f, is_sponsored: e.target.checked }))}
-              style={{ width: 18, height: 18, cursor: 'pointer', accentColor: '#6366F1' }}
-            />
-            <label htmlFor="is_sponsored" style={{ color: '#F1F5F9', fontSize: 14, fontWeight: 600, cursor: 'pointer' }}>
-              Sponsored quest
-            </label>
-          </div>
-
-          {form.is_sponsored && (
-            <div style={{ borderLeft: '3px solid #6366F1', paddingLeft: 12, marginBottom: 16 }}>
-              <div style={{ marginBottom: 12 }}>
-                <label style={{ color: '#64748B', fontSize: 12, display: 'block', marginBottom: 4 }}>
-                  Sponsor Name <span style={{ color: '#EF4444' }}>*</span>
-                </label>
-                <input
-                  value={form.sponsor_name}
-                  onChange={(e) => setForm((f) => ({ ...f, sponsor_name: e.target.value }))}
-                  placeholder="e.g. Frontrunners Victoria"
-                  style={{ width: '100%', background: '#0F172A', color: '#F1F5F9', border: '1px solid #334155', borderRadius: 8, padding: 10 }}
-                />
-              </div>
-              <div style={{ marginBottom: 12 }}>
-                <label style={{ color: '#64748B', fontSize: 12, display: 'block', marginBottom: 4 }}>
-                  Sponsor Reward <span style={{ color: '#EF4444' }}>*</span>
-                </label>
-                <input
-                  value={form.sponsor_reward}
-                  onChange={(e) => setForm((f) => ({ ...f, sponsor_reward: e.target.value }))}
-                  placeholder="e.g. Free drip coffee"
-                  style={{ width: '100%', background: '#0F172A', color: '#F1F5F9', border: '1px solid #334155', borderRadius: 8, padding: 10 }}
-                />
-              </div>
-            </div>
-          )}
-
-          <button
-            onClick={handleCreate}
-            style={{ background: '#6366F1', color: '#fff', border: 'none', borderRadius: 8, padding: '10px 24px', cursor: 'pointer', fontWeight: 700 }}
-          >
-            Create
-          </button>
+      {loading ? (
+        <p style={{ color: theme.textMuted }}>Loading quests…</p>
+      ) : quests.length === 0 ? (
+        <div className="admin-card" style={{ textAlign: 'center', padding: 48 }}>
+          <p style={{ color: theme.textMuted, marginBottom: 16 }}>No quests yet. Create your first one!</p>
+          <Link href="/quests/new" className="admin-btn admin-btn-primary" style={{ textDecoration: 'none' }}>
+            + Create Quest
+          </Link>
         </div>
-      )}
-
-      <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-        <thead>
-          <tr style={{ color: '#64748B', textAlign: 'left', borderBottom: '1px solid #1E293B' }}>
-            <th style={{ padding: '12px 16px' }}>Title</th>
-            <th style={{ padding: '12px 16px' }}>Category</th>
-            <th style={{ padding: '12px 16px' }}>XP</th>
-            <th style={{ padding: '12px 16px' }}>Sponsored</th>
-            <th style={{ padding: '12px 16px' }}>Status</th>
-          </tr>
-        </thead>
-        <tbody>
-          {quests.map((q) => (
-            <tr key={q.id} style={{ borderBottom: '1px solid #1E293B' }}>
-              <td style={{ padding: '12px 16px' }}>{q.title}</td>
-              <td style={{ padding: '12px 16px', color: '#64748B' }}>{q.category}</td>
-              <td style={{ padding: '12px 16px', color: '#6366F1' }}>{q.xp_reward}</td>
-              <td style={{ padding: '12px 16px' }}>{q.is_sponsored ? `⭐ ${q.sponsor_name}` : '—'}</td>
-              <td style={{ padding: '12px 16px' }}>
-                <button
-                  onClick={() => handleToggleStatus(q.id, q.status)}
+      ) : (
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 16 }}>
+          {quests.map((q) => {
+            const cat = theme.categories[q.category]
+            return (
+              <div key={q.id} className="admin-card" style={{ padding: 0, overflow: 'hidden' }}>
+                <div
                   style={{
-                    background: q.status === 'active' ? '#22C55E22' : '#64748B22',
-                    color: q.status === 'active' ? '#22C55E' : '#64748B',
-                    border: 'none', borderRadius: 20, padding: '4px 12px', cursor: 'pointer', fontWeight: 700,
+                    height: 140,
+                    background: q.cover_image_url
+                      ? `url(${q.cover_image_url}) center/cover`
+                      : `linear-gradient(135deg, ${cat?.soft ?? theme.primarySoft}, ${theme.surface})`,
+                    position: 'relative',
                   }}
                 >
-                  {q.status}
-                </button>
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
+                  {!q.cover_image_url && (
+                    <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 40 }}>
+                      {cat?.icon ?? '📍'}
+                    </div>
+                  )}
+                  <div
+                    style={{
+                      position: 'absolute',
+                      top: 10,
+                      right: 10,
+                      background: q.status === 'active' ? 'rgba(34,197,94,0.9)' : 'rgba(100,116,139,0.9)',
+                      color: '#fff',
+                      fontSize: 10,
+                      fontWeight: 800,
+                      padding: '4px 10px',
+                      borderRadius: 999,
+                      textTransform: 'uppercase',
+                    }}
+                  >
+                    {q.status}
+                  </div>
+                </div>
+                <div style={{ padding: 16 }}>
+                  <div style={{ display: 'flex', gap: 8, marginBottom: 8, flexWrap: 'wrap' }}>
+                    <span
+                      style={{
+                        fontSize: 10,
+                        fontWeight: 700,
+                        color: cat?.color ?? theme.primary,
+                        background: cat?.soft ?? theme.primarySoft,
+                        padding: '3px 8px',
+                        borderRadius: 999,
+                        textTransform: 'capitalize',
+                      }}
+                    >
+                      {cat?.icon} {q.category}
+                    </span>
+                    <span style={{ fontSize: 10, fontWeight: 800, color: theme.primary }}>+{q.xp_reward} XP</span>
+                    {q.is_sponsored && (
+                      <span style={{ fontSize: 10, fontWeight: 700, color: theme.highlight }}>⭐ Sponsored</span>
+                    )}
+                  </div>
+                  <h3 style={{ margin: '0 0 6px', fontSize: 16, fontWeight: 800, lineHeight: 1.3 }}>{q.title}</h3>
+                  <p style={{ margin: 0, color: theme.textMuted, fontSize: 12, lineHeight: 1.5, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
+                    {q.description}
+                  </p>
+                  {q.quest_badges && q.quest_badges.length > 0 && (
+                    <div style={{ display: 'flex', gap: 4, marginTop: 10, flexWrap: 'wrap' }}>
+                      {q.quest_badges.slice(0, 4).map((qb) => (
+                        <span key={qb.badge_id} title={qb.badge?.name} style={{ fontSize: 16 }}>
+                          {qb.badge?.icon ?? '🏅'}
+                        </span>
+                      ))}
+                      {q.quest_badges.length > 4 && (
+                        <span style={{ fontSize: 11, color: theme.textDim }}>+{q.quest_badges.length - 4}</span>
+                      )}
+                    </div>
+                  )}
+                  <button
+                    type="button"
+                    onClick={() => handleToggle(q.id, q.status)}
+                    className="admin-btn admin-btn-ghost"
+                    style={{ width: '100%', marginTop: 14, fontSize: 12 }}
+                  >
+                    {q.status === 'active' ? 'Deactivate' : 'Activate'}
+                  </button>
+                </div>
+              </div>
+            )
+          })}
+        </div>
+      )}
     </div>
   )
 }

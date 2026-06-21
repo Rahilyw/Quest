@@ -1,11 +1,11 @@
 import { TouchableOpacity, Text, View, Image, StyleSheet } from 'react-native'
 import {
-  CATEGORY_IMAGES,
   CATEGORY_TAGS,
   COLORS,
   RADIUS,
   SPACING,
   getDifficulty,
+  getQuestCoverImage,
 } from '@/lib/constants'
 import type { Quest } from '@/lib/types'
 
@@ -17,7 +17,7 @@ interface Props {
 
 export function QuestHeroCard({ quest, onPress, completionCount = 0 }: Props) {
   const diff = getDifficulty(quest.xp_reward)
-  const imageUri = CATEGORY_IMAGES[quest.category] ?? CATEGORY_IMAGES.fitness
+  const imageUri = getQuestCoverImage(quest)
   const tag = CATEGORY_TAGS[quest.category] ?? quest.category.toUpperCase()
 
   return (

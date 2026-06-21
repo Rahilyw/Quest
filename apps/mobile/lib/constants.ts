@@ -131,6 +131,12 @@ export const CATEGORY_IMAGES: Record<string, string> = {
   nature: 'https://images.unsplash.com/photo-1526268072039-3e33e8f0e379?w=700&h=440&fit=crop&auto=format',
 }
 
+/** Admin-uploaded cover, or category placeholder for legacy quests */
+export function getQuestCoverImage(quest: { category: string; cover_image_url?: string | null }): string {
+  if (quest.cover_image_url) return quest.cover_image_url
+  return CATEGORY_IMAGES[quest.category] ?? CATEGORY_IMAGES.fitness
+}
+
 export const PROOF_GEOFENCE_RADIUS = 300
 
 export const BYPASS_GEOFENCE =

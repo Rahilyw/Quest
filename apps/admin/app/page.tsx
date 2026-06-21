@@ -1,4 +1,6 @@
+import Link from 'next/link'
 import { supabaseAdmin } from '@/lib/supabase'
+import { theme } from '@/lib/theme'
 
 export const revalidate = 60
 
@@ -16,27 +18,38 @@ export default async function Dashboard() {
   ])
 
   const stats = [
-    { label: 'Total Users', value: totalUsers ?? 0, color: '#6366F1' },
-    { label: 'Approved Completions', value: totalCompletions ?? 0, color: '#22C55E' },
-    { label: 'Pending Review', value: pendingCompletions ?? 0, color: '#F59E0B', href: '/completions' },
-    { label: 'Active Quests', value: activeQuests ?? 0, color: '#3B82F6', href: '/quests' },
+    { label: 'Total Users', value: totalUsers ?? 0, color: theme.primary, href: '/users' },
+    { label: 'Approved Completions', value: totalCompletions ?? 0, color: theme.success },
+    { label: 'Pending Review', value: pendingCompletions ?? 0, color: theme.warning, href: '/completions' },
+    { label: 'Active Quests', value: activeQuests ?? 0, color: theme.categories.community.color, href: '/quests' },
   ]
 
   return (
     <div>
-      <h1 style={{ fontSize: 28, fontWeight: 800, marginBottom: 8 }}>Dashboard</h1>
-      <p style={{ color: '#64748B', marginBottom: 32 }}>Season 1 · Victoria, BC</p>
+      <h1 className="admin-page-title">Dashboard</h1>
+      <p className="admin-page-sub">Season 1 · Victoria, BC</p>
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 16 }}>
-        {stats.map((s) => (
-          <a key={s.label} href={s.href ?? '#'} style={{ textDecoration: 'none' }}>
-            <div style={{ background: '#1E293B', borderRadius: 16, padding: 24, borderLeft: `4px solid ${s.color}` }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: 16, marginBottom: 32 }}>
+        {stats.map((s) => {
+          const inner = (
+            <div className="admin-card" style={{ borderLeft: `4px solid ${s.color}`, padding: 20 }}>
               <div style={{ fontSize: 36, fontWeight: 800, color: s.color }}>{s.value}</div>
-              <div style={{ color: '#94A3B8', marginTop: 8 }}>{s.label}</div>
+              <div style={{ color: theme.textMuted, marginTop: 8, fontSize: 13 }}>{s.label}</div>
             </div>
-          </a>
-        ))}
+          )
+          return s.href ? (
+            <Link key={s.label} href={s.href} style={{ textDecoration: 'none' }}>
+              {inner}
+            </Link>
+          ) : (
+            <div key={s.label}>{inner}</div>
+          )
+        })}
       </div>
+
+      <Link href="/quests/new" className="admin-btn admin-btn-primary" style={{ textDecoration: 'none' }}>
+        + Create New Quest
+      </Link>
     </div>
   )
 }

@@ -23,7 +23,7 @@ const COLORS = {
   textPrimary: '#0F172A',
   textSecondary: '#475569',
   textMuted: '#94A3B8',
-  accent: '#6366F1',
+  accent: '#4364F7',
   accentSoft: '#EEF2FF',
   accentText: '#4338CA',
   warning: '#D97706',
@@ -251,7 +251,7 @@ assertEqual('COLORS.border is correct', COLORS.border, 'rgba(15, 23, 42, 0.06)')
 assertEqual('COLORS.textPrimary is correct', COLORS.textPrimary, '#0F172A')
 assertEqual('COLORS.textSecondary is correct', COLORS.textSecondary, '#475569')
 assertEqual('COLORS.textMuted is correct', COLORS.textMuted, '#94A3B8')
-assertEqual('COLORS.accent is correct', COLORS.accent, '#6366F1')
+assertEqual('COLORS.accent is correct', COLORS.accent, '#4364F7')
 assertEqual('COLORS.accentSoft is correct', COLORS.accentSoft, '#EEF2FF')
 assertEqual('COLORS.accentText is correct', COLORS.accentText, '#4338CA')
 assertEqual('COLORS.warning is correct', COLORS.warning, '#D97706')

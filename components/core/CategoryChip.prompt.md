@@ -1,19 +1,13 @@
-Filter pill for quest categories. Inactive = frosted glass. Active = Local Signal indigo with glow.
+Filter chips on the Explore screen. Active state uses Navy fill (not Quest Blue).
 
 ```jsx
-<CategoryChip label="All" active />
-<CategoryChip label="🏃 Fitness" />
-<CategoryChip label="🍽️ Food" active />
-<CategoryChip label="🌿 Nature" count={3} />
+<CategoryChip label="ALL" active />
+<CategoryChip label="FITNESS" active={false} />
+<CategoryChip label="🍽️ FOOD" active={false} />
 ```
 
-**States:**
-- **Inactive:** Glass White bg, 1.5px near-invisible border, Slate text, subtle shadow
-- **Active:** Local Signal (`#6366F1`) fill, white text, Action Glow shadow
+- **Inactive:** Glass White bg, subtle border, Slate Muted text
+- **Active:** Navy (`#0D1B3E`) fill, white text, subtle shadow
+- **Rule:** Chips show category labels; colour identity lives on the quest card, not the filter
 
-**Category labels (canonical):**
-```
-All | 🏃 Fitness | 🤝 Social | 🍽️ Food | 🏘️ Community | 🌿 Nature
-```
-
-**Rule — The Category Independence Rule:** Category colors (green, purple, orange, blue, teal) are for identification on quest cards and map pins. The chip active state uses Local Signal indigo, not the category color. Mixing them confuses the signal.
+**Design spec:** `DESIGN.md` § Category Chips (Harbour Electric)

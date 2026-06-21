@@ -75,7 +75,7 @@ export default function ResetPassword() {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#F0F9FF', padding: 24, justifyContent: 'center' },
   hero: { alignItems: 'center', marginBottom: 40 },
-  logo: { fontSize: 52, fontWeight: '800', color: '#6366F1', letterSpacing: -1, marginBottom: 6 },
+  logo: { fontSize: 52, fontWeight: '800', color: '#4364F7', letterSpacing: -1, marginBottom: 6 },
   tagline: { color: '#94A3B8', fontSize: 16 },
   input: {
     backgroundColor: '#FFFFFF',
@@ -88,7 +88,7 @@ const styles = StyleSheet.create({
     borderColor: 'rgba(15,23,42,0.07)',
   },
   button: {
-    backgroundColor: '#6366F1',
+    backgroundColor: '#4364F7',
     borderRadius: 12,
     padding: 16,
     alignItems: 'center',

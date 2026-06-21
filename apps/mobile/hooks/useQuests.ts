@@ -1,7 +1,15 @@
 import { useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabase'
 import { paramAsString } from '@/lib/routeParams'
-import type { Quest, QuestCategory } from '@/lib/types'
+import type { Badge, Quest, QuestCategory, QuestWithBadges } from '@/lib/types'
+
+type QuestBadgeRow = { badge_id: string; badge: Badge | null }
+
+function mapQuestBadges(rows: QuestBadgeRow[] | null | undefined): Badge[] {
+  return (rows ?? [])
+    .map((row) => row.badge)
+    .filter((badge): badge is Badge => badge != null)
+}
 
 export function useQuests(category?: QuestCategory) {
   const [quests, setQuests] = useState<Quest[]>([])
@@ -33,7 +41,7 @@ export function useQuests(category?: QuestCategory) {
 
 export function useQuest(id: string | string[] | undefined) {
   const questId = paramAsString(id)
-  const [quest, setQuest] = useState<Quest | null>(null)
+  const [quest, setQuest] = useState<QuestWithBadges | null>(null)
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
@@ -46,11 +54,19 @@ export function useQuest(id: string | string[] | undefined) {
     setLoading(true)
     supabase
       .from('quests')
-      .select('*')
+      .select('*, quest_badges(badge_id, badge:badges(*))')
       .eq('id', questId)
       .single()
       .then(({ data, error }) => {
-        setQuest(error ? null : data)
+        if (error || !data) {
+          setQuest(null)
+        } else {
+          const { quest_badges, ...rest } = data as Quest & { quest_badges?: QuestBadgeRow[] }
+          setQuest({
+            ...rest,
+            badges: mapQuestBadges(quest_badges),
+          })
+        }
         setLoading(false)
       })
   }, [questId])
