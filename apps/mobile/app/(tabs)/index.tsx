@@ -134,6 +134,7 @@ export default function QuestFeed() {
         showsHorizontalScrollIndicator={false}
         style={styles.categoryScroll}
         contentContainerStyle={styles.categoryContent}
+        nestedScrollEnabled
       >
         {CATEGORIES.map((cat) => (
           <CategoryChip
@@ -257,7 +258,16 @@ const styles = StyleSheet.create({
     marginBottom: SPACING.sm,
   },
   featuredXp: { color: COLORS.accentText, fontWeight: '800', fontSize: 14 },
-  categoryScroll: { marginBottom: SPACING.xs },
-  categoryContent: { paddingHorizontal: SPACING.lg, paddingVertical: SPACING.xs },
+  categoryScroll: {
+    flexGrow: 0,
+    marginBottom: SPACING.sm,
+  },
+  categoryContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: SPACING.lg,
+    paddingVertical: SPACING.sm,
+    minHeight: 44,
+  },
   list: { paddingHorizontal: SPACING.lg, paddingBottom: 100 },
 })
