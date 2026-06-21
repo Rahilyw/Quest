@@ -1,4 +1,5 @@
 import { Tabs } from 'expo-router'
+import { View, StyleSheet } from 'react-native'
 import { Ionicons } from '@expo/vector-icons'
 import { COLORS } from '@/lib/constants'
 
@@ -6,7 +7,9 @@ type IoniconsName = React.ComponentProps<typeof Ionicons>['name']
 
 function tabIcon(filledName: IoniconsName, outlineName: IoniconsName) {
   return ({ focused, color }: { focused: boolean; color: string }) => (
-    <Ionicons name={focused ? filledName : outlineName} size={24} color={color} />
+    <View style={[styles.iconWrap, focused && styles.iconWrapActive]}>
+      <Ionicons name={focused ? filledName : outlineName} size={20} color={focused ? '#FFFFFF' : color} />
+    </View>
   )
 }
 
@@ -16,44 +19,44 @@ export default function TabLayout() {
       screenOptions={{
         headerShown: false,
         tabBarStyle: {
-          // Glass tab bar: white surface floating above content
-          backgroundColor: 'rgba(255, 255, 255, 0.96)',
-          borderTopColor: 'rgba(15, 23, 42, 0.06)',
+          backgroundColor: COLORS.surface,
+          borderTopColor: 'rgba(67, 100, 247, 0.08)',
           borderTopWidth: 1,
-          height: 64,
-          paddingBottom: 8,
-          paddingTop: 4,
-          // Soft lift shadow facing upward
-          shadowColor: '#0F172A',
-          shadowOffset: { width: 0, height: -4 },
-          shadowOpacity: 0.06,
-          shadowRadius: 16,
-          elevation: 12,
+          height: 72,
+          paddingBottom: 14,
+          paddingTop: 8,
         },
-        tabBarActiveTintColor: COLORS.accent,
+        tabBarActiveTintColor: COLORS.primary,
         tabBarInactiveTintColor: COLORS.textMuted,
-        tabBarLabelStyle: { fontWeight: '600', fontSize: 11 },
+        tabBarLabelStyle: { fontWeight: '700', fontSize: 10 },
       }}
     >
       <Tabs.Screen
         name="index"
+        options={{
+          title: 'Explore',
+          tabBarIcon: tabIcon('compass', 'compass-outline'),
+        }}
+      />
+      <Tabs.Screen
+        name="feed"
         options={{
           title: 'Quests',
           tabBarIcon: tabIcon('map', 'map-outline'),
         }}
       />
       <Tabs.Screen
-        name="map"
+        name="leaderboard"
         options={{
-          title: 'Map',
-          tabBarIcon: tabIcon('location', 'location-outline'),
+          title: 'Rankings',
+          tabBarIcon: tabIcon('trophy', 'trophy-outline'),
         }}
       />
       <Tabs.Screen
-        name="leaderboard"
+        name="badges"
         options={{
-          title: 'Ranks',
-          tabBarIcon: tabIcon('trophy', 'trophy-outline'),
+          title: 'Badges',
+          tabBarIcon: tabIcon('ribbon', 'ribbon-outline'),
         }}
       />
       <Tabs.Screen
@@ -63,6 +66,26 @@ export default function TabLayout() {
           tabBarIcon: tabIcon('person', 'person-outline'),
         }}
       />
+      <Tabs.Screen
+        name="map"
+        options={{
+          href: null,
+        }}
+      />
     </Tabs>
   )
 }
+
+const styles = StyleSheet.create({
+  iconWrap: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  iconWrapActive: {
+    backgroundColor: COLORS.primary,
+    marginTop: -8,
+  },
+})

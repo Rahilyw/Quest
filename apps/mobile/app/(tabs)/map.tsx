@@ -3,7 +3,7 @@ import { View, StyleSheet, TouchableOpacity, Text } from 'react-native'
 import MapView, { Marker, Circle } from 'react-native-maps'
 import { useRouter } from 'expo-router'
 import { useQuests } from '@/hooks/useQuests'
-import { CATEGORY_COLORS, CITY } from '@/lib/constants'
+import { CATEGORY_COLORS, CITY, COLORS } from '@/lib/constants'
 
 export default function QuestMap() {
   const router = useRouter()
@@ -46,5 +46,5 @@ export default function QuestMap() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#0F172A' },
+  container: { flex: 1, backgroundColor: COLORS.bg },
 })

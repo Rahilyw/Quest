@@ -47,12 +47,12 @@ const styles = StyleSheet.create({
     paddingVertical: SPACING.sm,
   },
   chipActive: {
-    backgroundColor: COLORS.accent,
-    borderColor: COLORS.accent,
-    shadowColor: COLORS.accent,
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 4,
+    backgroundColor: COLORS.navy,
+    borderColor: COLORS.navy,
+    shadowColor: COLORS.navy,
+    shadowOpacity: 0.2,
+    shadowRadius: 6,
+    elevation: 3,
   },
   label: {
     color: COLORS.textSecondary,

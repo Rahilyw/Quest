@@ -1,31 +1,40 @@
 export const APP_NAME = 'Quest!'
 
+/** Figma redesign palette — Poppins-weight hierarchy on sky-blue canvas */
 export const COLORS = {
-  // Backgrounds — outdoor light, not a clinic
-  bg: '#F0F9FF',          // sky-50: sun through a window
-  bgWarm: '#FFF7ED',      // orange-50: warm surface accents
+  bg: '#E8F3FF',
+  bgOuter: '#C4DBFF',
+  bgWarm: '#FFF7ED',
 
-  // Surfaces (glass simulation: white lifts off the sky bg)
   surface: '#FFFFFF',
   surfaceElevated: '#F8FAFF',
 
-  // Borders — near-invisible so cards feel weightless
-  border: 'rgba(15, 23, 42, 0.06)',
+  border: 'rgba(67, 100, 247, 0.12)',
 
-  // Text hierarchy
-  textPrimary: '#0F172A',   // slate-900
-  textSecondary: '#475569', // slate-600
-  textMuted: '#94A3B8',     // slate-400
+  textPrimary: '#0D1B3E',
+  textSecondary: '#6B7FA3',
+  textMuted: '#6B7FA3',
 
-  // Local Signal — earned moments, active states, CTA only
-  accent: '#6366F1',         // indigo-500 (vivid on white)
-  accentSoft: '#EEF2FF',     // indigo-50 (pill backgrounds, your-rank strip)
-  accentText: '#4338CA',     // indigo-700 (text on soft bg)
+  /** Primary brand blue */
+  primary: '#4364F7',
+  primaryLight: '#6B8EFF',
+  primarySoft: '#D6E9FF',
 
-  // Status
-  success: '#16A34A',  // green-700
-  warning: '#D97706',  // amber-600
-  sponsor: '#EA580C',  // orange-600 (summer energy, not amber)
+  /** Earned / active accent (kept for XP bar, CTAs) */
+  accent: '#4364F7',
+  accentSoft: '#E8F3FF',
+  accentText: '#4364F7',
+
+  /** Orange highlight — city badge, notifications, featured */
+  highlight: '#FF6B35',
+
+  navy: '#0D1B3E',
+  navyMid: '#1a2d6d',
+
+  success: '#22C55E',
+  warning: '#F59E0B',
+  danger: '#EF4444',
+  sponsor: '#FF6B35',
 } as const
 
 export const SPACING = { xs: 4, sm: 8, md: 12, lg: 16, xl: 20, xxl: 24 } as const
@@ -64,22 +73,38 @@ export function getXpToNextLevel(xp: number) {
   return next ? next.minXp - xp : 0
 }
 
-// Category colors: full vivid on white, identification signals not emphasis
-export const CATEGORY_COLORS: Record<string, string> = {
-  fitness: '#16A34A',    // green-600
-  social: '#9333EA',     // purple-600
-  food: '#EA580C',       // orange-600
-  community: '#2563EB',  // blue-600
-  nature: '#0891B2',     // cyan-600
+export function getMinXpForLevel(level: number): number {
+  return XP_LEVELS[Math.min(level - 1, XP_LEVELS.length - 1)]?.minXp ?? 0
 }
 
-// Soft tint backgrounds for icon boxes (14% opacity simulation)
+export function getLevelTitle(level: number): string {
+  if (level >= 10) return 'LEGEND'
+  if (level >= 7) return 'EXPLORER'
+  if (level >= 4) return 'SEEKER'
+  if (level >= 2) return 'NOMAD'
+  return 'ROOKIE'
+}
+
+export function getDifficulty(xp: number): { label: string; color: string } {
+  if (xp >= 300) return { label: 'HARD', color: COLORS.danger }
+  if (xp >= 150) return { label: 'MEDIUM', color: COLORS.warning }
+  return { label: 'EASY', color: COLORS.success }
+}
+
+export const CATEGORY_COLORS: Record<string, string> = {
+  fitness: '#22C55E',
+  social: '#A855F7',
+  food: '#F97316',
+  community: '#3B82F6',
+  nature: '#06B6D4',
+}
+
 export const CATEGORY_SOFT: Record<string, string> = {
-  fitness: '#DCFCE7',   // green-100
-  social: '#F3E8FF',    // purple-100
-  food: '#FFEDD5',      // orange-100
-  community: '#DBEAFE', // blue-100
-  nature: '#CFFAFE',    // cyan-100
+  fitness: '#DCFCE7',
+  social: '#F3E8FF',
+  food: '#FFEDD5',
+  community: '#DBEAFE',
+  nature: '#CFFAFE',
 }
 
 export const CATEGORY_ICONS: Record<string, string> = {
@@ -90,8 +115,23 @@ export const CATEGORY_ICONS: Record<string, string> = {
   nature: '🌿',
 }
 
-export const PROOF_GEOFENCE_RADIUS = 300 // metres
+export const CATEGORY_TAGS: Record<string, string> = {
+  fitness: 'TRAIL',
+  social: 'SOCIAL',
+  food: 'FOOD',
+  community: 'LOCAL',
+  nature: 'VIEWS',
+}
 
-/** Skip GPS geofence checks in dev / when EXPO_PUBLIC_BYPASS_GEOFENCE=true (testing without travel). */
+export const CATEGORY_IMAGES: Record<string, string> = {
+  fitness: 'https://images.unsplash.com/photo-1629495063801-c1040fa82533?w=700&h=440&fit=crop&auto=format',
+  social: 'https://images.unsplash.com/photo-1634709170162-23a76022e9c9?w=700&h=440&fit=crop&auto=format',
+  food: 'https://images.unsplash.com/photo-1634709170162-23a76022e9c9?w=700&h=440&fit=crop&auto=format',
+  community: 'https://images.unsplash.com/photo-1526268072039-3e33e8f0e379?w=700&h=440&fit=crop&auto=format',
+  nature: 'https://images.unsplash.com/photo-1526268072039-3e33e8f0e379?w=700&h=440&fit=crop&auto=format',
+}
+
+export const PROOF_GEOFENCE_RADIUS = 300
+
 export const BYPASS_GEOFENCE =
   process.env.EXPO_PUBLIC_BYPASS_GEOFENCE === 'true' || __DEV__
