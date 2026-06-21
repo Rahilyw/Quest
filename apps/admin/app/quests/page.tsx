@@ -16,9 +16,23 @@ export default function QuestsPage() {
   }, [])
 
   async function handleCreate() {
+    if (form.is_sponsored) {
+      if (!form.sponsor_name.trim() || !form.sponsor_reward.trim()) {
+        alert('Please fill out all sponsor fields for a sponsored quest.')
+        return
+      }
+    }
     const data = await createQuest(form)
-    if (data) setQuests((prev) => [data, ...prev])
-    setShowForm(false)
+    if (data) {
+      setQuests((prev) => [data, ...prev])
+      setShowForm(false)
+      // Reset form to initial state
+      setForm({
+        title: '', description: '', category: 'fitness', lat: '', lng: '',
+        radius_meters: '300', xp_reward: '100', is_sponsored: false,
+        sponsor_name: '', sponsor_reward: '',
+      })
+    }
   }
 
   async function handleToggleStatus(id: string, current: string) {
@@ -54,15 +68,60 @@ export default function QuestsPage() {
               />
             </div>
           ))}
-          <select
-            value={form.category}
-            onChange={(e) => setForm((f) => ({ ...f, category: e.target.value }))}
-            style={{ background: '#0F172A', color: '#F1F5F9', border: '1px solid #334155', borderRadius: 8, padding: 10, marginBottom: 16, width: '100%' }}
-          >
-            {['fitness', 'social', 'food', 'community', 'nature'].map((c) => (
-              <option key={c} value={c}>{c}</option>
-            ))}
-          </select>
+          
+          <div style={{ marginBottom: 12 }}>
+            <label style={{ color: '#64748B', fontSize: 12, display: 'block', marginBottom: 4 }}>Category</label>
+            <select
+              value={form.category}
+              onChange={(e) => setForm((f) => ({ ...f, category: e.target.value }))}
+              style={{ background: '#0F172A', color: '#F1F5F9', border: '1px solid #334155', borderRadius: 8, padding: 10, width: '100%' }}
+            >
+              {['fitness', 'social', 'food', 'community', 'nature'].map((c) => (
+                <option key={c} value={c}>{c}</option>
+              ))}
+            </select>
+          </div>
+
+          <div style={{ marginBottom: 16, display: 'flex', alignItems: 'center', gap: 8 }}>
+            <input
+              type="checkbox"
+              id="is_sponsored"
+              checked={form.is_sponsored}
+              onChange={(e) => setForm((f) => ({ ...f, is_sponsored: e.target.checked }))}
+              style={{ width: 18, height: 18, cursor: 'pointer', accentColor: '#6366F1' }}
+            />
+            <label htmlFor="is_sponsored" style={{ color: '#F1F5F9', fontSize: 14, fontWeight: 600, cursor: 'pointer' }}>
+              Sponsored quest
+            </label>
+          </div>
+
+          {form.is_sponsored && (
+            <div style={{ borderLeft: '3px solid #6366F1', paddingLeft: 12, marginBottom: 16 }}>
+              <div style={{ marginBottom: 12 }}>
+                <label style={{ color: '#64748B', fontSize: 12, display: 'block', marginBottom: 4 }}>
+                  Sponsor Name <span style={{ color: '#EF4444' }}>*</span>
+                </label>
+                <input
+                  value={form.sponsor_name}
+                  onChange={(e) => setForm((f) => ({ ...f, sponsor_name: e.target.value }))}
+                  placeholder="e.g. Frontrunners Victoria"
+                  style={{ width: '100%', background: '#0F172A', color: '#F1F5F9', border: '1px solid #334155', borderRadius: 8, padding: 10 }}
+                />
+              </div>
+              <div style={{ marginBottom: 12 }}>
+                <label style={{ color: '#64748B', fontSize: 12, display: 'block', marginBottom: 4 }}>
+                  Sponsor Reward <span style={{ color: '#EF4444' }}>*</span>
+                </label>
+                <input
+                  value={form.sponsor_reward}
+                  onChange={(e) => setForm((f) => ({ ...f, sponsor_reward: e.target.value }))}
+                  placeholder="e.g. Free drip coffee"
+                  style={{ width: '100%', background: '#0F172A', color: '#F1F5F9', border: '1px solid #334155', borderRadius: 8, padding: 10 }}
+                />
+              </div>
+            </div>
+          )}
+
           <button
             onClick={handleCreate}
             style={{ background: '#6366F1', color: '#fff', border: 'none', borderRadius: 8, padding: '10px 24px', cursor: 'pointer', fontWeight: 700 }}
