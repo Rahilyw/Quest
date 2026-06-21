@@ -17,12 +17,14 @@ supabase/
 ## Quick start
 
 ### 1. Supabase setup
-1. Create a project at supabase.com
-2. Run `supabase/migrations/001_initial_schema.sql` in the SQL editor
+
+1. Create a project at [supabase.com](https://supabase.com)
+2. Apply migrations in order — see [supabase/migrations/README.md](supabase/migrations/README.md) (`001` through `007`)
 3. Run `supabase/seed.sql` to load starter quests and badges
 4. Copy your project URL and anon key
 
 ### 2. Environment
+
 ```
 cp .env.example apps/mobile/.env
 cp .env.example apps/admin/.env.local
@@ -30,6 +32,7 @@ cp .env.example apps/admin/.env.local
 ```
 
 ### 3. Mobile app
+
 ```bash
 cd apps/mobile
 npm install
@@ -37,11 +40,21 @@ npx expo start
 ```
 
 ### 4. Admin panel
+
 ```bash
 cd apps/admin
 npm install
-npm run dev   # http://localhost:3001
+npm run dev   # http://localhost:3000
 ```
+
+## CI
+
+GitHub Actions runs on every push to `main` and on pull requests targeting `main` (see [.github/workflows/ci.yml](.github/workflows/ci.yml)):
+
+- Mobile logic tests (`apps/mobile/__tests__/logic.test.js`)
+- TypeScript check — mobile and admin
+
+Run tests locally: `cd apps/mobile && npm test`
 
 ## Key files
 
