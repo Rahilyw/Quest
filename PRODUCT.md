@@ -24,6 +24,8 @@ The voice is confident and slightly irreverent. It does not explain itself. It s
 
 Early BeReal: raw social energy, anti-perfection, grounded in real moments. The product felt like it was made by and for the people using it, not designed by a committee for a target demographic. That texture, that sense that the interface trusts the user to handle something unpolished and real, is the north star.
 
+The June 2026 Figma reimagining adds a **game-show layer**: photo proof in a public feed, a podium rankings screen, and hero quest cards that sell the adventure before you tap in. Social proof is visible, not hidden behind a profile tab.
+
 ## Anti-references
 
 - **Pokémon GO**: No AR overlays, neon fictional-world palettes, or creature-collecting aesthetics. Quest! rewards are real; the visual language must be too.
@@ -33,11 +35,25 @@ Early BeReal: raw social energy, anti-perfection, grounded in real moments. The 
 
 ## Design Principles
 
-1. **Realness over polish.** The interface should feel like it was made for the city, not for a portfolio. Resist perfecting things that should feel a little rough. A completion photo card does not need a drop shadow; a leaderboard row does not need an animation for its own sake.
+1. **Realness over polish.** The interface should feel like it was made for the city, not for a portfolio. Proof photos in the activity feed are the product — not stock imagery.
 2. **Local identity is the product.** Generic is a bug. Every surface should feel like it could only exist in the city it serves. Quest copy, category names, empty states: all of them should feel written by someone standing on that street.
 3. **Earned, not given.** XP and badges carry weight because they represent real effort. The UI must respect that: no confetti on a pending submission, no XP counter before approval, no fake progress on incomplete actions.
-4. **Bold decisions, not safe ones.** Bold · Local · Playful means committing to choices that surprise. A leaderboard that looks like a leaderboard is a missed opportunity. An XP bar that looks like every XP bar is a failure of imagination.
+4. **Bold decisions, not safe ones.** Bold · Local · Playful means committing to choices that surprise. A podium leaderboard and navy hero headers are intentional — not a generic list with medals pasted on.
 5. **Design serves getting outside.** Every tap, every screen, every empty state should reduce friction between the user and the real world. If a screen makes someone spend longer in the app, it has failed.
+
+## Mobile information architecture
+
+Five primary tabs (see `DESIGN.md`):
+
+| Tab | Job to be done |
+|-----|----------------|
+| **Explore** | "What should I do next?" — discover quests with hero imagery |
+| **Quests** | "What's happening in the city?" — map + social proof feed |
+| **Rankings** | "Where do I stand?" — weekly competition, podium, chasers |
+| **Badges** | "What have I earned?" — collection progress and locked goals |
+| **Profile** | "What's my story?" — stats, recent activity, account access |
+
+Settings, edit profile, quest detail, and submission remain stack screens outside the tab bar.
 
 ## Accessibility & Inclusion
 

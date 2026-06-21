@@ -1,4 +1,4 @@
-import { TouchableOpacity, Text, StyleSheet } from 'react-native'
+import { TouchableOpacity, Text, View, StyleSheet } from 'react-native'
 import { COLORS, RADIUS, SPACING } from '@/lib/constants'
 
 interface Props {
@@ -15,22 +15,26 @@ export function CategoryChip({ label, active, onPress, count }: Props) {
       onPress={onPress}
       activeOpacity={0.75}
     >
-      <Text style={[styles.label, active && styles.labelActive]}>
-        {label}{count !== undefined ? ` ${count}` : ''}
-      </Text>
+      <View style={styles.labelWrap}>
+        <Text style={[styles.label, active && styles.labelActive]}>
+          {label}{count !== undefined ? ` ${count}` : ''}
+        </Text>
+      </View>
     </TouchableOpacity>
   )
 }
 
 const styles = StyleSheet.create({
   chip: {
+    alignSelf: 'center',
+    minHeight: 36,
     backgroundColor: COLORS.surface,
     borderRadius: RADIUS.pill,
     paddingHorizontal: SPACING.lg,
-    paddingVertical: SPACING.sm,
     marginRight: SPACING.sm,
     borderWidth: 1.5,
     borderColor: COLORS.border,
+    justifyContent: 'center',
     // Glass lift
     shadowColor: '#0F172A',
     shadowOffset: { width: 0, height: 2 },
@@ -38,14 +42,24 @@ const styles = StyleSheet.create({
     shadowRadius: 4,
     elevation: 2,
   },
-  chipActive: {
-    backgroundColor: COLORS.accent,
-    borderColor: COLORS.accent,
-    shadowColor: COLORS.accent,
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 4,
+  labelWrap: {
+    justifyContent: 'center',
+    paddingVertical: SPACING.sm,
   },
-  label: { color: COLORS.textSecondary, fontWeight: '600', fontSize: 13 },
+  chipActive: {
+    backgroundColor: COLORS.navy,
+    borderColor: COLORS.navy,
+    shadowColor: COLORS.navy,
+    shadowOpacity: 0.2,
+    shadowRadius: 6,
+    elevation: 3,
+  },
+  label: {
+    color: COLORS.textSecondary,
+    fontWeight: '600',
+    fontSize: 13,
+    lineHeight: 18,
+    includeFontPadding: false,
+  },
   labelActive: { color: '#FFFFFF' },
 })

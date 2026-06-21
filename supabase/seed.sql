@@ -38,3 +38,9 @@ insert into badges (name, description, icon, unlock_condition) values
 ('Weekend Warrior', 'Completed 3 quests in a single weekend', '⚡', 'complete 3 quests in 1 weekend'),
 ('Top 10', 'Reached top 10 on the weekly leaderboard', '🎯', 'reach top 10 on weekly leaderboard'),
 ('Season Veteran', 'Participated in 2 full seasons', '🎖️', 'participate in 2 seasons');
+
+-- Sponsored Victoria, BC quests
+insert into quests (title, description, category, lat, lng, xp_reward, is_sponsored, sponsor_name, sponsor_reward, status, radius_meters) values
+('Habit Coffee Pitstop', 'Grab a premium beverage from Habit Coffee on Yates Street. Take a photo of your drink inside or outside the cafe.', 'food', 48.4262, -123.3615, 120, true, 'Habit Coffee', 'Free double shot upgrade', 'active', 300),
+('Mile 0 Run with Frontrunners', 'Run to the Mile 0 monument of the Trans-Canada Highway. Take a photo at the monument. Sponsored by Frontrunners Victoria.', 'fitness', 48.4107, -123.3678, 150, true, 'Frontrunners Victoria', 'Free pair of athletic socks', 'active', 300),
+('Board Games at Interactivity', 'Play a game at Interactivity Board Game Cafe on Yates Street. Take a photo of your game board.', 'community', 48.4246, -123.3618, 100, true, 'Interactivity Board Game Cafe', 'Waived cover fee', 'active', 300);

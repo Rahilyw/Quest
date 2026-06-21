@@ -149,7 +149,7 @@ export default function Settings(): JSX.Element {
           <TouchableOpacity
             style={[styles.row, styles.rowBorder]}
             activeOpacity={0.7}
-            onPress={() => {}}
+            onPress={() => router.push('/legal/privacy')}
           >
             <Text style={styles.rowLabel}>Privacy Policy</Text>
             <Ionicons name="chevron-forward" size={18} color={COLORS.textMuted} />
@@ -157,7 +157,7 @@ export default function Settings(): JSX.Element {
           <TouchableOpacity
             style={[styles.row, styles.rowBorder]}
             activeOpacity={0.7}
-            onPress={() => {}}
+            onPress={() => router.push('/legal/terms')}
           >
             <Text style={styles.rowLabel}>Terms of Service</Text>
             <Ionicons name="chevron-forward" size={18} color={COLORS.textMuted} />

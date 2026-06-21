@@ -1,0 +1,54 @@
+<!-- @dsCard group="Spacing" viewport="700x200" name="Elevation" subtitle="3 named shadows — flat at rest, card glass, action glow, tab lift" -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<link rel="stylesheet" href="../../styles.css">
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--color-bg); padding: 24px 20px; font-family: var(--font-system); }
+  .row { display: flex; gap: 16px; }
+  .col { flex: 1; }
+  .card { height: 64px; background: var(--color-surface); border-radius: 12px; border: 1px solid var(--color-border); margin-bottom: 10px; display: flex; align-items: center; justify-content: center; }
+  .name  { font-size: 12px; font-weight: 700; color: #0F172A; }
+  .token { font-size: 10px; color: #94A3B8; font-family: monospace; margin-top: 2px; }
+  .usage { font-size: 10px; color: #94A3B8; margin-top: 3px; line-height: 1.4; }
+</style>
+</head>
+<body>
+<div class="row">
+  <div class="col">
+    <div class="card" style="box-shadow: none;">
+      <span style="font-size: 11px; color: #94A3B8;">No shadow</span>
+    </div>
+    <div class="name">Flat</div>
+    <div class="token">none</div>
+    <div class="usage">List rows, section headers, containers at rest</div>
+  </div>
+  <div class="col">
+    <div class="card" style="box-shadow: var(--shadow-card);">
+      <span style="font-size: 11px; color: #94A3B8;">Card Glass</span>
+    </div>
+    <div class="name">Card Glass</div>
+    <div class="token">--shadow-card</div>
+    <div class="usage">Quest cards, XP bar, badge tiles</div>
+  </div>
+  <div class="col">
+    <div class="card" style="box-shadow: var(--shadow-action-glow); background: #6366F1;">
+      <span style="font-size: 11px; color: rgba(255,255,255,0.8);">Action Glow</span>
+    </div>
+    <div class="name">Action Glow</div>
+    <div class="token">--shadow-action-glow</div>
+    <div class="usage">Primary CTA, active category chips</div>
+  </div>
+  <div class="col">
+    <div class="card" style="box-shadow: var(--shadow-tab); border-radius: 0;">
+      <span style="font-size: 11px; color: #94A3B8;">Tab Lift ↑</span>
+    </div>
+    <div class="name">Tab Lift</div>
+    <div class="token">--shadow-tab</div>
+    <div class="usage">Tab bar only — upward facing</div>
+  </div>
+</div>
+</body>
+</html>

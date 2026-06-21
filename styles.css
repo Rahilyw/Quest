@@ -1,0 +1,9 @@
+/* Quest! Design System — Global Entry Point
+   Link this file to load all design tokens.
+   Do NOT add rules here — only @import lines.
+   Source files: tokens/, assets/fonts/
+*/
+@import "./tokens/colors.css";
+@import "./tokens/typography.css";
+@import "./tokens/spacing.css";
+@import "./tokens/shadows.css";

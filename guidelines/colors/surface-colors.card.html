@@ -1,0 +1,46 @@
+<!-- @dsCard group="Colors" viewport="700x160" name="Surfaces" subtitle="Glass White + Glass Lifted — cards float on sky" -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<link rel="stylesheet" href="../../styles.css">
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--color-bg); padding: 20px; font-family: var(--font-system); }
+  .row { display: flex; gap: 12px; }
+  .swatch-wrap { flex: 1; }
+  .swatch { height: 60px; border-radius: 12px; margin-bottom: 8px; }
+  .name  { font-size: 12px; font-weight: 700; color: #0F172A; }
+  .hex   { font-size: 11px; color: #475569; margin-top: 2px; }
+  .token { font-size: 10px; color: #94A3B8; margin-top: 2px; font-family: monospace; }
+  .desc  { font-size: 10px; color: #94A3B8; margin-top: 2px; line-height: 1.4; }
+</style>
+</head>
+<body>
+<div class="row">
+  <div class="swatch-wrap">
+    <div class="swatch" style="background: var(--color-surface); box-shadow: 0 6px 16px rgba(15,23,42,0.07); border: 1px solid rgba(15,23,42,0.06);"></div>
+    <div class="name">Glass White</div>
+    <div class="hex">#FFFFFF</div>
+    <div class="token">--color-surface</div>
+    <div class="desc">Cards, inputs, tab bar</div>
+  </div>
+  <div class="swatch-wrap">
+    <div class="swatch" style="background: var(--color-surface-elevated); border: 1px solid rgba(15,23,42,0.06);"></div>
+    <div class="name">Glass Lifted</div>
+    <div class="hex">#F8FAFF</div>
+    <div class="token">--color-surface-elevated</div>
+    <div class="desc">XP track bg, alt leaderboard rows</div>
+  </div>
+  <div class="swatch-wrap">
+    <div class="swatch" style="background: var(--color-surface); display: flex; align-items: center; justify-content: center; border: 1px solid rgba(15,23,42,0.06);">
+      <div style="width: 80%; height: 1px; background: rgba(15,23,42,0.06);"></div>
+    </div>
+    <div class="name">Border</div>
+    <div class="hex">rgba(15,23,42,0.06)</div>
+    <div class="token">--color-border</div>
+    <div class="desc">Near-invisible; cards feel weightless</div>
+  </div>
+</div>
+</body>
+</html>

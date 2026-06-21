@@ -1,4 +1,5 @@
 import { supabaseAdmin } from '@/lib/supabase'
+import ExportButton from './ExportButton'
 
 export const revalidate = 60
 
@@ -35,6 +36,7 @@ export default async function SponsorsPage() {
                     ⭐ {q.sponsor_name}
                   </div>
                   <div style={{ color: '#64748B' }}>Reward: {q.sponsor_reward}</div>
+                  <ExportButton quest={q} />
                 </div>
                 <div style={{ textAlign: 'right' }}>
                   <div style={{ fontSize: 32, fontWeight: 800, color: '#22C55E' }}>{approved}</div>

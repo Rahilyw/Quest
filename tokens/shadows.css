@@ -1,0 +1,22 @@
+/* Quest! Elevation & Shadow Tokens — Harbour Electric
+   Source: DESIGN.md §4 Elevation
+*/
+:root {
+  /* Hero quest cards */
+  --shadow-hero-card: 0 8px 16px rgba(13, 27, 62, 0.12);
+
+  /* Feed posts, stat tiles */
+  --shadow-card: 0 4px 12px rgba(13, 27, 62, 0.08);
+
+  /* Primary CTA, active tab pill */
+  --shadow-action: 0 4px 12px rgba(67, 100, 247, 0.28);
+
+  /* Tab bar */
+  --shadow-tab: 0 -2px 8px rgba(13, 27, 62, 0.06);
+
+  /* Legacy alias */
+  --shadow-card-glass: var(--shadow-card);
+  --shadow-action-glow: var(--shadow-action);
+
+  /* Navy section headers (Rankings, Profile) use background colour, not shadow. */
+}

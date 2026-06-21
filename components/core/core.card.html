@@ -1,0 +1,108 @@
+<!-- @dsCard group="Components" viewport="700x540" name="Core Components" subtitle="Button · Avatar · Badge · Input · CategoryChip · LevelChip" -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<link rel="stylesheet" href="../../styles.css">
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+<script src="../../_ds_bundle.js"></script>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--color-bg); padding: 20px; font-family: var(--font-system); }
+  .section { margin-bottom: 20px; }
+  .label { font-size: 10px; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; color: var(--color-text-muted); margin-bottom: 10px; }
+  .row { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+  .col2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  hr { border: none; border-top: 1px solid var(--color-border); margin: 16px 0; }
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+const { Button, Avatar, Badge, Input, CategoryChip, LevelChip } = window.QuestDesignSystem_8b2125;
+
+function App() {
+  const [focusDemo] = React.useState('');
+  return (
+    <div>
+      <div class="section">
+        <div class="label">Button</div>
+        <div class="row">
+          <Button label="Get Started" variant="primary" />
+          <Button label="Cancel" variant="ghost" />
+          <Button label="Forgot password?" variant="link" />
+          <Button label="Disabled" variant="primary" disabled />
+          <Button label="Small" variant="primary" size="sm" />
+          <Button label="Ghost SM" variant="ghost" size="sm" />
+        </div>
+      </div>
+      <hr />
+      <div class="section">
+        <div class="label">Avatar</div>
+        <div class="row">
+          {['hazel_v','coastrunner','jada_bc','alex_kwon','mara_pdx','trailboss','you'].map(u => (
+            <div key={u} style={{display:'flex',flexDirection:'column',alignItems:'center',gap:4}}>
+              <Avatar username={u} size={40} />
+              <span style={{fontSize:9,color:'var(--color-text-muted)'}}>{u[0].toUpperCase()}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+      <hr />
+      <div class="section">
+        <div class="label">Badge</div>
+        <div class="row">
+          <Badge label="fitness" variant="category" category="fitness" />
+          <Badge label="social" variant="category" category="social" />
+          <Badge label="food" variant="category" category="food" />
+          <Badge label="community" variant="category" category="community" />
+          <Badge label="nature" variant="category" category="nature" />
+          <Badge label="Habit Coffee" variant="sponsor" icon="⭐" />
+          <Badge label="+150 XP" variant="accent" />
+          <Badge label="📍 0.8 km" variant="muted" />
+          <Badge label="Approved" variant="success" />
+          <Badge label="Pending" variant="warning" />
+        </div>
+      </div>
+      <hr />
+      <div class="section">
+        <div class="label">Input</div>
+        <div class="col2">
+          <Input placeholder="Email address" type="email" />
+          <Input label="Username" placeholder="@yourhandle" />
+          <Input label="Password" placeholder="••••••••" type="password" />
+          <Input label="City" placeholder="Victoria, BC" error="City not supported yet" />
+        </div>
+      </div>
+      <hr />
+      <div class="section">
+        <div class="label">CategoryChip</div>
+        <div class="row">
+          <CategoryChip label="All" active />
+          <CategoryChip label="🏃 Fitness" />
+          <CategoryChip label="🤝 Social" />
+          <CategoryChip label="🍽️ Food" />
+          <CategoryChip label="🏘️ Community" />
+          <CategoryChip label="🌿 Nature" />
+          <CategoryChip label="🍽️ Food" active />
+        </div>
+      </div>
+      <hr />
+      <div class="section">
+        <div class="label">LevelChip</div>
+        <div class="row">
+          {[1,2,3,4,5,7,10].map(l => <LevelChip key={l} level={l} />)}
+          <span style={{marginLeft:8,fontSize:11,color:'var(--color-text-muted)'}}>compact →</span>
+          {[4,7].map(l => <LevelChip key={`c${l}`} level={l} compact />)}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+</script>
+</body>
+</html>

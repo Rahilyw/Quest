@@ -12,6 +12,7 @@ Apply migrations in numeric/filename order:
 | `005_align_badge_unlock_logic.sql` | Replaces 002 trigger; must run after 004 |
 | `006_streak_system.sql` | Weekly streak columns and XP trigger extension |
 | `007_avatar_bucket.sql` | Public `avatars` storage bucket and RLS policies |
+| `008_public_feed_completions.sql` | RLS policy so activity feed can read approved completions |
 
 ## Env var naming drift
 

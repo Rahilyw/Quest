@@ -1,0 +1,44 @@
+<!-- @dsCard group="Colors" viewport="700x160" name="Text" subtitle="Ink · Slate · Mist — weight-driven hierarchy" -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<link rel="stylesheet" href="../../styles.css">
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--color-bg); padding: 24px 20px; font-family: var(--font-system); }
+  .row { display: flex; gap: 24px; }
+  .col { flex: 1; }
+  .sample { font-size: 20px; font-weight: 800; margin-bottom: 6px; }
+  .name  { font-size: 12px; font-weight: 700; }
+  .hex   { font-size: 11px; color: #94A3B8; margin-top: 2px; }
+  .token { font-size: 10px; color: #94A3B8; margin-top: 2px; font-family: monospace; }
+  .usage { font-size: 11px; color: #94A3B8; margin-top: 3px; line-height: 1.4; }
+</style>
+</head>
+<body>
+<div class="row">
+  <div class="col">
+    <div class="sample" style="color: var(--color-text-primary);">Ink</div>
+    <div class="name" style="color: var(--color-text-primary);">Ink</div>
+    <div class="hex">#0F172A</div>
+    <div class="token">--color-text-primary</div>
+    <div class="usage">Titles, quest names, primary body</div>
+  </div>
+  <div class="col">
+    <div class="sample" style="color: var(--color-text-secondary);">Slate</div>
+    <div class="name" style="color: var(--color-text-secondary);">Slate</div>
+    <div class="hex">#475569</div>
+    <div class="token">--color-text-secondary</div>
+    <div class="usage">Descriptions, supporting labels</div>
+  </div>
+  <div class="col">
+    <div class="sample" style="color: var(--color-text-muted);">Mist</div>
+    <div class="name" style="color: var(--color-text-muted);">Mist</div>
+    <div class="hex">#94A3B8</div>
+    <div class="token">--color-text-muted</div>
+    <div class="usage">Metadata, placeholders, distances</div>
+  </div>
+</div>
+</body>
+</html>

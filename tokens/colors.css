@@ -1,0 +1,57 @@
+/* Quest! Color Tokens — Harbour Electric palette (Figma reimagining, Jun 2026)
+   Canonical source: DESIGN.md + apps/mobile/lib/constants.ts
+*/
+:root {
+  /* ── Backgrounds ──────────────────────────────────────────── */
+  --color-bg:            #E8F3FF;  /* Quest Sky       — primary app canvas */
+  --color-bg-outer:      #C4DBFF;  /* Quest Sky Deep  — web frame / desktop bg */
+  --color-bg-warm:       #FFF7ED;  /* Warm Sand       — sponsor accents */
+
+  /* ── Surfaces ─────────────────────────────────────────────── */
+  --color-surface:          #FFFFFF;  /* Glass White  — cards, tab bar, feed posts */
+  --color-surface-elevated: #F8FAFF;  /* Glass Lifted — XP track, alt rows */
+
+  /* ── Borders ──────────────────────────────────────────────── */
+  --color-border:        rgba(67, 100, 247, 0.12);
+  --color-border-strong: rgba(13, 27, 62, 0.12);
+
+  /* ── Text ─────────────────────────────────────────────────── */
+  --color-text-primary:   #0D1B3E;  /* Navy        — primary text */
+  --color-text-secondary: #6B7FA3;  /* Slate Muted — descriptions */
+  --color-text-muted:     #6B7FA3;  /* metadata, inactive tabs */
+
+  /* ── Brand ────────────────────────────────────────────────── */
+  --color-primary:       #4364F7;  /* Quest Blue       — brand, CTA, active states */
+  --color-primary-light: #6B8EFF;  /* gradient partner */
+  --color-primary-soft:  #D6E9FF;  /* level chips, soft fills */
+  --color-highlight:     #FF6B35;  /* City Orange      — city badge, notifications */
+
+  /* Legacy aliases (admin / older components) */
+  --color-accent:      var(--color-primary);
+  --color-accent-soft: #E8F3FF;
+  --color-accent-text: var(--color-primary);
+
+  /* ── Navy sections ────────────────────────────────────────── */
+  --color-navy:     #0D1B3E;
+  --color-navy-mid: #1a2d6d;
+
+  /* ── Status ───────────────────────────────────────────────── */
+  --color-success: #22C55E;
+  --color-warning: #F59E0B;
+  --color-danger:  #EF4444;
+  --color-sponsor: #FF6B35;
+
+  /* ── Category Colors ──────────────────────────────────────── */
+  --color-cat-fitness:   #22C55E;
+  --color-cat-social:    #A855F7;
+  --color-cat-food:      #F97316;
+  --color-cat-community: #3B82F6;
+  --color-cat-nature:    #06B6D4;
+
+  /* ── Category Soft Tints ──────────────────────────────────── */
+  --color-cat-fitness-soft:   #DCFCE7;
+  --color-cat-social-soft:    #F3E8FF;
+  --color-cat-food-soft:      #FFEDD5;
+  --color-cat-community-soft: #DBEAFE;
+  --color-cat-nature-soft:    #CFFAFE;
+}
