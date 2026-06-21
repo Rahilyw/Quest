@@ -1,0 +1,39 @@
+<!-- @dsCard group="Brand" viewport="700x200" name="Earned, Not Given" subtitle="The XP principle — no reward UI before approval" -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<link rel="stylesheet" href="../../styles.css">
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--color-bg); padding: 20px; font-family: var(--font-system); }
+  .row { display: flex; gap: 16px; }
+  .col { flex: 1; }
+  .card { background: var(--color-surface); border-radius: 16px; padding: 16px; border: 1px solid var(--color-border); box-shadow: 0 6px 16px rgba(15,23,42,0.07); }
+  .badge { display: inline-flex; align-items: center; border-radius: 999px; padding: 4px 10px; font-size: 11px; font-weight: 700; margin-bottom: 10px; }
+  .title { font-size: 13px; font-weight: 700; color: #0F172A; margin-bottom: 4px; }
+  .desc  { font-size: 11px; color: #94A3B8; line-height: 1.4; }
+  .heading { font-size: 10px; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; color: #94A3B8; margin-bottom: 8px; }
+</style>
+</head>
+<body>
+<div class="row">
+  <div class="col">
+    <div class="heading">✓ After submission (correct)</div>
+    <div class="card">
+      <div class="badge" style="background:#FEF3C7; color:#D97706;">⏳ Pending review</div>
+      <div class="title">Quest Submitted</div>
+      <div class="desc">+150 XP pending approval — you'll earn it once reviewed. Check Pending Quests on your profile.</div>
+    </div>
+  </div>
+  <div class="col">
+    <div class="heading" style="color: #EA580C;">✗ Never do this</div>
+    <div class="card" style="border-color: #FDBA74; opacity: 0.6;">
+      <div class="badge" style="background:#DCFCE7; color:#16A34A;">🎉 +150 XP earned!</div>
+      <div class="title">Quest Complete!</div>
+      <div class="desc">You earned 150 XP! Your total is now 1,600 XP. Amazing work — keep it up!</div>
+    </div>
+  </div>
+</div>
+</body>
+</html>

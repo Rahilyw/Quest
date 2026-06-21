@@ -1,0 +1,499 @@
+<!-- @dsCard group="Mobile App" viewport="700x900" name="Mobile App" subtitle="Quest! player app — Quest Feed, Map, Leaderboard, Profile" -->
+<!-- @startingPoint section="Mobile" subtitle="Quest! player app — 4-screen interactive prototype" viewport="390x844" -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Quest! — Mobile App</title>
+<link rel="stylesheet" href="../../styles.css">
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { background: var(--color-bg); min-height: 100vh; display: flex; align-items: center; justify-content: center; font-family: var(--font-system); padding: 24px; }
+::-webkit-scrollbar { display: none; }
+button { font-family: var(--font-system); border: none; outline: none; cursor: pointer; }
+input { font-family: var(--font-system); outline: none; }
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+
+/* ── Design tokens ─────────────────────────────── */
+const T = {
+  bg:'#F0F9FF', bgWarm:'#FFF7ED',
+  surface:'#FFFFFF', surfaceEl:'#F8FAFF',
+  border:'rgba(15,23,42,0.06)', borderStrong:'rgba(15,23,42,0.12)',
+  ink:'#0F172A', slate:'#475569', mist:'#94A3B8',
+  accent:'#6366F1', accentSoft:'#EEF2FF', accentText:'#4338CA',
+  success:'#16A34A', warning:'#D97706', sponsor:'#EA580C',
+  shadow:'0 6px 16px rgba(15,23,42,0.07)',
+  glow:'0 4px 12px rgba(99,102,241,0.28)',
+};
+
+const CATS = {
+  fitness:   { color:'#16A34A', soft:'#DCFCE7', icon:'🏃', label:'Fitness' },
+  social:    { color:'#9333EA', soft:'#F3E8FF', icon:'🤝', label:'Social' },
+  food:      { color:'#EA580C', soft:'#FFEDD5', icon:'🍽️', label:'Food' },
+  community: { color:'#2563EB', soft:'#DBEAFE', icon:'🏘️', label:'Community' },
+  nature:    { color:'#0891B2', soft:'#CFFAFE', icon:'🌿', label:'Nature' },
+};
+
+/* ── Sample data ───────────────────────────────── */
+const QUESTS = [
+  { id:'1', title:'Run the Galloping Goose Trail', description:"Hit Victoria's iconic rail trail. Any distance — show up, prove you went.", category:'fitness', xp:150, sponsored:false, distance:'0.8 km', x:68, y:22 },
+  { id:'2', title:'Morning Coffee at Habit', description:"Order something new at Habit Coffee. Bonus: chat with the barista.", category:'food', xp:75, sponsored:true, sponsor:'Habit Coffee', distance:'0.3 km', x:50, y:48 },
+  { id:'3', title:'Inner Harbour at Sunset', description:"Show up at the Inner Harbour before 9pm. Any camera counts.", category:'nature', xp:100, sponsored:false, distance:'0.5 km', x:46, y:60 },
+  { id:'4', title:'Volunteer at the Food Bank', description:"The Victoria Community Food Bank runs Saturday morning shifts.", category:'community', xp:200, sponsored:false, distance:'1.2 km', x:28, y:34 },
+  { id:'5', title:'Meet Someone New at Beacon Hill', description:"Introduce yourself to a stranger in the park. A quick hi counts.", category:'social', xp:125, sponsored:false, distance:'0.6 km', x:70, y:70 },
+];
+
+const LB = [
+  { rank:1, username:'hazel_v',     xp:1240 },
+  { rank:2, username:'coastrunner', xp:980  },
+  { rank:3, username:'jada_bc',     xp:760  },
+  { rank:4, username:'alex_kwon',   xp:620  },
+  { rank:5, username:'mara_pdx',    xp:550  },
+  { rank:6, username:'trailboss',   xp:490  },
+  { rank:7, username:'you',         xp:425, me:true },
+  { rank:8, username:'seawalk99',   xp:390  },
+  { rank:9, username:'thimble_bay', xp:310  },
+  { rank:10,username:'downtown_d',  xp:275  },
+];
+
+const ME = { username:'you', city:'Victoria, BC', level:4, xp:1450, streak:3, badges:5, quests:12, weeklyXp:425, weeklyRank:7 };
+
+const BADGES = [
+  {icon:'🏃',name:'First Steps'}, {icon:'🌿',name:'Nature Seeker'},
+  {icon:'☕',name:'Local Foodie'}, {icon:'🤝',name:'Connector'}, {icon:'🔥',name:'On a Roll'},
+];
+
+const HISTORY = [
+  { title:'Victoria Blossom Run', category:'fitness', xp:150, date:'Jun 18' },
+  { title:'Esquimalt Farmer\'s Market', category:'community', xp:100, date:'Jun 14' },
+  { title:'Sunrise at Mt. Doug', category:'nature', xp:125, date:'Jun 10' },
+];
+
+/* ── Primitives ────────────────────────────────── */
+function Avatar({ username='?', size=40 }) {
+  const PL=[{bg:'#DCFCE7',fg:'#15803D'},{bg:'#F3E8FF',fg:'#7E22CE'},{bg:'#FFEDD5',fg:'#C2410C'},
+    {bg:'#DBEAFE',fg:'#1D4ED8'},{bg:'#CFFAFE',fg:'#0E7490'},{bg:'#FEF9C3',fg:'#A16207'},{bg:'#FCE7F3',fg:'#9D174D'}];
+  let h=0; for(let i=0;i<username.length;i++) h=(h*31+username.charCodeAt(i))>>>0;
+  const p=PL[h%PL.length];
+  return <div style={{width:size,height:size,borderRadius:'50%',backgroundColor:p.bg,display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0,userSelect:'none'}}>
+    <span style={{fontSize:Math.round(size*.38),fontWeight:800,color:p.fg}}>{username[0].toUpperCase()}</span>
+  </div>;
+}
+
+function LvChip({ level, compact=false }) {
+  return <span style={{background:T.accent,color:'#fff',borderRadius:999,padding:compact?'2px 7px':'4px 10px',fontSize:compact?10:11,fontWeight:800,boxShadow:T.glow,letterSpacing:'0.03em',whiteSpace:'nowrap'}}> Lv {level}</span>;
+}
+
+function QCard({ quest, onPress }) {
+  const [hov,setHov]=React.useState(false);
+  const cat=CATS[quest.category];
+  return <div onClick={()=>onPress&&onPress(quest)} onMouseEnter={()=>setHov(true)} onMouseLeave={()=>setHov(false)}
+    style={{display:'flex',gap:12,background:T.surface,borderRadius:20,padding:16,marginBottom:12,border:`1px solid ${T.border}`,boxShadow:T.shadow,cursor:'pointer',position:'relative',opacity:hov?.92:1,transition:'opacity 150ms'}}>
+    <div style={{position:'absolute',top:0,left:16,right:16,height:1,background:'rgba(255,255,255,0.9)',borderRadius:20,pointerEvents:'none'}}/>
+    <div style={{width:52,height:52,borderRadius:16,background:cat.soft,display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0,fontSize:24}}>{cat.icon}</div>
+    <div style={{flex:1,minWidth:0}}>
+      <div style={{marginBottom:6}}>
+        {quest.sponsored
+          ? <span style={{display:'inline-flex',background:'#FFF7ED',borderRadius:999,padding:'3px 8px',border:'1px solid #FDBA74',fontSize:11,fontWeight:700,color:'#EA580C'}}> ⭐ {quest.sponsor}</span>
+          : <span style={{display:'inline-flex',background:cat.soft,borderRadius:999,padding:'3px 8px',fontSize:11,fontWeight:700,color:cat.color,textTransform:'capitalize'}}>{quest.category}</span>}
+      </div>
+      <div style={{color:T.ink,fontWeight:800,fontSize:15,marginBottom:4,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{quest.title}</div>
+      <div style={{color:T.slate,fontSize:13,lineHeight:1.5,marginBottom:10,display:'-webkit-box',WebkitLineClamp:2,WebkitBoxOrient:'vertical',overflow:'hidden'}}>{quest.description}</div>
+      <div style={{display:'flex',justifyContent:'space-between',alignItems:'center'}}>
+        <span style={{background:T.surfaceEl,borderRadius:999,padding:'3px 8px',border:`1px solid ${T.border}`,fontSize:11,fontWeight:600,color:T.mist}}>📍 {quest.distance}</span>
+        <span style={{color:cat.color,fontWeight:800,fontSize:13}}>+{quest.xp} XP</span>
+      </div>
+    </div>
+  </div>;
+}
+
+function XPBarComp({ xp }) {
+  const levels=[0,200,500,1000,2000,3500,5500,8000,11000,15000];
+  let lv=1; for(let i=levels.length-1;i>=0;i--) { if(xp>=levels[i]){lv=i+1;break;} }
+  const cur=levels[lv-1]||0, nxt=levels[lv]||cur+1;
+  const pct=`${Math.min(Math.max(((xp-cur)/(nxt-cur))*100,2),100)}%`;
+  return <div style={{background:T.surface,borderRadius:20,padding:16,border:`1px solid ${T.border}`,boxShadow:T.shadow}}>
+    <div style={{display:'flex',justifyContent:'space-between',marginBottom:12}}>
+      <span style={{color:T.ink,fontWeight:800,fontSize:15}}>Level {lv}</span>
+      <span style={{color:T.mist,fontSize:13}}>{xp.toLocaleString()} / {nxt.toLocaleString()} XP</span>
+    </div>
+    <div style={{height:12,background:T.surfaceEl,borderRadius:999,overflow:'hidden',border:`1px solid ${T.border}`,position:'relative'}}>
+      <div style={{height:'100%',width:pct,background:T.accent,borderRadius:999,position:'relative',overflow:'hidden'}}>
+        <div style={{position:'absolute',right:0,top:0,bottom:0,width:'35%',background:'#8B5CF6',opacity:.55}}/>
+        <div style={{position:'absolute',top:0,left:0,right:0,height:'50%',background:'#fff',opacity:.28}}/>
+      </div>
+    </div>
+    <div style={{display:'flex',justifyContent:'space-between',marginTop:4}}>
+      <span style={{color:T.mist,fontSize:11,fontWeight:600}}>Lv {lv}</span>
+      <span style={{color:T.mist,fontSize:11,fontWeight:600}}>Lv {lv+1}</span>
+    </div>
+  </div>;
+}
+
+/* ── Screens ───────────────────────────────────── */
+function FeedScreen({ onPress }) {
+  const [cat,setCat]=React.useState(null);
+  const filtered=cat?QUESTS.filter(q=>q.category===cat):QUESTS;
+  const featured=QUESTS.find(q=>q.sponsored);
+  return <div style={{display:'flex',flexDirection:'column',height:'100%',overflow:'hidden'}}>
+    {/* Header */}
+    <div style={{padding:'12px 20px 12px',background:T.bg,flexShrink:0}}>
+      <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:10}}>
+        <div>
+          <div style={{color:T.mist,fontSize:12}}>Welcome back,</div>
+          <div style={{color:T.ink,fontSize:22,fontWeight:800}}>@{ME.username}</div>
+        </div>
+        <div style={{display:'flex',alignItems:'center',gap:8}}>
+          <LvChip level={ME.level}/>
+          <Avatar username={ME.username} size={40}/>
+        </div>
+      </div>
+      {/* XP strip */}
+      <div style={{display:'flex',alignItems:'center',gap:8}}>
+        <span style={{color:T.mist,fontSize:12,fontWeight:600,minWidth:68}}>{ME.xp.toLocaleString()} XP</span>
+        <div style={{flex:1,height:6,background:T.surface,borderRadius:999,overflow:'hidden',border:`1px solid ${T.border}`}}>
+          <div style={{height:'100%',width:'72%',background:T.accent,borderRadius:999}}/>
+        </div>
+      </div>
+    </div>
+    {/* Featured */}
+    {featured && <div onClick={()=>onPress(featured)} style={{margin:'0 16px 12px',padding:16,background:T.accentSoft,borderRadius:16,border:`1px solid ${T.accent}`,cursor:'pointer',flexShrink:0}}>
+      <div style={{display:'inline-flex',background:'rgba(234,88,12,.12)',borderRadius:999,padding:'2px 8px',border:'1px solid rgba(234,88,12,.25)',fontSize:11,fontWeight:700,color:T.sponsor,marginBottom:8}}>⭐ Featured Quest</div>
+      <div style={{color:T.ink,fontSize:16,fontWeight:800,marginBottom:4}}>{featured.title}</div>
+      <div style={{color:T.slate,fontSize:13,lineHeight:1.5,marginBottom:8}}>{featured.description}</div>
+      <div style={{color:T.accentText,fontWeight:800,fontSize:14}}>+{featured.xp} XP</div>
+    </div>}
+    {/* Chips */}
+    <div style={{display:'flex',gap:8,padding:'0 16px 10px',overflowX:'auto',flexShrink:0}}>
+      {[null,...Object.keys(CATS)].map(k=>{
+        const isActive=cat===k;
+        const label=k?`${CATS[k].icon} ${CATS[k].label}`:'All';
+        return <button key={k||'all'} onClick={()=>setCat(isActive&&k?null:k)}
+          style={{borderRadius:999,padding:'8px 14px',fontSize:12,fontWeight:600,whiteSpace:'nowrap',flexShrink:0,background:isActive?T.accent:T.surface,border:`1.5px solid ${isActive?T.accent:T.border}`,color:isActive?'#fff':T.slate,boxShadow:isActive?T.glow:'0 2px 8px rgba(15,23,42,.05)',transition:'all 150ms'}}>
+          {label}
+        </button>;
+      })}
+    </div>
+    {/* Section header */}
+    <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',padding:'4px 20px 8px',flexShrink:0}}>
+      <span style={{fontSize:12,fontWeight:700,letterSpacing:'0.05em',textTransform:'uppercase',color:T.mist}}>Active Quests</span>
+      <span style={{fontSize:12,color:T.mist}}>{filtered.length}</span>
+    </div>
+    {/* List */}
+    <div style={{flex:1,overflowY:'auto',padding:'0 16px 16px'}}>
+      {filtered.map(q=><QCard key={q.id} quest={q} onPress={onPress}/>)}
+    </div>
+  </div>;
+}
+
+function MapScreen() {
+  const [cat,setCat]=React.useState(null);
+  const pins=cat?QUESTS.filter(q=>q.category===cat):QUESTS;
+  return <div style={{display:'flex',flexDirection:'column',height:'100%',background:'#0C1A2E'}}>
+    {/* Filter strip */}
+    <div style={{padding:'12px 16px 10px',background:'rgba(15,23,42,0.95)',flexShrink:0}}>
+      <div style={{display:'flex',gap:8,overflowX:'auto'}}>
+        {Object.entries(CATS).map(([k,c])=>{
+          const a=cat===k;
+          return <button key={k} onClick={()=>setCat(a?null:k)}
+            style={{borderRadius:999,padding:'7px 12px',fontSize:11,fontWeight:600,whiteSpace:'nowrap',flexShrink:0,background:a?c.color:'rgba(255,255,255,0.08)',border:`1px solid ${a?c.color:'rgba(255,255,255,0.12)'}`,color:a?'#fff':'rgba(255,255,255,0.6)',transition:'all 150ms'}}>
+            {c.icon} {c.label}
+          </button>;
+        })}
+      </div>
+    </div>
+    {/* Map */}
+    <div style={{flex:1,position:'relative',overflow:'hidden'}}>
+      <svg width="100%" height="100%" viewBox="0 0 390 650" style={{position:'absolute',inset:0}}>
+        {/* Base streets */}
+        {[100,200,300].map(x=><line key={x} x1={x} y1="0" x2={x} y2="650" stroke="#1E3A5F" strokeWidth="1.5"/>)}
+        {[130,260,390,520].map(y=><line key={y} x1="0" y1={y} x2="390" y2={y} stroke="#1E3A5F" strokeWidth="1.5"/>)}
+        {/* Diagonal road */}
+        <line x1="0" y1="650" x2="390" y2="220" stroke="#1E3A5F" strokeWidth="2"/>
+        {/* Harbour water */}
+        <path d="M 0 500 Q 80 470 170 485 Q 250 498 320 475 Q 360 460 390 470 L 390 650 L 0 650 Z" fill="#0C4A6E" opacity="0.7"/>
+        {/* Park — Beacon Hill */}
+        <rect x="230" y="380" width="130" height="120" rx="12" fill="#14532D" opacity="0.5"/>
+        <text x="295" y="448" textAnchor="middle" fill="rgba(255,255,255,0.25)" fontSize="9">Beacon Hill Park</text>
+        {/* Inner Harbour label */}
+        <text x="195" y="545" textAnchor="middle" fill="rgba(255,255,255,0.3)" fontSize="9">Inner Harbour</text>
+        {/* User location pulse */}
+        <circle cx="190" cy="310" r="18" fill="rgba(99,102,241,0.12)" stroke="rgba(99,102,241,0.3)" strokeWidth="1"/>
+        <circle cx="190" cy="310" r="6" fill="#6366F1"/>
+        <circle cx="190" cy="310" r="3" fill="white"/>
+        {/* Street labels */}
+        <text x="105" y="248" fill="rgba(255,255,255,0.2)" fontSize="8">Douglas St</text>
+        <text x="205" y="248" fill="rgba(255,255,255,0.2)" fontSize="8">Blanshard St</text>
+      </svg>
+      {/* Quest pins */}
+      {pins.map(q=>{
+        const cat=CATS[q.category];
+        return <div key={q.id} style={{position:'absolute',left:`${q.x}%`,top:`${q.y}%`,transform:'translate(-50%,-100%)',display:'flex',flexDirection:'column',alignItems:'center',cursor:'pointer',zIndex:2}}>
+          <div style={{width:38,height:38,borderRadius:'50%',background:cat.color,display:'flex',alignItems:'center',justifyContent:'center',fontSize:17,boxShadow:`0 4px 14px ${cat.color}88`,border:'2px solid rgba(255,255,255,0.35)'}}>
+            {cat.icon}
+          </div>
+          <div style={{width:0,height:0,borderLeft:'5px solid transparent',borderRight:'5px solid transparent',borderTop:`7px solid ${cat.color}`,marginTop:-1}}/>
+          <div style={{background:'rgba(15,23,42,0.85)',borderRadius:6,padding:'2px 6px',fontSize:9,fontWeight:700,color:'rgba(255,255,255,0.9)',marginTop:4,whiteSpace:'nowrap'}}>+{q.xp} XP</div>
+        </div>;
+      })}
+    </div>
+  </div>;
+}
+
+function LeaderboardScreen() {
+  const medal = r => r===1?'🥇':r===2?'🥈':r===3?'🥉':null;
+  const myRow = LB.find(e=>e.me);
+  return <div style={{display:'flex',flexDirection:'column',height:'100%',overflow:'hidden'}}>
+    <div style={{padding:'12px 20px 16px',flexShrink:0}}>
+      <div style={{fontSize:28,fontWeight:800,color:T.ink,letterSpacing:'-0.02em'}}>Leaderboard</div>
+      <div style={{color:T.mist,fontSize:13,marginTop:4}}>Season 1 · Resets Monday</div>
+    </div>
+    {/* Your rank */}
+    <div style={{margin:'0 16px 12px',padding:16,background:T.accentSoft,borderRadius:12,border:`1px solid ${T.accent}`,display:'flex',justifyContent:'space-between',alignItems:'center',flexShrink:0,cursor:'pointer'}}>
+      <div style={{display:'flex',alignItems:'center',gap:12}}>
+        <Avatar username={myRow.username} size={40}/>
+        <div>
+          <div style={{color:T.accentText,fontWeight:700,fontSize:14}}>@{myRow.username}</div>
+          <div style={{color:T.accent,fontWeight:600,fontSize:12,marginTop:2}}>{myRow.xp} XP this week</div>
+        </div>
+      </div>
+      <div style={{textAlign:'right'}}>
+        <div style={{color:T.accentText,fontWeight:800,fontSize:22}}>#{myRow.rank}</div>
+        <div style={{color:T.accent,fontSize:11,fontWeight:600}}>↑ 2 places</div>
+      </div>
+    </div>
+    {/* List */}
+    <div style={{flex:1,overflowY:'auto'}}>
+      {LB.map((e,i)=>{
+        const m=medal(e.rank);
+        const even=i%2===1;
+        return <div key={e.rank} style={{display:'flex',alignItems:'center',gap:12,padding:'11px 20px',borderBottom:`1px solid ${T.border}`,background:e.me?T.accentSoft:even?T.surface:'transparent'}}>
+          <div style={{width:32,textAlign:'center',flexShrink:0}}>
+            {m?<span style={{fontSize:18}}>{m}</span>:<span style={{color:T.mist,fontWeight:700,fontSize:13}}>#{e.rank}</span>}
+          </div>
+          <Avatar username={e.username} size={32}/>
+          <span style={{flex:1,color:e.me?T.accentText:T.ink,fontWeight:e.me?700:500,fontSize:14,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>
+            {e.username}
+          </span>
+          <span style={{color:e.me?T.accentText:T.accent,fontWeight:700,fontSize:13,flexShrink:0}}>
+            {e.xp.toLocaleString()} XP
+          </span>
+        </div>;
+      })}
+    </div>
+  </div>;
+}
+
+function ProfileScreen() {
+  const cats=[['fitness',5],['nature',4],['community',3]];
+  return <div style={{height:'100%',overflowY:'auto'}}>
+    <div style={{padding:'12px 20px 16px',position:'relative'}}>
+      <div style={{fontSize:28,fontWeight:800,color:T.ink,letterSpacing:'-0.02em',marginBottom:16}}>Profile</div>
+      <div style={{position:'absolute',right:20,top:16,padding:8,cursor:'pointer'}}>
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={T.mist} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+        </svg>
+      </div>
+      {/* Hero card */}
+      <div style={{background:T.surface,borderRadius:16,padding:20,border:`1px solid ${T.border}`,textAlign:'center',marginBottom:12}}>
+        <div style={{position:'relative',display:'inline-block',marginBottom:12}}>
+          <Avatar username={ME.username} size={88}/>
+          <div style={{position:'absolute',bottom:-4,right:-4}}><LvChip level={ME.level} compact/></div>
+        </div>
+        <div style={{color:T.ink,fontSize:22,fontWeight:800}}>@{ME.username}</div>
+        <div style={{color:T.mist,fontSize:13,marginTop:4}}>📍 {ME.city}</div>
+        <div style={{color:T.mist,fontSize:12,marginTop:3}}>Member since May 2024</div>
+        <button style={{marginTop:12,display:'inline-flex',alignItems:'center',gap:6,background:T.accentSoft,border:`1px solid ${T.accent}`,borderRadius:999,padding:'8px 16px',color:T.accentText,fontWeight:700,fontSize:13,cursor:'pointer'}}>
+          ✏️ Edit Profile
+        </button>
+      </div>
+      {/* Rank */}
+      <div style={{background:T.accentSoft,borderRadius:12,padding:'12px 16px',border:`1px solid ${T.accent}`,display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:12,cursor:'pointer'}}>
+        <div>
+          <div style={{color:T.mist,fontSize:12,fontWeight:600}}>This week</div>
+          <div style={{color:T.accentText,fontWeight:800,fontSize:15,marginTop:2}}>{ME.weeklyXp.toLocaleString()} XP earned</div>
+        </div>
+        <div style={{textAlign:'right'}}>
+          <div style={{color:T.accentText,fontWeight:800,fontSize:22}}>#{ME.weeklyRank}</div>
+          <div style={{color:T.accent,fontSize:11,fontWeight:600}}>View ranks →</div>
+        </div>
+      </div>
+      {/* Stats */}
+      <div style={{background:T.surface,borderRadius:12,border:`1px solid ${T.border}`,display:'flex',padding:'14px 0',marginBottom:16}}>
+        {[['Quests',ME.quests],['Total XP',ME.xp.toLocaleString()],['Badges',ME.badges],['Level',`Lv ${ME.level}`],['Streak',`🔥${ME.streak}`]].map(([l,v],i,a)=>
+          <React.Fragment key={l}>
+            <div style={{flex:1,textAlign:'center'}}>
+              <div style={{color:T.accent,fontSize:15,fontWeight:800}}>{v}</div>
+              <div style={{color:T.mist,fontSize:10,marginTop:3}}>{l}</div>
+            </div>
+            {i<a.length-1&&<div style={{width:1,background:T.border}}/>}
+          </React.Fragment>
+        )}
+      </div>
+      {/* XP Bar */}
+      <div style={{marginBottom:16}}><XPBarComp xp={ME.xp}/></div>
+      {/* Category breakdown */}
+      <div style={{fontSize:12,fontWeight:700,letterSpacing:'0.05em',textTransform:'uppercase',color:T.mist,marginBottom:8}}>Top Categories</div>
+      <div style={{background:T.surface,borderRadius:12,border:`1px solid ${T.border}`,padding:16,marginBottom:16}}>
+        {cats.map(([cat,count])=>{
+          const c=CATS[cat];
+          const pct=Math.round((count/ME.quests)*100);
+          return <div key={cat} style={{marginBottom:10}}>
+            <div style={{display:'flex',alignItems:'center',gap:6,marginBottom:4}}>
+              <span style={{fontSize:13}}>{c.icon}</span>
+              <span style={{flex:1,color:T.ink,fontSize:13,fontWeight:600,textTransform:'capitalize'}}>{cat}</span>
+              <span style={{color:T.mist,fontSize:12,fontWeight:600}}>{count}</span>
+            </div>
+            <div style={{height:6,background:T.surfaceEl,borderRadius:999,overflow:'hidden'}}>
+              <div style={{height:'100%',width:`${pct}%`,background:c.color,borderRadius:999}}/>
+            </div>
+          </div>;
+        })}
+      </div>
+      {/* Badges */}
+      <div style={{fontSize:12,fontWeight:700,letterSpacing:'0.05em',textTransform:'uppercase',color:T.mist,marginBottom:8}}>Badges · {BADGES.length}</div>
+      <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:10,marginBottom:16}}>
+        {BADGES.map(b=><div key={b.name} style={{background:T.surface,borderRadius:14,padding:14,textAlign:'center',border:`1px solid ${T.border}`,boxShadow:'0 3px 8px rgba(15,23,42,0.05)'}}>
+          <div style={{fontSize:28,marginBottom:6}}>{b.icon}</div>
+          <div style={{color:T.slate,fontSize:10,fontWeight:600,lineHeight:1.3}}>{b.name}</div>
+        </div>)}
+      </div>
+      {/* Pending */}
+      <div style={{fontSize:12,fontWeight:700,letterSpacing:'0.05em',textTransform:'uppercase',color:T.mist,marginBottom:8}}>Pending · 1</div>
+      <div style={{background:T.surface,borderRadius:12,border:`1px solid ${T.border}`,padding:14,marginBottom:16,display:'flex',alignItems:'center',gap:10}}>
+        <div style={{width:38,height:38,borderRadius:12,background:'#DCFCE7',display:'flex',alignItems:'center',justifyContent:'center',fontSize:18,flexShrink:0}}>🏃</div>
+        <div style={{flex:1}}>
+          <div style={{color:T.ink,fontWeight:700,fontSize:14}}>Run the Galloping Goose Trail</div>
+          <div style={{color:T.mist,fontSize:12,marginTop:2}}>Submitted 2h ago</div>
+        </div>
+        <span style={{background:'#FEF3C7',borderRadius:999,padding:'3px 9px',fontSize:11,fontWeight:700,color:'#D97706'}}>⏳ Review</span>
+      </div>
+      {/* Quest history */}
+      <div style={{fontSize:12,fontWeight:700,letterSpacing:'0.05em',textTransform:'uppercase',color:T.mist,marginBottom:8}}>Quest History</div>
+      <div style={{background:T.surface,borderRadius:12,border:`1px solid ${T.border}`,overflow:'hidden',marginBottom:32}}>
+        {HISTORY.map((h,i)=>{
+          const c=CATS[h.category];
+          return <div key={h.title}>
+            <div style={{display:'flex',alignItems:'center',gap:12,padding:'13px 16px'}}>
+              <div style={{width:36,height:36,borderRadius:10,background:c.soft,display:'flex',alignItems:'center',justifyContent:'center',fontSize:16,flexShrink:0}}>{c.icon}</div>
+              <div style={{flex:1}}>
+                <div style={{color:T.ink,fontWeight:700,fontSize:13}}>{h.title}</div>
+                <div style={{color:T.mist,fontSize:11,marginTop:2}}>Approved · {h.date}</div>
+              </div>
+              <span style={{color:c.color,fontWeight:800,fontSize:13}}>+{h.xp} XP</span>
+            </div>
+            {i<HISTORY.length-1&&<div style={{height:1,background:T.border,marginLeft:64}}/>}
+          </div>;
+        })}
+      </div>
+    </div>
+  </div>;
+}
+
+/* ── Quest Detail Overlay ──────────────────────── */
+function QuestDetail({ quest, onClose }) {
+  const cat=CATS[quest.category];
+  const [submitted,setSubmitted]=React.useState(false);
+  return <div style={{position:'absolute',inset:0,background:'rgba(15,23,42,0.88)',display:'flex',alignItems:'flex-end',zIndex:10}} onClick={e=>{if(e.target===e.currentTarget)onClose();}}>
+    <div style={{width:'100%',background:T.bg,borderRadius:'24px 24px 0 0',padding:24,maxHeight:'85%',overflowY:'auto'}}>
+      {/* Handle */}
+      <div style={{width:40,height:4,background:T.border,borderRadius:2,margin:'0 auto 20px'}}/>
+      {/* Category + icon */}
+      <div style={{display:'flex',gap:16,alignItems:'center',marginBottom:20}}>
+        <div style={{width:64,height:64,borderRadius:18,background:cat.soft,display:'flex',alignItems:'center',justifyContent:'center',fontSize:30}}>{cat.icon}</div>
+        <div>
+          {quest.sponsored
+            ?<div style={{display:'inline-flex',background:'#FFF7ED',borderRadius:999,padding:'3px 10px',border:'1px solid #FDBA74',fontSize:11,fontWeight:700,color:'#EA580C',marginBottom:8}}>⭐ {quest.sponsor}</div>
+            :<div style={{display:'inline-flex',background:cat.soft,borderRadius:999,padding:'3px 10px',fontSize:11,fontWeight:700,color:cat.color,textTransform:'capitalize',marginBottom:8}}>{quest.category}</div>}
+          <div style={{color:T.ink,fontWeight:800,fontSize:18,lineHeight:1.25}}>{quest.title}</div>
+        </div>
+      </div>
+      {/* Description */}
+      <div style={{color:T.slate,fontSize:15,lineHeight:1.6,marginBottom:20}}>{quest.description}</div>
+      {/* Meta row */}
+      <div style={{display:'flex',gap:10,marginBottom:24}}>
+        <span style={{background:T.surfaceEl,borderRadius:999,padding:'6px 12px',fontSize:12,fontWeight:600,color:T.mist,border:`1px solid ${T.border}`}}>📍 {quest.distance} away</span>
+        <span style={{background:cat.soft,borderRadius:999,padding:'6px 12px',fontSize:12,fontWeight:700,color:cat.color}}>+{quest.xp} XP on approval</span>
+      </div>
+      {/* Rules */}
+      <div style={{background:T.surface,borderRadius:14,padding:16,border:`1px solid ${T.border}`,marginBottom:20}}>
+        <div style={{fontSize:12,fontWeight:700,color:T.ink,marginBottom:8}}>How it works</div>
+        <div style={{color:T.slate,fontSize:13,lineHeight:1.6}}>📸 Take a photo at the location<br/>📍 Your GPS must be within {quest.distance}<br/>⏳ XP awarded after admin review</div>
+      </div>
+      {submitted
+        ?<div style={{background:'#FEF3C7',borderRadius:14,padding:16,textAlign:'center',border:'1px solid #FDE68A'}}>
+          <div style={{fontSize:28,marginBottom:8}}>⏳</div>
+          <div style={{color:T.ink,fontWeight:800,fontSize:16}}>Quest Submitted</div>
+          <div style={{color:T.mist,fontSize:13,marginTop:6}}>+{quest.xp} XP pending approval — check Pending Quests on your profile.</div>
+          <button onClick={onClose} style={{marginTop:16,background:T.accent,borderRadius:999,padding:'12px 24px',color:'#fff',fontWeight:700,fontSize:15,cursor:'pointer',boxShadow:T.glow}}>Back to Quests</button>
+        </div>
+        :<button onClick={()=>setSubmitted(true)} style={{width:'100%',background:T.accent,borderRadius:12,padding:'15px',color:'#fff',fontWeight:700,fontSize:16,cursor:'pointer',boxShadow:T.glow}}>
+          Submit Proof
+        </button>}
+    </div>
+  </div>;
+}
+
+/* ── Navigation ────────────────────────────────── */
+function StatusBar() {
+  return <div style={{height:44,padding:'0 20px',display:'flex',alignItems:'center',justifyContent:'space-between',flexShrink:0,background:T.bg}}>
+    <span style={{fontSize:15,fontWeight:700,color:T.ink}}>9:41</span>
+    <div style={{display:'flex',alignItems:'center',gap:5}}>
+      <svg width="16" height="11" viewBox="0 0 16 11"><rect x="0" y="3" width="3" height="8" rx="1" fill={T.ink}/><rect x="4.5" y="2" width="3" height="9" rx="1" fill={T.ink}/><rect x="9" y="0.5" width="3" height="10.5" rx="1" fill={T.ink}/><rect x="13.5" y="0" width="2" height="11" rx="1" fill={T.ink} opacity=".3"/></svg>
+      <svg width="15" height="11" viewBox="0 0 15 11"><path d="M7.5 3.5C9.8 3.5 11.8 4.5 13.1 6.1L14.5 4.6C12.8 2.7 10.3 1.5 7.5 1.5 4.7 1.5 2.2 2.7.5 4.6L1.9 6.1C3.2 4.5 5.2 3.5 7.5 3.5z" fill={T.ink}/><path d="M7.5 6.5c1.3 0 2.4.6 3.2 1.5L12 6.6C10.9 5.4 9.3 4.5 7.5 4.5s-3.4.9-4.5 2.1L4.3 8C5.1 7.1 6.2 6.5 7.5 6.5z" fill={T.ink}/><circle cx="7.5" cy="9.5" r="1.5" fill={T.ink}/></svg>
+      <span style={{fontSize:13,fontWeight:600,color:T.ink}}>100%</span>
+    </div>
+  </div>;
+}
+
+function TabBar({ tab, setTab }) {
+  const tabs=[
+    { key:'feed', label:'Quests', icon:(a)=><svg width="22" height="22" viewBox="0 0 24 24" fill={a?T.accent:'none'} stroke={a?T.accent:T.mist} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg> },
+    { key:'map', label:'Map', icon:(a)=><svg width="22" height="22" viewBox="0 0 24 24" fill={a?T.accent:'none'} stroke={a?T.accent:T.mist} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg> },
+    { key:'leaderboard', label:'Ranks', icon:(a)=><svg width="22" height="22" viewBox="0 0 24 24" fill={a?T.accent:'none'} stroke={a?T.accent:T.mist} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"/><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"/><path d="M4 22h16"/><path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22"/><path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22"/><path d="M18 2H6v7a6 6 0 0 0 12 0V2Z"/></svg> },
+    { key:'profile', label:'Profile', icon:(a)=><svg width="22" height="22" viewBox="0 0 24 24" fill={a?T.accent:'none'} stroke={a?T.accent:T.mist} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg> },
+  ];
+  return <div style={{display:'flex',height:64,background:'rgba(255,255,255,0.96)',borderTop:`1px solid ${T.border}`,boxShadow:'0 -4px 16px rgba(15,23,42,0.06)',flexShrink:0,paddingBottom:8,paddingTop:4}}>
+    {tabs.map(t=>{
+      const a=tab===t.key;
+      return <button key={t.key} onClick={()=>setTab(t.key)} style={{flex:1,display:'flex',flexDirection:'column',alignItems:'center',gap:3,background:'none',padding:'2px 0',cursor:'pointer'}}>
+        {t.icon(a)}
+        <span style={{fontSize:10,fontWeight:a?700:500,color:a?T.accent:T.mist}}>{t.label}</span>
+      </button>;
+    })}
+  </div>;
+}
+
+/* ── App ───────────────────────────────────────── */
+function App() {
+  const [tab,setTab]=React.useState('feed');
+  const [quest,setQuest]=React.useState(null);
+  return (
+    <div style={{background:T.bg,minHeight:'100vh',display:'flex',alignItems:'center',justifyContent:'center',padding:24}}>
+      <div style={{width:390,height:844,background:T.bg,borderRadius:44,overflow:'hidden',boxShadow:'0 0 0 2px rgba(0,0,0,0.08), 0 40px 80px rgba(0,0,0,0.18)',display:'flex',flexDirection:'column',position:'relative'}}>
+        <StatusBar/>
+        <div style={{flex:1,overflow:'hidden',position:'relative'}}>
+          {tab==='feed'&&<FeedScreen onPress={setQuest}/>}
+          {tab==='map'&&<MapScreen/>}
+          {tab==='leaderboard'&&<LeaderboardScreen/>}
+          {tab==='profile'&&<ProfileScreen/>}
+          {quest&&<QuestDetail quest={quest} onClose={()=>setQuest(null)}/>}
+        </div>
+        <TabBar tab={tab} setTab={t=>{setTab(t);setQuest(null);}}/>
+      </div>
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
+</script>
+</body>
+</html>

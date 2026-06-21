@@ -1,0 +1,37 @@
+<!-- @dsCard group="Colors" viewport="700x150" name="Backgrounds" subtitle="Saltwater Sky + Warm Sand — every screen starts here" -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<link rel="stylesheet" href="../../styles.css">
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: #e2e8f0; padding: 20px; font-family: var(--font-system); }
+  .row { display: flex; gap: 16px; }
+  .swatch-wrap { flex: 1; }
+  .swatch { height: 68px; border-radius: 12px; border: 1px solid rgba(0,0,0,0.08); margin-bottom: 10px; }
+  .name { font-size: 13px; font-weight: 700; color: #0F172A; }
+  .hex  { font-size: 12px; color: #475569; margin-top: 2px; }
+  .token { font-size: 11px; color: #94A3B8; margin-top: 2px; font-family: monospace; }
+  .desc  { font-size: 11px; color: #94A3B8; margin-top: 3px; line-height: 1.4; }
+</style>
+</head>
+<body>
+<div class="row">
+  <div class="swatch-wrap">
+    <div class="swatch" style="background: var(--color-bg);"></div>
+    <div class="name">Saltwater Sky</div>
+    <div class="hex">#F0F9FF</div>
+    <div class="token">--color-bg</div>
+    <div class="desc">App base — every screen</div>
+  </div>
+  <div class="swatch-wrap">
+    <div class="swatch" style="background: var(--color-bg-warm);"></div>
+    <div class="name">Warm Sand</div>
+    <div class="hex">#FFF7ED</div>
+    <div class="token">--color-bg-warm</div>
+    <div class="desc">Featured quest hero, profile header</div>
+  </div>
+</div>
+</body>
+</html>

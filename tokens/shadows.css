@@ -1,0 +1,22 @@
+/* Quest! Elevation & Shadow Tokens
+   Flat at rest. Elevation = sky-to-white contrast, not heavy shadows.
+   Source: DESIGN.md §4 Elevation
+*/
+:root {
+  /* Card Glass — cards, XP bar container, badge tiles.
+     Consistent and non-decorative; applies only to interactive card surfaces. */
+  --shadow-card: 0 6px 16px rgba(15, 23, 42, 0.07);
+
+  /* Action Glow — primary CTA buttons and active category chips.
+     The indigo glow signals "this does something significant." */
+  --shadow-action-glow: 0 4px 12px rgba(99, 102, 241, 0.28);
+
+  /* Tab Lift — tab bar only.
+     Faces upward (negative Y) to simulate the bar floating above scroll content. */
+  --shadow-tab: 0 -4px 16px rgba(15, 23, 42, 0.06);
+
+  /* Subtle — inputs at rest, minor lift for small interactive targets */
+  --shadow-sm: 0 2px 8px rgba(15, 23, 42, 0.05);
+
+  /* NEVER add shadows to: list rows, section headers, container views at rest. */
+}

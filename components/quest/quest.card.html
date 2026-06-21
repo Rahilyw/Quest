@@ -1,0 +1,55 @@
+<!-- @dsCard group="Components" viewport="700x620" name="Quest Components" subtitle="QuestCard · XPBar — the central visual language of the feed" -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<link rel="stylesheet" href="../../styles.css">
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+<script src="../../_ds_bundle.js"></script>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--color-bg); padding: 20px; font-family: var(--font-system); }
+  .section { margin-bottom: 20px; }
+  .label { font-size: 10px; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; color: var(--color-text-muted); margin-bottom: 12px; }
+  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .xp-col { display: flex; flex-direction: column; gap: 12px; }
+  hr { border: none; border-top: 1px solid var(--color-border); margin: 16px 0; }
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+const { QuestCard, XPBar } = window.QuestDesignSystem_8b2125;
+
+function App() {
+  return (
+    <div>
+      <div class="section">
+        <div class="label">XPBar — Level progression</div>
+        <div class="xp-col">
+          <XPBar totalXp={150} />
+          <XPBar totalXp={1450} />
+          <XPBar totalXp={8500} />
+        </div>
+      </div>
+      <hr />
+      <div class="section">
+        <div class="label">QuestCard — All categories + sponsored</div>
+        <div class="grid2">
+          <QuestCard title="Run the Galloping Goose Trail" description="Hit Victoria's iconic rail trail. Any distance counts." category="fitness" xpReward={150} distance="0.8 km" />
+          <QuestCard title="Morning Coffee at Habit" description="Order something you've never tried. Bonus: chat with the barista." category="food" xpReward={75} isSponsored sponsorName="Habit Coffee" distance="0.3 km" />
+          <QuestCard title="Inner Harbour Sunrise" description="Show up before 9am. Photographers welcome." category="nature" xpReward={100} distance="0.5 km" />
+          <QuestCard title="Volunteer at the Food Bank" description="The Community Food Bank runs Saturday morning shifts." category="community" xpReward={200} distance="1.2 km" />
+          <QuestCard title="Meet Someone New at Beacon Hill" description="Introduce yourself to a stranger. A quick hi counts." category="social" xpReward={125} distance="0.6 km" />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+</script>
+</body>
+</html>

@@ -1,0 +1,39 @@
+/* Quest! Typography Tokens
+   System fonts only. Weight-driven hierarchy — jump weight before size.
+   Source: DESIGN.md §3 Typography
+*/
+:root {
+  /* ── Font Stack ───────────────────────────────────────────── */
+  /* Simulates SF Pro (iOS) / Roboto (Android) on web */
+  --font-system: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, Roboto, sans-serif;
+
+  /* ── Scale ────────────────────────────────────────────────── */
+  --font-size-display:     48px;  /* Display    — auth wordmark "Quest!" ONLY */
+  --font-size-title:       28px;  /* Title      — screen headers */
+  --font-size-headline-lg: 22px;  /* Headline L */
+  --font-size-headline:    20px;  /* Headline   — quest titles, section headers */
+  --font-size-headline-sm: 18px;  /* Headline S */
+  --font-size-body-lg:     16px;  /* Body L */
+  --font-size-body:        15px;  /* Body       — descriptions, meta text */
+  --font-size-body-sm:     14px;  /* Body S */
+  --font-size-label:       13px;  /* Label */
+  --font-size-label-sm:    11px;  /* Label S    — pills, XP values, badge names */
+
+  /* ── Weights ──────────────────────────────────────────────── */
+  --font-weight-display:  800;  /* Display + Title */
+  --font-weight-headline: 700;  /* Headline */
+  --font-weight-body:     400;  /* Body */
+  --font-weight-label:    700;  /* Label */
+  --font-weight-semibold: 600;  /* Secondary labels, meta */
+
+  /* ── Line Heights ─────────────────────────────────────────── */
+  --line-height-display:  1.0;
+  --line-height-title:    1.1;
+  --line-height-headline: 1.3;
+  --line-height-body:     1.5;
+  --line-height-label:    1.2;
+
+  /* ── Letter Spacing ───────────────────────────────────────── */
+  --letter-spacing-label: 0.03em;   /* Pills, XP values, badge names */
+  --letter-spacing-tight: -0.02em;  /* Large headings (28px+) — reduces optical tracking */
+}

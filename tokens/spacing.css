@@ -1,0 +1,20 @@
+/* Quest! Spacing & Radius Tokens
+   Source: apps/mobile/lib/constants.ts
+*/
+:root {
+  /* ── Spacing Scale ────────────────────────────────────────── */
+  --space-xs:  4px;   /* xs  */
+  --space-sm:  8px;   /* sm  */
+  --space-md:  12px;  /* md  */
+  --space-lg:  16px;  /* lg  — standard card padding, gutter */
+  --space-xl:  20px;  /* xl  — screen gutter */
+  --space-xxl: 24px;  /* xxl — section spacing */
+
+  /* ── Border Radius ────────────────────────────────────────── */
+  --radius-sm:   8px;     /* sm   — small chips, subtle elements */
+  --radius-md:   12px;    /* md   — buttons, inputs, city selection cards */
+  --radius-lg:   16px;    /* lg   — hero cards, profile card, badge tiles */
+  --radius-xl:   20px;    /* xl   — quest cards (primary repeating element) */
+  --radius-xxl:  28px;    /* xxl  — modals, celebration overlays */
+  --radius-pill: 9999px;  /* pill — all pills, chips, badges, XP bar fill */
+}

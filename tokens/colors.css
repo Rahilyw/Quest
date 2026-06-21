@@ -1,0 +1,49 @@
+/* Quest! Color Tokens — Saltwater Saturday palette
+   Canonical source: DESIGN.md + apps/mobile/lib/constants.ts
+   https://github.com/Rahilyw/Quest
+*/
+:root {
+  /* ── Backgrounds ──────────────────────────────────────────── */
+  --color-bg:       #F0F9FF;  /* Saltwater Sky  — sky-50, outdoor light, every screen */
+  --color-bg-warm:  #FFF7ED;  /* Warm Sand      — orange-50, featured quest hero, profile header */
+
+  /* ── Surfaces (Glass Simulation) ─────────────────────────── */
+  /* White surfaces float on the sky bg; the contrast IS the elevation signal */
+  --color-surface:          #FFFFFF;  /* Glass White  — cards, inputs, tab bar */
+  --color-surface-elevated: #F8FAFF;  /* Glass Lifted — XP track bg, leaderboard alt rows */
+
+  /* ── Borders ──────────────────────────────────────────────── */
+  --color-border:        rgba(15, 23, 42, 0.06);  /* near-invisible; cards feel weightless */
+  --color-border-strong: rgba(15, 23, 42, 0.12);  /* focus rings, strong dividers */
+
+  /* ── Text Hierarchy ───────────────────────────────────────── */
+  --color-text-primary:   #0F172A;  /* Ink   — slate-900, near-black w/ cool-blue trace */
+  --color-text-secondary: #475569;  /* Slate — descriptions, supporting labels */
+  --color-text-muted:     #94A3B8;  /* Mist  — metadata, disabled, placeholder */
+
+  /* ── Accent — Local Signal ────────────────────────────────── */
+  /* Reserved for earned/interactive moments. Max ~8% of any screen. */
+  --color-accent:      #6366F1;  /* Local Signal — indigo-500, vivid on white */
+  --color-accent-soft: #EEF2FF;  /* Signal Soft  — indigo-50, pill bg, rank strip */
+  --color-accent-text: #4338CA;  /* Signal Deep  — indigo-700, text on soft bg */
+
+  /* ── Status ───────────────────────────────────────────────── */
+  --color-success: #16A34A;  /* Trail Green  — green-600 (also: fitness category) */
+  --color-warning: #D97706;  /* Market Amber — amber-600, warnings only */
+  --color-sponsor: #EA580C;  /* Vendor Orange — orange-600, sponsor quests */
+
+  /* ── Category Colors (identification only) ───────────────── */
+  /* Never mix with indigo. Never use for status or emphasis. */
+  --color-cat-fitness:   #16A34A;  /* Trail Green    — green-600 */
+  --color-cat-social:    #9333EA;  /* Social Purple  — purple-600 */
+  --color-cat-food:      #EA580C;  /* Vendor Orange  — orange-600 */
+  --color-cat-community: #2563EB;  /* Community Blue — blue-600 */
+  --color-cat-nature:    #0891B2;  /* Harbour Teal   — cyan-600 */
+
+  /* ── Category Soft Tints (icon box backgrounds) ──────────── */
+  --color-cat-fitness-soft:   #DCFCE7;  /* green-100 */
+  --color-cat-social-soft:    #F3E8FF;  /* purple-100 */
+  --color-cat-food-soft:      #FFEDD5;  /* orange-100 */
+  --color-cat-community-soft: #DBEAFE;  /* blue-100 */
+  --color-cat-nature-soft:    #CFFAFE;  /* cyan-100 */
+}

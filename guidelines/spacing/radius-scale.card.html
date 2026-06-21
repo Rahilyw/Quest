@@ -1,0 +1,28 @@
+<!-- @dsCard group="Spacing" viewport="700x175" name="Radius Scale" subtitle="8px → pill — sm inputs to quest cards to category chips" -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<link rel="stylesheet" href="../../styles.css">
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--color-bg); padding: 20px; font-family: var(--font-system); }
+  .row { display: flex; gap: 10px; align-items: flex-start; }
+  .col { display: flex; flex-direction: column; align-items: center; gap: 8px; flex: 1; }
+  .box { width: 60px; height: 44px; background: #6366F1; opacity: 0.85; }
+  .label { font-size: 11px; font-weight: 700; color: #0F172A; }
+  .px    { font-size: 10px; color: #475569; }
+  .token { font-size: 8px; color: #94A3B8; font-family: monospace; text-align: center; }
+</style>
+</head>
+<body>
+<div class="row">
+  <div class="col"><div class="box" style="border-radius: 8px;"></div><div class="label">sm</div><div class="px">8px</div><div class="token">--radius-sm</div></div>
+  <div class="col"><div class="box" style="border-radius: 12px;"></div><div class="label">md</div><div class="px">12px</div><div class="token">--radius-md</div></div>
+  <div class="col"><div class="box" style="border-radius: 16px;"></div><div class="label">lg</div><div class="px">16px</div><div class="token">--radius-lg</div></div>
+  <div class="col"><div class="box" style="border-radius: 20px;"></div><div class="label">xl</div><div class="px">20px</div><div class="token">--radius-xl</div></div>
+  <div class="col"><div class="box" style="border-radius: 28px;"></div><div class="label">xxl</div><div class="px">28px</div><div class="token">--radius-xxl</div></div>
+  <div class="col"><div class="box" style="border-radius: 9999px;"></div><div class="label">pill</div><div class="px">9999px</div><div class="token">--radius-pill</div></div>
+</div>
+</body>
+</html>
