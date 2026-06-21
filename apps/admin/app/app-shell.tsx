@@ -46,7 +46,7 @@ function Sidebar() {
 
 export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname()
-  const isLogin = pathname === '/login'
+  const isLogin = pathname === '/login' || pathname.startsWith('/login/')
 
   if (isLogin) {
     return <>{children}</>

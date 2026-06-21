@@ -47,6 +47,10 @@ export default function SignIn() {
         <Text style={styles.buttonText}>{loading ? 'Signing in…' : 'Sign In'}</Text>
       </TouchableOpacity>
 
+      <TouchableOpacity onPress={() => router.push('/(auth)/forgot-password')}>
+        <Text style={styles.link}>Forgot password?</Text>
+      </TouchableOpacity>
+
       <TouchableOpacity onPress={() => router.push('/(auth)/sign-up')}>
         <Text style={styles.link}>Don't have an account? Sign up</Text>
       </TouchableOpacity>
@@ -99,5 +103,5 @@ const styles = StyleSheet.create({
     elevation: 5,
   },
   buttonText: { color: '#FFFFFF', fontWeight: '700', fontSize: 16 },
-  link: { color: '#6366F1', textAlign: 'center', fontWeight: '600' },
+  link: { color: '#6366F1', textAlign: 'center', fontWeight: '600', marginBottom: 8 },
 })

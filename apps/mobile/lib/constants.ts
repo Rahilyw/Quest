@@ -91,3 +91,7 @@ export const CATEGORY_ICONS: Record<string, string> = {
 }
 
 export const PROOF_GEOFENCE_RADIUS = 300 // metres
+
+/** Skip GPS geofence checks in dev / when EXPO_PUBLIC_BYPASS_GEOFENCE=true (testing without travel). */
+export const BYPASS_GEOFENCE =
+  process.env.EXPO_PUBLIC_BYPASS_GEOFENCE === 'true' || __DEV__

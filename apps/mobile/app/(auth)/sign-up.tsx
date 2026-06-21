@@ -18,7 +18,12 @@ export default function SignUp() {
       return
     }
     setLoading(true)
-    const { data, error } = await supabase.auth.signUp({ email, password })
+    const trimmedUsername = username.trim().toLowerCase()
+    const { data, error } = await supabase.auth.signUp({
+      email,
+      password,
+      options: { data: { username: trimmedUsername } },
+    })
     if (error) {
       Alert.alert('Error', error.message)
       setLoading(false)
@@ -26,13 +31,18 @@ export default function SignUp() {
     }
     if (data.user) {
       const city = await getOnboardingCity()
-      await supabase.from('profiles').insert({
+      const { error: profileError } = await supabase.from('profiles').insert({
         id: data.user.id,
-        username: username.trim().toLowerCase(),
+        username: trimmedUsername,
         city,
         total_xp: 0,
         level: 1,
       })
+      if (profileError && profileError.code !== '23505') {
+        Alert.alert('Error', profileError.message)
+        setLoading(false)
+        return
+      }
     }
     setLoading(false)
     Alert.alert('Account created!', 'You can now sign in.', [

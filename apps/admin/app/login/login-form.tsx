@@ -1,11 +1,26 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { signIn } from './actions'
 
 export default function LoginForm({ initialError }: { initialError?: string }) {
   const [error, setError] = useState<string | null>(initialError ?? null)
   const [pending, setPending] = useState(false)
+
+  // Supabase recovery emails may land on /login or / with #access_token=… — forward to reset page.
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    const search = window.location.search || ''
+    const hash = window.location.hash || ''
+
+    if (search.includes('code=') || search.includes('token_hash=')) {
+      window.location.replace(`/auth/confirm${search}`)
+      return
+    }
+    if (hash.includes('access_token=')) {
+      window.location.replace(`/login/reset-password${hash}`)
+    }
+  }, [])
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
@@ -115,6 +130,12 @@ export default function LoginForm({ initialError }: { initialError?: string }) {
           >
             {pending ? 'Signing in…' : 'Sign in'}
           </button>
+          <a
+            href="/login/forgot-password"
+            style={{ color: '#94A3B8', textAlign: 'center', fontSize: 14, textDecoration: 'none' }}
+          >
+            Forgot password?
+          </a>
         </form>
       </div>
     </div>

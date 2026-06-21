@@ -14,16 +14,14 @@ interface Props {
   title: string
   category: string
   xp_reward: number
-  completed_at: string
-  redemption_code?: string | null
-  is_sponsored?: boolean
+  submitted_at: string
 }
 
-function formatCompletedDate(iso: string) {
+function formatSubmittedDate(iso: string) {
   return new Date(iso).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
 }
 
-export function QuestHistoryItem({ title, category, xp_reward, completed_at, redemption_code, is_sponsored }: Props) {
+export function PendingQuestItem({ title, category, xp_reward, submitted_at }: Props) {
   const color = CATEGORY_COLORS[category] ?? COLORS.accent
   const iconName = CATEGORY_IONICONS[category] ?? 'flag-outline'
 
@@ -34,12 +32,10 @@ export function QuestHistoryItem({ title, category, xp_reward, completed_at, red
       </View>
       <View style={styles.info}>
         <Text style={styles.title} numberOfLines={1}>{title}</Text>
-        <Text style={styles.date}>{formatCompletedDate(completed_at)}</Text>
-        {is_sponsored && redemption_code ? (
-          <Text style={styles.codePill}>🎁 Code: {redemption_code}</Text>
-        ) : is_sponsored ? (
-          <Text style={styles.codePending}>🎁 Reward pending</Text>
-        ) : null}
+        <Text style={styles.date}>Submitted {formatSubmittedDate(submitted_at)}</Text>
+        <View style={styles.pendingPill}>
+          <Text style={styles.pendingText}>⏳ Pending approval</Text>
+        </View>
       </View>
       <Text style={styles.xp}>+{xp_reward} XP</Text>
     </View>
@@ -64,21 +60,14 @@ const styles = StyleSheet.create({
   info: { flex: 1 },
   title: { color: COLORS.textPrimary, fontSize: 14, fontWeight: '600' },
   date: { color: COLORS.textMuted, fontSize: 12, marginTop: 2 },
-  xp: { color: COLORS.accent, fontSize: 13, fontWeight: '700', alignSelf: 'flex-start' },
-  codePill: {
+  pendingPill: {
     alignSelf: 'flex-start',
     marginTop: 4,
-    backgroundColor: '#FFF7ED',
+    backgroundColor: '#FEF3C7',
     borderRadius: 999,
     paddingHorizontal: 8,
     paddingVertical: 3,
-    color: COLORS.sponsor,
-    fontWeight: '700',
-    fontSize: 11,
   },
-  codePending: {
-    marginTop: 4,
-    color: COLORS.textMuted,
-    fontSize: 11,
-  },
+  pendingText: { color: COLORS.warning, fontWeight: '700', fontSize: 11 },
+  xp: { color: COLORS.textMuted, fontSize: 13, fontWeight: '700', alignSelf: 'flex-start' },
 })

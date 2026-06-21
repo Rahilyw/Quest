@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabase'
+import { paramAsString } from '@/lib/routeParams'
 import type { Quest, QuestCategory } from '@/lib/types'
 
 export function useQuests(category?: QuestCategory) {
@@ -30,21 +31,29 @@ export function useQuests(category?: QuestCategory) {
   return { quests, loading, error, refetch: fetchQuests }
 }
 
-export function useQuest(id: string) {
+export function useQuest(id: string | string[] | undefined) {
+  const questId = paramAsString(id)
   const [quest, setQuest] = useState<Quest | null>(null)
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
+    if (!questId) {
+      setQuest(null)
+      setLoading(false)
+      return
+    }
+
+    setLoading(true)
     supabase
       .from('quests')
       .select('*')
-      .eq('id', id)
+      .eq('id', questId)
       .single()
-      .then(({ data }) => {
-        setQuest(data)
+      .then(({ data, error }) => {
+        setQuest(error ? null : data)
         setLoading(false)
       })
-  }, [id])
+  }, [questId])
 
   return { quest, loading }
 }

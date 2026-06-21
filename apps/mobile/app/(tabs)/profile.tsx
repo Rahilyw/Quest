@@ -8,7 +8,7 @@ import {
   ActivityIndicator,
   RefreshControl,
 } from 'react-native'
-import { useRouter } from 'expo-router'
+import { useRouter, useFocusEffect } from 'expo-router'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { Ionicons } from '@expo/vector-icons'
 import { useAuth } from '@/hooks/useAuth'
@@ -20,6 +20,8 @@ import { LevelChip } from '@/components/LevelChip'
 import { SectionHeader } from '@/components/SectionHeader'
 import { EmptyState } from '@/components/EmptyState'
 import { QuestHistoryItem } from '@/components/QuestHistoryItem'
+import { PendingQuestItem } from '@/components/PendingQuestItem'
+import { useUserCompletions } from '@/hooks/useUserCompletions'
 import { COLORS, SPACING, RADIUS, CATEGORY_ICONS, CATEGORY_COLORS } from '@/lib/constants'
 import type { UserBadgeWithBadge } from '@/lib/types'
 
@@ -41,7 +43,8 @@ function formatMemberSince(dateStr: string): string {
 export default function Profile() {
   const insets = useSafeAreaInsets()
   const router = useRouter()
-  const { profile, loading, refreshProfile } = useAuth()
+  const { profile, loading, profileError, refreshProfile } = useAuth()
+  const { pendingQuests, refetch: refetchCompletions } = useUserCompletions(profile?.id)
   const [badges, setBadges] = useState<UserBadgeWithBadge[]>([])
   const [completionCount, setCompletionCount] = useState(0)
   const [completedQuests, setCompletedQuests] = useState<CompletedQuest[]>([])
@@ -119,9 +122,15 @@ export default function Profile() {
     loadProfileStats()
   }, [loadProfileStats])
 
+  useFocusEffect(
+    useCallback(() => {
+      refetchCompletions()
+    }, [refetchCompletions])
+  )
+
   async function handleRefresh() {
     setRefreshing(true)
-    await Promise.all([refreshProfile(), loadProfileStats()])
+    await Promise.all([refreshProfile(), loadProfileStats(), refetchCompletions()])
     setRefreshing(false)
   }
 
@@ -138,10 +147,24 @@ export default function Profile() {
   const currentStreak = profile?.current_streak ?? 0
   const longestStreak = profile?.longest_streak ?? 0
 
-  if (loading || !profile) {
+  if (loading) {
     return (
       <View style={[styles.loadingScreen, { paddingTop: insets.top }]}>
         <ActivityIndicator size="large" color={COLORS.accent} />
+      </View>
+    )
+  }
+
+  if (!profile) {
+    return (
+      <View style={[styles.loadingScreen, { paddingTop: insets.top }]}>
+        <Text style={styles.errorTitle}>Could not load profile</Text>
+        <Text style={styles.errorMessage}>
+          {profileError ?? 'Your profile data is missing. Try again or sign out and back in.'}
+        </Text>
+        <TouchableOpacity style={styles.retryBtn} onPress={refreshProfile} activeOpacity={0.85}>
+          <Text style={styles.retryBtnText}>Try Again</Text>
+        </TouchableOpacity>
       </View>
     )
   }
@@ -293,6 +316,32 @@ export default function Profile() {
       <SectionHeader title="Badges" trailing={badges.length > 0 ? `${badges.length}` : undefined} />
       <BadgeGrid badges={badges} />
 
+      <SectionHeader
+        title="Pending Quests"
+        trailing={pendingQuests.length > 0 ? `${pendingQuests.length}` : undefined}
+      />
+      {pendingQuests.length === 0 ? (
+        <EmptyState
+          icon="⏳"
+          title="Nothing pending"
+          subtitle="Quests you submit will appear here until approved"
+        />
+      ) : (
+        <View style={styles.historyList}>
+          {pendingQuests.map((quest, index) => (
+            <View key={quest.id}>
+              <PendingQuestItem
+                title={quest.title}
+                category={quest.category}
+                xp_reward={quest.xp_reward}
+                submitted_at={quest.submitted_at}
+              />
+              {index < pendingQuests.length - 1 && <View style={styles.historyDivider} />}
+            </View>
+          ))}
+        </View>
+      )}
+
       <SectionHeader title="Quest History" />
       {completedQuests.length === 0 ? (
         <EmptyState
@@ -329,7 +378,29 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.bg,
     alignItems: 'center',
     justifyContent: 'center',
+    paddingHorizontal: SPACING.xl,
   },
+  errorTitle: {
+    color: COLORS.textPrimary,
+    fontSize: 18,
+    fontWeight: '800',
+    marginBottom: SPACING.sm,
+    textAlign: 'center',
+  },
+  errorMessage: {
+    color: COLORS.textMuted,
+    fontSize: 14,
+    textAlign: 'center',
+    lineHeight: 20,
+    marginBottom: SPACING.lg,
+  },
+  retryBtn: {
+    backgroundColor: COLORS.accent,
+    borderRadius: RADIUS.md,
+    paddingVertical: SPACING.md,
+    paddingHorizontal: SPACING.xl,
+  },
+  retryBtnText: { color: '#FFFFFF', fontWeight: '700', fontSize: 15 },
   header: {
     alignItems: 'center',
     paddingBottom: SPACING.lg,

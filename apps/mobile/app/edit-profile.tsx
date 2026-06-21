@@ -17,6 +17,7 @@ import { supabase } from '@/lib/supabase'
 import { Avatar } from '@/components/Avatar'
 import { SectionHeader } from '@/components/SectionHeader'
 import { COLORS, SPACING, RADIUS } from '@/lib/constants'
+import { ensureMediaLibraryPermission } from '@/lib/permissions'
 import { PILOT_CITIES } from '@/lib/onboarding'
 
 function isLocalImageUri(uri: string): boolean {
@@ -65,19 +66,23 @@ export default function EditProfile() {
   }
 
   async function pickAvatar() {
-    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync()
-    if (status !== 'granted') {
-      Alert.alert('Permission needed', 'Allow photo library access to set your avatar.')
-      return
-    }
+    const granted = await ensureMediaLibraryPermission()
+    if (!granted) return
 
-    const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
-      allowsEditing: true,
-      aspect: [1, 1],
-      quality: 0.8,
-    })
-    if (!result.canceled) setAvatarUri(result.assets[0].uri)
+    try {
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ['images'],
+        allowsEditing: true,
+        aspect: [1, 1],
+        quality: 0.8,
+      })
+      if (!result.canceled) setAvatarUri(result.assets[0].uri)
+    } catch {
+      Alert.alert(
+        'Photos unavailable',
+        'Could not open your photo library. Check that photo access is allowed in Settings.'
+      )
+    }
   }
 
   async function handleSave() {

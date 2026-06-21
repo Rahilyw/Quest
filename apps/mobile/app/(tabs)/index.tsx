@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useMemo, useCallback, useState } from 'react'
 import {
   View,
   Text,
@@ -8,9 +8,10 @@ import {
   ScrollView,
   RefreshControl,
 } from 'react-native'
-import { useRouter } from 'expo-router'
+import { useRouter, useFocusEffect } from 'expo-router'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useQuests } from '@/hooks/useQuests'
+import { useUserCompletions } from '@/hooks/useUserCompletions'
 import { useAuth } from '@/hooks/useAuth'
 import { QuestCard } from '@/components/QuestCard'
 import { QuestCardSkeleton } from '@/components/QuestCardSkeleton'
@@ -37,16 +38,28 @@ export default function QuestFeed() {
   const [activeCategory, setActiveCategory] = useState<QuestCategory | undefined>(undefined)
   const { quests, loading, refetch } = useQuests(activeCategory)
   const { profile } = useAuth()
+  const { excludedQuestIds, refetch: refetchCompletions } = useUserCompletions(profile?.id)
 
-  // Featured quest: highest-XP active sponsored quest, derived client-side
+  const availableQuests = useMemo(
+    () => quests.filter((q) => !excludedQuestIds.has(q.id)),
+    [quests, excludedQuestIds]
+  )
+
+  // Featured quest: highest-XP active sponsored quest not yet completed/pending
   const featuredQuest =
-    quests.length > 0
-      ? quests
+    availableQuests.length > 0
+      ? availableQuests
           .filter((q) => q.is_sponsored)
           .sort((a, b) => b.xp_reward - a.xp_reward)[0] ?? null
       : null
 
   const hasProfile = profile !== null
+
+  useFocusEffect(
+    useCallback(() => {
+      refetchCompletions()
+    }, [refetchCompletions])
+  )
 
   return (
     <View style={styles.container}>
@@ -135,7 +148,7 @@ export default function QuestFeed() {
       {/* Section header */}
       <SectionHeader
         title="Active Quests"
-        trailing={loading ? undefined : `${quests.length}`}
+        trailing={loading ? undefined : `${availableQuests.length}`}
       />
 
       {/* List area */}
@@ -145,15 +158,15 @@ export default function QuestFeed() {
           <QuestCardSkeleton />
           <QuestCardSkeleton />
         </ScrollView>
-      ) : quests.length === 0 ? (
+      ) : availableQuests.length === 0 ? (
         <EmptyState
           icon="🗺️"
           title="No quests here yet"
-          subtitle="Try a different category or check back soon."
+          subtitle="Completed and pending quests move to your profile. Try another category or check back soon."
         />
       ) : (
         <FlatList
-          data={quests}
+          data={availableQuests}
           keyExtractor={(item) => item.id}
           renderItem={({ item }) => (
             <QuestCard quest={item} onPress={() => router.push(`/quest/${item.id}`)} />
@@ -163,7 +176,10 @@ export default function QuestFeed() {
           refreshControl={
             <RefreshControl
               refreshing={loading}
-              onRefresh={refetch}
+              onRefresh={() => {
+                refetch()
+                refetchCompletions()
+              }}
               tintColor={COLORS.accent}
               colors={[COLORS.accent]}
             />

@@ -1,5 +1,5 @@
 import { useEffect, useRef } from 'react'
-import { Modal, View, Text, TouchableOpacity, Animated, StyleSheet } from 'react-native'
+import { Modal, View, Text, TouchableOpacity, Animated, StyleSheet, Easing } from 'react-native'
 import { COLORS } from '@/lib/constants'
 
 interface Props {
@@ -7,7 +7,60 @@ interface Props {
   questTitle: string
   xpReward: number
   streakCount?: number
+  variant?: 'success' | 'alreadyPending'
   onDone: () => void
+}
+
+const CONFETTI = ['🎉', '⭐', '✨', '🏅', '🎊', '💫']
+
+function ConfettiPiece({ index, active }: { index: number; active: boolean }) {
+  const progress = useRef(new Animated.Value(0)).current
+  const left = 8 + (index * 14) % 84
+
+  useEffect(() => {
+    if (!active) {
+      progress.setValue(0)
+      return
+    }
+    progress.setValue(0)
+    Animated.timing(progress, {
+      toValue: 1,
+      duration: 1400 + (index % 4) * 200,
+      delay: index * 80,
+      easing: Easing.out(Easing.quad),
+      useNativeDriver: true,
+    }).start()
+  }, [active, index, progress])
+
+  const translateY = progress.interpolate({
+    inputRange: [0, 1],
+    outputRange: [-20, 220],
+  })
+
+  const opacity = progress.interpolate({
+    inputRange: [0, 0.15, 0.85, 1],
+    outputRange: [0, 1, 1, 0],
+  })
+
+  const rotate = progress.interpolate({
+    inputRange: [0, 1],
+    outputRange: ['0deg', `${(index % 2 === 0 ? 1 : -1) * 180}deg`],
+  })
+
+  return (
+    <Animated.Text
+      style={[
+        styles.confetti,
+        {
+          left: `${left}%`,
+          opacity,
+          transform: [{ translateY }, { rotate }],
+        },
+      ]}
+    >
+      {CONFETTI[index % CONFETTI.length]}
+    </Animated.Text>
+  )
 }
 
 export default function CompletionCelebration({
@@ -15,36 +68,78 @@ export default function CompletionCelebration({
   questTitle,
   xpReward,
   streakCount = 0,
+  variant = 'success',
   onDone,
 }: Props) {
   const scaleAnim = useRef(new Animated.Value(0)).current
+  const pulseAnim = useRef(new Animated.Value(1)).current
+  const isAlreadyPending = variant === 'alreadyPending'
 
   useEffect(() => {
-    if (visible) {
-      Animated.spring(scaleAnim, {
-        toValue: 1,
-        useNativeDriver: true,
-        damping: 12,
-        stiffness: 180,
-      }).start()
-    } else {
+    if (!visible) {
       scaleAnim.setValue(0)
+      pulseAnim.setValue(1)
+      return
     }
-  }, [visible])
+
+    scaleAnim.setValue(0)
+    Animated.spring(scaleAnim, {
+      toValue: 1,
+      useNativeDriver: true,
+      damping: 10,
+      stiffness: 160,
+    }).start()
+
+    const pulse = Animated.loop(
+      Animated.sequence([
+        Animated.timing(pulseAnim, {
+          toValue: 1.08,
+          duration: 600,
+          easing: Easing.inOut(Easing.ease),
+          useNativeDriver: true,
+        }),
+        Animated.timing(pulseAnim, {
+          toValue: 1,
+          duration: 600,
+          easing: Easing.inOut(Easing.ease),
+          useNativeDriver: true,
+        }),
+      ])
+    )
+    pulse.start()
+    return () => pulse.stop()
+  }, [visible, scaleAnim, pulseAnim])
 
   return (
-    <Modal transparent animationType="fade" visible={visible}>
+    <Modal transparent animationType="fade" visible={visible} onRequestClose={onDone}>
       <View style={styles.backdrop}>
-        <View style={styles.card}>
-          <Animated.View style={[styles.checkCircle, { transform: [{ scale: scaleAnim }] }]}>
-            <Text style={styles.checkMark}>✓</Text>
+        {!isAlreadyPending &&
+          CONFETTI.map((_, i) => <ConfettiPiece key={i} index={i} active={visible} />)}
+
+        <Animated.View style={[styles.card, { transform: [{ scale: scaleAnim }] }]}>
+          <Animated.View
+            style={[
+              styles.checkCircle,
+              isAlreadyPending && styles.pendingCircle,
+              { transform: [{ scale: pulseAnim }] },
+            ]}
+          >
+            <Text style={[styles.checkMark, isAlreadyPending && styles.pendingMark]}>
+              {isAlreadyPending ? '⏳' : '✓'}
+            </Text>
           </Animated.View>
 
-          <Text style={styles.title}>Quest Submitted!</Text>
+          <Text style={styles.title}>
+            {isAlreadyPending ? 'Already Submitted' : 'Quest Submitted!'}
+          </Text>
           <Text style={styles.subtitle}>{questTitle}</Text>
 
-          <View style={styles.xpPill}>
-            <Text style={styles.xpText}>+{xpReward} XP pending approval</Text>
+          <View style={[styles.xpPill, isAlreadyPending && styles.pendingPill]}>
+            <Text style={[styles.xpText, isAlreadyPending && styles.pendingPillText]}>
+              {isAlreadyPending
+                ? `+${xpReward} XP awaiting review`
+                : `+${xpReward} XP pending approval`}
+            </Text>
           </View>
 
           {streakCount > 0 && (
@@ -54,13 +149,17 @@ export default function CompletionCelebration({
           )}
 
           <Text style={styles.infoText}>
-            {'Your submission is under review.\nYou\'ll be notified when it\'s approved.'}
+            {isAlreadyPending
+              ? 'Your proof is already in the review queue.\nCheck Pending Quests on your profile.'
+              : 'Your submission is under review.\nYou\'ll earn XP once it\'s approved — find it under Pending Quests on your profile.'}
           </Text>
 
           <TouchableOpacity style={styles.doneBtn} onPress={onDone} activeOpacity={0.85}>
-            <Text style={styles.doneBtnText}>Back to Quests</Text>
+            <Text style={styles.doneBtnText}>
+              {isAlreadyPending ? 'View Profile' : 'Back to Quests'}
+            </Text>
           </TouchableOpacity>
-        </View>
+        </Animated.View>
       </View>
     </Modal>
   )
@@ -69,10 +168,16 @@ export default function CompletionCelebration({
 const styles = StyleSheet.create({
   backdrop: {
     flex: 1,
-    backgroundColor: 'rgba(15,23,42,0.85)',
+    backgroundColor: 'rgba(15,23,42,0.88)',
     alignItems: 'center',
     justifyContent: 'center',
     paddingHorizontal: 32,
+    overflow: 'hidden',
+  },
+  confetti: {
+    position: 'absolute',
+    top: '18%',
+    fontSize: 22,
   },
   card: {
     backgroundColor: 'white',
@@ -89,10 +194,17 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
+  pendingCircle: {
+    backgroundColor: '#FEF3C7',
+  },
   checkMark: {
     fontSize: 36,
     color: 'white',
     fontWeight: '800',
+  },
+  pendingMark: {
+    fontSize: 32,
+    color: COLORS.warning,
   },
   title: {
     fontSize: 22,
@@ -114,10 +226,16 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
     paddingHorizontal: 20,
   },
+  pendingPill: {
+    backgroundColor: '#FEF3C7',
+  },
   xpText: {
     color: COLORS.success,
     fontWeight: '700',
     fontSize: 14,
+  },
+  pendingPillText: {
+    color: COLORS.warning,
   },
   streakPill: {
     marginTop: 8,

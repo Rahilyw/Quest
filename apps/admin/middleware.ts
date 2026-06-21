@@ -29,9 +29,17 @@ export async function middleware(request: NextRequest) {
   } = await supabase.auth.getUser()
 
   const { pathname } = request.nextUrl
+  const publicPaths = [
+    '/login',
+    '/login/forgot-password',
+    '/login/reset-password',
+    '/auth/confirm',
+    '/auth/recovery',
+  ]
+  const isPublic = publicPaths.some((p) => pathname === p || pathname.startsWith(`${p}/`))
 
   if (!user) {
-    if (pathname !== '/login') {
+    if (!isPublic) {
       const url = request.nextUrl.clone()
       url.pathname = '/login'
       return NextResponse.redirect(url)
@@ -39,16 +47,19 @@ export async function middleware(request: NextRequest) {
     return supabaseResponse
   }
 
-  // Authenticated but not an allowed admin — redirect to login with error
+  // Authenticated but not an allowed admin — still allow password reset in progress.
   if (!isAdminEmail(user.email)) {
+    if (pathname === '/login/reset-password') {
+      return supabaseResponse
+    }
     const url = request.nextUrl.clone()
     url.pathname = '/login'
     url.searchParams.set('error', 'access_denied')
     return NextResponse.redirect(url)
   }
 
-  // Authenticated admin visiting /login → send to dashboard
-  if (pathname === '/login') {
+  // Authenticated admin visiting /login → send to dashboard (except password reset)
+  if (pathname.startsWith('/login') && pathname !== '/login/reset-password') {
     const url = request.nextUrl.clone()
     url.pathname = '/'
     url.searchParams.delete('error')
@@ -59,5 +70,5 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ['/((?!_next/static|_next/image|favicon.ico).*)'],
+  matcher: ['/((?!_next/static|_next/image|favicon.ico|password-reset.html).*)'],
 }
