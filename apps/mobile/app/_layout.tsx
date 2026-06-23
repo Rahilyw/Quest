@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import { Stack, useRouter, useSegments } from 'expo-router'
 import { SafeAreaProvider } from 'react-native-safe-area-context'
 import { ErrorBoundary } from '@/components/ErrorBoundary'
@@ -15,7 +15,7 @@ function RootLayoutNav() {
   const [onboardingChecked, setOnboardingChecked] = useState(false)
   const [hasOnboarded, setHasOnboarded] = useState(false)
 
-  const authScreen = segments[1] as string | undefined
+  const authScreen = segments.length > 1 ? (segments as string[])[1] : undefined
   const isPasswordRecoveryScreen =
     authScreen === 'reset-password' || authScreen === 'forgot-password'
 
@@ -86,7 +86,7 @@ function RootLayoutNav() {
   )
 }
 
-export default function RootLayout() {
+export default function RootLayout(): React.JSX.Element {
   return (
     <SafeAreaProvider>
       <AuthProvider>

@@ -1,3 +1,4 @@
+import React from 'react'
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Linking } from 'react-native'
 import { useRouter } from 'expo-router'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
@@ -20,7 +21,7 @@ function Paragraph({ children }: { children: string }) {
   return <Text style={styles.paragraph}>{children}</Text>
 }
 
-export default function PrivacyPolicy(): JSX.Element {
+export default function PrivacyPolicy(): React.JSX.Element {
   const insets = useSafeAreaInsets()
   const router = useRouter()
 

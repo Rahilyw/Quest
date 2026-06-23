@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import React, { useState, useEffect } from 'react'
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Switch } from 'react-native'
 import { useRouter } from 'expo-router'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
@@ -13,7 +13,7 @@ import { registerForPushNotifications, clearPushToken } from '@/lib/notification
 
 const WEEKLY_DIGEST_KEY = 'pref_weekly_digest'
 
-export default function Settings(): JSX.Element {
+export default function Settings(): React.JSX.Element {
   const insets = useSafeAreaInsets()
   const router = useRouter()
   const { session, profile, signOut } = useAuth()

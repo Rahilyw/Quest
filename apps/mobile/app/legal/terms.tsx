@@ -1,3 +1,4 @@
+import React from 'react'
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native'
 import { useRouter } from 'expo-router'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
@@ -23,7 +24,7 @@ function Bullet({ children }: { children: string }) {
   return <Text style={styles.bullet}>• {children}</Text>
 }
 
-export default function TermsOfService(): JSX.Element {
+export default function TermsOfService(): React.JSX.Element {
   const insets = useSafeAreaInsets()
   const router = useRouter()
 
