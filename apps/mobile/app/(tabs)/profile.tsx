@@ -7,7 +7,6 @@ import {
   ScrollView,
   ActivityIndicator,
   RefreshControl,
-  Image,
 } from 'react-native'
 import { useRouter, useFocusEffect } from 'expo-router'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
@@ -16,13 +15,13 @@ import { useAuth } from '@/hooks/useAuth'
 import { supabase } from '@/lib/supabase'
 import { Avatar } from '@/components/Avatar'
 import { useUserCompletions } from '@/hooks/useUserCompletions'
+import { QuestHistoryItem } from '@/components/QuestHistoryItem'
 import {
   COLORS,
   SPACING,
   RADIUS,
   CITY,
   getLevelTitle,
-  CATEGORY_IMAGES,
 } from '@/lib/constants'
 
 interface RecentQuest {
@@ -30,6 +29,10 @@ interface RecentQuest {
   title: string
   category: string
   xp_reward: number
+  completed_at: string
+  redemption_code: string | null
+  is_sponsored: boolean
+  sponsor_reward: string | null
 }
 
 export default function Profile() {
@@ -57,7 +60,7 @@ export default function Profile() {
         .eq('status', 'approved'),
       supabase
         .from('completions')
-        .select('id, quest:quests(title, category, xp_reward)')
+        .select('id, completed_at, redemption_code, quest:quests(title, category, xp_reward, is_sponsored, sponsor_reward)')
         .eq('user_id', profile.id)
         .eq('status', 'approved')
         .order('completed_at', { ascending: false })
@@ -70,12 +73,25 @@ export default function Profile() {
 
     type HistoryRow = {
       id: string
-      quest: { title: string; category: string; xp_reward: number } | null
+      completed_at: string
+      redemption_code: string | null
+      quest: {
+        title: string
+        category: string
+        xp_reward: number
+        is_sponsored: boolean
+        sponsor_reward: string | null
+      } | null
     }
     setRecentQuests(
       ((historyResult.data ?? []) as unknown as HistoryRow[])
         .filter((r) => r.quest)
-        .map((r) => ({ id: r.id, ...r.quest! }))
+        .map((r) => ({
+          id: r.id,
+          completed_at: r.completed_at,
+          redemption_code: r.redemption_code,
+          ...r.quest!,
+        }))
     )
 
     const entries = leaderboardResult.data ?? []
@@ -180,15 +196,15 @@ export default function Profile() {
         <View style={styles.activityList}>
           {recentQuests.map((q) => (
             <View key={q.id} style={styles.activityRow}>
-              <Image
-                source={{ uri: CATEGORY_IMAGES[q.category] ?? CATEGORY_IMAGES.fitness }}
-                style={styles.activityThumb}
+              <QuestHistoryItem
+                title={q.title}
+                category={q.category}
+                xp_reward={q.xp_reward}
+                completed_at={q.completed_at}
+                redemption_code={q.redemption_code}
+                is_sponsored={q.is_sponsored}
+                sponsor_reward={q.sponsor_reward}
               />
-              <View style={styles.activityInfo}>
-                <Text style={styles.activityTitle} numberOfLines={1}>{q.title}</Text>
-                <Text style={styles.activityMeta}>{q.category} · completed</Text>
-              </View>
-              <Text style={styles.activityXp}>+{q.xp_reward}</Text>
             </View>
           ))}
         </View>
@@ -285,18 +301,15 @@ const styles = StyleSheet.create({
     paddingHorizontal: SPACING.xl,
     marginBottom: SPACING.xl,
   },
-  activityList: { paddingHorizontal: SPACING.xl, gap: SPACING.sm },
+  activityList: { paddingHorizontal: SPACING.sm, gap: SPACING.xs },
+  // Outer wrapper carries elevation — no overflow clip to avoid Android shadow bug
   activityRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: SPACING.md,
     backgroundColor: COLORS.surface,
     borderRadius: RADIUS.xl,
-    padding: SPACING.md,
+    shadowColor: COLORS.navy,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    elevation: 2,
   },
-  activityThumb: { width: 40, height: 40, borderRadius: RADIUS.md },
-  activityInfo: { flex: 1, minWidth: 0 },
-  activityTitle: { color: COLORS.textPrimary, fontSize: 12, fontWeight: '700' },
-  activityMeta: { color: COLORS.textMuted, fontSize: 10, marginTop: 2 },
-  activityXp: { color: COLORS.success, fontSize: 12, fontWeight: '900' },
 })

@@ -35,6 +35,10 @@ export const COLORS = {
   warning: '#F59E0B',
   danger: '#EF4444',
   sponsor: '#FF6B35',
+
+  /** Local Signal indigo — redemption codes, sponsored accent */
+  indigo: '#6366F1',
+  indigoSoft: '#EEF2FF',
 } as const
 
 export const SPACING = { xs: 4, sm: 8, md: 12, lg: 16, xl: 20, xxl: 24 } as const
