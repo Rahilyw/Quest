@@ -66,8 +66,8 @@ export async function createQuest(formData: FormData): Promise<{ ok: true; quest
     if (Number.isNaN(lat) || Number.isNaN(lng)) {
       return { ok: false, error: 'Valid latitude and longitude are required.' }
     }
-    if (is_sponsored && (!sponsor_name || !sponsor_reward)) {
-      return { ok: false, error: 'Sponsor name and reward are required for sponsored quests.' }
+    if (is_sponsored && !sponsor_name) {
+      return { ok: false, error: 'Sponsor name is required for sponsored quests.' }
     }
 
     let cover_image_url: string | null = null

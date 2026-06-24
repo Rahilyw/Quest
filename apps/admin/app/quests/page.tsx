@@ -100,6 +100,11 @@ export default function QuestsPage() {
                     )}
                   </div>
                   <h3 style={{ margin: '0 0 6px', fontSize: 16, fontWeight: 800, lineHeight: 1.3 }}>{q.title}</h3>
+                  {q.is_sponsored && q.sponsor_name && (
+                    <p style={{ margin: '0 0 6px', fontSize: 11, color: theme.highlight, fontWeight: 600 }}>
+                      Sponsored by {q.sponsor_name}
+                    </p>
+                  )}
                   <p style={{ margin: 0, color: theme.textMuted, fontSize: 12, lineHeight: 1.5, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
                     {q.description}
                   </p>

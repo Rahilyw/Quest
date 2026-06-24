@@ -203,11 +203,11 @@ export default function NewQuestPage() {
           {isSponsored && (
             <div className="admin-grid-2">
               <div className="admin-field">
-                <label className="admin-label" htmlFor="sponsor_name">Sponsor name</label>
-                <input id="sponsor_name" name="sponsor_name" className="admin-input" placeholder="Habit Coffee" />
+                <label className="admin-label" htmlFor="sponsor_name">Sponsor name <span style={{ color: '#ef4444' }}>*</span></label>
+                <input id="sponsor_name" name="sponsor_name" className="admin-input" placeholder="Habit Coffee" required={isSponsored} />
               </div>
               <div className="admin-field">
-                <label className="admin-label" htmlFor="sponsor_reward">Sponsor reward</label>
+                <label className="admin-label" htmlFor="sponsor_reward">Sponsor reward <span style={{ color: theme.textMuted, fontWeight: 400 }}>(optional)</span></label>
                 <input id="sponsor_reward" name="sponsor_reward" className="admin-input" placeholder="Free double shot upgrade" />
               </div>
             </div>
