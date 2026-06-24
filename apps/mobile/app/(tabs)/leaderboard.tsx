@@ -17,6 +17,24 @@ import { EmptyState } from '@/components/EmptyState'
 import { COLORS, SPACING, RADIUS, CITY, getLevelTitle } from '@/lib/constants'
 import type { LeaderboardEntry, UserBadgeWithBadge } from '@/lib/types'
 
+/** Returns a compact rank-delta label and its colour given a user's delta. */
+function getRankDelta(
+  currentRank: number,
+  lastWeekRank: number | null,
+): { label: string; color: string } {
+  if (lastWeekRank === null) {
+    return { label: '–', color: COLORS.textMuted }
+  }
+  const delta = lastWeekRank - currentRank
+  if (delta > 0) {
+    return { label: `↑${delta}`, color: COLORS.success }
+  }
+  if (delta < 0) {
+    return { label: `↓${Math.abs(delta)}`, color: COLORS.danger }
+  }
+  return { label: '–', color: COLORS.textMuted }
+}
+
 export default function RankingsScreen() {
   const insets = useSafeAreaInsets()
   const { profile } = useAuth()
@@ -38,8 +56,29 @@ export default function RankingsScreen() {
             .eq('user_id', profile.id)
             .limit(6)
         : Promise.resolve({ data: [] }),
-    ]).then(([lbResult, badgeResult]) => {
-      setEntries((lbResult.data ?? []).map((e, i) => ({ ...e, rank: i + 1 })))
+    ]).then(async ([lbResult, badgeResult]) => {
+      const lbRows = lbResult.data ?? []
+
+      // Fetch last_week_rank for each user on the leaderboard.
+      let rankMap: Record<string, number | null> = {}
+      if (lbRows.length > 0) {
+        const userIds = lbRows.map((r: { user_id: string }) => r.user_id)
+        const { data: profileRows } = await supabase
+          .from('profiles')
+          .select('id, last_week_rank')
+          .in('id', userIds)
+        for (const p of profileRows ?? []) {
+          rankMap[p.id] = p.last_week_rank ?? null
+        }
+      }
+
+      setEntries(
+        lbRows.map((e: any, i: number) => ({
+          ...e,
+          rank: i + 1,
+          last_week_rank: rankMap[e.user_id] ?? null,
+        })),
+      )
       setBadges(badgeResult.data ?? [])
       setLoading(false)
     })
@@ -114,33 +153,42 @@ export default function RankingsScreen() {
 
   return (
     <View style={styles.container}>
-      <FlatList
+      <FlatList<LeaderboardEntry>
         data={loading || entries.length === 0 ? [] : rest}
         keyExtractor={(item) => item.user_id}
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{ paddingBottom: 100 }}
         ListHeaderComponent={ListHeaderComponent}
         ListFooterComponent={ListFooterComponent}
-        renderItem={({ item }) => (
-          <View style={[
-            styles.chaserRow,
-            item.user_id === profile?.id && styles.chaserHighlight,
-            { marginHorizontal: SPACING.xl },
-          ]}>
-            <Text style={styles.chaserRank}>{item.rank}</Text>
-            <Avatar username={item.username} uri={item.avatar_url} size={40} />
-            <View style={styles.chaserInfo}>
-              <Text style={styles.chaserName}>@{item.username}</Text>
-              <Text style={styles.chaserLevel}>
-                LV {estimateLevel(item.weekly_xp)} {getLevelTitle(estimateLevel(item.weekly_xp))}
-              </Text>
+        renderItem={({ item }) => {
+          const { label: deltaLabel, color: deltaColor } = getRankDelta(
+            item.rank,
+            item.last_week_rank,
+          )
+          return (
+            <View style={[
+              styles.chaserRow,
+              item.user_id === profile?.id && styles.chaserHighlight,
+              { marginHorizontal: SPACING.xl },
+            ]}>
+              <View style={styles.rankBlock}>
+                <Text style={styles.chaserRank}>{item.rank}</Text>
+                <Text style={[styles.rankDelta, { color: deltaColor }]}>{deltaLabel}</Text>
+              </View>
+              <Avatar username={item.username} uri={item.avatar_url} size={40} />
+              <View style={styles.chaserInfo}>
+                <Text style={styles.chaserName}>@{item.username}</Text>
+                <Text style={styles.chaserLevel}>
+                  LV {estimateLevel(item.weekly_xp)} {getLevelTitle(estimateLevel(item.weekly_xp))}
+                </Text>
+              </View>
+              <View style={styles.chaserXpBlock}>
+                <Text style={styles.chaserXp}>{item.weekly_xp.toLocaleString()}</Text>
+                <Text style={styles.chaserXpLabel}>XP</Text>
+              </View>
             </View>
-            <View style={styles.chaserXpBlock}>
-              <Text style={styles.chaserXp}>{item.weekly_xp.toLocaleString()}</Text>
-              <Text style={styles.chaserXpLabel}>XP</Text>
-            </View>
-          </View>
-        )}
+          )
+        }}
       />
     </View>
   )
@@ -240,12 +288,20 @@ const styles = StyleSheet.create({
     marginBottom: SPACING.sm,
   },
   chaserHighlight: { borderWidth: 1, borderColor: COLORS.primary },
+  rankBlock: {
+    alignItems: 'center',
+    width: 32,
+  },
   chaserRank: {
-    width: 24,
     textAlign: 'center',
     color: COLORS.textMuted,
     fontSize: 14,
     fontWeight: '900',
+  },
+  rankDelta: {
+    fontSize: 11,
+    fontWeight: '700',
+    marginTop: 1,
   },
   chaserInfo: { flex: 1, minWidth: 0 },
   chaserName: { color: COLORS.textPrimary, fontSize: 14, fontWeight: '700' },

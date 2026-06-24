@@ -28,6 +28,7 @@ const COLORS = {
   accentText: '#4338CA',
   warning: '#D97706',
   success: '#16A34A',
+  danger: '#EF4444',
   sponsor: '#EA580C',
 }
 
@@ -535,6 +536,94 @@ assertEqual(
   'getXpToNextLevel for 0 XP → 200 (200 - 0)',
   getXpToNextLevel(0),
   200
+)
+
+// ---------------------------------------------------------------------------
+// SECTION 13: getRankDelta — leaderboard rank delta logic (Unit 6)
+// ---------------------------------------------------------------------------
+console.log('\n--- Section 13: getRankDelta rank delta logic ---')
+
+/**
+ * Replicated from apps/mobile/app/(tabs)/leaderboard.tsx
+ */
+function getRankDelta(currentRank, lastWeekRank) {
+  if (lastWeekRank === null || lastWeekRank === undefined) {
+    return { label: '–', color: COLORS.textMuted }
+  }
+  const delta = lastWeekRank - currentRank
+  if (delta > 0) {
+    return { label: `↑${delta}`, color: COLORS.success }
+  }
+  if (delta < 0) {
+    return { label: `↓${Math.abs(delta)}`, color: COLORS.danger }
+  }
+  return { label: '–', color: COLORS.textMuted }
+}
+
+// Use matching color values from test-local COLORS (replicated at top of file)
+const TEST_SUCCESS = COLORS.success
+const TEST_DANGER = COLORS.danger
+const TEST_MUTED = COLORS.textMuted
+
+// null last_week_rank → new user, show –
+assertDeepEqual(
+  'getRankDelta: null lastWeekRank → label "–", muted color',
+  getRankDelta(3, null),
+  { label: '–', color: TEST_MUTED }
+)
+
+// Same rank → no change, show –
+assertDeepEqual(
+  'getRankDelta: same rank (was 5, now 5) → label "–", muted color',
+  getRankDelta(5, 5),
+  { label: '–', color: TEST_MUTED }
+)
+
+// Moved up (lower rank number = better) → ↑delta in green
+// was rank 10 last week, now rank 7 → delta = 10 - 7 = +3
+assertDeepEqual(
+  'getRankDelta: moved up (was 10, now 7) → label "↑3", success color',
+  getRankDelta(7, 10),
+  { label: '↑3', color: TEST_SUCCESS }
+)
+
+// Moved up by 1
+assertDeepEqual(
+  'getRankDelta: moved up by 1 (was 2, now 1) → label "↑1", success color',
+  getRankDelta(1, 2),
+  { label: '↑1', color: TEST_SUCCESS }
+)
+
+// Moved down → ↓delta in danger color
+// was rank 3, now rank 8 → delta = 3 - 8 = -5
+assertEqual(
+  'getRankDelta: moved down (was 3, now 8) → label "↓5"',
+  getRankDelta(8, 3).label,
+  '↓5'
+)
+assertEqual(
+  'getRankDelta: moved down → danger color',
+  getRankDelta(8, 3).color,
+  TEST_DANGER
+)
+
+// Moved down by 1
+assertEqual(
+  'getRankDelta: moved down by 1 (was 1, now 2) → label "↓1"',
+  getRankDelta(2, 1).label,
+  '↓1'
+)
+
+// Large delta
+assertEqual(
+  'getRankDelta: large jump up (was 50, now 4) → label "↑46"',
+  getRankDelta(4, 50).label,
+  '↑46'
+)
+assertEqual(
+  'getRankDelta: large drop (was 1, now 30) → label "↓29"',
+  getRankDelta(30, 1).label,
+  '↓29'
 )
 
 // ---------------------------------------------------------------------------

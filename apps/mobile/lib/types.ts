@@ -70,6 +70,7 @@ export interface UserProfile {
   current_streak: number
   longest_streak: number
   last_completion_week: string | null
+  last_week_rank: number | null
   created_at: string
 }
 
@@ -82,6 +83,8 @@ export interface LeaderboardRow {
 
 export interface LeaderboardEntry extends LeaderboardRow {
   rank: number
+  /** Rank position from the previous week's snapshot; null for new users. */
+  last_week_rank: number | null
 }
 
 export type Database = {
