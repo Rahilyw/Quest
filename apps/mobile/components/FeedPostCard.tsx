@@ -1,4 +1,4 @@
-import { View, Text, Image, TouchableOpacity, StyleSheet } from 'react-native'
+import { View, Text, Image, StyleSheet } from 'react-native'
 import { Avatar } from '@/components/Avatar'
 import { COLORS, SPACING, RADIUS } from '@/lib/constants'
 import type { FeedPost } from '@/hooks/useActivityFeed'
@@ -27,17 +27,12 @@ export function FeedPostCard({ post }: Props) {
           <Text style={styles.time}>{formatTimeAgo(post.completed_at)}</Text>
         </View>
       </View>
-      <Image source={{ uri: post.photo_url }} style={styles.photo} resizeMode="cover" />
-      <View style={styles.actions}>
-        <TouchableOpacity style={styles.action} activeOpacity={0.7}>
-          <Text style={styles.actionIcon}>♥</Text>
-          <Text style={styles.actionCount}>—</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.action} activeOpacity={0.7}>
-          <Text style={styles.actionIcon}>💬</Text>
-          <Text style={styles.actionCount}>—</Text>
-        </TouchableOpacity>
-      </View>
+      <Image
+        source={{ uri: post.photo_url }}
+        style={styles.photo}
+        resizeMode="cover"
+        accessibilityLabel={`${post.user.username}'s proof photo for ${post.quest.title}`}
+      />
     </View>
   )
 }
@@ -75,14 +70,5 @@ const styles = StyleSheet.create({
   timeBlock: { alignItems: 'flex-end' },
   xp: { color: COLORS.success, fontSize: 12, fontWeight: '900' },
   time: { color: COLORS.textMuted, fontSize: 10, marginTop: 2 },
-  photo: { width: '100%', height: 208 },
-  actions: {
-    flexDirection: 'row',
-    gap: SPACING.lg,
-    padding: SPACING.lg,
-    paddingTop: SPACING.md,
-  },
-  action: { flexDirection: 'row', alignItems: 'center', gap: 6 },
-  actionIcon: { fontSize: 16, color: COLORS.textMuted },
-  actionCount: { color: COLORS.textMuted, fontSize: 12, fontWeight: '600' },
+  photo: { width: '100%', height: 208, marginBottom: SPACING.xs },
 })

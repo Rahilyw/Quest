@@ -1,5 +1,6 @@
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Image } from 'react-native'
 import { useLocalSearchParams, useRouter } from 'expo-router'
+import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useQuest } from '@/hooks/useQuests'
 import {
   CATEGORY_COLORS,
@@ -14,6 +15,7 @@ import {
 export default function QuestDetail() {
   const { id } = useLocalSearchParams<{ id: string }>()
   const router = useRouter()
+  const insets = useSafeAreaInsets()
   const { quest, loading } = useQuest(id)
 
   if (loading || !quest) {
@@ -35,7 +37,12 @@ export default function QuestDetail() {
         <View style={styles.heroWrap}>
           <Image source={{ uri: coverUri }} style={styles.heroImage} />
           <View style={styles.heroOverlay} />
-          <TouchableOpacity style={styles.back} onPress={() => router.back()}>
+          <TouchableOpacity
+            style={[styles.back, { top: insets.top + 12 }]}
+            onPress={() => router.back()}
+            accessibilityRole="button"
+            accessibilityLabel="Go back"
+          >
             <View style={styles.backPill}>
               <Text style={styles.backText}>←</Text>
             </View>
@@ -95,7 +102,7 @@ export default function QuestDetail() {
             <Text style={styles.rulesText}>1. Go to the quest location</Text>
             <Text style={styles.rulesText}>2. Tap "Start Quest" when you arrive</Text>
             <Text style={styles.rulesText}>3. Take a photo as proof</Text>
-            <Text style={styles.rulesText}>4. Submit — we'll review within 2 hours</Text>
+            <Text style={styles.rulesText}>4. Submit. We'll review within 2 hours.</Text>
           </View>
         </View>
       </ScrollView>
@@ -105,6 +112,9 @@ export default function QuestDetail() {
           style={styles.ctaButton}
           onPress={() => router.push(`/submit/${quest.id}`)}
           activeOpacity={0.85}
+          accessibilityRole="button"
+          accessibilityLabel={`Start quest: ${quest.title}`}
+          accessibilityHint="Takes you to the photo submission screen"
         >
           <Text style={styles.ctaText}>Start Quest</Text>
         </TouchableOpacity>
@@ -122,7 +132,7 @@ const styles = StyleSheet.create({
     ...StyleSheet.absoluteFillObject,
     backgroundColor: 'rgba(13,27,62,0.55)',
   },
-  back: { position: 'absolute', top: 52, left: SPACING.lg, zIndex: 2 },
+  back: { position: 'absolute', left: SPACING.lg, zIndex: 2 },
   backPill: {
     backgroundColor: 'rgba(255,255,255,0.92)',
     borderRadius: RADIUS.pill,

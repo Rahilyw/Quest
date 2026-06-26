@@ -1,6 +1,8 @@
 import { View, Text, StyleSheet } from 'react-native'
 import { Avatar } from '@/components/Avatar'
 import { COLORS, SPACING, RADIUS, getLevelTitle } from '@/lib/constants'
+
+const RANK_LABELS: Record<number, string> = { 1: '1st', 2: '2nd', 3: '3rd' }
 import type { LeaderboardEntry } from '@/lib/types'
 
 interface Props {
@@ -37,7 +39,11 @@ function PodiumSlot({
   const isLarge = size === 'lg'
 
   return (
-    <View style={[styles.slot, isLarge && styles.slotLarge]}>
+    <View
+      style={[styles.slot, isLarge && styles.slotLarge]}
+      accessible
+      accessibilityLabel={`${RANK_LABELS[rank] ?? `${rank}th`} place: @${entry.username}, ${entry.weekly_xp.toLocaleString()} XP`}
+    >
       {crown && <Text style={styles.crown}>👑</Text>}
       <View style={styles.avatarWrap}>
         <Avatar username={entry.username} uri={entry.avatar_url} size={avatarSize} />
@@ -92,7 +98,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFFFFF',
     alignItems: 'center',
     justifyContent: 'center',
-    shadowColor: '#000',
+    shadowColor: COLORS.navy,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.15,
     shadowRadius: 4,

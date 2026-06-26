@@ -33,6 +33,7 @@ export function Avatar({ username, uri, size = 48 }: Props) {
       <Image
         source={{ uri }}
         style={[styles.image, { width: size, height: size, borderRadius: radius }]}
+        accessibilityLabel={`${username}'s avatar`}
       />
     )
   }
@@ -43,6 +44,8 @@ export function Avatar({ username, uri, size = 48 }: Props) {
         styles.initials,
         { width: size, height: size, borderRadius: radius, backgroundColor: palette.bg },
       ]}
+      accessible
+      accessibilityLabel={`${username}'s avatar`}
     >
       <Text
         style={{

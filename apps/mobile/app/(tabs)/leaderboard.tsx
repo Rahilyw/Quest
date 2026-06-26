@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import {
   View,
   Text,
@@ -8,14 +8,16 @@ import {
   StyleSheet,
 } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
+import { useRouter } from 'expo-router'
 import { Ionicons } from '@expo/vector-icons'
 import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/hooks/useAuth'
 import { Avatar } from '@/components/Avatar'
 import { Podium } from '@/components/Podium'
 import { EmptyState } from '@/components/EmptyState'
-import { COLORS, SPACING, RADIUS, CITY, getLevelTitle } from '@/lib/constants'
+import { COLORS, SPACING, RADIUS, CITY, getLevelTitle, getISOWeek } from '@/lib/constants'
 import type { LeaderboardEntry, UserBadgeWithBadge } from '@/lib/types'
+
 
 /** Returns a compact rank-delta label and its colour given a user's delta. */
 function getRankDelta(
@@ -37,7 +39,9 @@ function getRankDelta(
 
 export default function RankingsScreen() {
   const insets = useSafeAreaInsets()
+  const router = useRouter()
   const { profile } = useAuth()
+  const weekLabel = useMemo(() => `WEEK ${getISOWeek()} · ${CITY.name.toUpperCase()}`, [])
   const [entries, setEntries] = useState<LeaderboardEntry[]>([])
   const [badges, setBadges] = useState<UserBadgeWithBadge[]>([])
   const [loading, setLoading] = useState(true)
@@ -86,7 +90,7 @@ export default function RankingsScreen() {
 
   const rest = entries.slice(3)
 
-  const ListHeaderComponent = (
+  const ListHeaderComponent = useMemo(() => (
     <>
       <View style={[styles.hero, { paddingTop: insets.top + 12 }]}>
         <View style={styles.heroTop}>
@@ -99,7 +103,7 @@ export default function RankingsScreen() {
           <Ionicons name="trophy" size={20} color={COLORS.warning} />
         </View>
 
-        <Text style={styles.weekLabel}>WEEK 24 · {CITY.name.toUpperCase()}</Text>
+        <Text style={styles.weekLabel}>{weekLabel}</Text>
         <Text style={styles.headline}>THE CITY&apos;S ELITE</Text>
         <Text style={styles.tagline}>Off the couch and onto the board.</Text>
 
@@ -143,10 +147,16 @@ export default function RankingsScreen() {
         />
       ) : null}
     </>
-  )
+  ), [loading, entries, badges, insets.top, weekLabel])
 
   const ListFooterComponent = entries.length > 0 ? (
-    <TouchableOpacity style={styles.boostBtn} activeOpacity={0.85}>
+    <TouchableOpacity
+      style={styles.boostBtn}
+      activeOpacity={0.85}
+      onPress={() => router.push('/')}
+      accessibilityRole="button"
+      accessibilityLabel="Boost your rank — go to Explore"
+    >
       <Text style={styles.boostText}>Boost Your Rank →</Text>
     </TouchableOpacity>
   ) : null

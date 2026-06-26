@@ -5,11 +5,12 @@ import { APP_NAME, CITY, COLORS, SPACING, RADIUS } from '@/lib/constants'
 interface Props {
   subtitle?: string
   showBell?: boolean
+  notificationCount?: number
   trailing?: React.ReactNode
   centerTitle?: string
 }
 
-export function AppHeader({ subtitle, showBell, trailing, centerTitle }: Props) {
+export function AppHeader({ subtitle, showBell, notificationCount = 0, trailing, centerTitle }: Props) {
   if (centerTitle) {
     return (
       <View style={styles.row}>
@@ -32,11 +33,18 @@ export function AppHeader({ subtitle, showBell, trailing, centerTitle }: Props) 
         {subtitle ? <Text style={styles.subtitle}>{subtitle}</Text> : null}
       </View>
       {showBell ? (
-        <TouchableOpacity style={styles.bellWrap} activeOpacity={0.7}>
+        <TouchableOpacity
+          style={styles.bellWrap}
+          activeOpacity={0.7}
+          accessibilityRole="button"
+          accessibilityLabel={notificationCount > 0 ? `Notifications, ${notificationCount} unread` : 'Notifications'}
+        >
           <Ionicons name="notifications-outline" size={22} color={COLORS.textPrimary} />
-          <View style={styles.bellDot}>
-            <Text style={styles.bellCount}>3</Text>
-          </View>
+          {notificationCount > 0 && (
+            <View style={styles.bellDot}>
+              <Text style={styles.bellCount}>{notificationCount}</Text>
+            </View>
+          )}
         </TouchableOpacity>
       ) : trailing ? (
         <View>{trailing}</View>

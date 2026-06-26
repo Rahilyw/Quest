@@ -194,7 +194,7 @@ export default function Submit() {
       return `GPS locked, ±${Math.round(submissionCoords.accuracy ?? 0)}m`
     }
     if (locationError) return locationError
-    return 'Waiting for GPS location…'
+    return 'Getting your location…'
   }
 
   return (
@@ -223,7 +223,7 @@ export default function Submit() {
           <TouchableOpacity style={styles.photoEmpty} onPress={pickPhoto} activeOpacity={0.85}>
             <Text style={styles.photoIcon}>📷</Text>
             <Text style={styles.photoHint}>Tap to take a photo</Text>
-            <Text style={styles.photoSub}>Proof of your quest completion</Text>
+            <Text style={styles.photoSub}>Show us you were there</Text>
           </TouchableOpacity>
         )}
       </View>
@@ -287,7 +287,7 @@ export default function Submit() {
         variant={celebrationVariant}
         questTitle={quest?.title ?? ''}
         xpReward={quest?.xp_reward ?? 0}
-        streakCount={0}
+        streakCount={profile?.current_streak ?? 0}
         onDone={handleCelebrationDone}
       />
     </View>

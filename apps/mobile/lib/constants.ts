@@ -150,3 +150,16 @@ export const LEGAL_URLS = {
   privacyPolicy: 'https://quest.app/privacy',
   termsOfService: 'https://quest.app/terms',
 } as const
+
+export function getISOWeek(): number {
+  const d = new Date()
+  d.setHours(0, 0, 0, 0)
+  d.setDate(d.getDate() + 4 - (d.getDay() || 7))
+  const yearStart = new Date(d.getFullYear(), 0, 1)
+  return Math.ceil(((d.getTime() - yearStart.getTime()) / 86400000 + 1) / 7)
+}
+
+export function getDaysLeftInWeek(): number {
+  const day = new Date().getDay()
+  return day === 0 ? 0 : 7 - day
+}

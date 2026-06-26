@@ -86,6 +86,8 @@ export default function Settings(): JSX.Element {
             style={styles.row}
             activeOpacity={0.7}
             onPress={() => router.push('/edit-profile')}
+            accessibilityRole="button"
+            accessibilityLabel="Edit profile"
           >
             <Text style={styles.rowLabel}>Edit Profile</Text>
             <Ionicons name="chevron-forward" size={18} color={COLORS.textMuted} />
@@ -114,7 +116,7 @@ export default function Settings(): JSX.Element {
         <SectionHeader title="Notifications" />
         <View style={styles.sectionCard}>
           <View style={styles.row}>
-            <Text style={styles.rowLabel}>Quest Nearby</Text>
+            <Text style={styles.rowLabel}>Quest Alerts</Text>
             <Switch
               value={questNearby}
               onValueChange={handleQuestNearbyToggle}
@@ -150,6 +152,8 @@ export default function Settings(): JSX.Element {
             style={[styles.row, styles.rowBorder]}
             activeOpacity={0.7}
             onPress={() => Linking.openURL(LEGAL_URLS.privacyPolicy).catch(() => {})}
+            accessibilityRole="link"
+            accessibilityLabel="Privacy Policy"
           >
             <Text style={styles.rowLabel}>Privacy Policy</Text>
             <Ionicons name="chevron-forward" size={18} color={COLORS.textMuted} />
@@ -158,6 +162,8 @@ export default function Settings(): JSX.Element {
             style={[styles.row, styles.rowBorder]}
             activeOpacity={0.7}
             onPress={() => Linking.openURL(LEGAL_URLS.termsOfService).catch(() => {})}
+            accessibilityRole="link"
+            accessibilityLabel="Terms of Service"
           >
             <Text style={styles.rowLabel}>Terms of Service</Text>
             <Ionicons name="chevron-forward" size={18} color={COLORS.textMuted} />
@@ -171,6 +177,8 @@ export default function Settings(): JSX.Element {
             style={styles.signOutRow}
             onPress={handleSignOut}
             activeOpacity={0.7}
+            accessibilityRole="button"
+            accessibilityLabel="Sign out"
           >
             <Text style={styles.signOutText}>Sign Out</Text>
           </TouchableOpacity>

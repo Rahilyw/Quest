@@ -14,7 +14,7 @@ export default function ForgotPassword() {
   async function handleSendReset() {
     const trimmed = email.trim().toLowerCase()
     if (!trimmed) {
-      Alert.alert('Error', 'Enter your email address')
+      Alert.alert('Email required', 'Enter your email to receive a reset link.')
       return
     }
 
@@ -25,7 +25,7 @@ export default function ForgotPassword() {
     setLoading(false)
 
     if (error) {
-      Alert.alert('Error', error.message)
+      Alert.alert('Couldn\'t send reset link', error.message)
       return
     }
 
@@ -85,7 +85,7 @@ const styles = StyleSheet.create({
   back: { position: 'absolute', top: 56, left: 24 },
   backText: { color: COLORS.accent, fontWeight: '600', fontSize: 16 },
   hero: { alignItems: 'center', marginBottom: 40 },
-  logo: { fontSize: 52, fontWeight: '800', color: '#4364F7', letterSpacing: -1, marginBottom: 6 },
+  logo: { fontSize: 52, fontWeight: '800', color: COLORS.primary, letterSpacing: -1, marginBottom: 6 },
   tagline: { color: '#94A3B8', fontSize: 16, textAlign: 'center' },
   input: {
     backgroundColor: '#FFFFFF',
@@ -98,7 +98,7 @@ const styles = StyleSheet.create({
     borderColor: 'rgba(15,23,42,0.07)',
   },
   button: {
-    backgroundColor: '#4364F7',
+    backgroundColor: COLORS.primary,
     borderRadius: 12,
     padding: 16,
     alignItems: 'center',

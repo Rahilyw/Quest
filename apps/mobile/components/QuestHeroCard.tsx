@@ -21,7 +21,14 @@ export function QuestHeroCard({ quest, onPress, completionCount = 0 }: Props) {
   const tag = CATEGORY_TAGS[quest.category] ?? quest.category.toUpperCase()
 
   return (
-    <TouchableOpacity style={styles.card} onPress={onPress} activeOpacity={0.9}>
+    <TouchableOpacity
+      style={styles.card}
+      onPress={onPress}
+      activeOpacity={0.9}
+      accessibilityRole="button"
+      accessibilityLabel={quest.title}
+      accessibilityHint={`${quest.xp_reward} XP. Double tap to view quest details.`}
+    >
       <View style={styles.imageWrap}>
         <Image source={{ uri: imageUri }} style={styles.image} />
         <View style={styles.imageOverlay} />

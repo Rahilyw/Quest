@@ -65,6 +65,8 @@ function RedemptionCodeCard({ code, sponsor_reward }: { code: string; sponsor_re
           style={[styles.copyBtn, copied && styles.copyBtnCopied]}
           onPress={handleCopy}
           activeOpacity={0.75}
+          accessibilityRole="button"
+          accessibilityLabel={copied ? 'Code copied' : 'Copy redemption code'}
         >
           <Ionicons
             name={copied ? 'checkmark' : 'copy-outline'}

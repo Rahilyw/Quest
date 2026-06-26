@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert } from 'react-native'
 import { useRouter } from 'expo-router'
 import { supabase } from '@/lib/supabase'
-import { APP_NAME } from '@/lib/constants'
+import { APP_NAME, COLORS } from '@/lib/constants'
 
 export default function SignIn() {
   const router = useRouter()
@@ -13,7 +13,7 @@ export default function SignIn() {
   async function handleSignIn() {
     setLoading(true)
     const { error } = await supabase.auth.signInWithPassword({ email, password })
-    if (error) Alert.alert('Error', error.message)
+    if (error) Alert.alert('Couldn\'t sign in', error.message)
     setLoading(false)
   }
 
@@ -69,39 +69,39 @@ const styles = StyleSheet.create({
   logo: {
     fontSize: 52,
     fontWeight: '800',
-    color: '#4364F7',
+    color: COLORS.primary,
     letterSpacing: -1,
     marginBottom: 6,
   },
   tagline: { color: '#94A3B8', fontSize: 16 },
   input: {
-    backgroundColor: '#FFFFFF',
-    color: '#0F172A',
+    backgroundColor: COLORS.surface,
+    color: COLORS.textPrimary,
     borderRadius: 12,
     padding: 16,
     marginBottom: 12,
     fontSize: 16,
     borderWidth: 1.5,
     borderColor: 'rgba(15,23,42,0.07)',
-    shadowColor: '#0F172A',
+    shadowColor: COLORS.navy,
     shadowOffset: { width: 0, height: 3 },
     shadowOpacity: 0.05,
     shadowRadius: 8,
     elevation: 2,
   },
   button: {
-    backgroundColor: '#4364F7',
+    backgroundColor: COLORS.primary,
     borderRadius: 12,
     padding: 16,
     alignItems: 'center',
     marginTop: 8,
     marginBottom: 16,
-    shadowColor: '#4364F7',
+    shadowColor: COLORS.primary,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.28,
     shadowRadius: 10,
     elevation: 5,
   },
-  buttonText: { color: '#FFFFFF', fontWeight: '700', fontSize: 16 },
-  link: { color: '#4364F7', textAlign: 'center', fontWeight: '600', marginBottom: 8 },
+  buttonText: { color: COLORS.surface, fontWeight: '700', fontSize: 16 },
+  link: { color: COLORS.primary, textAlign: 'center', fontWeight: '600', marginBottom: 8 },
 })

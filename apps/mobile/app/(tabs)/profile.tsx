@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import {
   View,
   Text,
@@ -7,6 +7,7 @@ import {
   ScrollView,
   ActivityIndicator,
   RefreshControl,
+  useWindowDimensions,
 } from 'react-native'
 import { useRouter, useFocusEffect } from 'expo-router'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
@@ -37,7 +38,13 @@ interface RecentQuest {
 
 export default function Profile() {
   const insets = useSafeAreaInsets()
+  const { width } = useWindowDimensions()
   const router = useRouter()
+
+  const isWide = width >= 600
+  const numCols = isWide ? 4 : 2
+  const tileWidth = (width - 2 * SPACING.xl - (numCols - 1) * SPACING.md) / numCols
+  const heroHPad = Math.max(SPACING.xl, insets.left + SPACING.sm)
   const { profile, loading, profileError, refreshProfile } = useAuth()
   const { refetch: refetchCompletions } = useUserCompletions(profile?.id)
   const [badgesCount, setBadgesCount] = useState(0)
@@ -51,7 +58,7 @@ export default function Profile() {
     if (!profile) return
     setStatsLoading(true)
 
-    const [badgesResult, countResult, historyResult, leaderboardResult] = await Promise.all([
+    const [badgesResult, countResult, historyResult, userXpResult] = await Promise.all([
       supabase.from('user_badges').select('badge_id', { count: 'exact' }).eq('user_id', profile.id),
       supabase
         .from('completions')
@@ -65,7 +72,7 @@ export default function Profile() {
         .eq('status', 'approved')
         .order('completed_at', { ascending: false })
         .limit(3),
-      supabase.from('leaderboard').select('user_id').order('weekly_xp', { ascending: false }).limit(50),
+      supabase.from('leaderboard').select('weekly_xp').eq('user_id', profile.id).maybeSingle(),
     ])
 
     setBadgesCount(badgesResult.count ?? 0)
@@ -94,9 +101,16 @@ export default function Profile() {
         }))
     )
 
-    const entries = leaderboardResult.data ?? []
-    const idx = entries.findIndex((e) => e.user_id === profile.id)
-    setWeeklyRank(idx >= 0 ? idx + 1 : null)
+    const userWeeklyXp = userXpResult.data?.weekly_xp ?? null
+    if (userWeeklyXp !== null) {
+      const { count: aboveCount } = await supabase
+        .from('leaderboard')
+        .select('user_id', { count: 'exact', head: true })
+        .gt('weekly_xp', userWeeklyXp)
+      setWeeklyRank(aboveCount !== null ? aboveCount + 1 : null)
+    } else {
+      setWeeklyRank(null)
+    }
     setStatsLoading(false)
   }, [profile])
 
@@ -105,6 +119,9 @@ export default function Profile() {
   }, [loadStats])
 
   useFocusEffect(useCallback(() => { refetchCompletions() }, [refetchCompletions]))
+
+  const goToSettings = useCallback(() => router.push('/settings'), [router])
+  const goToEditProfile = useCallback(() => router.push('/edit-profile'), [router])
 
   async function handleRefresh() {
     setRefreshing(true)
@@ -125,32 +142,42 @@ export default function Profile() {
       <View style={[styles.loadingScreen, { paddingTop: insets.top }]}>
         <Text style={styles.errorTitle}>Could not load profile</Text>
         <Text style={styles.errorMessage}>{profileError ?? 'Try again or sign out and back in.'}</Text>
-        <TouchableOpacity style={styles.retryBtn} onPress={refreshProfile}>
+        <TouchableOpacity
+          style={styles.retryBtn}
+          onPress={refreshProfile}
+          accessibilityRole="button"
+          accessibilityLabel="Try again"
+        >
           <Text style={styles.retryBtnText}>Try Again</Text>
         </TouchableOpacity>
       </View>
     )
   }
 
-  const stats = [
-    { label: 'Quests Done', value: statsLoading ? '—' : String(completionCount), icon: '🎯' },
-    { label: 'Total XP', value: statsLoading ? '—' : profile.total_xp.toLocaleString(), icon: '⚡' },
-    { label: 'Badges', value: statsLoading ? '—' : String(badgesCount), icon: '🏅' },
-    { label: 'Best Rank', value: weeklyRank ? `#${weeklyRank}` : '—', icon: '🏆' },
-  ]
+  const streakValue = profile.current_streak > 0 ? `${profile.current_streak}w` : '—'
+
+  const stats = useMemo(() => [
+    { label: 'Quests Done', value: statsLoading ? '—' : String(completionCount), icon: '🎯', color: COLORS.primary },
+    { label: 'Total XP', value: statsLoading ? '—' : profile.total_xp.toLocaleString(), icon: '⚡', color: COLORS.highlight },
+    { label: 'Badges', value: statsLoading ? '—' : String(badgesCount), icon: '🏅', color: '#A855F7' },
+    { label: 'Streak', value: streakValue, icon: '🔥', color: COLORS.success },
+  ], [statsLoading, completionCount, profile.total_xp, badgesCount, streakValue])
 
   return (
     <ScrollView
       style={styles.container}
-      contentContainerStyle={{ paddingBottom: 100 }}
+      contentContainerStyle={{ paddingBottom: insets.bottom + 80 }}
       refreshControl={
         <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} tintColor={COLORS.primary} />
       }
     >
-      <View style={[styles.hero, { paddingTop: insets.top + 16 }]}>
+      <View style={[styles.hero, { paddingTop: insets.top + 16, paddingHorizontal: heroHPad }]}>
         <TouchableOpacity
-          style={[styles.settingsBtn, { top: insets.top + 16 }]}
-          onPress={() => router.push('/settings')}
+          style={[styles.settingsBtn, { top: insets.top + 16, right: heroHPad }]}
+          onPress={goToSettings}
+          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+          accessibilityRole="button"
+          accessibilityLabel="Settings"
         >
           <Ionicons name="settings-outline" size={22} color="rgba(255,255,255,0.6)" />
         </TouchableOpacity>
@@ -160,7 +187,7 @@ export default function Profile() {
         </View>
         <Text style={styles.heroName}>@{profile.username}</Text>
         <Text style={styles.heroMeta}>
-          LV {profile.level} · Week 24 · {CITY.name}
+          LV {profile.level} · {CITY.name}{profile.current_streak > 0 ? ` · 🔥 ${profile.current_streak}w streak` : ''}
         </Text>
         <View style={styles.heroPills}>
           <View style={styles.heroPill}>
@@ -177,21 +204,26 @@ export default function Profile() {
 
       <View style={styles.statsGrid}>
         {stats.map((s) => (
-          <View key={s.label} style={styles.statTile}>
+          <View key={s.label} style={[styles.statTile, { width: tileWidth }]}>
             <Text style={styles.statIcon}>{s.icon}</Text>
-            <Text style={styles.statValue}>{s.value}</Text>
+            <Text style={[styles.statValue, { color: s.color }]}>{s.value}</Text>
             <Text style={styles.statLabel}>{s.label}</Text>
           </View>
         ))}
       </View>
 
-      <TouchableOpacity style={styles.editLink} onPress={() => router.push('/edit-profile')}>
+      <TouchableOpacity
+        style={styles.editLink}
+        onPress={goToEditProfile}
+        accessibilityRole="button"
+        accessibilityLabel="Edit profile"
+      >
         <Text style={styles.editLinkText}>Edit Profile →</Text>
       </TouchableOpacity>
 
       <Text style={styles.sectionTitle}>RECENT ACTIVITY</Text>
       {recentQuests.length === 0 ? (
-        <Text style={styles.emptyActivity}>No completed quests yet — start exploring!</Text>
+        <Text style={styles.emptyActivity}>No completed quests yet. Start exploring!</Text>
       ) : (
         <View style={styles.activityList}>
           {recentQuests.map((q) => (
@@ -235,21 +267,20 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.navy,
     alignItems: 'center',
     paddingBottom: SPACING.xxl,
-    paddingHorizontal: SPACING.xl,
     borderBottomLeftRadius: RADIUS.xxl,
     borderBottomRightRadius: RADIUS.xxl,
   },
-  settingsBtn: { position: 'absolute', right: SPACING.xl, padding: SPACING.sm, zIndex: 1 },
+  settingsBtn: { position: 'absolute', padding: SPACING.sm, zIndex: 1 },
   avatarRing: {
-    borderWidth: 4,
-    borderColor: 'rgba(255,255,255,0.2)',
+    borderWidth: 3,
+    borderColor: COLORS.primary,
     borderRadius: 44,
     marginBottom: SPACING.md,
   },
   heroName: { color: '#FFFFFF', fontSize: 20, fontWeight: '900' },
   heroMeta: { color: 'rgba(255,255,255,0.5)', fontSize: 13, fontWeight: '600', marginTop: 4 },
   heroTitle: {
-    color: 'rgba(255,255,255,0.35)',
+    color: COLORS.highlight,
     fontSize: 11,
     fontWeight: '800',
     letterSpacing: 2,
@@ -272,7 +303,6 @@ const styles = StyleSheet.create({
     gap: SPACING.md,
   },
   statTile: {
-    width: '47%',
     backgroundColor: COLORS.surface,
     borderRadius: RADIUS.xl,
     padding: SPACING.lg,
@@ -288,7 +318,7 @@ const styles = StyleSheet.create({
   editLink: { alignItems: 'center', paddingVertical: SPACING.lg },
   editLinkText: { color: COLORS.primary, fontWeight: '700', fontSize: 14 },
   sectionTitle: {
-    color: COLORS.textPrimary,
+    color: COLORS.primary,
     fontSize: 11,
     fontWeight: '900',
     letterSpacing: 1,

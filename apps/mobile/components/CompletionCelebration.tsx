@@ -130,15 +130,13 @@ export default function CompletionCelebration({
           </Animated.View>
 
           <Text style={styles.title}>
-            {isAlreadyPending ? 'Already Submitted' : 'Quest Submitted!'}
+            {isAlreadyPending ? 'Already In Review' : 'Quest Submitted!'}
           </Text>
           <Text style={styles.subtitle}>{questTitle}</Text>
 
           <View style={[styles.xpPill, isAlreadyPending && styles.pendingPill]}>
             <Text style={[styles.xpText, isAlreadyPending && styles.pendingPillText]}>
-              {isAlreadyPending
-                ? `+${xpReward} XP awaiting review`
-                : `+${xpReward} XP pending approval`}
+              {`+${xpReward} XP pending approval`}
             </Text>
           </View>
 
@@ -150,13 +148,13 @@ export default function CompletionCelebration({
 
           <Text style={styles.infoText}>
             {isAlreadyPending
-              ? 'Your proof is already in the review queue.\nCheck Pending Quests on your profile.'
-              : 'Your submission is under review.\nYou\'ll earn XP once it\'s approved — find it under Pending Quests on your profile.'}
+              ? 'Your proof is already being reviewed.\nFind it under Pending Quests on your profile.'
+              : 'Your submission is under review.\nYou\'ll earn XP once it\'s approved. Find it under Pending Quests on your profile.'}
           </Text>
 
           <TouchableOpacity style={styles.doneBtn} onPress={onDone} activeOpacity={0.85}>
             <Text style={styles.doneBtnText}>
-              {isAlreadyPending ? 'View Profile' : 'Back to Quests'}
+              {isAlreadyPending ? 'View Profile' : 'Keep Exploring'}
             </Text>
           </TouchableOpacity>
         </Animated.View>
@@ -180,7 +178,7 @@ const styles = StyleSheet.create({
     fontSize: 22,
   },
   card: {
-    backgroundColor: 'white',
+    backgroundColor: COLORS.surface,
     borderRadius: 24,
     padding: 32,
     alignItems: 'center',

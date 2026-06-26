@@ -14,6 +14,9 @@ export function CategoryChip({ label, active, onPress, count }: Props) {
       style={[styles.chip, active && styles.chipActive]}
       onPress={onPress}
       activeOpacity={0.75}
+      accessibilityRole="button"
+      accessibilityLabel={label}
+      accessibilityState={{ selected: active }}
     >
       <View style={styles.labelWrap}>
         <Text style={[styles.label, active && styles.labelActive]}>

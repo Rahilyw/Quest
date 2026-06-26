@@ -1,4 +1,4 @@
-import { useMemo, useCallback, useState } from 'react'
+import { useMemo, useCallback, useState, useEffect } from 'react'
 import {
   View,
   FlatList,
@@ -17,8 +17,10 @@ import { CategoryChip } from '@/components/CategoryChip'
 import { EmptyState } from '@/components/EmptyState'
 import { AppHeader } from '@/components/AppHeader'
 import { PlayerCard } from '@/components/PlayerCard'
-import { COLORS, SPACING, CATEGORY_ICONS } from '@/lib/constants'
+import { COLORS, SPACING, CATEGORY_ICONS, getISOWeek, getDaysLeftInWeek } from '@/lib/constants'
+import { supabase } from '@/lib/supabase'
 import type { QuestCategory } from '@/lib/types'
+
 
 const CATEGORIES: { label: string; value: QuestCategory | undefined }[] = [
   { label: 'ALL', value: undefined },
@@ -36,6 +38,24 @@ export default function ExploreScreen() {
   const { quests, loading, refetch } = useQuests(activeCategory)
   const { profile } = useAuth()
   const { excludedQuestIds, refetch: refetchCompletions } = useUserCompletions(profile?.id)
+  const [weeklyRank, setWeeklyRank] = useState<number | null>(null)
+
+  useEffect(() => {
+    if (!profile) return
+    supabase
+      .from('leaderboard')
+      .select('weekly_xp')
+      .eq('user_id', profile.id)
+      .maybeSingle()
+      .then(({ data }) => {
+        if (!data?.weekly_xp) return
+        supabase
+          .from('leaderboard')
+          .select('user_id', { count: 'exact', head: true })
+          .gt('weekly_xp', data.weekly_xp)
+          .then(({ count }) => setWeeklyRank(count !== null ? count + 1 : null))
+      })
+  }, [profile?.id])
 
   const availableQuests = useMemo(
     () => quests.filter((q) => !excludedQuestIds.has(q.id)),
@@ -51,8 +71,8 @@ export default function ExploreScreen() {
   return (
     <View style={styles.container}>
       <View style={[styles.header, { paddingTop: insets.top + 12 }]}>
-        <AppHeader subtitle="Week 24 · 3 days left" showBell />
-        {profile && <PlayerCard profile={profile} weeklyRank={12} />}
+        <AppHeader subtitle={`Week ${getISOWeek()} · ${getDaysLeftInWeek()} days left`} showBell />
+        {profile && <PlayerCard profile={profile} weeklyRank={weeklyRank ?? undefined} />}
       </View>
 
       <ScrollView
@@ -80,7 +100,7 @@ export default function ExploreScreen() {
         <EmptyState
           icon="🗺️"
           title="No quests here yet"
-          subtitle="Try another category or check back soon."
+          subtitle="Try another category or check back tomorrow."
         />
       ) : (
         <FlatList

@@ -88,11 +88,11 @@ export default function EditProfile() {
   async function handleSave() {
     const trimmed = username.trim().toLowerCase()
     if (!trimmed) {
-      Alert.alert('Error', 'Username is required')
+      Alert.alert('Username required', 'Enter a username to save your profile.')
       return
     }
     if (!/^[a-z0-9_]{3,20}$/.test(trimmed)) {
-      Alert.alert('Error', 'Username must be 3–20 characters: letters, numbers, or underscores')
+      Alert.alert('Invalid username', 'Use 3 to 20 characters: letters, numbers, or underscores.')
       return
     }
 
@@ -116,7 +116,7 @@ export default function EditProfile() {
 
     if (error) {
       if (error.code === '23505') {
-        Alert.alert('Error', 'That username is already taken')
+        Alert.alert('Username taken', 'That one\'s gone. Try a different username.')
       } else {
         Alert.alert('Error', error.message)
       }
@@ -133,6 +133,8 @@ export default function EditProfile() {
         style={[styles.back, { top: insets.top + 12, left: SPACING.lg }]}
         onPress={() => router.back()}
         activeOpacity={0.8}
+        accessibilityRole="button"
+        accessibilityLabel="Go back"
       >
         <View style={styles.backPill}>
           <Text style={[styles.backText, { color: COLORS.accent }]}>←</Text>
@@ -150,6 +152,8 @@ export default function EditProfile() {
           style={styles.avatarSection}
           onPress={pickAvatar}
           activeOpacity={0.8}
+          accessibilityRole="button"
+          accessibilityLabel="Change profile photo"
         >
           <Avatar username={user.username} uri={avatarUri} size={88} />
           <View style={styles.avatarEditBadge}>
@@ -201,6 +205,9 @@ export default function EditProfile() {
           onPress={handleSave}
           disabled={saving}
           activeOpacity={0.85}
+          accessibilityRole="button"
+          accessibilityLabel={saving ? 'Saving…' : 'Save changes'}
+          accessibilityState={{ disabled: saving }}
         >
           {saving ? (
             <ActivityIndicator color="#FFFFFF" />
