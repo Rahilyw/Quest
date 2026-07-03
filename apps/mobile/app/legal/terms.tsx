@@ -23,7 +23,7 @@ function Bullet({ children }: { children: string }) {
   return <Text style={styles.bullet}>• {children}</Text>
 }
 
-export default function TermsOfService(): JSX.Element {
+export default function TermsOfService() {
   const insets = useSafeAreaInsets()
   const router = useRouter()
 
