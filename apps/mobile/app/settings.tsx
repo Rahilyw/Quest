@@ -13,7 +13,7 @@ import { registerForPushNotifications, clearPushToken } from '@/lib/notification
 
 const WEEKLY_DIGEST_KEY = 'pref_weekly_digest'
 
-export default function Settings(): JSX.Element {
+export default function Settings() {
   const insets = useSafeAreaInsets()
   const router = useRouter()
   const { session, profile, signOut } = useAuth()
