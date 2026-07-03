@@ -278,6 +278,7 @@ assertEqual('RADIUS.pill is 999', RADIUS.pill, 999)
 // ---------------------------------------------------------------------------
 console.log('\n--- Section 3: getLevelFromXp helper ---')
 
+// Existing simple tests
 assertEqual('0 XP → level 1', getLevelFromXp(0), 1)
 assertEqual('199 XP → level 1', getLevelFromXp(199), 1)
 assertEqual('200 XP → level 2', getLevelFromXp(200), 2)
@@ -285,6 +286,27 @@ assertEqual('1999 XP → level 4', getLevelFromXp(1999), 4)
 assertEqual('2000 XP → level 5', getLevelFromXp(2000), 5)
 assertEqual('15000 XP → level 10 (max)', getLevelFromXp(15000), 10)
 assertEqual('99999 XP → level 10 (capped)', getLevelFromXp(99999), 10)
+
+// Expanded Boundary Testing
+assertEqual('499 XP → level 2 (just below level 3)', getLevelFromXp(499), 2)
+assertEqual('500 XP → level 3 (exact boundary)', getLevelFromXp(500), 3)
+assertEqual('999 XP → level 3 (just below level 4)', getLevelFromXp(999), 3)
+assertEqual('1000 XP → level 4 (exact boundary)', getLevelFromXp(1000), 4)
+assertEqual('3499 XP → level 5 (just below level 6)', getLevelFromXp(3499), 5)
+assertEqual('3500 XP → level 6 (exact boundary)', getLevelFromXp(3500), 6)
+assertEqual('5499 XP → level 6 (just below level 7)', getLevelFromXp(5499), 6)
+assertEqual('5500 XP → level 7 (exact boundary)', getLevelFromXp(5500), 7)
+assertEqual('7999 XP → level 7 (just below level 8)', getLevelFromXp(7999), 7)
+assertEqual('8000 XP → level 8 (exact boundary)', getLevelFromXp(8000), 8)
+assertEqual('10999 XP → level 8 (just below level 9)', getLevelFromXp(10999), 8)
+assertEqual('11000 XP → level 9 (exact boundary)', getLevelFromXp(11000), 9)
+assertEqual('14999 XP → level 9 (just below level 10)', getLevelFromXp(14999), 9)
+
+// Edge cases
+assertEqual('199.9 XP (decimal) → level 1', getLevelFromXp(199.9), 1)
+assertEqual('NaN XP → level 1', getLevelFromXp(NaN), 1)
+assertEqual('undefined XP → level 1', getLevelFromXp(undefined), 1)
+assertEqual('null XP → level 1', getLevelFromXp(null), 1)
 
 // ---------------------------------------------------------------------------
 // SECTION 4: getXpToNextLevel helper
