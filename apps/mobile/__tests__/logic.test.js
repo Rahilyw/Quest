@@ -539,9 +539,74 @@ assertEqual(
 )
 
 // ---------------------------------------------------------------------------
-// SECTION 13: getRankDelta — leaderboard rank delta logic (Unit 6)
+// SECTION 13: isWithinRadius — geofence calculation logic (useLocation.ts)
 // ---------------------------------------------------------------------------
-console.log('\n--- Section 13: getRankDelta rank delta logic ---')
+console.log('\n--- Section 13: isWithinRadius geofence logic ---')
+
+/**
+ * Replicated from apps/mobile/hooks/useLocation.ts
+ */
+function isWithinRadius(targetLat, targetLng, radiusMeters, coords, BYPASS_GEOFENCE = false) {
+  if (BYPASS_GEOFENCE) return true
+  if (!coords) return false
+  const R = 6371000
+  const dLat = ((targetLat - coords.lat) * Math.PI) / 180
+  const dLng = ((targetLng - coords.lng) * Math.PI) / 180
+  const a =
+    Math.sin(dLat / 2) ** 2 +
+    Math.cos((coords.lat * Math.PI) / 180) *
+      Math.cos((targetLat * Math.PI) / 180) *
+      Math.sin(dLng / 2) ** 2
+  const distance = R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))
+  return distance <= radiusMeters
+}
+
+const SF_COORDS = { lat: 37.7749, lng: -122.4194 }
+// Approx 100m away
+const SF_COORDS_NEARBY = { lat: 37.7758, lng: -122.4194 }
+// Approx 2km away
+const SF_COORDS_FAR = { lat: 37.7929, lng: -122.4194 }
+
+assertEqual(
+  'isWithinRadius: exact same coordinates (0m) -> true',
+  isWithinRadius(SF_COORDS.lat, SF_COORDS.lng, 100, SF_COORDS),
+  true
+)
+
+assertEqual(
+  'isWithinRadius: target inside radius -> true',
+  isWithinRadius(SF_COORDS_NEARBY.lat, SF_COORDS_NEARBY.lng, 200, SF_COORDS),
+  true
+)
+
+assertEqual(
+  'isWithinRadius: target outside radius -> false',
+  isWithinRadius(SF_COORDS_FAR.lat, SF_COORDS_FAR.lng, 200, SF_COORDS),
+  false
+)
+
+assertEqual(
+  'isWithinRadius: null coords -> false',
+  isWithinRadius(SF_COORDS.lat, SF_COORDS.lng, 100, null),
+  false
+)
+
+assertEqual(
+  'isWithinRadius: BYPASS_GEOFENCE true -> true (even if outside)',
+  isWithinRadius(SF_COORDS_FAR.lat, SF_COORDS_FAR.lng, 200, SF_COORDS, true),
+  true
+)
+
+assertEqual(
+  'isWithinRadius: BYPASS_GEOFENCE true -> true (even if coords null)',
+  isWithinRadius(SF_COORDS.lat, SF_COORDS.lng, 100, null, true),
+  true
+)
+
+// ---------------------------------------------------------------------------
+// SECTION 14: getRankDelta — leaderboard rank delta logic (Unit 6)
+// ---------------------------------------------------------------------------
+console.log('\n--- Section 14: getRankDelta rank delta logic ---')
 
 /**
  * Replicated from apps/mobile/app/(tabs)/leaderboard.tsx
