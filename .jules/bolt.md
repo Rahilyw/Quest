@@ -4,3 +4,7 @@
 ## 2024-07-03 - Test Boundary Coverage
 **Learning:** Pure logic functions with tier configurations are highly susceptible to off-by-one errors. Expanding test coverage precisely along transition borders prevents regressions.
 **Action:** When adding tests for numerical mapping logic, always include the boundaries (n-1, n, n+1) and unpredictable edge cases like `null`, `undefined`, and decimals.
+
+## 2024-07-03 - Fixing Typescript type checks in CI
+**Learning:** CI failures for typescript can often be due to small things like returning JSX.Element without proper configuration or bad tuple indexing (`[string]`). Fix those type checks along with unit tests.
+**Action:** Run `npx tsc --noEmit` to verify there are no typescript issues that would fail CI before submitting.
