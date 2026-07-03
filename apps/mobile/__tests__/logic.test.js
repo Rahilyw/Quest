@@ -86,14 +86,13 @@ function getXpToNextLevel(xp) {
   return next ? next.minXp - xp : 0
 }
 
+function getMinXpForLevel(level) {
+  return XP_LEVELS[Math.min(level - 1, XP_LEVELS.length - 1)]?.minXp ?? 0
+}
+
 // ---------------------------------------------------------------------------
 // Replicated from apps/mobile/app/(tabs)/index.tsx
 // ---------------------------------------------------------------------------
-
-function getMinXpForLevel(level) {
-  const XP_LEVELS_LOCAL = [0, 200, 500, 1000, 2000, 3500, 5500, 8000, 11000, 15000]
-  return XP_LEVELS_LOCAL[Math.min(level - 1, XP_LEVELS_LOCAL.length - 1)] ?? 0
-}
 
 // XP strip progress calculation from index.tsx (patched: guards denom === 0 at max level)
 function xpStripProgress(totalXp, level) {
@@ -536,6 +535,42 @@ assertEqual(
   'getXpToNextLevel for 0 XP → 200 (200 - 0)',
   getXpToNextLevel(0),
   200
+)
+
+assertEqual(
+  'getMinXpForLevel for level 0 (out of lower bound) → 0',
+  getMinXpForLevel(0),
+  0
+)
+assertEqual(
+  'getMinXpForLevel for level -1 (negative) → 0',
+  getMinXpForLevel(-1),
+  0
+)
+assertEqual(
+  'getMinXpForLevel for level 1 → 0',
+  getMinXpForLevel(1),
+  0
+)
+assertEqual(
+  'getMinXpForLevel for level 2 → 200',
+  getMinXpForLevel(2),
+  200
+)
+assertEqual(
+  'getMinXpForLevel for level 10 (max) → 15000',
+  getMinXpForLevel(10),
+  15000
+)
+assertEqual(
+  'getMinXpForLevel for level 11 (out of upper bound) → 15000',
+  getMinXpForLevel(11),
+  15000
+)
+assertEqual(
+  'getMinXpForLevel for level 100 (way out of upper bound) → 15000',
+  getMinXpForLevel(100),
+  15000
 )
 
 // ---------------------------------------------------------------------------
