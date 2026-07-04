@@ -1,5 +1,7 @@
 export type QuestCategory = 'fitness' | 'social' | 'food' | 'community' | 'nature'
 
+export type GeofenceType = 'none' | 'circle' | 'city'
+
 export type QuestStatus = 'active' | 'inactive'
 
 export type CompletionStatus = 'pending' | 'approved' | 'rejected'
@@ -9,6 +11,8 @@ export interface Quest {
   title: string
   description: string
   category: QuestCategory
+  geofence_type: GeofenceType
+  city_id: string | null
   lat: number
   lng: number
   radius_meters: number

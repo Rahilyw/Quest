@@ -16,6 +16,7 @@ Apply migrations in numeric/filename order:
 | `010_quest_covers_bucket.sql` | Public `quest-covers` storage bucket for admin cover uploads |
 | `011_leaderboard_rank_snapshot.sql` | `profiles.last_week_rank` for weekly rank delta display |
 | `012_quest_scheduling.sql` | `quests.active_from` / `active_until` scheduling columns |
+| `013_geofence_system.sql` | PostGIS, `geofence_type` enum, `cities` table, completion geofence trigger |
 
 ## Env var naming drift
 

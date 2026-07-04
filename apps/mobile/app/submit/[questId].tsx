@@ -14,7 +14,8 @@ import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/hooks/useAuth'
 import { useLocation } from '@/hooks/useLocation'
 import { useQuest } from '@/hooks/useQuests'
-import { PROOF_GEOFENCE_RADIUS, COLORS } from '@/lib/constants'
+import { useGeofenceCheck } from '@/hooks/useGeofenceCheck'
+import { COLORS } from '@/lib/constants'
 import { ensureCameraPermission } from '@/lib/permissions'
 import { paramAsString } from '@/lib/routeParams'
 import { readUriAsArrayBuffer } from '@/lib/uploadImage'
@@ -32,7 +33,6 @@ export default function Submit() {
     ensurePermission,
     refresh,
     getSubmissionCoords,
-    isWithinRadius,
   } = useLocation()
   const { quest, loading: questLoading } = useQuest(questId)
   const [photo, setPhoto] = useState<string | null>(null)
@@ -43,8 +43,18 @@ export default function Submit() {
 
   const userId = profile?.id ?? session?.user?.id
   const submissionCoords = getSubmissionCoords(quest?.lat, quest?.lng)
-  const hasLocation = submissionCoords != null
+  const effectiveCoords =
+    submissionCoords ??
+    (quest?.geofence_type === 'none' && quest
+      ? { lat: quest.lat, lng: quest.lng, accuracy: null }
+      : null)
+  const hasLocation = effectiveCoords != null
   const hasPhoto = photo != null
+  const { insideGeofence, geofenceLabel, requiresLocation } = useGeofenceCheck(
+    quest,
+    effectiveCoords,
+    bypassGeofence
+  )
 
   useEffect(() => {
     if (!userId || !questId) return
@@ -94,7 +104,7 @@ export default function Submit() {
     if (authLoading || questLoading) return null
     if (!questId) return 'Invalid quest link.'
     if (!hasPhoto) return 'Take a photo first.'
-    if (!hasLocation) return 'Location is required. Tap the GPS row above to allow access.'
+    if (!hasLocation && requiresLocation) return 'Location is required. Tap the GPS row above to allow access.'
     if (!quest) return 'Could not load this quest. Go back and try again.'
     if (!userId) return 'You must be signed in to submit. Sign in and try again.'
     return null
@@ -129,12 +139,12 @@ export default function Submit() {
       return
     }
 
-    if (!photo || !submissionCoords || !quest || !userId || !questId) return
+    if (!photo || !effectiveCoords || !quest || !userId || !questId) return
 
-    if (!isWithinRadius(quest.lat, quest.lng, PROOF_GEOFENCE_RADIUS)) {
+    if (!insideGeofence) {
       Alert.alert(
         'Too far away',
-        `You need to be within ${PROOF_GEOFENCE_RADIUS}m of the quest location.`
+        `You need to be ${geofenceLabel.toLowerCase()} to submit.`
       )
       return
     }
@@ -162,8 +172,8 @@ export default function Submit() {
         user_id: userId,
         quest_id: questId,
         photo_url: publicUrl,
-        lat: submissionCoords.lat,
-        lng: submissionCoords.lng,
+        lat: effectiveCoords.lat,
+        lng: effectiveCoords.lng,
         completed_at: new Date().toISOString(),
         status: 'pending',
       })
@@ -171,6 +181,14 @@ export default function Submit() {
       if (insertError) {
         if (insertError.code === '23505') {
           showCelebrationModal('alreadyPending')
+        } else if (
+          insertError.message?.includes('GEOFENCE_VIOLATION') ||
+          insertError.code === '23514'
+        ) {
+          Alert.alert(
+            'Too far away',
+            `Your location is outside the quest zone. ${geofenceLabel}.`
+          )
         } else {
           Alert.alert('Submission failed', insertError.message)
         }
@@ -187,11 +205,15 @@ export default function Submit() {
   }
 
   function locationStatusText() {
-    if (submissionCoords) {
+    if (quest?.geofence_type === 'none') {
+      return 'No location required for this quest'
+    }
+    if (effectiveCoords) {
       if (bypassGeofence && !coords) {
         return 'Test mode: using quest location (no GPS needed)'
       }
-      return `GPS locked, ±${Math.round(submissionCoords.accuracy ?? 0)}m`
+      const zoneStatus = insideGeofence ? 'Inside quest zone' : 'Outside quest zone'
+      return `${zoneStatus} · GPS ±${Math.round(effectiveCoords.accuracy ?? 0)}m`
     }
     if (locationError) return locationError
     return 'Getting your location…'
@@ -235,7 +257,10 @@ export default function Submit() {
       >
         <Text
           style={{
-            color: hasLocation ? COLORS.success : COLORS.warning,
+            color:
+              insideGeofence || quest?.geofence_type === 'none'
+                ? COLORS.success
+                : COLORS.warning,
             marginRight: 6,
             fontSize: 12,
           }}

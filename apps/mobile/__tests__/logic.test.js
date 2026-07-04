@@ -627,6 +627,46 @@ assertEqual(
 )
 
 // ---------------------------------------------------------------------------
+// Section 15: Geofence labels and checks
+// ---------------------------------------------------------------------------
+
+const {
+  formatGeofenceLabel,
+  formatGeofenceShort,
+  isWithinGeofence,
+  VICTORIA_BOUNDARY,
+} = require('../../../packages/geofence/src/index.js')
+
+console.log('\n--- Section 15: Geofence labels and checks ---')
+
+assertEqual(
+  'formatGeofenceShort circle',
+  formatGeofenceShort({ geofence_type: 'circle', lat: 0, lng: 0, radius_meters: 50, city_id: null }),
+  '50m'
+)
+assertEqual(
+  'formatGeofenceShort none',
+  formatGeofenceShort({ geofence_type: 'none', lat: 0, lng: 0, radius_meters: 0, city_id: null }),
+  'Anywhere'
+)
+assertEqual(
+  'formatGeofenceLabel city',
+  formatGeofenceLabel(
+    { geofence_type: 'city', lat: 48.4284, lng: -123.3656, radius_meters: 0, city_id: 'victoria-bc' },
+    'Victoria, BC'
+  ),
+  'Anywhere in Victoria, BC'
+)
+assertEqual(
+  'isWithinGeofence none always passes',
+  isWithinGeofence({
+    quest: { geofence_type: 'none', lat: 0, lng: 0, radius_meters: 0, city_id: null },
+    user: { lat: 49.28, lng: -123.12 },
+  }),
+  true
+)
+
+// ---------------------------------------------------------------------------
 // SUMMARY
 // ---------------------------------------------------------------------------
 console.log('\n=== SUMMARY ===')

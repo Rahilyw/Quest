@@ -19,6 +19,8 @@ export interface Quest {
   lat: number
   lng: number
   radius_meters: number
+  geofence_type: 'none' | 'circle' | 'city'
+  city_id: string | null
   xp_reward: number
   is_sponsored: boolean
   sponsor_name: string | null
@@ -45,6 +47,32 @@ export async function getBadges(): Promise<Badge[]> {
   return (data as Badge[]) ?? []
 }
 
+type GeofenceType = 'none' | 'circle' | 'city'
+
+function validateGeofence(input: {
+  geofence_type: GeofenceType
+  lat: number
+  lng: number
+  radius_meters: number
+  city_id: string | null
+}): string | null {
+  if (Number.isNaN(input.lat) || Number.isNaN(input.lng)) {
+    return 'Valid latitude and longitude are required.'
+  }
+  switch (input.geofence_type) {
+    case 'none':
+      return null
+    case 'circle':
+      if (Number.isNaN(input.radius_meters) || input.radius_meters < 50 || input.radius_meters > 2000) {
+        return 'Circle radius must be between 50 and 2000 metres.'
+      }
+      return null
+    case 'city':
+      if (!input.city_id) return 'City is required for city-wide geofence.'
+      return null
+  }
+}
+
 export async function createQuest(formData: FormData): Promise<{ ok: true; quest: Quest } | { ok: false; error: string }> {
   try {
     const title = String(formData.get('title') ?? '').trim()
@@ -52,7 +80,14 @@ export async function createQuest(formData: FormData): Promise<{ ok: true; quest
     const category = String(formData.get('category') ?? 'fitness')
     const lat = parseFloat(String(formData.get('lat') ?? ''))
     const lng = parseFloat(String(formData.get('lng') ?? ''))
-    const radius_meters = parseInt(String(formData.get('radius_meters') ?? '300'), 10)
+    const geofence_type = String(formData.get('geofence_type') ?? 'circle') as GeofenceType
+    const city_id = String(formData.get('city_id') ?? '').trim() || null
+    let radius_meters = parseInt(String(formData.get('radius_meters') ?? '300'), 10)
+    if (geofence_type === 'none') {
+      radius_meters = 0
+    } else if (geofence_type === 'city') {
+      radius_meters = 0
+    }
     const xp_reward = parseInt(String(formData.get('xp_reward') ?? '100'), 10)
     const is_sponsored = formData.get('is_sponsored') === 'true'
     const sponsor_name = String(formData.get('sponsor_name') ?? '').trim()
@@ -63,9 +98,8 @@ export async function createQuest(formData: FormData): Promise<{ ok: true; quest
     if (!title || !description) {
       return { ok: false, error: 'Title and description are required.' }
     }
-    if (Number.isNaN(lat) || Number.isNaN(lng)) {
-      return { ok: false, error: 'Valid latitude and longitude are required.' }
-    }
+    const geofenceError = validateGeofence({ geofence_type, lat, lng, radius_meters, city_id })
+    if (geofenceError) return { ok: false, error: geofenceError }
     if (is_sponsored && !sponsor_name) {
       return { ok: false, error: 'Sponsor name is required for sponsored quests.' }
     }
@@ -99,6 +133,8 @@ export async function createQuest(formData: FormData): Promise<{ ok: true; quest
         lat,
         lng,
         radius_meters,
+        geofence_type,
+        city_id,
         xp_reward,
         is_sponsored,
         sponsor_name: is_sponsored ? sponsor_name : null,
@@ -152,6 +188,8 @@ export interface UpdateQuestInput {
   lat: number
   lng: number
   radius_meters: number
+  geofence_type: 'none' | 'circle' | 'city'
+  city_id: string | null
   xp_reward: number
   is_sponsored: boolean
   sponsor_name: string | null
@@ -160,17 +198,13 @@ export interface UpdateQuestInput {
 
 export async function updateQuest(input: UpdateQuestInput): Promise<{ ok: true; quest: Quest } | { ok: false; error: string }> {
   try {
-    const { id, title, description, category, lat, lng, radius_meters, xp_reward, is_sponsored, sponsor_name, sponsor_reward } = input
+    const { id, title, description, category, lat, lng, radius_meters, geofence_type, city_id, xp_reward, is_sponsored, sponsor_name, sponsor_reward } = input
 
     if (!title.trim() || !description.trim()) {
       return { ok: false, error: 'Title and description are required.' }
     }
-    if (Number.isNaN(lat) || Number.isNaN(lng)) {
-      return { ok: false, error: 'Valid latitude and longitude are required.' }
-    }
-    if (Number.isNaN(radius_meters) || radius_meters < 50 || radius_meters > 2000) {
-      return { ok: false, error: 'Geofence radius must be between 50 and 2000 metres.' }
-    }
+    const geofenceError = validateGeofence({ geofence_type, lat, lng, radius_meters, city_id })
+    if (geofenceError) return { ok: false, error: geofenceError }
     if (Number.isNaN(xp_reward) || xp_reward < 25 || xp_reward > 1000) {
       return { ok: false, error: 'XP reward must be between 25 and 1000.' }
     }
@@ -187,6 +221,8 @@ export async function updateQuest(input: UpdateQuestInput): Promise<{ ok: true; 
         lat,
         lng,
         radius_meters,
+        geofence_type,
+        city_id,
         xp_reward,
         is_sponsored,
         sponsor_name: is_sponsored ? (sponsor_name?.trim() ?? null) : null,

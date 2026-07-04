@@ -46,3 +46,16 @@ insert into quests (title, description, category, lat, lng, xp_reward, is_sponso
 ('Board Games at Interactivity', 'Play a game at Interactivity Board Game Cafe on Yates Street. Take a photo of your game board.', 'community', 48.4246, -123.3618, 100, true, 'Interactivity Board Game Cafe', 'Waived cover fee', 'active', 300),
 ('Try the Harbour Espresso Flight', 'Order the espresso flight at Blue Fox Cafe and try all three single-origin shots. A serious coffee experience steps from the Inner Harbour.', 'food', 48.4236, -123.3656, 120, true, 'Blue Fox Cafe', 'Free pastry with any coffee purchase', 'active', 200),
 ('Visit the Inner Harbour at Sunset', 'Head to the Inner Harbour between 7:30 and 9pm on any evening and take a photo of the sunset over the water. Victoria at its most iconic.', 'nature', 48.4230, -123.3699, 100, true, 'Tourism Victoria', 'Enter prize draw for hotel stay', 'active', 400);
+
+-- Geofence examples (requires migration 013 applied)
+-- 1. Remote / home quest (none)
+insert into quests (title, description, category, lat, lng, xp_reward, status, radius_meters, geofence_type, city_id) values
+('Write a Journal Entry About Your City', 'Reflect on one thing you love about Victoria. Snap a photo of your journal entry — no need to be anywhere specific.', 'community', 48.4284, -123.3656, 75, 'active', 0, 'none', null);
+
+-- 2. City-wide quest
+insert into quests (title, description, category, lat, lng, xp_reward, status, radius_meters, geofence_type, city_id) values
+('Explore Victoria This Week', 'Visit anywhere in Victoria and take a photo of something that captures the city for you this week.', 'nature', 48.4284, -123.3656, 100, 'active', 0, 'city', 'victoria-bc');
+
+-- 3. Tight landmark circle (50m) — Mount Doug summit area
+insert into quests (title, description, category, lat, lng, xp_reward, status, radius_meters, geofence_type, city_id) values
+('Summit Mount Doug', 'Hike to the Mount Doug summit lookout and take a photo with the view. You must be within 50 metres of the summit marker.', 'fitness', 48.4912, -123.3456, 200, 'active', 50, 'circle', null);

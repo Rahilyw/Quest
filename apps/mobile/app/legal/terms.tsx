@@ -2,9 +2,9 @@ import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-nati
 import { useRouter } from 'expo-router'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { SectionHeader } from '@/components/SectionHeader'
-import { COLORS, SPACING, RADIUS, PROOF_GEOFENCE_RADIUS } from '@/lib/constants'
+import { COLORS, SPACING, RADIUS } from '@/lib/constants'
 
-const LAST_UPDATED = 'June 21, 2026'
+const LAST_UPDATED = 'July 4, 2026'
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
@@ -62,9 +62,9 @@ export default function TermsOfService(): JSX.Element {
         <Section title="Quest rules">
           <Bullet>Go to the actual location. No couch completions.</Bullet>
           <Bullet>Take an honest photo when you are there — no old camera roll tricks.</Bullet>
-          <Bullet>
-            {`You must be within ${PROOF_GEOFENCE_RADIUS} metres of the quest pin when you submit. GPS can be fuzzy; if we cannot verify you were close enough, we may reject the submission.`}
-          </Bullet>
+          <Paragraph>
+            {`Quest location rules depend on the quest type. Some quests require you to be within a specific radius of a landmark (typically 50–300 metres). City-wide quests require you to be within Victoria, BC. Remote quests have no location requirement. GPS can be imprecise; if we cannot verify you were in the allowed zone, we may reject the submission.`}
+          </Paragraph>
           <Bullet>Follow local laws and venue rules. We are not responsible if you hop a fence.</Bullet>
         </Section>
 

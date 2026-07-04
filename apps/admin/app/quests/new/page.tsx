@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import { useEffect, useRef, useState } from 'react'
 import { createQuest, getBadges, type Badge } from '../actions'
 import { theme, VICTORIA_DEFAULT } from '@/lib/theme'
+import GeofenceEditor from '@/components/GeofenceEditor'
 
 const CATEGORIES = Object.entries(theme.categories)
 
@@ -17,6 +18,11 @@ export default function NewQuestPage() {
   const [selectedBadges, setSelectedBadges] = useState<Set<string>>(new Set())
   const [isSponsored, setIsSponsored] = useState(false)
   const [category, setCategory] = useState('fitness')
+  const [geofenceType, setGeofenceType] = useState<'none' | 'circle' | 'city'>('circle')
+  const [lat, setLat] = useState(VICTORIA_DEFAULT.lat)
+  const [lng, setLng] = useState(VICTORIA_DEFAULT.lng)
+  const [radiusMeters, setRadiusMeters] = useState(300)
+  const [cityId, setCityId] = useState<string | null>(null)
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -151,41 +157,21 @@ export default function NewQuestPage() {
 
         {/* Location */}
         <section className="admin-card" style={{ marginBottom: 20 }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-            <h2 style={{ margin: 0, fontSize: 16, fontWeight: 800 }}>Location</h2>
-            <button
-              type="button"
-              className="admin-btn admin-btn-ghost"
-              style={{ fontSize: 12, padding: '6px 12px' }}
-              onClick={() => {
-                const lat = document.getElementById('lat') as HTMLInputElement
-                const lng = document.getElementById('lng') as HTMLInputElement
-                if (lat) lat.value = String(VICTORIA_DEFAULT.lat)
-                if (lng) lng.value = String(VICTORIA_DEFAULT.lng)
-              }}
-            >
-              Use Victoria centre
-            </button>
-          </div>
-          <div className="admin-grid-2">
-            <div className="admin-field">
-              <label className="admin-label" htmlFor="lat">Latitude</label>
-              <input id="lat" name="lat" className="admin-input" type="number" step="any" defaultValue={VICTORIA_DEFAULT.lat} required />
-            </div>
-            <div className="admin-field">
-              <label className="admin-label" htmlFor="lng">Longitude</label>
-              <input id="lng" name="lng" className="admin-input" type="number" step="any" defaultValue={VICTORIA_DEFAULT.lng} required />
-            </div>
-          </div>
-          <div className="admin-grid-2">
-            <div className="admin-field">
-              <label className="admin-label" htmlFor="radius_meters">Geofence radius (m)</label>
-              <input id="radius_meters" name="radius_meters" className="admin-input" type="number" defaultValue={300} min={50} max={2000} required />
-            </div>
-            <div className="admin-field">
-              <label className="admin-label" htmlFor="xp_reward">XP reward</label>
-              <input id="xp_reward" name="xp_reward" className="admin-input" type="number" defaultValue={150} min={25} max={1000} required />
-            </div>
+          <GeofenceEditor
+            geofenceType={geofenceType}
+            onGeofenceTypeChange={setGeofenceType}
+            lat={lat}
+            lng={lng}
+            onLatLngChange={(newLat, newLng) => { setLat(newLat); setLng(newLng) }}
+            radiusMeters={radiusMeters}
+            onRadiusChange={setRadiusMeters}
+            cityId={cityId}
+            onCityIdChange={setCityId}
+            renderHiddenInputs
+          />
+          <div className="admin-field" style={{ marginTop: 16 }}>
+            <label className="admin-label" htmlFor="xp_reward">XP reward</label>
+            <input id="xp_reward" name="xp_reward" className="admin-input" type="number" defaultValue={150} min={25} max={1000} required />
           </div>
         </section>
 

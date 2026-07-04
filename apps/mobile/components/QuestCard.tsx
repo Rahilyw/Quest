@@ -1,4 +1,5 @@
 import { TouchableOpacity, Text, View, StyleSheet } from 'react-native'
+import { formatGeofenceShort } from '@quest/geofence'
 import { CATEGORY_COLORS, CATEGORY_ICONS, CATEGORY_SOFT, COLORS, RADIUS, SPACING } from '@/lib/constants'
 import type { Quest } from '@/lib/types'
 
@@ -11,6 +12,15 @@ export function QuestCard({ quest, onPress }: Props) {
   const color = CATEGORY_COLORS[quest.category]
   const softBg = CATEGORY_SOFT[quest.category] ?? '#F1F5F9'
   const icon = CATEGORY_ICONS[quest.category]
+  const geofenceType = quest.geofence_type ?? 'circle'
+  const geofenceShort = formatGeofenceShort({
+    geofence_type: geofenceType,
+    lat: quest.lat,
+    lng: quest.lng,
+    radius_meters: quest.radius_meters,
+    city_id: quest.city_id ?? null,
+  })
+  const geofenceIcon = geofenceType === 'none' ? '🌐' : geofenceType === 'city' ? '🌆' : '📍'
 
   return (
     <TouchableOpacity
@@ -42,7 +52,7 @@ export function QuestCard({ quest, onPress }: Props) {
 
         <View style={styles.footer}>
           <View style={styles.distancePill}>
-            <Text style={styles.distanceText}>📍 {quest.radius_meters}m</Text>
+            <Text style={styles.distanceText}>{geofenceIcon} {geofenceShort}</Text>
           </View>
           <Text style={[styles.xp, { color }]}>+{quest.xp_reward} XP</Text>
         </View>

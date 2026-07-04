@@ -3,10 +3,12 @@
   "private": true,
   "workspaces": [
     "apps/mobile",
-    "apps/admin"
+    "apps/admin",
+    "packages/geofence"
   ],
   "scripts": {
     "mobile": "yarn workspace mobile start",
-    "admin": "yarn workspace admin dev"
+    "admin": "yarn workspace admin dev",
+    "test:geofence": "yarn workspace @quest/geofence test"
   }
 }

@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { useEffect, useState } from 'react'
 import { getQuests, toggleQuestStatus, updateQuest, type Quest } from './actions'
 import { theme, VICTORIA_DEFAULT } from '@/lib/theme'
+import GeofenceEditor from '@/components/GeofenceEditor'
 
 const CATEGORIES = Object.entries(theme.categories)
 
@@ -14,6 +15,8 @@ interface EditFormState {
   lat: string
   lng: string
   radius_meters: string
+  geofence_type: 'none' | 'circle' | 'city'
+  city_id: string
   xp_reward: string
   is_sponsored: boolean
   sponsor_name: string
@@ -28,6 +31,8 @@ function questToFormState(q: Quest): EditFormState {
     lat: String(q.lat),
     lng: String(q.lng),
     radius_meters: String(q.radius_meters),
+    geofence_type: q.geofence_type ?? 'circle',
+    city_id: q.city_id ?? '',
     xp_reward: String(q.xp_reward),
     is_sponsored: q.is_sponsored,
     sponsor_name: q.sponsor_name ?? '',
@@ -63,6 +68,8 @@ function EditForm({ quest, onSave, onCancel }: { quest: Quest; onSave: (updated:
         lat,
         lng,
         radius_meters,
+        geofence_type: form.geofence_type,
+        city_id: form.city_id || null,
         xp_reward,
         is_sponsored: form.is_sponsored,
         sponsor_name: form.is_sponsored ? form.sponsor_name || null : null,
@@ -144,74 +151,33 @@ function EditForm({ quest, onSave, onCancel }: { quest: Quest; onSave: (updated:
           </div>
         </div>
 
-        {/* Location */}
-        <div className="admin-grid-2">
-          <div className="admin-field">
-            <label className="admin-label" htmlFor={`edit-lat-${quest.id}`}>Latitude</label>
-            <input
-              id={`edit-lat-${quest.id}`}
-              className="admin-input"
-              type="number"
-              step="any"
-              value={form.lat}
-              onChange={(e) => set('lat', e.target.value)}
-              required
-            />
-          </div>
-          <div className="admin-field">
-            <label className="admin-label" htmlFor={`edit-lng-${quest.id}`}>Longitude</label>
-            <input
-              id={`edit-lng-${quest.id}`}
-              className="admin-input"
-              type="number"
-              step="any"
-              value={form.lng}
-              onChange={(e) => set('lng', e.target.value)}
-              required
-            />
-          </div>
-        </div>
+        <GeofenceEditor
+          geofenceType={form.geofence_type}
+          onGeofenceTypeChange={(t) => set('geofence_type', t)}
+          lat={parseFloat(form.lat) || VICTORIA_DEFAULT.lat}
+          lng={parseFloat(form.lng) || VICTORIA_DEFAULT.lng}
+          onLatLngChange={(newLat, newLng) => {
+            set('lat', String(newLat))
+            set('lng', String(newLng))
+          }}
+          radiusMeters={parseInt(form.radius_meters, 10) || 300}
+          onRadiusChange={(r) => set('radius_meters', String(r))}
+          cityId={form.city_id || null}
+          onCityIdChange={(id) => set('city_id', id ?? '')}
+        />
 
-        {/* Radius + XP */}
-        <div className="admin-grid-2">
-          <div className="admin-field">
-            <label className="admin-label" htmlFor={`edit-radius-${quest.id}`}>Geofence radius (m)</label>
-            <input
-              id={`edit-radius-${quest.id}`}
-              className="admin-input"
-              type="number"
-              min={50}
-              max={2000}
-              value={form.radius_meters}
-              onChange={(e) => set('radius_meters', e.target.value)}
-              required
-            />
-          </div>
-          <div className="admin-field">
-            <label className="admin-label" htmlFor={`edit-xp-${quest.id}`}>XP reward</label>
-            <input
-              id={`edit-xp-${quest.id}`}
-              className="admin-input"
-              type="number"
-              min={25}
-              max={1000}
-              value={form.xp_reward}
-              onChange={(e) => set('xp_reward', e.target.value)}
-              required
-            />
-          </div>
-        </div>
-
-        {/* Victoria shortcut */}
-        <div style={{ marginBottom: 12 }}>
-          <button
-            type="button"
-            className="admin-btn admin-btn-ghost"
-            style={{ fontSize: 11, padding: '5px 10px' }}
-            onClick={() => { set('lat', String(VICTORIA_DEFAULT.lat)); set('lng', String(VICTORIA_DEFAULT.lng)) }}
-          >
-            Reset to Victoria centre
-          </button>
+        <div className="admin-field" style={{ marginTop: 16 }}>
+          <label className="admin-label" htmlFor={`edit-xp-${quest.id}`}>XP reward</label>
+          <input
+            id={`edit-xp-${quest.id}`}
+            className="admin-input"
+            type="number"
+            min={25}
+            max={1000}
+            value={form.xp_reward}
+            onChange={(e) => set('xp_reward', e.target.value)}
+            required
+          />
         </div>
 
         {/* Sponsor toggle */}
@@ -372,6 +338,15 @@ export default function QuestsPage() {
                     <span style={{ fontSize: 10, fontWeight: 800, color: theme.primary }}>+{q.xp_reward} XP</span>
                     {q.is_sponsored && (
                       <span style={{ fontSize: 10, fontWeight: 700, color: theme.highlight }}>⭐ Sponsored</span>
+                    )}
+                    {(q.geofence_type ?? 'circle') === 'none' && (
+                      <span style={{ fontSize: 10, fontWeight: 700, color: theme.textMuted }}>📍 Anywhere</span>
+                    )}
+                    {(q.geofence_type ?? 'circle') === 'city' && (
+                      <span style={{ fontSize: 10, fontWeight: 700, color: theme.primaryLight }}>🌆 City-wide</span>
+                    )}
+                    {(q.geofence_type ?? 'circle') === 'circle' && (
+                      <span style={{ fontSize: 10, fontWeight: 700, color: theme.primaryLight }}>📍 {q.radius_meters}m</span>
                     )}
                   </div>
                   <h3 style={{ margin: '0 0 6px', fontSize: 16, fontWeight: 800, lineHeight: 1.3 }}>{q.title}</h3>

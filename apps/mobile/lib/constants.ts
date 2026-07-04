@@ -144,6 +144,7 @@ export function getQuestCoverImage(quest: { category: string; cover_image_url?: 
   return CATEGORY_IMAGES[quest.category] ?? CATEGORY_IMAGES.fitness
 }
 
+/** @deprecated Use quest.geofence_type + @quest/geofence instead. Kept for legacy tests. */
 export const PROOF_GEOFENCE_RADIUS = 300
 
 export const BYPASS_GEOFENCE =

@@ -2,6 +2,7 @@ import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Image } from 'rea
 import { useLocalSearchParams, useRouter } from 'expo-router'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useQuest } from '@/hooks/useQuests'
+import { formatGeofenceLabel } from '@quest/geofence'
 import {
   CATEGORY_COLORS,
   CATEGORY_TAGS,
@@ -30,6 +31,16 @@ export default function QuestDetail() {
   const tag = CATEGORY_TAGS[quest.category] ?? quest.category.toUpperCase()
   const diff = getDifficulty(quest.xp_reward)
   const coverUri = getQuestCoverImage(quest)
+  const geofenceLabel = formatGeofenceLabel(
+    {
+      geofence_type: quest.geofence_type ?? 'circle',
+      lat: quest.lat,
+      lng: quest.lng,
+      radius_meters: quest.radius_meters,
+      city_id: quest.city_id ?? null,
+    },
+    'Victoria, BC'
+  )
 
   return (
     <View style={styles.container}>
@@ -70,7 +81,7 @@ export default function QuestDetail() {
             <View style={styles.xpBadge}>
               <Text style={styles.xpText}>+{quest.xp_reward} XP</Text>
             </View>
-            <Text style={styles.radiusText}>Within {quest.radius_meters}m of location</Text>
+            <Text style={styles.radiusText}>{geofenceLabel}</Text>
           </View>
 
           <Text style={styles.description}>{quest.description}</Text>
