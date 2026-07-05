@@ -1,6 +1,6 @@
 # Quest!
 
-**Real life, gamified.** Quest! is a city exploration app that turns your neighbourhood into a game. Players complete real-world challenges — trying a local café, running a trail, joining a community event — capture photo proof on location, and earn XP, badges, and leaderboard ranking. Admins review submissions and approve completions through a dedicated web dashboard.
+**Real life, gamified.** Quest! is a city exploration app that turns your neighbourhood into a game. Players complete real-world challenges — trying a local café, running a trail, joining a community event — capture photo proof on location, and earn XP, badges, and leaderboard ranking. Completions are **geofence-validated server-side** (PostGIS); rewards currently wait on admin approval and are moving to **instant verification** ([Spec 02](docs/specs/02-instant-verification.md)). See [ROADMAP.md](ROADMAP.md) and [docs/specs/](docs/specs/README.md) for the full plan.
 
 Built for Victoria, BC as the pilot city, but designed to drop into any city with a new seed file.
 
@@ -39,12 +39,14 @@ Quest! has three moving parts:
 The core loop is:
 
 1. Player opens the app, browses quests on the **Explore** tab
-2. Player travels to the quest location (300 m geofence check)
-3. Player captures a **photo proof** with the in-app camera
-4. Submission goes into an **admin approval queue**
-5. Admin reviews the photo and approves/rejects
-6. On approval: XP is awarded, level is recalculated, badges are checked, a push notification is sent
-7. Completion appears on the **public activity feed**
+2. Player travels to the quest location — **four geofence types** (anywhere / circle / city / drawn polygon), enforced server-side on insert
+3. Player captures a **photo proof** with the in-app camera (no gallery picker)
+4. Submission uploads to Storage and inserts a completion row
+5. **Today:** admin approves from the dashboard → XP, badges, streak, push notification
+6. **Next (Spec 02):** geofence pass = proof → instant XP at the moment of effort; community reports replace pre-approval ([Spec 03](docs/specs/03-report-moderation.md))
+7. Completion appears on the **public activity feed** (with feed opt-out planned in Spec 03)
+
+Strategic priorities before launch: instant verification, UGC moderation (Apple Guideline 1.2), analytics instrumentation ([Spec 04](docs/specs/04-analytics-instrumentation.md)), then content and growth specs 05–07.
 
 ---
 
@@ -94,24 +96,31 @@ Quest! (monorepo root)
 │   │   ├── components/           Reusable UI components
 │   │   ├── hooks/                Data-fetching hooks (Supabase queries)
 │   │   ├── lib/                  Supabase client, constants, types
-│   │   └── __tests__/            Logic unit tests (84 assertions)
+│   │   └── __tests__/            Logic unit tests (98 assertions)
 │   │
 │   └── admin/                    Next.js admin dashboard
 │       ├── app/                  App Router pages
 │       │   ├── login/            Admin login (email allowlist)
-│       │   ├── completions/      Approval queue
-│       │   ├── quests/           Quest management + create form
+│       │   ├── completions/      Approval queue (→ moderation log in Spec 02)
+│       │   ├── quests/           Quest management + GeofenceEditor (draw mode)
 │       │   ├── users/            User directory
 │       │   └── sponsors/         Sponsor completion reports
 │       ├── lib/                  Supabase clients (server + SSR)
 │       └── middleware.ts         Auth redirect guard
 │
+├── packages/
+│   └── geofence/                 @quest/geofence — shared client geofence (44 tests)
+│
+├── docs/
+│   └── specs/                    Feature specs 01–07 (instant verification era)
+│
 ├── supabase/
-│   ├── migrations/               001–010 SQL migration files (ordered)
+│   ├── migrations/               001–015 SQL migration files (PostGIS geofence 013–015)
 │   ├── functions/
 │   │   ├── award-xp/             Badge checking + push notifications
-│   │   └── generate-redemption-code/  Sponsor reward codes
-│   ├── seed.sql                  20 Victoria quests + 13 badge definitions
+│   │   ├── generate-redemption-code/  Sponsor reward codes
+│   │   └── snapshot-ranks/       Weekly rank snapshot (011)
+│   ├── seed.sql                  ~28 Victoria quests + 13 badges + geofence examples
 │   └── config.toml               Edge function config
 │
 ├── tokens/                       Shared CSS design tokens
@@ -119,8 +128,8 @@ Quest! (monorepo root)
 ├── Gamified City Challenge App/  Figma Make web prototype (design reference)
 ├── DESIGN.md                     Harbour Electric design system spec
 ├── ARCHITECTURE.md               Visual architecture maps
-├── PRODUCT.md                    Product positioning and strategy
-├── ROADMAP.md                    Development status and blockers
+├── PRODUCT.md                    Product positioning, content engine, safety
+├── ROADMAP.md                    Development status, phases, and blockers
 └── .github/workflows/ci.yml      GitHub Actions (tests + type checks)
 ```
 
@@ -137,10 +146,11 @@ Quest! (monorepo root)
 - Completed quests are automatically hidden from the feed
 
 **Complete quests**
-- Tap a quest card to view full details (description, XP reward, sponsor info)
-- GPS geofence check confirms you're within 300 m of the quest location
+- Tap a quest card to view full details (description, XP reward, sponsor info, geofence type)
+- Client geofence pre-check via `@quest/geofence` (circle, city, polygon, or anywhere)
+- **Server-side geofence trigger** is the authority — inserts outside the zone are rejected
 - In-app camera captures photo proof
-- Submission is uploaded to Supabase Storage and queued for admin review
+- Submission uploads to Supabase Storage; completion row inserted (pending today → instant in Spec 02)
 
 **Track progress**
 - XP earned on each approval; 10-level progression (0 → 15,000 XP)
@@ -171,8 +181,9 @@ Quest! (monorepo root)
 - All admin queries run server-side with the service-role key
 
 **Quest management**
-- Create quests with title, description, category, lat/lng (manual or map picker), geofence radius, XP reward
-- Sponsor fields: sponsor name, sponsor reward description, toggle
+- Create and edit quests with title, description, category, XP reward, scheduling (`active_from` / `active_until`)
+- **GeofenceEditor:** anywhere / radius slider / Victoria city boundary / **draw custom polygon** on map
+- Sponsor fields: sponsor name, reward description, toggle
 - Toggle any quest active/inactive without deleting
 
 **User directory**
@@ -258,7 +269,11 @@ Extends Supabase Auth users with game data.
 | `description` | text | What the player must do |
 | `category` | enum | `fitness`, `social`, `food`, `community`, `nature` |
 | `lat` / `lng` | float | Quest location coordinates |
-| `radius_meters` | integer | Geofence radius (default 300 m) |
+| `geofence_type` | enum | `none`, `circle`, `city`, `polygon` (migrations 013–015) |
+| `radius_meters` | integer | Circle radius (50–2000 m) when type is `circle` |
+| `boundary` | geometry | PostGIS polygon when type is `polygon` |
+| `boundary_geojson` | json (generated) | Client-friendly boundary for map rendering |
+| `active_from` / `active_until` | timestamptz | Quest scheduling window (012) |
 | `xp_reward` | integer | XP awarded on approval (100–300) |
 | `is_sponsored` | boolean | Whether this quest has a sponsor |
 | `sponsor_name` | text | Sponsor display name |
@@ -343,6 +358,13 @@ Apply these in order via the Supabase SQL Editor or CLI:
 | `008_public_feed_completions.sql` | RLS policy for public activity feed |
 | `009_quest_cover_and_badges.sql` | `cover_image_url` on quests + `quest_badges` table |
 | `010_quest_covers_bucket.sql` | `quest-covers` storage bucket |
+| `011_leaderboard_rank_snapshot.sql` | `last_week_rank` on profiles |
+| `012_quest_scheduling.sql` | `active_from` / `active_until` on quests |
+| `013_geofence_system.sql` | PostGIS, `cities`, geofence enum, server-side insert trigger |
+| `014_geofence_polygon_enum.sql` | Adds `polygon` to geofence enum |
+| `015_geofence_polygon.sql` | `quests.boundary`, `set_quest_boundary()`, polygon validation |
+
+Specs 02–07 define migrations `016+` (instant verification, moderation, content, growth, merchant). See [docs/specs/README.md](docs/specs/README.md).
 
 ---
 
@@ -373,8 +395,8 @@ cd ../admin && npm install
 
 1. Create a new project at [supabase.com](https://supabase.com)
 2. Go to **SQL Editor** in your Supabase dashboard
-3. Apply each migration file in order (001 through 010) — paste and run each file from `supabase/migrations/`
-4. Run `supabase/seed.sql` to load the 20 starter quests and 13 badge definitions
+3. Apply each migration file in order (001 through **015**) — paste and run each file from `supabase/migrations/`
+4. Run `supabase/seed.sql` to load starter quests, badges, and geofence examples
 5. Go to **Project Settings → API** and copy your:
    - Project URL
    - `anon` public key
@@ -486,30 +508,19 @@ Quest detail page
   (category colour, description, XP, sponsor)
     │
     ▼  tap "Start Quest"
-GPS geofence check ──── fail ──→ "You're not close enough" message
+GPS geofence pre-check (@quest/geofence) ─ fail ──→ "You're not close enough"
     │ pass
     ▼
-Camera opens
+Camera opens (in-app only)
     │ capture photo
     ▼
 Photo uploaded to proof-photos bucket
     │
     ▼
-completion row inserted (status: 'pending')
+INSERT completion → server geofence trigger (013–015)
     │
-    ▼
-Admin approval queue
-    │ admin approves
-    ▼
-DB trigger fires:
-  - XP added to profile
-  - Level recalculated
-  - Streak updated
-  - Badges checked (13 conditions)
-    │
-    ▼
-Push notification sent to player
-Completion appears on activity feed
+    ├── Today: status pending → admin approves → DB trigger: XP, level, streak, badges
+    └── Spec 02: auto-approved on insert → instant celebration + feed (unless opted out)
 ```
 
 ### XP and Level System
@@ -659,17 +670,13 @@ Quest! uses the **Harbour Electric** design system. Full spec in [DESIGN.md](DES
 
 ### Unit Tests
 
-Logic tests live at `apps/mobile/__tests__/logic.test.js` and cover 84 assertions across:
+Logic tests live at `apps/mobile/__tests__/logic.test.js` (**98 assertions**). Geofence package tests at `packages/geofence/src/__tests__/geofence.test.js` (**44 assertions**). CI runs both (see `.github/workflows/ci.yml`).
 
-- XP calculation and level thresholds
-- Leaderboard ranking logic
-- Geofence distance calculations (Haversine formula)
-- Greeting text generation
-- Avatar URL helpers
+Coverage includes XP/level thresholds, leaderboard logic, Haversine and polygon geofence checks, greeting text, and avatar URL helpers.
 
 ```bash
-cd apps/mobile
-npm test
+node apps/mobile/__tests__/logic.test.js
+node packages/geofence/src/__tests__/geofence.test.js
 ```
 
 ### Type Checking
@@ -686,9 +693,10 @@ cd apps/admin && npx tsc --noEmit
 
 Every push to `main` and every pull request targeting `main` runs `.github/workflows/ci.yml`:
 
-1. **logic-tests** — Node 20; runs `apps/mobile/__tests__/logic.test.js`
-2. **typescript-check-mobile** — Installs deps; runs `tsc --noEmit` on the mobile app
-3. **typescript-check-admin** — Installs deps; runs `tsc --noEmit` on the admin dashboard
+1. **geofence-tests** — 44 assertions in `packages/geofence`
+2. **logic-tests** — 98 assertions in `apps/mobile`
+3. **typescript-check-mobile** — `tsc --noEmit` on the mobile app
+4. **typescript-check-admin** — `tsc --noEmit` on the admin dashboard
 
 ---
 
@@ -745,15 +753,12 @@ The admin app uses Next.js ISR for the user directory page (60-second revalidati
 
 ## Roadmap
 
-See [ROADMAP.md](ROADMAP.md) for the full status breakdown.
+See [ROADMAP.md](ROADMAP.md) for the full phase plan and [docs/specs/README.md](docs/specs/README.md) for feature specs.
 
-**In progress**
-- Sponsored quest redemption code flow (mobile UI not yet connected to edge function)
-- Push notification tap handlers (token registration is wired; deep link on tap is not)
+**Shipped:** geofence system (four zone types, admin draw UI, `@quest/geofence` package), 5-tab Harbour Electric UI, activity feed, quest scheduling schema.
 
-**Coming next**
-- Avatar upload in the Edit Profile screen
-- Streak milestone celebration modal
-- ESLint and Prettier configuration
-- UI and integration tests (Detox for mobile, Playwright for admin)
-- Multi-city support (city picker in admin, per-city quest filtering)
+**P0 before launch:** instant verification (Spec 02) + reports/moderation (Spec 03), PostHog analytics (Spec 04), iOS submit credentials, production admin allowlist.
+
+**Post-launch:** community quests & weekly drops (Spec 05), duo quests & recap card (Spec 06), merchant redemption validation (Spec 07).
+
+**Deliberately deferred:** multi-city, self-serve sponsor portal, follow/friend graph.

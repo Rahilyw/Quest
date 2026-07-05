@@ -37,7 +37,7 @@ The June 2026 Figma reimagining adds a **game-show layer**: photo proof in a pub
 
 1. **Realness over polish.** The interface should feel like it was made for the city, not for a portfolio. Proof photos in the activity feed are the product — not stock imagery.
 2. **Local identity is the product.** Generic is a bug. Every surface should feel like it could only exist in the city it serves. Quest copy, category names, empty states: all of them should feel written by someone standing on that street.
-3. **Earned, not given.** XP and badges carry weight because they represent real effort. The UI must respect that: no confetti on a pending submission, no XP counter before approval, no fake progress on incomplete actions.
+3. **Earned, not given — and earned *there*.** XP and badges carry weight because they represent real, verified effort. Verification happens at the location, at the moment: the geofence is the proof, and the reward lands seconds after the real-world act (see `docs/specs/02-instant-verification.md`). No XP for unverified actions, no fake progress — but also no waiting for a stranger to approve what you already did.
 4. **Bold decisions, not safe ones.** Bold · Local · Playful means committing to choices that surprise. A podium leaderboard and navy hero headers are intentional — not a generic list with medals pasted on.
 5. **Design serves getting outside.** Every tap, every screen, every empty state should reduce friction between the user and the real world. If a screen makes someone spend longer in the app, it has failed.
 
@@ -54,6 +54,42 @@ Five primary tabs (see `DESIGN.md`):
 | **Profile** | "What's my story?" — stats, recent activity, account access |
 
 Settings, edit profile, quest detail, and submission remain stack screens outside the tab bar.
+
+## Content engine
+
+The city writes the game. Quest content comes from three sources, in rising order of importance:
+
+1. **Seeded quests** — the founder-authored starter set (Victoria pilot: ~28).
+2. **Weekly drops** — new quests land Monday morning; expiring quests end Sunday night, bookending the leaderboard week. The rhythm is the product: Monday pulls you out, Sunday night settles the score.
+3. **Community-suggested quests** — locals submit ideas; the best are curated, published, and credited ("Quest by @sarah"). The people who know the streets write the streets. See `docs/specs/05-community-quests.md`.
+
+Quest chains group existing quests into neighbourhood storylines ("The Old Town Trilogy") for progression depth without content volume.
+
+## Playing together
+
+The mission is real-world connection, so the game can't stay single-player. **Duo quests** require two people at the location — both submit, both earn bonus XP — and bringing someone who doesn't have Quest! yet is the growth loop (see `docs/specs/06-growth-engagement.md`). The **Sunday recap card** (rank, XP, streak, best photo) is the shareable unit: your week in the city, worth showing off. No follow graphs or DMs in the pilot — one city, one feed, one leaderboard is the social layer.
+
+## Safety, privacy & trust
+
+The activity feed is user-generated content and is treated that way:
+
+- **Report** on every feed post; repeated independent reports hide a post pending review.
+- **Block** any user; their posts disappear from your feed.
+- **Moderation** — a human reviews every flagged post with GPS evidence; removal revokes the XP. (Apple Guideline 1.2 compliance; see `docs/specs/03-report-moderation.md`.)
+- **Feed opt-out** — players can complete quests without their photo appearing publicly. Some quests photograph journal entries and strangers; publication is a choice, not a toll.
+- Proof photos come from the in-app camera only. Location is verified server-side and never shown to other players beyond the quest itself.
+
+## Success metrics
+
+Instrumented via product analytics from day one of the pilot (see `docs/specs/04-analytics-instrumentation.md`):
+
+| Metric | Signal |
+|---|---|
+| **WAU retention after first quest** | Primary retention |
+| **Sponsor quest renewal rate** | Primary revenue — proven with merchant-validated redemption counts |
+| **Leaderboard week-2 return** | Secondary engagement |
+| **Average XP per MAU** | Depth of play |
+| **Time-to-first-XP** | Activation — target median < 24 h; the no-geofence starter quest aims at < 5 minutes |
 
 ## Accessibility & Inclusion
 
