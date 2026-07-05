@@ -1,6 +1,7 @@
 'use server'
 
 import { revalidatePath } from 'next/cache'
+import { validatePolygonRing } from '@quest/geofence'
 import { supabaseAdmin } from '@/lib/supabase'
 
 export interface Badge {
@@ -19,8 +20,10 @@ export interface Quest {
   lat: number
   lng: number
   radius_meters: number
-  geofence_type: 'none' | 'circle' | 'city'
+  geofence_type: 'none' | 'circle' | 'city' | 'polygon'
   city_id: string | null
+  /** GeoJSON Polygon from the generated boundary_geojson column; read-only. */
+  boundary_geojson: { type: 'Polygon'; coordinates: number[][][] } | null
   xp_reward: number
   is_sponsored: boolean
   sponsor_name: string | null
@@ -47,7 +50,30 @@ export async function getBadges(): Promise<Badge[]> {
   return (data as Badge[]) ?? []
 }
 
-type GeofenceType = 'none' | 'circle' | 'city'
+type GeofenceType = 'none' | 'circle' | 'city' | 'polygon'
+
+/**
+ * Parse a boundary_geojson form value into a validated GeoJSON Polygon.
+ * Returns { geojson } on success or { error } on any problem.
+ */
+function parseBoundaryGeojson(
+  raw: string | null
+): { geojson: { type: 'Polygon'; coordinates: number[][][] } } | { error: string } {
+  if (!raw) return { error: 'Draw the quest zone on the map first.' }
+  let parsed: unknown
+  try {
+    parsed = JSON.parse(raw)
+  } catch {
+    return { error: 'Quest zone data is malformed — redraw the shape.' }
+  }
+  const geojson = parsed as { type?: string; coordinates?: number[][][] }
+  if (geojson?.type !== 'Polygon' || !Array.isArray(geojson.coordinates)) {
+    return { error: 'Quest zone must be a polygon — redraw the shape.' }
+  }
+  const validation = validatePolygonRing(geojson.coordinates[0])
+  if (!validation.ok) return { error: validation.error }
+  return { geojson: { type: 'Polygon', coordinates: [validation.ring] } }
+}
 
 function validateGeofence(input: {
   geofence_type: GeofenceType
@@ -55,6 +81,7 @@ function validateGeofence(input: {
   lng: number
   radius_meters: number
   city_id: string | null
+  boundary_geojson?: string | null
 }): string | null {
   if (Number.isNaN(input.lat) || Number.isNaN(input.lng)) {
     return 'Valid latitude and longitude are required.'
@@ -70,6 +97,10 @@ function validateGeofence(input: {
     case 'city':
       if (!input.city_id) return 'City is required for city-wide geofence.'
       return null
+    case 'polygon': {
+      const result = parseBoundaryGeojson(input.boundary_geojson ?? null)
+      return 'error' in result ? result.error : null
+    }
   }
 }
 
@@ -82,10 +113,9 @@ export async function createQuest(formData: FormData): Promise<{ ok: true; quest
     const lng = parseFloat(String(formData.get('lng') ?? ''))
     const geofence_type = String(formData.get('geofence_type') ?? 'circle') as GeofenceType
     const city_id = String(formData.get('city_id') ?? '').trim() || null
+    const boundary_geojson = String(formData.get('boundary_geojson') ?? '').trim() || null
     let radius_meters = parseInt(String(formData.get('radius_meters') ?? '300'), 10)
-    if (geofence_type === 'none') {
-      radius_meters = 0
-    } else if (geofence_type === 'city') {
+    if (geofence_type !== 'circle') {
       radius_meters = 0
     }
     const xp_reward = parseInt(String(formData.get('xp_reward') ?? '100'), 10)
@@ -98,7 +128,7 @@ export async function createQuest(formData: FormData): Promise<{ ok: true; quest
     if (!title || !description) {
       return { ok: false, error: 'Title and description are required.' }
     }
-    const geofenceError = validateGeofence({ geofence_type, lat, lng, radius_meters, city_id })
+    const geofenceError = validateGeofence({ geofence_type, lat, lng, radius_meters, city_id, boundary_geojson })
     if (geofenceError) return { ok: false, error: geofenceError }
     if (is_sponsored && !sponsor_name) {
       return { ok: false, error: 'Sponsor name is required for sponsored quests.' }
@@ -134,7 +164,7 @@ export async function createQuest(formData: FormData): Promise<{ ok: true; quest
         lng,
         radius_meters,
         geofence_type,
-        city_id,
+        city_id: geofence_type === 'city' ? city_id : null,
         xp_reward,
         is_sponsored,
         sponsor_name: is_sponsored ? sponsor_name : null,
@@ -147,6 +177,24 @@ export async function createQuest(formData: FormData): Promise<{ ok: true; quest
 
     if (insertError || !quest) {
       return { ok: false, error: insertError?.message ?? 'Failed to create quest.' }
+    }
+
+    if (geofence_type === 'polygon') {
+      // Boundary is written through the validated RPC (migration 015). If it
+      // fails, remove the just-created quest so no broken polygon quest lives.
+      const parsed = parseBoundaryGeojson(boundary_geojson)
+      if ('error' in parsed) {
+        await supabaseAdmin.from('quests').delete().eq('id', quest.id)
+        return { ok: false, error: parsed.error }
+      }
+      const { error: boundaryError } = await supabaseAdmin.rpc('set_quest_boundary', {
+        p_quest_id: quest.id,
+        p_geojson: parsed.geojson,
+      })
+      if (boundaryError) {
+        await supabaseAdmin.from('quests').delete().eq('id', quest.id)
+        return { ok: false, error: `Quest zone rejected: ${boundaryError.message}` }
+      }
     }
 
     if (badgeIds.length > 0) {
@@ -188,8 +236,10 @@ export interface UpdateQuestInput {
   lat: number
   lng: number
   radius_meters: number
-  geofence_type: 'none' | 'circle' | 'city'
+  geofence_type: 'none' | 'circle' | 'city' | 'polygon'
   city_id: string | null
+  /** Stringified GeoJSON Polygon; required when geofence_type is 'polygon'. */
+  boundary_geojson: string | null
   xp_reward: number
   is_sponsored: boolean
   sponsor_name: string | null
@@ -198,12 +248,12 @@ export interface UpdateQuestInput {
 
 export async function updateQuest(input: UpdateQuestInput): Promise<{ ok: true; quest: Quest } | { ok: false; error: string }> {
   try {
-    const { id, title, description, category, lat, lng, radius_meters, geofence_type, city_id, xp_reward, is_sponsored, sponsor_name, sponsor_reward } = input
+    const { id, title, description, category, lat, lng, radius_meters, geofence_type, city_id, boundary_geojson, xp_reward, is_sponsored, sponsor_name, sponsor_reward } = input
 
     if (!title.trim() || !description.trim()) {
       return { ok: false, error: 'Title and description are required.' }
     }
-    const geofenceError = validateGeofence({ geofence_type, lat, lng, radius_meters, city_id })
+    const geofenceError = validateGeofence({ geofence_type, lat, lng, radius_meters, city_id, boundary_geojson })
     if (geofenceError) return { ok: false, error: geofenceError }
     if (Number.isNaN(xp_reward) || xp_reward < 25 || xp_reward > 1000) {
       return { ok: false, error: 'XP reward must be between 25 and 1000.' }
@@ -212,7 +262,7 @@ export async function updateQuest(input: UpdateQuestInput): Promise<{ ok: true; 
       return { ok: false, error: 'Sponsor name and reward are required for sponsored quests.' }
     }
 
-    const { data: quest, error: updateError } = await supabaseAdmin
+    const { error: updateError } = await supabaseAdmin
       .from('quests')
       .update({
         title: title.trim(),
@@ -220,20 +270,43 @@ export async function updateQuest(input: UpdateQuestInput): Promise<{ ok: true; 
         category,
         lat,
         lng,
-        radius_meters,
+        radius_meters: geofence_type === 'circle' ? radius_meters : 0,
         geofence_type,
-        city_id,
+        city_id: geofence_type === 'city' ? city_id : null,
+        // Leaving polygon: drop the boundary in the same statement so the
+        // quests_boundary_type_check constraint stays satisfied.
+        ...(geofence_type !== 'polygon' ? { boundary: null } : {}),
         xp_reward,
         is_sponsored,
         sponsor_name: is_sponsored ? (sponsor_name?.trim() ?? null) : null,
         sponsor_reward: is_sponsored ? (sponsor_reward?.trim() ?? null) : null,
       })
       .eq('id', id)
+
+    if (updateError) {
+      return { ok: false, error: updateError.message }
+    }
+
+    if (geofence_type === 'polygon') {
+      const parsed = parseBoundaryGeojson(boundary_geojson)
+      if ('error' in parsed) return { ok: false, error: parsed.error }
+      const { error: boundaryError } = await supabaseAdmin.rpc('set_quest_boundary', {
+        p_quest_id: id,
+        p_geojson: parsed.geojson,
+      })
+      if (boundaryError) {
+        return { ok: false, error: `Quest zone rejected: ${boundaryError.message}` }
+      }
+    }
+
+    const { data: quest, error: fetchError } = await supabaseAdmin
+      .from('quests')
       .select('*, quest_badges(badge_id, badge:badges(*))')
+      .eq('id', id)
       .single()
 
-    if (updateError || !quest) {
-      return { ok: false, error: updateError?.message ?? 'Failed to update quest.' }
+    if (fetchError || !quest) {
+      return { ok: false, error: fetchError?.message ?? 'Failed to update quest.' }
     }
 
     revalidatePath('/quests')

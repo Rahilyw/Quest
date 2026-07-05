@@ -3,11 +3,21 @@
 import { useEffect, useState, useMemo, useRef } from 'react'
 import { theme, VICTORIA_DEFAULT } from '@/lib/theme'
 import { boundaryToLeafletCoords, VICTORIA_BOUNDARY } from '@/lib/cities'
-import { formatGeofenceLabel, RADIUS_PRESETS, DEFAULT_CITY_ID } from '@quest/geofence'
+import {
+  formatGeofenceLabel,
+  RADIUS_PRESETS,
+  DEFAULT_CITY_ID,
+  validatePolygonRing,
+  polygonAreaMeters,
+  polygonCentroid,
+  openRing,
+  closeRing,
+  POLYGON_MIN_VERTICES,
+} from '@quest/geofence'
 
 import 'leaflet/dist/leaflet.css'
 
-export type GeofenceType = 'none' | 'circle' | 'city'
+export type GeofenceType = 'none' | 'circle' | 'city' | 'polygon'
 
 interface GeofenceEditorProps {
   geofenceType: GeofenceType
@@ -19,6 +29,9 @@ interface GeofenceEditorProps {
   onRadiusChange: (radius: number) => void
   cityId: string | null
   onCityIdChange: (cityId: string | null) => void
+  /** Closed GeoJSON ring [lng, lat][] for polygon quests; null when not drawn. */
+  boundaryRing: number[][] | null
+  onBoundaryChange: (ring: number[][] | null) => void
   /** When true, emit hidden inputs for FormData (create form). When false, parent manages state only (edit form). */
   renderHiddenInputs?: boolean
 }
@@ -29,6 +42,7 @@ let TileLayer: any = null
 let Marker: any = null
 let Circle: any = null
 let Polygon: any = null
+let Polyline: any = null
 let useMap: any = null
 let useMapEvents: any = null
 let L: any = null
@@ -42,6 +56,7 @@ function initLeaflet() {
     Marker = reactLeaflet.Marker
     Circle = reactLeaflet.Circle
     Polygon = reactLeaflet.Polygon
+    Polyline = reactLeaflet.Polyline
     useMap = reactLeaflet.useMap
     useMapEvents = reactLeaflet.useMapEvents
 
@@ -53,6 +68,30 @@ function initLeaflet() {
       shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png',
     })
   }
+}
+
+function vertexIcon(color: string, size = 14) {
+  return L.divIcon({
+    className: '',
+    html: `<div style="width:${size}px;height:${size}px;border-radius:50%;background:${color};border:2px solid #fff;box-shadow:0 1px 3px rgba(0,0,0,0.4);cursor:grab"></div>`,
+    iconSize: [size, size],
+    iconAnchor: [size / 2, size / 2],
+  })
+}
+
+function midpointIcon() {
+  return L.divIcon({
+    className: '',
+    html: '<div style="width:10px;height:10px;border-radius:50%;background:rgba(255,255,255,0.85);border:2px solid rgba(67,100,247,0.6);cursor:grab"></div>',
+    iconSize: [10, 10],
+    iconAnchor: [5, 5],
+  })
+}
+
+function formatArea(m2: number): string {
+  if (m2 < 10_000) return `${Math.round(m2)} m²`
+  if (m2 < 1_000_000) return `${(m2 / 10_000).toFixed(1)} ha`
+  return `${(m2 / 1_000_000).toFixed(1)} km²`
 }
 
 function MapRecenter({ lat, lng }: { lat: number; lng: number }) {
@@ -82,9 +121,13 @@ export default function GeofenceEditor({
   onRadiusChange,
   cityId,
   onCityIdChange,
+  boundaryRing,
+  onBoundaryChange,
   renderHiddenInputs = false,
 }: GeofenceEditorProps) {
   const [isMounted, setIsMounted] = useState(false)
+  /** In-progress polygon vertices as [lat, lng] while drawing (not yet committed). */
+  const [draft, setDraft] = useState<[number, number][]>([])
   const markerRef = useRef<any>(null)
 
   useEffect(() => {
@@ -118,12 +161,85 @@ export default function GeofenceEditor({
     } else if (type === 'city') {
       onCityIdChange(DEFAULT_CITY_ID)
       onRadiusChange(0)
+    } else if (type === 'polygon') {
+      onRadiusChange(0)
+      onCityIdChange(null)
     }
+    // Drawn boundary survives type switches so a mis-click doesn't destroy
+    // work; the server clears it when a non-polygon quest is saved.
   }
 
   const handleResetToVictoria = () => {
     onLatLngChange(VICTORIA_DEFAULT.lat, VICTORIA_DEFAULT.lng)
   }
+
+  // ─── Polygon drawing ───────────────────────────────────────────────────────
+
+  const openBoundary = useMemo(
+    () => (boundaryRing ? openRing(boundaryRing) : null),
+    [boundaryRing]
+  )
+
+  function commitRing(open: number[][]) {
+    const closed = closeRing(open)
+    onBoundaryChange(closed)
+    const centroid = polygonCentroid(closed)
+    if (centroid) onLatLngChange(centroid.lat, centroid.lng)
+  }
+
+  function finishDraft() {
+    if (draft.length < POLYGON_MIN_VERTICES) return
+    commitRing(draft.map(([vLat, vLng]) => [vLng, vLat]))
+    setDraft([])
+  }
+
+  function clearPolygon() {
+    setDraft([])
+    onBoundaryChange(null)
+  }
+
+  function updateVertex(index: number, vLat: number, vLng: number) {
+    if (!openBoundary) return
+    const next = openBoundary.map((v, i) => (i === index ? [vLng, vLat] : v))
+    commitRing(next)
+  }
+
+  function deleteVertex(index: number) {
+    if (!openBoundary || openBoundary.length <= POLYGON_MIN_VERTICES) return
+    commitRing(openBoundary.filter((_, i) => i !== index))
+  }
+
+  function insertVertexAfter(index: number, vLat: number, vLng: number) {
+    if (!openBoundary) return
+    const next = [...openBoundary]
+    next.splice(index + 1, 0, [vLng, vLat])
+    commitRing(next)
+  }
+
+  function handleMapClick(clickLat: number, clickLng: number) {
+    if (geofenceType === 'polygon') {
+      // Clicks add vertices while drawing; a committed shape is edited via its
+      // handles, so stray map clicks do nothing.
+      if (!boundaryRing) setDraft((prev) => [...prev, [clickLat, clickLng]])
+      return
+    }
+    onLatLngChange(clickLat, clickLng)
+  }
+
+  const polygonValidation = useMemo(
+    () => (geofenceType === 'polygon' && boundaryRing ? validatePolygonRing(boundaryRing) : null),
+    [geofenceType, boundaryRing]
+  )
+
+  const boundaryArea = useMemo(
+    () => (boundaryRing ? polygonAreaMeters(boundaryRing) : 0),
+    [boundaryRing]
+  )
+
+  const boundaryGeojsonValue =
+    geofenceType === 'polygon' && boundaryRing
+      ? JSON.stringify({ type: 'Polygon', coordinates: [boundaryRing] })
+      : ''
 
   const mapContent = useMemo(() => {
     if (!isMounted || !MapContainer) {
@@ -147,6 +263,8 @@ export default function GeofenceEditor({
       )
     }
 
+    const drawing = geofenceType === 'polygon' && !boundaryRing
+
     return (
       <div
         style={{
@@ -155,6 +273,7 @@ export default function GeofenceEditor({
           border: `1px solid ${theme.border}`,
           overflow: 'hidden',
           position: 'relative',
+          cursor: drawing ? 'crosshair' : undefined,
         }}
       >
         <MapContainer
@@ -168,13 +287,15 @@ export default function GeofenceEditor({
             url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
           />
           <MapRecenter lat={lat} lng={lng} />
-          <MapEvents onClick={onLatLngChange} />
-          <Marker
-            position={[lat, lng]}
-            draggable={true}
-            ref={markerRef}
-            eventHandlers={eventHandlers}
-          />
+          <MapEvents onClick={handleMapClick} />
+          {geofenceType !== 'polygon' && (
+            <Marker
+              position={[lat, lng]}
+              draggable={true}
+              ref={markerRef}
+              eventHandlers={eventHandlers}
+            />
+          )}
           {geofenceType === 'circle' && (
             <Circle
               center={[lat, lng]}
@@ -198,10 +319,79 @@ export default function GeofenceEditor({
               }}
             />
           )}
+
+          {/* Drawing in progress: dashed preview + numbered vertices */}
+          {drawing && draft.length >= 2 && (
+            <Polyline
+              positions={draft}
+              pathOptions={{ color: theme.primary, weight: 2, dashArray: '6 6' }}
+            />
+          )}
+          {drawing &&
+            draft.map(([vLat, vLng], i) => (
+              <Marker
+                key={`draft-${i}`}
+                position={[vLat, vLng]}
+                icon={vertexIcon(i === 0 ? theme.highlight ?? '#f59e0b' : theme.primary)}
+                eventHandlers={
+                  i === 0 && draft.length >= POLYGON_MIN_VERTICES
+                    ? { click: () => finishDraft() }
+                    : undefined
+                }
+              />
+            ))}
+
+          {/* Committed shape: polygon + draggable vertex/midpoint handles */}
+          {geofenceType === 'polygon' && openBoundary && (
+            <>
+              <Polygon
+                positions={openBoundary.map(([vLng, vLat]) => [vLat, vLng])}
+                pathOptions={{
+                  fillColor: theme.primary,
+                  fillOpacity: 0.15,
+                  color: theme.primary,
+                  weight: 2,
+                }}
+              />
+              {openBoundary.map(([vLng, vLat], i) => (
+                <Marker
+                  key={`vertex-${i}-${openBoundary.length}`}
+                  position={[vLat, vLng]}
+                  draggable={true}
+                  icon={vertexIcon(theme.primary)}
+                  eventHandlers={{
+                    dragend: (e: any) => {
+                      const p = e.target.getLatLng()
+                      updateVertex(i, p.lat, p.lng)
+                    },
+                    contextmenu: () => deleteVertex(i),
+                  }}
+                />
+              ))}
+              {openBoundary.map(([vLng, vLat], i) => {
+                const [nLng, nLat] = openBoundary[(i + 1) % openBoundary.length]
+                return (
+                  <Marker
+                    key={`mid-${i}-${openBoundary.length}`}
+                    position={[(vLat + nLat) / 2, (vLng + nLng) / 2]}
+                    draggable={true}
+                    icon={midpointIcon()}
+                    eventHandlers={{
+                      dragend: (e: any) => {
+                        const p = e.target.getLatLng()
+                        insertVertexAfter(i, p.lat, p.lng)
+                      },
+                    }}
+                  />
+                )
+              })}
+            </>
+          )}
         </MapContainer>
       </div>
     )
-  }, [isMounted, geofenceType, lat, lng, radiusMeters, eventHandlers, onLatLngChange])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isMounted, geofenceType, lat, lng, radiusMeters, eventHandlers, draft, boundaryRing, openBoundary])
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
@@ -213,6 +403,7 @@ export default function GeofenceEditor({
           <input type="hidden" name="lat" value={lat} />
           <input type="hidden" name="lng" value={lng} />
           <input type="hidden" name="radius_meters" value={geofenceType === 'circle' ? radiusMeters : 0} />
+          <input type="hidden" name="boundary_geojson" value={boundaryGeojsonValue} />
         </>
       )}
 
@@ -225,12 +416,13 @@ export default function GeofenceEditor({
       </div>
 
       {/* Type selection pills */}
-      <div style={{ display: 'flex', gap: 8 }}>
-        {(['none', 'circle', 'city'] as const).map((type) => {
+      <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+        {(['none', 'circle', 'city', 'polygon'] as const).map((type) => {
           const active = geofenceType === type
           let label = 'Anywhere'
           if (type === 'circle') label = 'Radius'
           if (type === 'city') label = 'Victoria'
+          if (type === 'polygon') label = 'Draw'
 
           return (
             <button
@@ -252,6 +444,7 @@ export default function GeofenceEditor({
               {type === 'none' && '📍 '}
               {type === 'circle' && '⭕ '}
               {type === 'city' && '🌆 '}
+              {type === 'polygon' && '✏️ '}
               {label}
             </button>
           )
@@ -261,10 +454,78 @@ export default function GeofenceEditor({
       {/* Map preview */}
       {mapContent}
 
+      {/* Conditional: Polygon draw controls */}
+      {geofenceType === 'polygon' && (
+        <div className="admin-card" style={{ background: theme.bgElevated, border: `1px solid ${theme.border}`, padding: 14 }}>
+          {!boundaryRing ? (
+            <>
+              <p style={{ margin: '0 0 10px', fontSize: 13, color: theme.textMuted }}>
+                {draft.length === 0
+                  ? 'Tap the map to add points. Add at least 3, then finish the shape.'
+                  : `${draft.length} point${draft.length === 1 ? '' : 's'} — tap the first point or Finish to close the shape.`}
+              </p>
+              <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                <button
+                  type="button"
+                  className="admin-btn admin-btn-primary"
+                  style={{ fontSize: 12 }}
+                  disabled={draft.length < POLYGON_MIN_VERTICES}
+                  onClick={finishDraft}
+                >
+                  ✓ Finish shape ({draft.length})
+                </button>
+                <button
+                  type="button"
+                  className="admin-btn admin-btn-ghost"
+                  style={{ fontSize: 12 }}
+                  disabled={draft.length === 0}
+                  onClick={() => setDraft((prev) => prev.slice(0, -1))}
+                >
+                  ↩ Undo point
+                </button>
+                <button
+                  type="button"
+                  className="admin-btn admin-btn-ghost"
+                  style={{ fontSize: 12 }}
+                  disabled={draft.length === 0}
+                  onClick={clearPolygon}
+                >
+                  ✕ Clear
+                </button>
+              </div>
+            </>
+          ) : (
+            <>
+              <p style={{ margin: '0 0 10px', fontSize: 13, color: theme.textMuted }}>
+                <strong style={{ color: theme.text }}>
+                  {openBoundary?.length ?? 0} points · {formatArea(boundaryArea)}
+                </strong>
+                {' — '}drag points to adjust · drag a midpoint to add detail · right-click a point to remove it.
+              </p>
+              {polygonValidation && !polygonValidation.ok && (
+                <p style={{ margin: '0 0 10px', fontSize: 13, color: '#fca5a5', fontWeight: 600 }}>
+                  ⚠ {polygonValidation.error}
+                </p>
+              )}
+              <button
+                type="button"
+                className="admin-btn admin-btn-ghost"
+                style={{ fontSize: 12 }}
+                onClick={clearPolygon}
+              >
+                ✕ Clear and redraw
+              </button>
+            </>
+          )}
+        </div>
+      )}
+
       {/* Coordinate settings */}
       <div>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
-          <span className="admin-label" style={{ margin: 0 }}>Coordinates</span>
+          <span className="admin-label" style={{ margin: 0 }}>
+            {geofenceType === 'polygon' ? 'Map pin (auto-set to zone centre)' : 'Coordinates'}
+          </span>
           <button
             type="button"
             className="admin-btn admin-btn-ghost"

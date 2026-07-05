@@ -18,7 +18,8 @@ export default function NewQuestPage() {
   const [selectedBadges, setSelectedBadges] = useState<Set<string>>(new Set())
   const [isSponsored, setIsSponsored] = useState(false)
   const [category, setCategory] = useState('fitness')
-  const [geofenceType, setGeofenceType] = useState<'none' | 'circle' | 'city'>('circle')
+  const [geofenceType, setGeofenceType] = useState<'none' | 'circle' | 'city' | 'polygon'>('circle')
+  const [boundaryRing, setBoundaryRing] = useState<number[][] | null>(null)
   const [lat, setLat] = useState(VICTORIA_DEFAULT.lat)
   const [lng, setLng] = useState(VICTORIA_DEFAULT.lng)
   const [radiusMeters, setRadiusMeters] = useState(300)
@@ -167,6 +168,8 @@ export default function NewQuestPage() {
             onRadiusChange={setRadiusMeters}
             cityId={cityId}
             onCityIdChange={setCityId}
+            boundaryRing={boundaryRing}
+            onBoundaryChange={setBoundaryRing}
             renderHiddenInputs
           />
           <div className="admin-field" style={{ marginTop: 16 }}>

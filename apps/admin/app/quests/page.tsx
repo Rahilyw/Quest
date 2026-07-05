@@ -15,8 +15,9 @@ interface EditFormState {
   lat: string
   lng: string
   radius_meters: string
-  geofence_type: 'none' | 'circle' | 'city'
+  geofence_type: 'none' | 'circle' | 'city' | 'polygon'
   city_id: string
+  boundary_ring: number[][] | null
   xp_reward: string
   is_sponsored: boolean
   sponsor_name: string
@@ -33,6 +34,7 @@ function questToFormState(q: Quest): EditFormState {
     radius_meters: String(q.radius_meters),
     geofence_type: q.geofence_type ?? 'circle',
     city_id: q.city_id ?? '',
+    boundary_ring: q.boundary_geojson?.coordinates?.[0] ?? null,
     xp_reward: String(q.xp_reward),
     is_sponsored: q.is_sponsored,
     sponsor_name: q.sponsor_name ?? '',
@@ -70,6 +72,10 @@ function EditForm({ quest, onSave, onCancel }: { quest: Quest; onSave: (updated:
         radius_meters,
         geofence_type: form.geofence_type,
         city_id: form.city_id || null,
+        boundary_geojson:
+          form.geofence_type === 'polygon' && form.boundary_ring
+            ? JSON.stringify({ type: 'Polygon', coordinates: [form.boundary_ring] })
+            : null,
         xp_reward,
         is_sponsored: form.is_sponsored,
         sponsor_name: form.is_sponsored ? form.sponsor_name || null : null,
@@ -164,6 +170,8 @@ function EditForm({ quest, onSave, onCancel }: { quest: Quest; onSave: (updated:
           onRadiusChange={(r) => set('radius_meters', String(r))}
           cityId={form.city_id || null}
           onCityIdChange={(id) => set('city_id', id ?? '')}
+          boundaryRing={form.boundary_ring}
+          onBoundaryChange={(ring) => set('boundary_ring', ring)}
         />
 
         <div className="admin-field" style={{ marginTop: 16 }}>
@@ -347,6 +355,9 @@ export default function QuestsPage() {
                     )}
                     {(q.geofence_type ?? 'circle') === 'circle' && (
                       <span style={{ fontSize: 10, fontWeight: 700, color: theme.primaryLight }}>📍 {q.radius_meters}m</span>
+                    )}
+                    {(q.geofence_type ?? 'circle') === 'polygon' && (
+                      <span style={{ fontSize: 10, fontWeight: 700, color: theme.primaryLight }}>✏️ Custom zone</span>
                     )}
                   </div>
                   <h3 style={{ margin: '0 0 6px', fontSize: 16, fontWeight: 800, lineHeight: 1.3 }}>{q.title}</h3>
