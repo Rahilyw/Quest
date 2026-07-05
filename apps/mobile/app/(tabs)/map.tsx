@@ -54,6 +54,17 @@ export default function QuestMap() {
                   strokeWidth={1}
                 />
               )}
+              {geofenceType === 'polygon' && quest.boundary_geojson?.coordinates?.[0] && (
+                <Polygon
+                  coordinates={quest.boundary_geojson.coordinates[0].map(([lng, lat]) => ({
+                    latitude: lat,
+                    longitude: lng,
+                  }))}
+                  fillColor={`${CATEGORY_COLORS[quest.category]}22`}
+                  strokeColor={`${CATEGORY_COLORS[quest.category]}66`}
+                  strokeWidth={1}
+                />
+              )}
             </Fragment>
           )
         })}

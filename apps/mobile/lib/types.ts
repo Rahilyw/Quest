@@ -1,6 +1,12 @@
 export type QuestCategory = 'fitness' | 'social' | 'food' | 'community' | 'nature'
 
-export type GeofenceType = 'none' | 'circle' | 'city'
+export type GeofenceType = 'none' | 'circle' | 'city' | 'polygon'
+
+/** GeoJSON Polygon geometry, as exposed by quests.boundary_geojson (migration 015). */
+export interface PolygonGeometry {
+  type: 'Polygon'
+  coordinates: number[][][]
+}
 
 export type QuestStatus = 'active' | 'inactive'
 
@@ -23,6 +29,8 @@ export interface Quest {
   status: QuestStatus
   created_at: string
   cover_image_url?: string | null
+  /** Drawn perimeter for polygon quests; generated server-side, read-only. */
+  boundary_geojson?: PolygonGeometry | null
 }
 
 export interface QuestWithBadges extends Quest {
@@ -96,8 +104,8 @@ export type Database = {
     Tables: {
       quests: {
         Row: Quest
-        Insert: Omit<Quest, 'id' | 'created_at'>
-        Update: Partial<Omit<Quest, 'id' | 'created_at'>>
+        Insert: Omit<Quest, 'id' | 'created_at' | 'boundary_geojson'>
+        Update: Partial<Omit<Quest, 'id' | 'created_at' | 'boundary_geojson'>>
         Relationships: []
       }
       completions: {

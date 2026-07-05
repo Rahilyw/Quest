@@ -13,6 +13,8 @@ function formatGeofenceLabel(quest, cityName) {
       return `Within ${quest.radius_meters}m of location`
     case 'city':
       return cityName ? `Anywhere in ${cityName}` : 'Anywhere in city'
+    case 'polygon':
+      return 'Inside the quest zone'
     default:
       return `Within ${quest.radius_meters}m of location`
   }
@@ -30,6 +32,8 @@ function formatGeofenceShort(quest) {
       return `${quest.radius_meters}m`
     case 'city':
       return 'City-wide'
+    case 'polygon':
+      return 'Custom zone'
     default:
       return `${quest.radius_meters}m`
   }

@@ -59,3 +59,8 @@ insert into quests (title, description, category, lat, lng, xp_reward, status, r
 -- 3. Tight landmark circle (50m) — Mount Doug summit area
 insert into quests (title, description, category, lat, lng, xp_reward, status, radius_meters, geofence_type, city_id) values
 ('Summit Mount Doug', 'Hike to the Mount Doug summit lookout and take a photo with the view. You must be within 50 metres of the summit marker.', 'fitness', 48.4912, -123.3456, 200, 'active', 50, 'circle', null);
+
+-- 4. Custom drawn polygon (requires migrations 014 + 015) — rough Beacon Hill Park outline
+insert into quests (title, description, category, lat, lng, xp_reward, status, radius_meters, geofence_type, city_id, boundary) values
+('Picnic in Beacon Hill Park', 'Have a picnic anywhere inside Beacon Hill Park — the lawn, the pond, the lookout. Snap a photo of your spread.', 'nature', 48.4130, -123.3625, 150, 'active', 0, 'polygon', null,
+  ST_GeogFromText('POLYGON((-123.3695 48.4185, -123.3555 48.4185, -123.3555 48.4075, -123.3695 48.4075, -123.3695 48.4185))'));

@@ -17,6 +17,8 @@ Apply migrations in numeric/filename order:
 | `011_leaderboard_rank_snapshot.sql` | `profiles.last_week_rank` for weekly rank delta display |
 | `012_quest_scheduling.sql` | `quests.active_from` / `active_until` scheduling columns |
 | `013_geofence_system.sql` | PostGIS, `geofence_type` enum, `cities` table, completion geofence trigger |
+| `014_geofence_polygon_enum.sql` | Adds `polygon` to `geofence_type` (enum value must land in its own transaction) |
+| `015_geofence_polygon.sql` | `quests.boundary` + generated `boundary_geojson`, `set_quest_boundary()` validated write path, polygon branch in `check_completion_geofence()` |
 
 ## Env var naming drift
 

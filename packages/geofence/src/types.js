@@ -1,6 +1,12 @@
 'use strict'
 
-/** @typedef {'none' | 'circle' | 'city'} GeofenceType */
+/** @typedef {'none' | 'circle' | 'city' | 'polygon'} GeofenceType */
+
+/**
+ * @typedef {Object} PolygonGeometry GeoJSON Polygon geometry
+ * @property {'Polygon'} type
+ * @property {number[][][]} coordinates [ring][vertex][lng, lat]
+ */
 
 /**
  * @typedef {Object} LatLng
@@ -30,6 +36,7 @@
  * @property {LatLng} user
  * @property {number | null | undefined} [accuracyMeters]
  * @property {CityBoundary | null | undefined} [cityBoundary]
+ * @property {PolygonGeometry | null | undefined} [boundary] drawn perimeter for polygon quests (quests.boundary_geojson)
  * @property {boolean | undefined} [bypass]
  */
 

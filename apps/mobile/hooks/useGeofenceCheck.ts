@@ -28,6 +28,7 @@ export function useGeofenceCheck(
       accuracyMeters: coords.accuracy,
       cityBoundary:
         (quest.geofence_type ?? 'circle') === 'city' ? VICTORIA_BOUNDARY : null,
+      boundary: quest.boundary_geojson ?? null,
       bypass,
     })
   }, [quest, coords, bypass])
