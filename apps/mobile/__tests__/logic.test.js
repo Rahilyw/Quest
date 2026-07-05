@@ -667,6 +667,49 @@ assertEqual(
 )
 
 // ---------------------------------------------------------------------------
+// SECTION 14: Instant verification celebration (didLevelUp)
+// ---------------------------------------------------------------------------
+console.log('\n--- Section 14: didLevelUp (celebration) ---')
+
+function didLevelUp(previousXp, newXp) {
+  return getLevelFromXp(newXp) > getLevelFromXp(previousXp)
+}
+
+assertEqual('didLevelUp: 100 → 150 stays level 1', didLevelUp(100, 150), false)
+assertEqual('didLevelUp: 199 → 200 hits level 2', didLevelUp(199, 200), true)
+assertEqual('didLevelUp: 500 → 700 stays level 3', didLevelUp(500, 700), false)
+assertEqual('didLevelUp: 1999 → 2000 hits level 5', didLevelUp(1999, 2000), true)
+
+// ---------------------------------------------------------------------------
+// SECTION 16: Feed moderation filters
+// ---------------------------------------------------------------------------
+console.log('\n--- Section 16: feed moderation filters ---')
+
+function filterFeedPosts(posts, blockedIds, viewerId) {
+  return posts.filter(
+    (p) => !blockedIds.has(p.user_id) && !(viewerId && p.user_id === viewerId)
+  )
+}
+
+function shouldShowPostMenu(viewerId, postUserId) {
+  return viewerId != null && postUserId !== viewerId
+}
+
+const samplePosts = [
+  { id: '1', user_id: 'a' },
+  { id: '2', user_id: 'b' },
+  { id: '3', user_id: 'c' },
+]
+
+assertEqual(
+  'filterFeedPosts removes blocked users',
+  filterFeedPosts(samplePosts, new Set(['b']), 'me').map((p) => p.id).join(','),
+  '1,3'
+)
+assertEqual('shouldShowPostMenu hides menu on own post', shouldShowPostMenu('a', 'a'), false)
+assertEqual('shouldShowPostMenu shows menu on others', shouldShowPostMenu('a', 'b'), true)
+
+// ---------------------------------------------------------------------------
 // SUMMARY
 // ---------------------------------------------------------------------------
 console.log('\n=== SUMMARY ===')

@@ -1,26 +1,30 @@
 import Link from 'next/link'
 import { supabaseAdmin } from '@/lib/supabase'
+import { getFlaggedCount } from '@/app/moderation/actions'
 import { theme } from '@/lib/theme'
 
 export const revalidate = 60
 
 export default async function Dashboard() {
+  const flaggedCount = await getFlaggedCount()
+
   const [
     { count: totalUsers },
     { count: totalCompletions },
-    { count: pendingCompletions },
+    { count: removedCompletions },
     { count: activeQuests },
   ] = await Promise.all([
     supabaseAdmin.from('profiles').select('*', { count: 'exact', head: true }),
     supabaseAdmin.from('completions').select('*', { count: 'exact', head: true }).eq('status', 'approved'),
-    supabaseAdmin.from('completions').select('*', { count: 'exact', head: true }).eq('status', 'pending'),
+    supabaseAdmin.from('completions').select('*', { count: 'exact', head: true }).eq('status', 'removed'),
     supabaseAdmin.from('quests').select('*', { count: 'exact', head: true }).eq('status', 'active'),
   ])
 
   const stats = [
     { label: 'Total Users', value: totalUsers ?? 0, color: theme.primary, href: '/users' },
-    { label: 'Approved Completions', value: totalCompletions ?? 0, color: theme.success },
-    { label: 'Pending Review', value: pendingCompletions ?? 0, color: theme.warning, href: '/completions' },
+    { label: 'Approved Completions', value: totalCompletions ?? 0, color: theme.success, href: '/completions' },
+    { label: 'Flagged for review', value: flaggedCount, color: theme.warning, href: '/moderation' },
+    { label: 'Removed (moderated)', value: removedCompletions ?? 0, color: theme.danger, href: '/completions' },
     { label: 'Active Quests', value: activeQuests ?? 0, color: theme.categories.community.color, href: '/quests' },
   ]
 

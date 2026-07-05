@@ -147,8 +147,9 @@ export function getQuestCoverImage(quest: { category: string; cover_image_url?: 
 /** @deprecated Use quest.geofence_type + @quest/geofence instead. Kept for legacy tests. */
 export const PROOF_GEOFENCE_RADIUS = 300
 
+/** Dev-only; never active in production builds (Spec 02). */
 export const BYPASS_GEOFENCE =
-  process.env.EXPO_PUBLIC_BYPASS_GEOFENCE === 'true' || __DEV__
+  __DEV__ && process.env.EXPO_PUBLIC_BYPASS_GEOFENCE === 'true'
 
 export const LEGAL_URLS = {
   privacyPolicy: 'https://quest.app/privacy',

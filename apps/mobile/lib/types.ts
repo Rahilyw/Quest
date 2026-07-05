@@ -10,7 +10,7 @@ export interface PolygonGeometry {
 
 export type QuestStatus = 'active' | 'inactive'
 
-export type CompletionStatus = 'pending' | 'approved' | 'rejected'
+export type CompletionStatus = 'pending' | 'approved' | 'rejected' | 'removed'
 
 export interface Quest {
   id: string
@@ -83,6 +83,7 @@ export interface UserProfile {
   longest_streak: number
   last_completion_week: string | null
   last_week_rank: number | null
+  feed_public: boolean
   created_at: string
 }
 

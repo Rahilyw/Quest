@@ -13,12 +13,14 @@ export function useLocation() {
   const [coords, setCoords] = useState<Coords | null>(null)
   const [permissionGranted, setPermissionGranted] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [isMocked, setIsMocked] = useState(false)
 
   const getCurrentLocation = useCallback(async () => {
     try {
       const location = await Location.getCurrentPositionAsync({
         accuracy: Location.Accuracy.High,
       })
+      setIsMocked(location.mocked === true)
       setCoords({
         lat: location.coords.latitude,
         lng: location.coords.longitude,
@@ -74,6 +76,7 @@ export function useLocation() {
     coords,
     permissionGranted,
     error,
+    isMocked,
     bypassGeofence: BYPASS_GEOFENCE,
     ensurePermission,
     refresh: getCurrentLocation,

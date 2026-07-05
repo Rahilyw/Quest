@@ -5,8 +5,8 @@ The spec set behind the post-MVP strategy: make rewards instant, let the communi
 | # | Spec | One-liner | Status |
 |---|---|---|---|
 | [01](01-geofence-drawing.md) | **Geofence Drawing** | Admin draws quest perimeters on a map — none / circle / city / custom polygon | ✅ **Shipped** (migrations 014–015, admin draw UI, mobile rendering) |
-| [02](02-instant-verification.md) | **Instant Verification** | Geofence pass = proof. Completions auto-approve on submit; XP, streaks, badges, redemption codes fire instantly. Manual approval removed. | Draft |
-| [03](03-report-moderation.md) | **Reports & Moderation** | Report button on feed posts, block user, admin moderation queue with XP revocation — Apple Guideline 1.2 compliance | Draft |
+| [02](02-instant-verification.md) | **Instant Verification** | Geofence pass = proof. Completions auto-approve on submit; XP, streaks, badges, redemption codes fire instantly. Manual approval removed. | ✅ **Shipped** (migration 016, instant celebration, admin log, rate limits) |
+| [03](03-report-moderation.md) | **Reports & Moderation** | Report button on feed posts, block user, feed privacy opt-out, admin moderation queue with XP revocation — Apple Guideline 1.2 compliance | ✅ **Shipped** (migration 017, ReportPostSheet, /moderation, feed_public) |
 | [04](04-analytics-instrumentation.md) | **Analytics** | PostHog + ~15-event schema so the success metrics in PRODUCT.md are actually measurable | Draft |
 | [05](05-community-quests.md) | **Community Quests & Drops** | Player-suggested quests with credit, Monday drop ritual, quest chains — solves the content treadmill | Draft |
 | [06](06-growth-engagement.md) | **Growth & Engagement** | Duo quests + referral loop, Sunday recap share card, XP economy events, first-quest onboarding, offline queue | Draft |
@@ -44,9 +44,9 @@ Plus the growth reality: word-of-mouth in a ~90k city is the entire distribution
 | Phase | Contents | Migrations | Status |
 |---|---|---|---|
 | **A** | Polygon geofences: enum, `boundary` + generated `boundary_geojson`, `set_quest_boundary()`, admin draw UI, mobile display | `014`, `015` | ✅ Shipped |
-| **B** | Instant verification: auto-approve on insert, rewards on insert path, in-DB redemption codes, revocation, anti-abuse guards; mobile celebration with real XP/streak | `016` | Next |
-| **C** | Reports & moderation: `completion_reports`, feed report button, block user, admin moderation queue; **approval queue + pending UI removed in the same release** | `017` | With B |
-| **D** | Analytics: PostHog wrapper, event schema, 4 dashboards | — | Before launch |
+| **B** | Instant verification: auto-approve on insert, rewards on insert path, in-DB redemption codes, revocation, anti-abuse guards; mobile celebration with real XP/streak | `016` | ✅ Shipped |
+| **C** | Reports & moderation: `completion_reports`, feed report button, block user, feed privacy opt-out, admin moderation queue; **approval queue + pending UI removed in the same release** | `017` | ✅ Shipped (with B) |
+| **D** | Analytics: PostHog wrapper, event schema, 4 dashboards | — | **Next** — before launch |
 | **E** | Content engine: weekly drop surfacing + push, community suggestions, chains | `018+` | Post-launch weeks 1–4 |
 | **F** | Growth: starter quest, recap card, XP events, offline queue, duo quests | `019+` | Post-launch weeks 2–8 |
 | **G** | Sponsor loop: merchant redemption page, redemption reporting | `020+` | Before sponsor renewals |

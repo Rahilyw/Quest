@@ -63,25 +63,32 @@ export default function TermsOfService(): JSX.Element {
           <Bullet>Go to the actual location. No couch completions.</Bullet>
           <Bullet>Take an honest photo when you are there — no old camera roll tricks.</Bullet>
           <Paragraph>
-            {`Quest location rules depend on the quest type. Some quests require you to be within a specific radius of a landmark (typically 50–300 metres). City-wide quests require you to be within Victoria, BC. Remote quests have no location requirement. GPS can be imprecise; if we cannot verify you were in the allowed zone, we may reject the submission.`}
+            Quest location rules depend on the quest type. Some quests require you to be within a specific radius of a landmark. City-wide quests require you to be within Victoria, BC. Remote quests have no location requirement. GPS can be imprecise; if we cannot verify you were in the allowed zone, the submission will not count.
           </Paragraph>
           <Bullet>Follow local laws and venue rules. We are not responsible if you hop a fence.</Bullet>
         </Section>
 
-        <Section title="Submissions">
+        <Section title="Submissions & verification">
           <Paragraph>
-            Every submission is reviewed by a human on our team. Pending does not mean
-            approved — hang tight. We may reject photos that look staged, off-location, or
-            inappropriate. You can appeal by emailing support, but our call on verification
-            is final for the pilot.
+            Valid submissions are verified instantly when you are inside the quest zone with an in-app photo. XP, streaks, and sponsored reward codes land right away — there is no manual approval queue.
+          </Paragraph>
+          <Paragraph>
+            The community can report posts that look wrong. We review reports and may remove a completion, which revokes the XP. You can turn off public feed sharing in Settings and keep proofs on your profile only.
+          </Paragraph>
+        </Section>
+
+        <Section title="Community & objectionable content">
+          <Paragraph>
+            Quest! is a user-generated feed of real-world proof photos. You must not post content that is illegal, harassing, sexually explicit, violent, or otherwise objectionable. Report tools exist on every feed post; we block and remove content that breaks these rules.
+          </Paragraph>
+          <Paragraph>
+            Abusing the report system or farming fake completions may result in account suspension. Contact support to appeal a removal during the pilot.
           </Paragraph>
         </Section>
 
         <Section title="XP and rewards">
           <Paragraph>
-            XP is awarded when your submission is approved, not when you hit submit. Leaderboard
-            rank updates after approval too. Sponsored quests may include a reward code — that
-            code only appears after approval, usually on your profile quest history.
+            XP is awarded when your submission verifies at the location. Leaderboard rank updates immediately. Sponsored quests may include a reward code on the celebration screen and in your profile history.
           </Paragraph>
         </Section>
 

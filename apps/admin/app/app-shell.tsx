@@ -9,6 +9,7 @@ function Sidebar() {
   const pathname = usePathname()
   const links = [
     { href: '/', label: 'Dashboard', icon: '◆' },
+    { href: '/moderation', label: 'Moderation', icon: '🚩' },
     { href: '/completions', label: 'Completions', icon: '◎' },
     { href: '/quests', label: 'Quests', icon: '⚡' },
     { href: '/quests/new', label: 'New Quest', icon: '＋' },

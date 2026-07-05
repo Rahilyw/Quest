@@ -1,6 +1,6 @@
 # Quest!
 
-**Real life, gamified.** Quest! is a city exploration app that turns your neighbourhood into a game. Players complete real-world challenges — trying a local café, running a trail, joining a community event — capture photo proof on location, and earn XP, badges, and leaderboard ranking. Completions are **geofence-validated server-side** (PostGIS); rewards currently wait on admin approval and are moving to **instant verification** ([Spec 02](docs/specs/02-instant-verification.md)). See [ROADMAP.md](ROADMAP.md) and [docs/specs/](docs/specs/README.md) for the full plan.
+**Real life, gamified.** Quest! is a city exploration app that turns your neighbourhood into a game. Players complete real-world challenges — trying a local café, running a trail, joining a community event — capture photo proof on location, and earn XP, badges, and leaderboard ranking **instantly**: completions are **geofence-verified server-side** (PostGIS) at the moment of submission, so the reward lands seconds after the real-world act. Community reports, block-user, feed privacy, and an admin moderation queue keep the public feed honest. See [ROADMAP.md](ROADMAP.md) and [docs/specs/](docs/specs/README.md) for the full plan.
 
 Built for Victoria, BC as the pilot city, but designed to drop into any city with a new seed file.
 
@@ -42,11 +42,11 @@ The core loop is:
 2. Player travels to the quest location — **four geofence types** (anywhere / circle / city / drawn polygon), enforced server-side on insert
 3. Player captures a **photo proof** with the in-app camera (no gallery picker)
 4. Submission uploads to Storage and inserts a completion row
-5. **Today:** admin approves from the dashboard → XP, badges, streak, push notification
-6. **Next (Spec 02):** geofence pass = proof → instant XP at the moment of effort; community reports replace pre-approval ([Spec 03](docs/specs/03-report-moderation.md))
-7. Completion appears on the **public activity feed** (with feed opt-out planned in Spec 03)
+5. **Geofence pass = proof:** the row auto-approves at insert (rate-limited) — XP, level, streak, badges, and any sponsored redemption code land instantly; the celebration shows the real numbers
+6. Completion appears on the **public activity feed** — unless the player turned off feed publishing in Settings
+7. The community can **report** posts (3 independent reports auto-hide) and **block** users; the admin **moderation queue** reviews flagged posts with GPS evidence — removal revokes the XP
 
-Strategic priorities before launch: instant verification, UGC moderation (Apple Guideline 1.2), analytics instrumentation ([Spec 04](docs/specs/04-analytics-instrumentation.md)), then content and growth specs 05–07.
+Strategic priorities before launch: analytics instrumentation ([Spec 04](docs/specs/04-analytics-instrumentation.md)), iOS store credentials, applying migrations live — then content and growth specs 05–07.
 
 ---
 
@@ -93,19 +93,20 @@ Quest! (monorepo root)
 │   │   │   ├── submit/[questId]  Camera + GPS submission flow
 │   │   │   ├── onboarding.tsx    3-screen intro + city selection
 │   │   │   └── ...               Edit profile, settings, legal
-│   │   ├── components/           Reusable UI components
+│   │   ├── components/           Reusable UI components (incl. ReportPostSheet)
 │   │   ├── hooks/                Data-fetching hooks (Supabase queries)
-│   │   ├── lib/                  Supabase client, constants, types
-│   │   └── __tests__/            Logic unit tests (98 assertions)
+│   │   ├── lib/                  Supabase client, constants, types, celebration
+│   │   └── __tests__/            Logic unit tests (105 assertions)
 │   │
 │   └── admin/                    Next.js admin dashboard
 │       ├── app/                  App Router pages
 │       │   ├── login/            Admin login (email allowlist)
-│       │   ├── completions/      Approval queue (→ moderation log in Spec 02)
+│       │   ├── completions/      Read-only completions log (spot-check + remove)
+│       │   ├── moderation/       Flagged-post queue — reports + GPS evidence
 │       │   ├── quests/           Quest management + GeofenceEditor (draw mode)
 │       │   ├── users/            User directory
 │       │   └── sponsors/         Sponsor completion reports
-│       ├── lib/                  Supabase clients (server + SSR)
+│       ├── lib/                  Supabase clients (server + SSR), Expo push
 │       └── middleware.ts         Auth redirect guard
 │
 ├── packages/
@@ -115,12 +116,11 @@ Quest! (monorepo root)
 │   └── specs/                    Feature specs 01–07 (instant verification era)
 │
 ├── supabase/
-│   ├── migrations/               001–015 SQL migration files (PostGIS geofence 013–015)
+│   ├── migrations/               001–017 (geofence 013–015 · instant verification 016 · moderation 017)
 │   ├── functions/
-│   │   ├── award-xp/             Badge checking + push notifications
-│   │   ├── generate-redemption-code/  Sponsor reward codes
-│   │   └── snapshot-ranks/       Weekly rank snapshot (011)
-│   ├── seed.sql                  ~28 Victoria quests + 13 badges + geofence examples
+│   │   └── snapshot-ranks/       Weekly rank snapshot (award-xp + generate-redemption-code
+│   │                             retired — absorbed into 016 DB triggers)
+│   ├── seed.sql                  ~29 Victoria quests + 13 badges + geofence examples
 │   └── config.toml               Edge function config
 │
 ├── tokens/                       Shared CSS design tokens
@@ -150,10 +150,11 @@ Quest! (monorepo root)
 - Client geofence pre-check via `@quest/geofence` (circle, city, polygon, or anywhere)
 - **Server-side geofence trigger** is the authority — inserts outside the zone are rejected
 - In-app camera captures photo proof
-- Submission uploads to Supabase Storage; completion row inserted (pending today → instant in Spec 02)
+- Submission uploads to Supabase Storage; the completion **auto-approves at insert** — the celebration shows real total XP, level-ups, the updated streak, and the redemption code for sponsored quests
+- Rate limits (2 per 10 min, 10 per 24 h) and Android mock-location blocking guard the unattended gate
 
 **Track progress**
-- XP earned on each approval; 10-level progression (0 → 15,000 XP)
+- XP earned instantly on verification; 10-level progression (0 → 15,000 XP)
 - Weekly leaderboard resets every Monday — compete for the top spot
 - Streak system: maintain a weekly completion streak to build momentum
 - 13 collectible badges with distinct unlock conditions
@@ -161,6 +162,8 @@ Quest! (monorepo root)
 **Social feed**
 - Activity tab shows a live feed of approved completions from the community
 - See who completed what, their level, and when
+- **Report** any post (⋯ menu, five reasons) and **block** users you don't want to see
+- **Feed privacy:** a Settings toggle lets you complete quests without publishing to the feed
 - Map preview shows quest pin distribution across the city
 
 **Rankings**
@@ -175,9 +178,13 @@ Quest! (monorepo root)
 
 ### For Admins (Dashboard)
 
-**Completions queue**
-- Pending submissions with photo thumbnail (click to expand), GPS coordinates, quest title, username, and XP value
-- One-click approve (triggers XP award + push notification) or reject
+**Moderation queue**
+- Flagged completions (reported by the community) with photo, report reasons, submitter history, and **GPS-vs-geofence evidence**
+- Actions: dismiss reports (post restored) · remove (XP revoked + owner notified by push) · remove-and-allow-retry
+- Posts auto-hide from the feed at 3 independent reports pending review
+
+**Completions log**
+- Read-only recent completions with photo, GPS, and quest info for spot-checking, with a one-click Remove
 - All admin queries run server-side with the service-role key
 
 **Quest management**
@@ -195,7 +202,7 @@ Quest! (monorepo root)
 - Export button for CSV/reporting
 
 **Dashboard overview**
-- Live counts: total users, approved completions, pending queue size, active quests
+- Live counts: total users, approved completions, flagged posts, active quests
 
 ---
 
@@ -235,7 +242,8 @@ Quest! (monorepo root)
 | Supabase Auth | Email/password authentication |
 | Supabase Postgres | Primary database with RLS |
 | Supabase Storage | Photo proof, avatars, quest covers |
-| Supabase Edge Functions | XP award + push notifications, redemption codes |
+| Supabase Edge Functions | Weekly rank snapshot (rewards + redemption codes run in DB triggers) |
+| PostGIS | Geofence enforcement at insert (4 zone types) |
 | Row Level Security | Per-user data access enforced at DB layer |
 
 ---
@@ -259,6 +267,8 @@ Extends Supabase Auth users with game data.
 | `current_streak` | integer | Consecutive weeks with ≥1 approved completion |
 | `longest_streak` | integer | Historical best streak |
 | `last_completion_week` | text | ISO week string (e.g., "2026-W25") |
+| `last_week_rank` | integer | Prior week's leaderboard rank (011) |
+| `feed_public` | boolean | Feed privacy opt-out — `false` hides all posts from the public feed (017) |
 
 #### `quests`
 
@@ -291,9 +301,33 @@ Extends Supabase Auth users with game data.
 | `photo_url` | text | Proof photo URL in `proof-photos` bucket |
 | `lat` / `lng` | float | GPS coordinates at submission time |
 | `completed_at` | timestamptz | Submission timestamp |
-| `status` | text | `pending`, `approved`, `rejected` |
-| `redemption_code` | text | Generated code for sponsored quests |
-| `reviewed_at` | timestamptz | Timestamp of admin decision |
+| `status` | enum | `approved` (set at insert) or `removed` (moderation); `pending`/`rejected` are legacy |
+| `redemption_code` | text | Auto-generated at insert for sponsored quests (016) |
+| `redeemed_at` | timestamptz | When the merchant marked the code redeemed (Spec 07) |
+| `reviewed_at` | timestamptz | Verification timestamp (set at insert) |
+| `reviewed_by` | text | Admin who actioned a moderation decision (017) |
+| `open_report_count` | integer | Open community reports (maintained by trigger, 017) |
+| `hidden_pending_review` | boolean | Auto-hidden from feed at 3 distinct reporters (017) |
+
+#### `completion_reports` (017)
+
+One report per user per post; immutable; can't report your own post; rate-limited (10/24 h) in-DB.
+
+| Column | Type | Description |
+|--------|------|-------------|
+| `completion_id` | uuid (FK) | Reported post |
+| `reporter_id` | uuid (FK) | Who reported |
+| `reason` | enum | `not_at_location`, `photo_mismatch`, `inappropriate`, `spam`, `other` |
+| `details` | text | Optional free text (≤500 chars) |
+| `status` | enum | `open`, `dismissed`, `actioned` |
+
+#### `blocked_users` (017)
+
+Composite PK (`blocker_id`, `blocked_id`). Users manage their own rows; the feed filters blocked users client-side.
+
+#### `cities` (013)
+
+City boundary polygons (PostGIS geography) for city-wide geofences. Pilot row: `victoria-bc`.
 
 #### `badges`
 
@@ -315,14 +349,19 @@ Links badges to specific quests. Composite PK on (`quest_id`, `badge_id`).
 
 **`leaderboard`** — Aggregates approved completions from the current ISO week, summing `xp_reward` per user, ordered highest first.
 
-### Key Database Triggers
+### Key Database Triggers (execution order on submit)
 
-**`on_completion_approved`** — Fires after any update to `completions`. When `status` changes to `'approved'`:
-- Increments `profiles.total_xp` by the quest's `xp_reward`
-- Recalculates `profiles.level` using the XP threshold table
-- Updates `current_streak`, `longest_streak`, and `last_completion_week`
+**`trg_enforce_completion_geofence`** (BEFORE INSERT, 013–015) — validates the submission coordinates against the quest's geofence via `check_completion_geofence()`; inserts outside the zone are rejected. Unbypassable by clients.
 
-**`on_xp_update`** — Fires after `profiles.total_xp` changes. Evaluates all 13 badge unlock conditions and inserts any newly earned badges into `user_badges`.
+**`trg_normalize_completion`** (BEFORE INSERT, 016) — enforces rate limits (2/10 min, 10/24 h), then sets `status = 'approved'` and `reviewed_at = now()`, and assigns a redemption code for sponsored quests. Clients cannot choose their own status.
+
+**`trg_apply_completion_rewards_on_insert`** (AFTER INSERT, 016) — calls `apply_completion_rewards()`: XP increment, level recalculation, weekly streak update.
+
+**`on_xp_update`** (005) — fires on `profiles.total_xp` change; evaluates all badge unlock conditions and inserts newly earned badges.
+
+**`trg_revoke_completion_rewards`** (AFTER UPDATE, 016) — when moderation sets `status = 'removed'`: subtracts the XP (floored at 0), recalculates level, voids an unredeemed redemption code.
+
+**`trg_sync_completion_report_counts`** (017) — maintains `open_report_count` and flips `hidden_pending_review` at 3 distinct open reporters.
 
 ### Storage Buckets
 
@@ -338,7 +377,10 @@ Links badges to specific quests. Composite PK on (`quest_id`, `badge_id`).
 |-------|-------------|---------------|
 | `profiles` | All authenticated users | Own row only |
 | `quests` | All authenticated users (active only) | Admin (service-role) |
-| `completions` | Own rows + all approved rows | Own rows only |
+| `completions` | Own rows + approved rows that aren't hidden and whose owner has `feed_public = true` (017) | Own rows only (insert) |
+| `completion_reports` | Own reports | Own reports (insert only, not own posts) |
+| `blocked_users` | Own rows | Own rows |
+| `cities` | Everyone | Admin (service-role) |
 | `badges` | All authenticated users | Admin (service-role) |
 | `user_badges` | Own rows | DB trigger only |
 
@@ -363,8 +405,10 @@ Apply these in order via the Supabase SQL Editor or CLI:
 | `013_geofence_system.sql` | PostGIS, `cities`, geofence enum, server-side insert trigger |
 | `014_geofence_polygon_enum.sql` | Adds `polygon` to geofence enum |
 | `015_geofence_polygon.sql` | `quests.boundary`, `set_quest_boundary()`, polygon validation |
+| `016_instant_verification.sql` | Auto-approve on insert, rewards on insert path, rate limits, in-DB redemption codes, `removed` status + XP revocation, pending backfill |
+| `017_completion_reports.sql` | Reports, blocking, feed privacy (`feed_public`), auto-hide at 3 reports, moderation GPS evidence |
 
-Specs 02–07 define migrations `016+` (instant verification, moderation, content, growth, merchant). See [docs/specs/README.md](docs/specs/README.md).
+Specs 05–07 define migrations `018+` (content engine, growth, merchant redemption). See [docs/specs/README.md](docs/specs/README.md).
 
 ---
 
@@ -395,7 +439,7 @@ cd ../admin && npm install
 
 1. Create a new project at [supabase.com](https://supabase.com)
 2. Go to **SQL Editor** in your Supabase dashboard
-3. Apply each migration file in order (001 through **015**) — paste and run each file from `supabase/migrations/`
+3. Apply each migration file in order (001 through **017**) — paste and run each file from `supabase/migrations/`
 4. Run `supabase/seed.sql` to load starter quests, badges, and geofence examples
 5. Go to **Project Settings → API** and copy your:
    - Project URL
@@ -484,7 +528,7 @@ The app uses [Expo Router](https://expo.github.io/router/) with file-based routi
 | `submit/[questId]` | Photo capture + GPS submission flow |
 | `onboarding` | 3-screen intro shown once on first launch |
 | `edit-profile` | Update username and city |
-| `settings` | Push notification toggle, weekly digest, sign out |
+| `settings` | Push toggle, **feed privacy toggle**, weekly digest, sign out |
 | `legal/privacy` | Privacy policy |
 | `legal/terms` | Terms of service |
 
@@ -496,7 +540,8 @@ The app uses [Expo Router](https://expo.github.io/router/) with file-based routi
 | `useQuests` | `hooks/useQuests.ts` | Fetches active quests; accepts optional category filter |
 | `useActivityFeed` | `hooks/useActivityFeed.ts` | Queries approved completions with user and quest joins for the feed |
 | `useUserCompletions` | `hooks/useUserCompletions.ts` | Returns the current user's completed quest IDs to hide from Explore |
-| `useLocation` | `hooks/useLocation.ts` | GPS location with geofence check helper |
+| `useLocation` | `hooks/useLocation.ts` | GPS location with geofence check helper + mock-location detection |
+| `useBlockedUsers` | `hooks/useBlockedUsers.ts` | Block/unblock users; feeds the activity-feed filter |
 
 ### Quest Submission Flow
 
@@ -518,9 +563,14 @@ Photo uploaded to proof-photos bucket
     │
     ▼
 INSERT completion → server geofence trigger (013–015)
+    │ inside zone
+    ▼
+Auto-approved at insert (016): rate-limit check → status = approved
+  → XP + level + streak applied → badges checked → sponsored code assigned
     │
-    ├── Today: status pending → admin approves → DB trigger: XP, level, streak, badges
-    └── Spec 02: auto-approved on insert → instant celebration + feed (unless opted out)
+    ▼
+Celebration modal — real total XP, level-up, streak, redemption code
+Post appears on the public feed (unless feed_public = false)
 ```
 
 ### XP and Level System
@@ -567,10 +617,11 @@ The admin dashboard lives at `apps/admin/` and is a standard Next.js 14 app with
 | Route | Purpose |
 |-------|---------|
 | `/login` | Email sign-in; email must be in `ADMIN_ALLOWED_EMAILS` |
-| `/` | Overview dashboard with 4 stat cards |
-| `/completions` | Approval queue — photo, GPS, approve/reject |
-| `/quests` | Quest list with active toggle |
-| `/quests/new` | Create quest form |
+| `/` | Overview dashboard with 4 stat cards (incl. flagged-post count) |
+| `/moderation` | Flagged-post queue — reports, GPS evidence, dismiss / remove / remove-and-retry |
+| `/completions` | Read-only completions log with spot-check Remove |
+| `/quests` | Quest list with edit + active toggle |
+| `/quests/new` | Create quest form (incl. geofence draw mode) |
 | `/users` | User directory sorted by XP (ISR 60 s) |
 | `/sponsors` | Per-sponsor completion counts and export |
 
@@ -581,16 +632,16 @@ The admin dashboard lives at `apps/admin/` and is a standard Next.js 14 app with
 - The `ADMIN_ALLOWED_EMAILS` allowlist is checked at login time
 - All database queries use the `service_role` key in server components and server actions — it never reaches the browser
 
-### Approving a Completion
+### Moderating a Flagged Completion
 
-1. Navigate to `/completions`
-2. See pending submissions with photo thumbnail, GPS coordinates, player username, quest name, and XP value
-3. Click the photo to view full-size proof
-4. Click **Approve** — this calls the `award-xp` edge function, which:
-   - Updates `completions.status` to `'approved'`
-   - The DB trigger awards XP, recalculates level, and checks badges
-   - Sends a push notification to the player
-5. Click **Reject** — sets status to `'rejected'` with no XP awarded
+There is no approval step — completions verify instantly at submission. The admin's job is post-hoc review of community-reported posts:
+
+1. Navigate to `/moderation` (flagged count shows on the dashboard)
+2. Each flagged post shows the proof photo, report reasons and reporters, the submitter's history, and **GPS evidence** — whether the submission coordinates were inside the quest's geofence
+3. Choose an action:
+   - **Dismiss reports** — reports closed, post restored to the feed
+   - **Remove** — status → `removed`; the DB trigger revokes the XP, recalculates level, voids an unredeemed code; the owner gets a push notification
+   - **Remove + allow retry** — as above, then deletes the row so an honest re-attempt is possible
 
 ---
 
@@ -598,20 +649,17 @@ The admin dashboard lives at `apps/admin/` and is a standard Next.js 14 app with
 
 ### Edge Functions
 
-**`award-xp`**
+**`snapshot-ranks`**
 
-Called by the admin dashboard when approving a completion. Supplements the DB trigger by handling badge conditions that require cross-table context (Early Bird, Weekend Warrior, Top 10) and sending Expo push notifications.
+Captures weekly leaderboard positions into `profiles.last_week_rank` for the rank-delta display.
 
-**`generate-redemption-code`**
-
-Generates or redeems 8-character alphanumeric codes for sponsored quest completions. Accepts `action: 'generate'` (on approve) or `action: 'redeem'` (when player claims reward). Mobile integration is in progress.
+**Retired:** `award-xp` and `generate-redemption-code` were absorbed into database triggers by migration 016 — rewards, badge checks, and redemption codes now run in-DB on the insert path, with no network hop between submission and reward. The function folders remain in the repo for reference only.
 
 ### Deploying Edge Functions
 
 ```bash
 # With Supabase CLI
-supabase functions deploy award-xp
-supabase functions deploy generate-redemption-code
+supabase functions deploy snapshot-ranks
 ```
 
 ### Local Development with Supabase CLI
@@ -670,9 +718,9 @@ Quest! uses the **Harbour Electric** design system. Full spec in [DESIGN.md](DES
 
 ### Unit Tests
 
-Logic tests live at `apps/mobile/__tests__/logic.test.js` (**98 assertions**). Geofence package tests at `packages/geofence/src/__tests__/geofence.test.js` (**44 assertions**). CI runs both (see `.github/workflows/ci.yml`).
+Logic tests live at `apps/mobile/__tests__/logic.test.js` (**105 assertions**). Geofence package tests at `packages/geofence/src/__tests__/geofence.test.js` (**44 assertions**). CI runs both (see `.github/workflows/ci.yml`).
 
-Coverage includes XP/level thresholds, leaderboard logic, Haversine and polygon geofence checks, greeting text, and avatar URL helpers.
+Coverage includes XP/level thresholds, celebration/level-up derivation, leaderboard logic, Haversine and polygon geofence checks, moderation logic, greeting text, and avatar URL helpers.
 
 ```bash
 node apps/mobile/__tests__/logic.test.js
@@ -694,7 +742,7 @@ cd apps/admin && npx tsc --noEmit
 Every push to `main` and every pull request targeting `main` runs `.github/workflows/ci.yml`:
 
 1. **geofence-tests** — 44 assertions in `packages/geofence`
-2. **logic-tests** — 98 assertions in `apps/mobile`
+2. **logic-tests** — 105 assertions in `apps/mobile`
 3. **typescript-check-mobile** — `tsc --noEmit` on the mobile app
 4. **typescript-check-admin** — `tsc --noEmit` on the admin dashboard
 
@@ -755,9 +803,9 @@ The admin app uses Next.js ISR for the user directory page (60-second revalidati
 
 See [ROADMAP.md](ROADMAP.md) for the full phase plan and [docs/specs/README.md](docs/specs/README.md) for feature specs.
 
-**Shipped:** geofence system (four zone types, admin draw UI, `@quest/geofence` package), 5-tab Harbour Electric UI, activity feed, quest scheduling schema.
+**Shipped:** geofence system (four zone types, admin draw UI, `@quest/geofence` package), **instant verification** (Spec 02 — no approval queue, rewards on insert), **reports & moderation** (Spec 03 — report/block/feed-privacy, admin moderation queue, Apple 1.2 compliant), 5-tab Harbour Electric UI, activity feed, quest scheduling schema.
 
-**P0 before launch:** instant verification (Spec 02) + reports/moderation (Spec 03), PostHog analytics (Spec 04), iOS submit credentials, production admin allowlist.
+**P0 before launch:** PostHog analytics (Spec 04), iOS submit credentials, applying migrations 014–017 on the live database, production admin allowlist, real Victoria boundary polygon.
 
 **Post-launch:** community quests & weekly drops (Spec 05), duo quests & recap card (Spec 06), merchant redemption validation (Spec 07).
 

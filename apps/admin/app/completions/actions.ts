@@ -1,6 +1,5 @@
 'use server'
 
-import { invokeEdgeFunction } from '@/lib/invoke-edge-function'
 import { supabaseAdmin } from '@/lib/supabase'
 
 export interface Completion {
@@ -14,64 +13,43 @@ export interface Completion {
   quest_id: string
   redemption_code: string | null
   profiles: { username: string } | null
-  quests: { title: string; xp_reward: number; is_sponsored: boolean } | null
+  quests: { title: string; xp_reward: number; is_sponsored: boolean; geofence_type: string } | null
 }
 
-export async function getPendingCompletions(): Promise<Completion[]> {
+export async function getRecentCompletions(limit = 100): Promise<Completion[]> {
   const { data } = await supabaseAdmin
     .from('completions')
-    .select('*, profiles(username), quests(title, xp_reward, is_sponsored)')
-    .eq('status', 'pending')
-    .order('completed_at', { ascending: true })
+    .select('*, profiles(username), quests(title, xp_reward, is_sponsored, geofence_type)')
+    .in('status', ['approved', 'removed'])
+    .order('completed_at', { ascending: false })
+    .limit(limit)
 
   return (data as Completion[]) ?? []
 }
 
-export interface ApprovalResult {
-  codeGenerated: boolean
-}
-
-export async function updateCompletionStatus(
-  id: string,
-  status: 'approved' | 'rejected',
-  isSponsored: boolean,
-): Promise<ApprovalResult> {
+export async function removeCompletion(id: string): Promise<void> {
   const { data, error } = await supabaseAdmin
     .from('completions')
     .select('status')
     .eq('id', id)
     .single()
 
-  // Prevent double-processing if already approved/rejected
-  if (!error && data?.status !== 'pending') {
-    return { codeGenerated: false }
+  if (error || !data) {
+    throw new Error(error?.message ?? 'Completion not found')
+  }
+
+  if (data.status === 'removed') {
+    return
+  }
+
+  if (data.status !== 'approved') {
+    throw new Error('Only approved completions can be removed')
   }
 
   const { error: updateError } = await supabaseAdmin
     .from('completions')
-    .update({ status, reviewed_at: new Date().toISOString() })
+    .update({ status: 'removed', reviewed_at: new Date().toISOString() })
     .eq('id', id)
 
   if (updateError) throw new Error(updateError.message)
-
-  let codeGenerated = false
-
-  if (status === 'approved') {
-    try {
-      await invokeEdgeFunction('award-xp', { completion_id: id })
-    } catch (err) {
-      console.error('[award-xp] failed for completion', id, err)
-    }
-
-    if (isSponsored) {
-      try {
-        await invokeEdgeFunction('generate-redemption-code', { completion_id: id, action: 'generate' })
-        codeGenerated = true
-      } catch (err) {
-        console.error('[generate-redemption-code] failed for completion', id, err)
-      }
-    }
-  }
-
-  return { codeGenerated }
 }

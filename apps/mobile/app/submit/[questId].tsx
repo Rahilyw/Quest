@@ -16,20 +16,33 @@ import { useLocation } from '@/hooks/useLocation'
 import { useQuest } from '@/hooks/useQuests'
 import { useGeofenceCheck } from '@/hooks/useGeofenceCheck'
 import { COLORS } from '@/lib/constants'
+import { didLevelUp } from '@/lib/celebration'
 import { ensureCameraPermission } from '@/lib/permissions'
 import { paramAsString } from '@/lib/routeParams'
 import { readUriAsArrayBuffer } from '@/lib/uploadImage'
-import CompletionCelebration from '@/components/CompletionCelebration'
+import CompletionCelebration, { type CelebrationVariant } from '@/components/CompletionCelebration'
+
+interface CelebrationState {
+  variant: CelebrationVariant
+  xpReward: number
+  totalXp: number
+  level: number
+  levelUp: boolean
+  streakCount: number
+  redemptionCode: string | null
+  sponsorReward: string | null
+}
 
 export default function Submit() {
   const params = useLocalSearchParams<{ questId: string | string[] }>()
   const questId = paramAsString(params.questId)
   const router = useRouter()
-  const { session, profile, loading: authLoading } = useAuth()
+  const { session, profile, loading: authLoading, refreshProfile } = useAuth()
   const {
     coords,
     error: locationError,
     bypassGeofence,
+    isMocked,
     ensurePermission,
     refresh,
     getSubmissionCoords,
@@ -38,8 +51,8 @@ export default function Submit() {
   const [photo, setPhoto] = useState<string | null>(null)
   const [submitting, setSubmitting] = useState(false)
   const [showCelebration, setShowCelebration] = useState(false)
-  const [celebrationVariant, setCelebrationVariant] = useState<'success' | 'alreadyPending'>('success')
-  const [alreadySubmitted, setAlreadySubmitted] = useState(false)
+  const [celebration, setCelebration] = useState<CelebrationState | null>(null)
+  const [alreadyCompleted, setAlreadyCompleted] = useState(false)
 
   const userId = profile?.id ?? session?.user?.id
   const submissionCoords = getSubmissionCoords(quest?.lat, quest?.lng)
@@ -66,8 +79,8 @@ export default function Submit() {
       .eq('quest_id', questId)
       .maybeSingle()
       .then(({ data }) => {
-        if (data?.status === 'pending') {
-          setAlreadySubmitted(true)
+        if (data?.status === 'approved' || data?.status === 'removed') {
+          setAlreadyCompleted(true)
         }
       })
   }, [userId, questId])
@@ -100,7 +113,8 @@ export default function Submit() {
   }
 
   function submissionBlockReason(): string | null {
-    if (alreadySubmitted) return 'This quest is already awaiting approval. Check Pending Quests on your profile.'
+    if (alreadyCompleted) return 'You already completed this quest.'
+    if (isMocked) return 'Turn off mock location to submit.'
     if (authLoading || questLoading) return null
     if (!questId) return 'Invalid quest link.'
     if (!hasPhoto) return 'Take a photo first.'
@@ -110,17 +124,14 @@ export default function Submit() {
     return null
   }
 
-  function showCelebrationModal(variant: 'success' | 'alreadyPending') {
-    setCelebrationVariant(variant)
+  function openCelebration(state: CelebrationState) {
+    setCelebration(state)
     setShowCelebration(true)
-    if (variant === 'success' || variant === 'alreadyPending') {
-      setAlreadySubmitted(true)
-    }
   }
 
   function handleCelebrationDone() {
     setShowCelebration(false)
-    if (celebrationVariant === 'alreadyPending') {
+    if (celebration?.variant === 'alreadyDone') {
       router.replace('/(tabs)/profile')
     } else {
       router.replace('/(tabs)')
@@ -128,8 +139,17 @@ export default function Submit() {
   }
 
   async function handleSubmit() {
-    if (alreadySubmitted && !showCelebration) {
-      showCelebrationModal('alreadyPending')
+    if (alreadyCompleted && !showCelebration) {
+      openCelebration({
+        variant: 'alreadyDone',
+        xpReward: quest?.xp_reward ?? 0,
+        totalXp: profile?.total_xp ?? 0,
+        level: profile?.level ?? 1,
+        levelUp: false,
+        streakCount: profile?.current_streak ?? 0,
+        redemptionCode: null,
+        sponsorReward: null,
+      })
       return
     }
 
@@ -139,7 +159,7 @@ export default function Submit() {
       return
     }
 
-    if (!photo || !effectiveCoords || !quest || !userId || !questId) return
+    if (!photo || !effectiveCoords || !quest || !userId || !questId || !profile) return
 
     if (!insideGeofence) {
       Alert.alert(
@@ -149,6 +169,7 @@ export default function Submit() {
       return
     }
 
+    const previousXp = profile.total_xp
     setSubmitting(true)
 
     try {
@@ -168,19 +189,32 @@ export default function Submit() {
         .from('proof-photos')
         .getPublicUrl(fileName)
 
-      const { error: insertError } = await supabase.from('completions').insert({
-        user_id: userId,
-        quest_id: questId,
-        photo_url: publicUrl,
-        lat: effectiveCoords.lat,
-        lng: effectiveCoords.lng,
-        completed_at: new Date().toISOString(),
-        status: 'pending',
-      })
+      const { data: completion, error: insertError } = await supabase
+        .from('completions')
+        .insert({
+          user_id: userId,
+          quest_id: questId,
+          photo_url: publicUrl,
+          lat: effectiveCoords.lat,
+          lng: effectiveCoords.lng,
+          completed_at: new Date().toISOString(),
+        })
+        .select('redemption_code')
+        .single()
 
       if (insertError) {
         if (insertError.code === '23505') {
-          showCelebrationModal('alreadyPending')
+          setAlreadyCompleted(true)
+          openCelebration({
+            variant: 'alreadyDone',
+            xpReward: quest.xp_reward,
+            totalXp: profile.total_xp,
+            level: profile.level,
+            levelUp: false,
+            streakCount: profile.current_streak,
+            redemptionCode: null,
+            sponsorReward: null,
+          })
         } else if (
           insertError.message?.includes('GEOFENCE_VIOLATION') ||
           insertError.code === '23514'
@@ -189,13 +223,43 @@ export default function Submit() {
             'Too far away',
             `Your location is outside the quest zone. ${geofenceLabel}.`
           )
+        } else if (
+          insertError.message?.includes('RATE_LIMITED') ||
+          insertError.hint === 'RATE_LIMITED'
+        ) {
+          Alert.alert(
+            'Slow down',
+            'You are submitting quests too quickly. Take a breather and try again in a few minutes.'
+          )
         } else {
           Alert.alert('Submission failed', insertError.message)
         }
         return
       }
 
-      showCelebrationModal('success')
+      await refreshProfile()
+
+      const { data: freshProfile } = await supabase
+        .from('profiles')
+        .select('total_xp, level, current_streak')
+        .eq('id', userId)
+        .single()
+
+      const newXp = freshProfile?.total_xp ?? previousXp + quest.xp_reward
+      const newLevel = freshProfile?.level ?? profile.level
+      const newStreak = freshProfile?.current_streak ?? profile.current_streak
+
+      setAlreadyCompleted(true)
+      openCelebration({
+        variant: 'success',
+        xpReward: quest.xp_reward,
+        totalXp: newXp,
+        level: newLevel,
+        levelUp: didLevelUp(previousXp, newXp),
+        streakCount: newStreak,
+        redemptionCode: completion?.redemption_code ?? null,
+        sponsorReward: quest.is_sponsored ? quest.sponsor_reward : null,
+      })
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Something went wrong. Try again.'
       Alert.alert('Submission failed', message)
@@ -205,6 +269,7 @@ export default function Submit() {
   }
 
   function locationStatusText() {
+    if (isMocked) return 'Mock location detected — turn it off to submit'
     if (quest?.geofence_type === 'none') {
       return 'No location required for this quest'
     }
@@ -218,6 +283,8 @@ export default function Submit() {
     if (locationError) return locationError
     return 'Getting your location…'
   }
+
+  const locationOk = !isMocked && (insideGeofence || quest?.geofence_type === 'none')
 
   return (
     <View style={styles.container}>
@@ -257,10 +324,7 @@ export default function Submit() {
       >
         <Text
           style={{
-            color:
-              insideGeofence || quest?.geofence_type === 'none'
-                ? COLORS.success
-                : COLORS.warning,
+            color: isMocked ? COLORS.danger : locationOk ? COLORS.success : COLORS.warning,
             marginRight: 6,
             fontSize: 12,
           }}
@@ -268,27 +332,19 @@ export default function Submit() {
           ●
         </Text>
         <Text style={[styles.statusText, { flex: 1 }]}>{locationStatusText()}</Text>
-        {!hasLocation && <Text style={styles.statusAction}>Allow →</Text>}
+        {!hasLocation && !isMocked && <Text style={styles.statusAction}>Allow →</Text>}
       </TouchableOpacity>
 
       {bypassGeofence && (
         <Text style={styles.devBanner}>
-          Dev mode: geofence bypass is on — you can submit without being at the quest.
+          Dev mode: geofence bypass is on — set EXPO_PUBLIC_BYPASS_GEOFENCE=true in dev only.
         </Text>
-      )}
-
-      {alreadySubmitted && !showCelebration && (
-        <View style={styles.pendingBanner}>
-          <Text style={styles.pendingBannerText}>
-            ⏳ Awaiting approval — find this under Pending Quests on your profile.
-          </Text>
-        </View>
       )}
 
       <TouchableOpacity
         style={[
           styles.submitBtn,
-          (submitting || ((authLoading || questLoading) && !alreadySubmitted)) && styles.submitDisabled,
+          (submitting || ((authLoading || questLoading) && !alreadyCompleted)) && styles.submitDisabled,
         ]}
         onPress={handleSubmit}
         disabled={submitting}
@@ -298,8 +354,8 @@ export default function Submit() {
           <ActivityIndicator color="#FFFFFF" />
         ) : (
           <Text style={styles.submitText}>
-            {alreadySubmitted
-              ? 'View Submission Status'
+            {alreadyCompleted
+              ? 'View Completion'
               : authLoading || questLoading
                 ? 'Loading…'
                 : `Submit for +${quest?.xp_reward ?? '?'} XP`}
@@ -309,10 +365,15 @@ export default function Submit() {
 
       <CompletionCelebration
         visible={showCelebration}
-        variant={celebrationVariant}
+        variant={celebration?.variant ?? 'success'}
         questTitle={quest?.title ?? ''}
-        xpReward={quest?.xp_reward ?? 0}
-        streakCount={profile?.current_streak ?? 0}
+        xpReward={celebration?.xpReward ?? quest?.xp_reward ?? 0}
+        totalXp={celebration?.totalXp}
+        level={celebration?.level}
+        levelUp={celebration?.levelUp}
+        streakCount={celebration?.streakCount ?? 0}
+        redemptionCode={celebration?.redemptionCode}
+        sponsorReward={celebration?.sponsorReward}
         onDone={handleCelebrationDone}
       />
     </View>
@@ -406,21 +467,6 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginBottom: 8,
     fontStyle: 'italic',
-  },
-  pendingBanner: {
-    backgroundColor: COLORS.warningSoft,
-    borderRadius: 10,
-    padding: 12,
-    marginBottom: 8,
-    borderWidth: 1,
-    borderColor: COLORS.warning,
-  },
-  pendingBannerText: {
-    color: COLORS.warning,
-    fontSize: 12,
-    fontWeight: '600',
-    textAlign: 'center',
-    lineHeight: 18,
   },
   submitBtn: {
     backgroundColor: COLORS.accent,

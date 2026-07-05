@@ -1,8 +1,10 @@
 # Spec 03 — Reports & Moderation
 
-**Status:** Draft
-**Depends on:** Spec 02 (`removed` status + `revoke_completion_rewards`)
-**Ship rule:** must release together with Spec 02 — auto-approval without a report mechanism fails both content safety and Apple App Store Guideline 1.2 (UGC apps require reporting, blocking, and moderation).
+**Status:** ✅ Implemented (July 2026) — migration `017_completion_reports.sql`
+**Depends on:** Spec 02 (`removed` status + `revoke_completion_rewards`) — shipped together (migration `016`)
+**Ship rule:** must release together with Spec 02 — auto-approval without a report mechanism fails both content safety and Apple App Store Guideline 1.2 (UGC apps require reporting, blocking, and moderation). ✅ Honoured.
+
+> **Implementation notes:** shipped with the feed privacy opt-out as `profiles.feed_public` (Settings toggle) enforced in the 017 feed RLS policy, report rate-limit trigger (10/24 h) and own-post guard in-DB, `get_completion_geofence_evidence()` for the admin GPS check, block-user via `blocked_users` + `useBlockedUsers` (client-side feed filter), report UI in `ReportPostSheet.tsx`, moderation actions (`dismissReports` / `removeCompletionModeration` / `removeAndAllowRetry` / `getFlaggedCount`) in `apps/admin/app/moderation/`, and owner removal push via `apps/admin/lib/expo-push.ts`.
 
 ## Summary
 

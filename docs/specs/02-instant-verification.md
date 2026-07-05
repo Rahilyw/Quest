@@ -1,8 +1,10 @@
 # Spec 02 — Instant Verification (remove the approval system)
 
-**Status:** Draft
+**Status:** ✅ Implemented (July 2026) — migration `016_instant_verification.sql`
 **Depends on:** migration `013` (geofence enforcement on insert); Spec 01 recommended first
-**Must ship with:** Spec 03 (reports & moderation) in the same release
+**Must ship with:** Spec 03 (reports & moderation) in the same release — shipped together (migration `017`)
+
+> **Implementation notes (deltas from this spec):** `completions.redeemed_at` (Spec 07 §2) landed early in 016. Rewards logic was extracted to `apply_completion_rewards()` + `level_from_xp()`; the `AFTER UPDATE` trigger remains for moderation re-instates and the one-time pending backfill. The admin completions page is now a read-only log with `getRecentCompletions` / `removeCompletion`; `PendingQuestItem` and all pending UI were deleted; the celebration shows real total XP, level-up, streak, and redemption code via `lib/celebration.ts`.
 
 ## Summary
 

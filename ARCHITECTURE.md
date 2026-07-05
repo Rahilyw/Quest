@@ -18,7 +18,7 @@ flowchart TB
         DB["PostgreSQL + RLS + PostGIS"]
         Storage["Storage: proof-photos · avatars · quest-covers"]
         Edge["Edge Functions"]
-        Migrations["migrations/001–015"]
+        Migrations["migrations/001–017"]
         Seed["seed.sql"]
     end
 
@@ -106,7 +106,7 @@ sequenceDiagram
     Feed->>Feed: render FeedPostCard list
 ```
 
-Requires migration `008_public_feed_completions.sql`.
+Requires migrations `008` (public feed RLS) and `017` (replaces the policy: feed now excludes `hidden_pending_review` posts and profiles with `feed_public = false`; client also filters blocked users).
 
 ## Geofence system (migrations 013–015)
 
@@ -121,9 +121,9 @@ Four zone types, all enforced **server-side** by a `BEFORE INSERT` trigger on `c
 
 Shape data flows to clients via the generated `quests.boundary_geojson` column (plain `select *`, no RPC). The admin writes boundaries through the validated `set_quest_boundary()` function (3–100 vertices, 400 m²–250 km², self-intersection repair). Client-side mirror logic lives in the shared `packages/geofence` package (44 tests).
 
-## Core quest flow (today → target)
+## Core quest flow — instant verification (shipped)
 
-**Today:** manual admin approval after geofence-validated insert. **Target (Specs [02](docs/specs/02-instant-verification.md) + [03](docs/specs/03-report-moderation.md)):** geofence pass = proof; rewards on insert; community reports + admin moderation replace the approval queue.
+**Geofence pass = proof.** Completions auto-approve at insert (migration `016`); XP, level, streak, and sponsored redemption codes land before the celebration modal renders. Community reports + admin moderation (migration `017`) replace the old approval queue. Specs: [02](docs/specs/02-instant-verification.md) + [03](docs/specs/03-report-moderation.md).
 
 ```mermaid
 sequenceDiagram
@@ -147,7 +147,7 @@ sequenceDiagram
     alt Outside zone
         GeoTrig-->>Mobile: INSERT rejected
     else Inside zone
-        Note over SB: Today: status pending → admin approves later<br/>Target (016): auto-approved on insert
+        Note over SB: 016: rate-limit check → status = approved, reviewed_at = now<br/>sponsored → redemption code assigned in-DB
         SB->>Reward: XP + level + streak (+ redemption code if sponsored)
         Reward->>SB: profiles.total_xp → badge trigger (005)
         Mobile->>Player: Celebration with real XP / streak (Spec 02)
@@ -159,18 +159,19 @@ sequenceDiagram
     Mobile->>SB: leaderboard view + approved completions
 ```
 
-Spec reference: full target flow and migration `016` in [02-instant-verification.md](docs/specs/02-instant-verification.md).
+Anti-abuse at the same layer: rate limits (2 per 10 min, 10 per 24 h) in the `BEFORE INSERT` trigger, in-app camera only, Android mock-location block client-side.
 
-## Planned systems (spec map)
+## System map (specs 01–07)
 
-| System | Spec | Touches |
-|---|---|---|
-| Instant verification | [02](docs/specs/02-instant-verification.md) | `completions` insert path, mobile celebration, admin queue → log |
-| Reports & moderation | [03](docs/specs/03-report-moderation.md) | `FeedPostCard`, `/moderation`, feed RLS, `removed` status |
-| Analytics | [04](docs/specs/04-analytics-instrumentation.md) | `lib/analytics.ts`, PostHog in `_layout.tsx` |
-| Content engine | [05](docs/specs/05-community-quests.md) | `quest_suggestions`, weekly drops (012), `quest_chains` |
-| Growth & engagement | [06](docs/specs/06-growth-engagement.md) | duo parties, recap share card, `xp_events`, offline queue |
-| Merchant redemption | [07](docs/specs/07-merchant-redemption.md) | `/redeem/[merchantKey]`, `sponsors`, `redeemed_at` |
+| System | Spec | Status | Touches |
+|---|---|---|---|
+| Geofence drawing | [01](docs/specs/01-geofence-drawing.md) | ✅ Shipped (014–015) | `quests.boundary`, admin ✏️ Draw mode, `@quest/geofence` |
+| Instant verification | [02](docs/specs/02-instant-verification.md) | ✅ Shipped (016) | `completions` insert path, mobile celebration, admin queue → log |
+| Reports & moderation | [03](docs/specs/03-report-moderation.md) | ✅ Shipped (017) | `FeedPostCard` + `ReportPostSheet`, `/moderation`, feed RLS, `removed` status, `feed_public`, `blocked_users` |
+| Analytics | [04](docs/specs/04-analytics-instrumentation.md) | Planned | `lib/analytics.ts`, PostHog in `_layout.tsx` |
+| Content engine | [05](docs/specs/05-community-quests.md) | Planned | `quest_suggestions`, weekly drops (012), `quest_chains` |
+| Growth & engagement | [06](docs/specs/06-growth-engagement.md) | Planned | duo parties, recap share card, `xp_events`, offline queue |
+| Merchant redemption | [07](docs/specs/07-merchant-redemption.md) | Planned (`redeemed_at` already landed in 016) | `/redeem/[merchantKey]`, `sponsors` |
 
 Index and dependency order: [docs/specs/README.md](docs/specs/README.md). Product rationale: [PRODUCT.md](PRODUCT.md), phase plan: [ROADMAP.md](ROADMAP.md).
 
@@ -185,8 +186,8 @@ Quest!/
 │   │   ├── hooks/           useAuth, useQuests, useActivityFeed, …
 │   │   └── lib/             constants.ts, types, supabase (+ analytics.ts — Spec 04)
 │   └── admin/               Next.js dashboard
-│       └── app/             completions, quests, users, sponsors
-│                            (+ moderation, suggestions, redeem — specced)
+│       └── app/             completions (log), moderation, quests, users, sponsors
+│                            (+ suggestions, redeem — specced)
 ├── packages/
 │   └── geofence/            @quest/geofence — shared client geofence logic (44 tests)
 ├── docs/specs/              01–07 feature specs (instant verification era)
@@ -196,8 +197,8 @@ Quest!/
 ├── PRODUCT.md               Product positioning, content engine, safety
 ├── ROADMAP.md               Phase plan and status
 └── supabase/
-    ├── migrations/          001–015 (PostGIS geofence 013–015)
-    ├── functions/           award-xp, generate-redemption-code, snapshot-ranks
+    ├── migrations/          001–017 (geofence 013–015 · instant verification 016 · moderation 017)
+    ├── functions/           snapshot-ranks (award-xp + generate-redemption-code retired by 016)
     └── seed.sql
 ```
 
@@ -230,7 +231,7 @@ flowchart LR
 
 No server-side event forwarding in v1. Sponsor redemption counts come from Postgres (Spec 07), not PostHog.
 
-## Moderation data flow (Spec 03 — planned, ships with Spec 02)
+## Moderation data flow (Spec 03 — shipped, migration 017)
 
 ```mermaid
 sequenceDiagram
@@ -251,4 +252,4 @@ sequenceDiagram
     end
 ```
 
-Feed privacy opt-out (complete without public feed) and block-user filtering live in the same spec.
+Feed privacy opt-out (`profiles.feed_public`, toggle in Settings) and block-user filtering (`blocked_users` + `useBlockedUsers`) shipped in the same migration. Removal notifies the owner via `apps/admin/lib/expo-push.ts`.

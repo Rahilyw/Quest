@@ -1,9 +1,9 @@
 # Quest! — Product Roadmap
 
-**Last updated:** July 4, 2026
-**Stage:** MVP Complete → Geofence System Shipped → Instant Verification Era
+**Last updated:** July 5, 2026
+**Stage:** MVP Complete → **Instant Verification Shipped** → Pre-Launch (analytics + store readiness)
 
-The core product loop works end-to-end. The strategic direction has shifted: the manual approval queue — previously treated as a solved feature — is now recognised as the biggest retention and scaling bottleneck in the product, and is being **removed** in favour of instant, geofence-verified completion with community-report moderation. The full spec set lives in [`docs/specs/`](docs/specs/README.md).
+The manual approval queue is **gone**. Completions are verified by the server-side geofence at the moment of submission (migrations 013–016); XP, level, streak, and sponsored redemption codes land before the celebration modal renders. Community reports, block-user, feed privacy, and an admin moderation queue (migration 017) replace pre-approval review — satisfying Apple Guideline 1.2. The full spec set lives in [`docs/specs/`](docs/specs/README.md).
 
 **The strategy in one sentence:** automate approval so XP is instant, make the community generate the content, instrument everything, and ship the UGC moderation Apple will demand.
 
@@ -13,37 +13,37 @@ The core product loop works end-to-end. The strategic direction has shifted: the
 
 | Area | Status |
 |---|---|
-| Mobile core loop | ✅ Shippable (submit → admin approve → XP; approval removal specced as [Spec 02](docs/specs/02-instant-verification.md)) |
+| Mobile core loop | ✅ **Instant:** submit → server geofence verifies → XP/streak/code in the celebration, seconds after the real-world act (migration 016) |
 | Geofence system | ✅ **Four types shipped:** none / circle / city / drawn polygon — server-enforced at insert (migrations 013–015) |
 | Admin geofence drawing | ✅ Draw mode in quest create + edit (click-to-draw, drag vertices, midpoints, validation) |
-| Mobile profile & settings | ✅ Profile, edit profile, avatar upload, legal screens |
-| Admin operations | ✅ Usable (set `ADMIN_ALLOWED_EMAILS` before prod deploy) |
-| Engagement plumbing | ⚠️ Push on approve wired server-side; tap listeners + streak celebration still partial (superseded by Spec 02's instant celebration) |
-| Analytics | ❌ **None** — success metrics are defined but unmeasured ([Spec 04](docs/specs/04-analytics-instrumentation.md)) |
-| UGC moderation (Apple 1.2) | ❌ **Ship blocker** — no report/block/moderation on the public feed ([Spec 03](docs/specs/03-report-moderation.md)) |
-| Sponsor / B2B loop | ❌ Codes exist but merchants can't validate them ([Spec 07](docs/specs/07-merchant-redemption.md)); no sponsored seed E2E test |
-| Content pipeline | ❌ ~28 seeded quests, no refresh cadence or community input ([Spec 05](docs/specs/05-community-quests.md)) |
+| UGC moderation (Apple 1.2) | ✅ **Shipped:** report + block + feed privacy opt-out + admin moderation queue with GPS evidence and XP revocation (migration 017) |
+| Mobile profile & settings | ✅ Profile, edit profile, avatar upload, feed-privacy toggle, legal screens |
+| Admin operations | ✅ Completions log + moderation queue + quest management (set `ADMIN_ALLOWED_EMAILS` before prod deploy) |
+| Engagement plumbing | ⚠️ Approval push retired (reward is in-app now); removal push shipped; new-quest/streak pushes not built; tap listeners unmounted |
+| Analytics | ❌ **None** — success metrics are defined but unmeasured ([Spec 04](docs/specs/04-analytics-instrumentation.md)) — **the top remaining pre-launch gap** |
+| Sponsor / B2B loop | ⚠️ Codes now auto-issued in-DB (016) but merchants can't validate them ([Spec 07](docs/specs/07-merchant-redemption.md)) |
+| Content pipeline | ❌ ~29 seeded quests, no refresh cadence or community input ([Spec 05](docs/specs/05-community-quests.md)) |
 | Growth loop | ❌ Zero acquisition features ([Spec 06](docs/specs/06-growth-engagement.md)) |
-| Production readiness | ⚠️ CI + npm test wired; EAS project ID set; iOS submit creds still placeholders |
+| Production readiness | ⚠️ CI + tests green (105 mobile + 44 geofence); EAS project ID set; iOS submit creds still placeholders |
 
 **Highest-impact blockers before real users:**
 
 1. **iOS App Store submit credentials** — `eas.json` still has `REPLACE_WITH_*` placeholders
-2. **Apple Guideline 1.2 compliance** — report + block + moderation must exist before store review (Spec 03; ships with Spec 02)
+2. **Analytics instrumentation** — the pilot exists to learn; today nothing is measured (Spec 04)
 3. **`ADMIN_ALLOWED_EMAILS`** must be set in production
-4. **Analytics instrumentation** — the pilot exists to learn; today nothing is measured (Spec 04)
-5. **Confirm migrations `005`–`015`** applied on live Supabase (including the new polygon geofence pair `014`/`015`)
+4. **Apply migrations `014`–`017` on live Supabase** (and confirm `005`–`013`) — instant verification and moderation exist only as files until then
+5. **Real Victoria boundary** — 013's placeholder bounding box matters more now that geofence = proof
 
 ---
 
 ## Strategic Direction (July 2026)
 
-Four findings reframed the roadmap — none were on any earlier list:
+Four findings reframed the roadmap — none were on any earlier list. Two are now fixed:
 
-1. **Approval latency is reward latency.** A player submits at the location and gets nothing until the founder opens a dashboard. The design principle "no XP before approval" makes approval delay the retention killer. Fix: geofence pass **is** the proof (013–015 already enforce it server-side); auto-approve at insert, moderate after the fact. → Specs 01 ✅ / 02 / 03
-2. **The content treadmill.** ~28 quests ≈ 4–6 weeks of engaged play, then churn. Fix: community-suggested quests with credit + a Monday drop / Sunday expiry ritual + quest chains. → Spec 05
-3. **Unmeasured success metrics.** WAU retention, week-2 leaderboard return, sponsor renewal — defined in PRODUCT.md, recorded nowhere. Fix: PostHog + a ~15-event schema. → Spec 04
-4. **The feed is UGC.** Apple 1.2 requires report/block/moderation; users also deserve a feed privacy opt-out. → Spec 03
+1. **Approval latency is reward latency.** ✅ **Fixed.** Geofence pass **is** the proof; completions auto-approve at insert with rewards applied before the celebration renders; rate limits + in-app-camera-only + mock-location block guard the gate. → Specs 01 ✅ / 02 ✅ / 03 ✅
+2. **The feed is UGC.** ✅ **Fixed.** Report on every post, block-user, feed privacy opt-out (`feed_public`), auto-hide at 3 independent reports, admin moderation with GPS evidence, removal revokes XP. → Spec 03 ✅
+3. **Unmeasured success metrics.** ❌ WAU retention, week-2 leaderboard return, sponsor renewal — defined in PRODUCT.md, recorded nowhere. Fix: PostHog + a ~15-event schema. → Spec 04 — **now the top priority**
+4. **The content treadmill.** ❌ ~29 quests ≈ 4–6 weeks of engaged play, then churn. Fix: community-suggested quests with credit + a Monday drop / Sunday expiry ritual + quest chains. → Spec 05
 
 Plus: duo quests as the referral loop (word-of-mouth **is** the distribution strategy in a 90k city), the Sunday recap share card as the organic marketing engine, merchant redemption validation as the sponsor-renewal proof, and XP economy events as cheap retention levers. → Specs 06 / 07
 
@@ -66,7 +66,9 @@ Plus: duo quests as the referral loop (word-of-mouth **is** the distribution str
 | Quest detail | Full info, category colors, geofence label (all 4 types), start/submit CTA |
 | Quest submission | In-app camera proof, GPS + client geofence pre-check, Supabase Storage upload; **server-side geofence trigger is the authority** |
 | **Geofence support** | All 4 types checked client-side via `@quest/geofence` (incl. polygon w/ GPS-accuracy edge buffer); polygon zones rendered on map |
-| Submission celebration | Post-submit modal (pending approval — becomes the instant reward moment in Spec 02) |
+| **Instant verification** | Completion auto-approved at insert; celebration shows **real** total XP, level-up moment, updated streak, and redemption code (`lib/celebration.ts`) — no pending state anywhere |
+| **Report & block** | ⋯ menu on feed posts → `ReportPostSheet` (5 reasons, rate-limited in-DB); block user hides their posts (`useBlockedUsers`) |
+| **Feed privacy** | `feed_public` toggle in Settings — complete quests without publishing to the feed (enforced by 017 RLS) |
 | Map view | Full-screen map; circle radii, city boundary, and drawn polygon zones rendered |
 | User profile | Navy hero, stats grid, recent activity, settings/edit links |
 | Edit profile / avatar | Username + city + avatar upload |
@@ -82,8 +84,9 @@ Plus: duo quests as the referral loop (word-of-mouth **is** the distribution str
 | Feature | Notes |
 |---|---|
 | Session auth + email allowlist | `ADMIN_ALLOWED_EMAILS`; service role server-only |
-| Dashboard stats | Users, completions, pending, active quests |
-| Completions queue | Approve/reject with photo + GPS (**removed by Spec 02**, replaced by moderation queue) |
+| Dashboard stats | Users, completions, **flagged count**, active quests |
+| **Completions log** | Read-only recent-completions view with spot-check **Remove** (approval queue deleted) |
+| **Moderation queue** | `/moderation` — flagged posts with photo, reports by reason, **GPS-vs-fence evidence** (`get_completion_geofence_evidence`); actions: dismiss / remove (revokes XP + owner push) / remove-and-allow-retry |
 | Quest management | List, **create, edit**, toggle active/inactive |
 | **GeofenceEditor** | 4 modes: Anywhere / Radius (slider + presets) / Victoria / **✏️ Draw** (click-to-draw polygon, drag vertices, midpoint insertion, right-click delete, live area + validation, centroid autofill) |
 | Quest covers + badge linking | Cover upload, quest_badges junction |
@@ -96,13 +99,14 @@ Plus: duo quests as the referral loop (word-of-mouth **is** the distribution str
 |---|---|
 | PostgreSQL schema | Tables + views, RLS on core tables |
 | **Geofence system (013–015)** | PostGIS; `geofence_type` enum (none/circle/city/**polygon**); `cities` boundary table; `quests.boundary` + generated `boundary_geojson`; `set_quest_boundary()` validated write path (3–100 vertices, 400 m²–250 km², self-intersection repair); `check_completion_geofence()` enforced by BEFORE INSERT trigger — **no client can submit outside the zone** |
-| XP-award DB trigger | `on_completion_approved` — XP + level + streak (moves to insert path in Spec 02) |
-| Badge unlock DB trigger | 12/13 badges via `005`; chains off `total_xp` so it survives the Spec 02 switch unchanged |
+| **Instant verification (016)** | `normalize_completion_on_insert()` — rate limits (2/10 min, 10/24 h) → auto-approve → in-DB redemption code for sponsored quests; `apply_completion_rewards()` on the insert path (XP + level + streak); `revoke_completion_rewards()` on removal; legacy pending rows backfilled |
+| **Moderation (017)** | `completion_reports` (immutable, one per user per post, can't report own, 10/day limit), `blocked_users`, `profiles.feed_public`, auto-hide at 3 distinct reporters, feed RLS excludes hidden + opted-out, `get_completion_geofence_evidence()` for admin |
+| Badge unlock DB trigger | 12/13 badges via `005`; chains off `total_xp` — worked unchanged through the instant-verification switch |
 | Quest scheduling (012) | `active_from` / `active_until` — the schema behind Spec 05's weekly drops |
 | Rank snapshot (011) | `last_week_rank` for rank delta |
-| Migrations 001–015 | Documented in `supabase/migrations/README.md` |
+| Migrations 001–017 | Documented in `supabase/migrations/README.md` |
 | Seed data | 20 Victoria quests + 5 sponsored + 4 geofence examples (incl. polygon) + 13 badges |
-| Edge functions | `award-xp`, `generate-redemption-code`, `snapshot-ranks` (first two retired/absorbed by Spec 02) |
+| Edge functions | `snapshot-ranks` active; `award-xp` + `generate-redemption-code` **retired** — absorbed into 016 DB triggers (folders kept for reference) |
 | Shared package | `@quest/geofence` — haversine, point-in-polygon, polygon area/centroid/edge-distance/validation, labels; 44 tests |
 
 ### Tests & Infrastructure
@@ -110,7 +114,7 @@ Plus: duo quests as the referral loop (word-of-mouth **is** the distribution str
 | Area | Status |
 |---|---|
 | Geofence package tests | ✅ 44 assertions (`packages/geofence`) |
-| Mobile logic tests | ✅ 98 assertions; `npm test` |
+| Mobile logic tests | ✅ 105 assertions (incl. celebration/level-up + moderation logic); `npm test` |
 | CI | ✅ `.github/workflows/ci.yml` — logic tests + `tsc` both apps |
 | EAS build profiles + project ID | ✅ Set |
 | EAS submit (iOS) | ❌ Apple ID / ASC / team placeholders in `eas.json` |
@@ -124,24 +128,32 @@ Plus: duo quests as the referral loop (word-of-mouth **is** the distribution str
 
 | Gap | Severity | Impact | Fix |
 |---|---|---|---|
-| **Apple 1.2: no report/block/moderation on UGC feed** | 🔴 Critical (store review) | App Store rejection | Spec 03 (ships with Spec 02) |
 | **iOS submit credentials not configured** | 🔴 Critical (ship) | Blocks TestFlight / App Store | Ops: fill `eas.json` |
 | **No analytics** | 🔴 Critical (learning) | Pilot generates no data | Spec 04 |
+| **Migrations 014–017 not applied on live DB** | 🔴 Critical (ops) | Instant verification + moderation are files-only until applied; confirm 005–013 too | Ops check |
 | **`ADMIN_ALLOWED_EMAILS` unset in prod** | 🔴 Critical (ops) | All admin logins denied | Set on deploy |
-| **Approval latency** | 🟠 High (retention) | Reward delayed until founder reviews | Spec 02 removes approval |
-| **Content treadmill (~28 quests)** | 🟠 High (retention) | Engaged players exhaust content in weeks | Spec 05 |
-| **Feed privacy opt-out missing** | 🟠 High (trust/legal) | Photos publicised without granular consent | With Spec 03 |
-| **Merchant can't validate redemption codes** | 🟠 High (revenue) | No proof of value for sponsor renewals | Spec 07 |
+| **Content treadmill (~29 quests)** | 🟠 High (retention) | Engaged players exhaust content in weeks | Spec 05 |
+| **Merchant can't validate redemption codes** | 🟠 High (revenue) | No proof of value for sponsor renewals | Spec 07 (`redeemed_at` already in 016) |
 | **No acquisition features** | 🟠 High (growth) | Word-of-mouth unassisted | Spec 06 (duo quests, recap card) |
-| **Migrations 005–015 on live DB unconfirmed** | 🟠 High (ops) | Badge/streak/geofence behaviour may be missing live | Ops check |
-| **Placeholder Victoria city boundary** | 🟠 High | 013 seeded a bounding box; matters more once geofence = proof | Load real boundary from `supabase/seeds/victoria-bc-boundary.geojson` |
-| **Sponsored quest E2E untested** | 🟡 Medium | Redemption flow unverified | With Spec 07 |
-| **Duplicate completion dead-end after rejection** | 🟡 Medium | `unique(user_id, quest_id)` blocks retry | Dissolved by Spec 02 (rejection no longer pre-award; "remove + allow retry" in Spec 03) |
+| **Placeholder Victoria city boundary** | 🟠 High | 013 seeded a bounding box; geofence = proof now | Load real boundary from `supabase/seeds/victoria-bc-boundary.geojson` |
+| **Mock-location / bypass release checks** | 🟠 High (integrity) | Gate is now unattended | Verify Android `mocked` block + `bypassGeofence` stripped in release builds (Spec 02 §6) |
+| **Sponsored quest E2E untested** | 🟡 Medium | Codes auto-issue (016) but full loop unverified on a device | With Spec 07 |
 | **Offline submission failure** | 🟡 Medium | Bad signal at trail/breakwater loses the moment | Spec 06 §5 queue |
-| **Push tap navigation** | 🟡 Medium | `mountPushListeners` not mounted in `_layout` | Mount in Phase 0; less critical once approval push is retired |
+| **Push tap navigation** | 🟡 Medium | `mountPushListeners` not mounted in `_layout` | Mount in Phase 0 (removal push now exists) |
 | **Crash reporting** | 🟡 Medium | No Sentry | Phase 0 |
 | **Season Veteran badge** | 🟢 Low | Needs seasons table | Deferred |
 | **In-app quest search** | 🟢 Low | Category filter only | Deferred |
+
+### Resolved since prior roadmap (July 2026)
+
+| Was listed as gap | Now |
+|---|---|
+| Apple 1.2: no report/block/moderation | ✅ Migration 017 + `ReportPostSheet` + `/moderation` + `blocked_users` |
+| Approval latency (retention killer) | ✅ Migration 016 — instant verification, rewards on insert |
+| Feed privacy opt-out missing | ✅ `profiles.feed_public` + Settings toggle + 017 RLS |
+| Streak celebration showed stale count | ✅ Celebration reads post-reward profile (`lib/celebration.ts`) |
+| Duplicate completion dead-end after rejection | ✅ Rejection no longer exists pre-award; moderation offers "remove + allow retry" |
+| Redemption not wired E2E | ✅ Codes auto-issued in-DB at verification for sponsored quests |
 
 ---
 
@@ -173,28 +185,28 @@ Status key: ✅ Done · ⚠️ Partial · ❌ Not started
 | A.4 | Mobile: polygon check in `@quest/geofence` + submit-screen indicator + map rendering | ✅ |
 | A.5 | Seed polygon example (Beacon Hill Park) + package tests (44) | ✅ |
 
-### Phase B — Instant Verification ([Spec 02](docs/specs/02-instant-verification.md)) — NEXT
+### Phase B — Instant Verification ([Spec 02](docs/specs/02-instant-verification.md)) — ✅ SHIPPED July 2026
 
 | # | Task | Status |
 |---|---|---|
-| B.1 | Migration 016: auto-approve on insert (`status='approved'`, `reviewed_at=now()`), rewards on insert path, `removed` status + XP revocation, in-DB redemption codes, rate limits | ❌ |
-| B.2 | Mobile: strip pending UI; celebration shows real XP / level-up / streak / redemption code | ❌ |
-| B.3 | Admin: approval queue → read-only completions log with Remove | ❌ |
-| B.4 | Retire `award-xp` approval push + `generate-redemption-code` invocation | ❌ |
-| B.5 | Anti-abuse: mock-location block, rate limits, `bypassGeofence` prod-strip check | ❌ |
-| B.6 | Backfill legacy `pending` rows | ❌ |
+| B.1 | Migration 016: auto-approve on insert, rewards on insert path, `removed` status + XP revocation, in-DB redemption codes, rate limits (2/10 min, 10/24 h) | ✅ |
+| B.2 | Mobile: pending UI deleted (`PendingQuestItem` gone); celebration shows real XP / level-up / streak / redemption code | ✅ |
+| B.3 | Admin: approval queue → read-only completions log with Remove | ✅ |
+| B.4 | Retire `award-xp` approval push + `generate-redemption-code` invocation | ✅ |
+| B.5 | Anti-abuse: DB rate limits + mock-location block | ✅ (verify `bypassGeofence` stripped in release build — release checklist) |
+| B.6 | Backfill legacy `pending` rows | ✅ (in 016) |
 
-### Phase C — Reports & Moderation ([Spec 03](docs/specs/03-report-moderation.md)) — SHIPS WITH B
+### Phase C — Reports & Moderation ([Spec 03](docs/specs/03-report-moderation.md)) — ✅ SHIPPED July 2026 (with B)
 
 | # | Task | Status |
 |---|---|---|
-| C.1 | Migration 017: `completion_reports`, report counters, auto-hide at 3 reporters, `blocked_users` | ❌ |
-| C.2 | Mobile: ⋯ menu on feed posts → report reasons sheet; block user; feed filtering | ❌ |
-| C.3 | Admin `/moderation` queue: GPS-vs-fence evidence, dismiss / remove / remove-with-retry | ❌ |
-| C.4 | Feed privacy opt-out (complete quests without public feed publication) | ❌ |
-| C.5 | EULA/objectionable-content line in legal screens | ❌ |
+| C.1 | Migration 017: `completion_reports`, counters, auto-hide at 3 distinct reporters, `blocked_users`, `feed_public` | ✅ |
+| C.2 | Mobile: ⋯ menu → `ReportPostSheet` (5 reasons); block user; feed filtering | ✅ |
+| C.3 | Admin `/moderation`: GPS-vs-fence evidence, dismiss / remove (+ owner push) / remove-with-retry, flagged count on dashboard | ✅ |
+| C.4 | Feed privacy opt-out (`feed_public` toggle in Settings, enforced by RLS) | ✅ |
+| C.5 | EULA/objectionable-content line in legal screens | ✅ (`legal/terms.tsx` updated) |
 
-### Phase D — Analytics ([Spec 04](docs/specs/04-analytics-instrumentation.md)) — BEFORE LAUNCH
+### Phase D — Analytics ([Spec 04](docs/specs/04-analytics-instrumentation.md)) — NEXT · BEFORE LAUNCH
 
 | # | Task | Status |
 |---|---|---|
@@ -248,13 +260,13 @@ Status key: ✅ Done · ⚠️ Partial · ❌ Not started
 | Feature | Effort | Impact | Priority | Status |
 |---|---|---|---|---|
 | iOS submit creds + first store build | Low | Critical (ship) | **P0** | ❌ |
-| Instant verification (Spec 02) | Medium | Critical (retention) | **P0** | ❌ Specced |
-| Reports & moderation + block + opt-out (Spec 03) | Medium | Critical (store review) | **P0** | ❌ Specced — ships with Spec 02 |
-| Analytics (Spec 04) | Low | Critical (learning) | **P0** | ❌ Specced |
+| Analytics (Spec 04) | Low | Critical (learning) | **P0** | ❌ Specced — **next up** |
+| Apply migrations 014–017 live (confirm 005–013) | Low | Critical (ops) | **P0** | ⚠️ Ops |
 | `ADMIN_ALLOWED_EMAILS` in prod | Trivial | Critical | **P0** | ⚠️ Set on deploy |
-| Confirm migrations 005–015 live | Low | High | **P0** | ⚠️ Ops |
 | Real Victoria boundary | Low | High | **P0** | ❌ |
 | Sentry | Low | High | **P0** | ❌ |
+| Instant verification (Spec 02) | Medium | Critical (retention) | — | ✅ Shipped |
+| Reports & moderation + block + opt-out (Spec 03) | Medium | Critical (store review) | — | ✅ Shipped |
 | Geofence drawing (Spec 01) | Medium | High | — | ✅ Shipped |
 | Weekly drop ritual (E.1) | Low | High (retention) | **P1** | ❌ |
 | First-quest onboarding (F.1) | Low | High (activation) | **P1** | ❌ |
@@ -287,27 +299,18 @@ Status key: ✅ Done · ⚠️ Partial · ❌ Not started
 
 ## Architecture Notes
 
-**Current approval flow (being removed in Phase B):**
+**Live flow (Phases B+C shipped — migrations 016/017):**
 
 ```
-Mobile submit → geofence trigger validates (013–015, all 4 zone types)
-  → completions (pending)
-  → Admin approve → DB trigger: XP + level + streak → badge trigger
-  → award-xp edge fn: push + badge redundancy
-  → if sponsored: generate-redemption-code
-```
-
-**Target flow (Phase B+C — Specs 02/03):**
-
-```
-Mobile submit → geofence trigger validates (server-side, unbypassable)
-  → normalize: status = approved, reviewed_at = now
+Mobile submit → geofence trigger validates (013–015, all 4 zone types, unbypassable)
+  → normalize (016): rate-limit check → status = approved, reviewed_at = now
   → apply_completion_rewards: XP + level + streak (insert path)
-  → badge trigger via total_xp (unchanged)
+  → badge trigger via total_xp (005, unchanged)
   → sponsored: redemption code assigned in-DB
-  → celebration shows real XP / streak / code, seconds after the real-world effort
-  → post appears on public feed (unless user opted out)
-  → community reports → admin moderation → remove revokes XP
+  → celebration shows real XP / level-up / streak / code, seconds after the real-world effort
+  → post appears on public feed (unless feed_public = false or hidden by reports)
+  → community reports (017) → auto-hide at 3 → admin moderation
+      → dismiss (restore) | remove (revoke XP + owner push) | remove-and-allow-retry
 ```
 
 **Mobile screen map:** unchanged from June (5 tabs + stack screens); Phase C adds report/block sheets, Phase E adds suggest-a-quest, Phase F adds recap screen.
@@ -328,6 +331,7 @@ Mobile submit → geofence trigger validates (server-side, unbypassable)
 
 | Date | Change |
 |---|---|
+| Jul 5, 2026 | **Instant verification era shipped (Phases B+C).** Migration 016: auto-approve on insert, rewards on insert path, in-DB redemption codes, rate limits, `removed` status + XP revocation, pending backfill. Migration 017: reports (reasons, rate limits, auto-hide at 3), `blocked_users`, `feed_public` privacy opt-out, feed RLS, GPS-evidence RPC. Mobile: pending UI deleted, real-XP celebration, `ReportPostSheet`, block user, settings privacy toggle. Admin: approval queue → completions log, `/moderation` queue with dismiss/remove/remove-and-retry, flagged dashboard stat, owner removal push. Edge fns `award-xp` + `generate-redemption-code` retired. Tests 105 mobile + 44 geofence, tsc clean. Remaining before launch: analytics (Spec 04), store creds, live migration apply. |
 | Jul 4, 2026 | **Strategic reframe + spec set.** Docs/specs 01–07 authored. Phase A (geofence drawing: migrations 014–015, admin draw UI, mobile polygon support, 44 package tests) shipped. Roadmap restructured around instant verification (removes approval queue), reports/moderation (Apple 1.2 + block + privacy opt-out), analytics instrumentation, content engine (community quests, weekly drops, chains), growth loop (duo quests, recap card, XP events, starter quest, offline queue), and merchant redemption validation. Multi-city, sponsor portal, and follow graph explicitly deferred. |
 | Jun 21, 2026 | Figma UI reimagining shipped: 5-tab nav, Harbour Electric design system, hero quest cards, activity feed, podium rankings, badges tab, profile simplification. Migration `008` for feed RLS. |
 | Jun 21, 2026 | Code audit: CI + npm test marked done; avatar upload, streak DB/profile, redemption admin wiring verified; legal screens shipped. |

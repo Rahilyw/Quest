@@ -19,6 +19,7 @@ export default function Settings(): JSX.Element {
   const { session, profile, signOut } = useAuth()
   const [questNearby, setQuestNearby] = useState(false)
   const [weeklyDigest, setWeeklyDigest] = useState(true)
+  const [feedPublic, setFeedPublic] = useState(true)
 
   useEffect(() => {
     if (!session?.user?.id) return
@@ -26,11 +27,12 @@ export default function Settings(): JSX.Element {
     // Derive questNearby from actual push token presence
     supabase
       .from('profiles')
-      .select('push_token')
+      .select('push_token, feed_public')
       .eq('id', session.user.id)
       .single()
       .then(({ data }) => {
         setQuestNearby(!!data?.push_token)
+        if (data?.feed_public != null) setFeedPublic(data.feed_public)
       })
 
     // Restore weekly digest preference
@@ -54,6 +56,18 @@ export default function Settings(): JSX.Element {
   async function handleWeeklyDigestToggle(enabled: boolean) {
     setWeeklyDigest(enabled)
     await AsyncStorage.setItem(WEEKLY_DIGEST_KEY, String(enabled))
+  }
+
+  async function handleFeedPublicToggle(enabled: boolean) {
+    if (!session?.user?.id) return
+    setFeedPublic(enabled)
+    const { error } = await supabase
+      .from('profiles')
+      .update({ feed_public: enabled })
+      .eq('id', session.user.id)
+    if (error) {
+      setFeedPublic(!enabled)
+    }
   }
 
   async function handleSignOut() {
@@ -137,6 +151,26 @@ export default function Settings(): JSX.Element {
           </View>
         </View>
 
+        {/* PRIVACY */}
+        <SectionHeader title="Privacy" />
+        <View style={styles.sectionCard}>
+          <View style={styles.row}>
+            <View style={{ flex: 1, paddingRight: SPACING.md }}>
+              <Text style={styles.rowLabel}>Show in activity feed</Text>
+              <Text style={styles.rowHint}>
+                When off, your proof photos stay on your profile only — not the public city feed.
+              </Text>
+            </View>
+            <Switch
+              value={feedPublic}
+              onValueChange={handleFeedPublicToggle}
+              thumbColor="#FFFFFF"
+              trackColor={{ false: '#CBD5E1', true: COLORS.accent }}
+              ios_backgroundColor="#CBD5E1"
+            />
+          </View>
+        </View>
+
         {/* ABOUT */}
         <SectionHeader title="About" />
         <View style={styles.sectionCard}>
@@ -161,11 +195,21 @@ export default function Settings(): JSX.Element {
           <TouchableOpacity
             style={[styles.row, styles.rowBorder]}
             activeOpacity={0.7}
-            onPress={() => Linking.openURL(LEGAL_URLS.termsOfService).catch(() => {})}
-            accessibilityRole="link"
+            onPress={() => router.push('/legal/terms')}
+            accessibilityRole="button"
             accessibilityLabel="Terms of Service"
           >
             <Text style={styles.rowLabel}>Terms of Service</Text>
+            <Ionicons name="chevron-forward" size={18} color={COLORS.textMuted} />
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.row, styles.rowBorder]}
+            activeOpacity={0.7}
+            onPress={() => router.push('/legal/privacy')}
+            accessibilityRole="button"
+            accessibilityLabel="Privacy Policy"
+          >
+            <Text style={styles.rowLabel}>Privacy Policy (in app)</Text>
             <Ionicons name="chevron-forward" size={18} color={COLORS.textMuted} />
           </TouchableOpacity>
         </View>
@@ -234,6 +278,7 @@ const styles = StyleSheet.create({
   },
   rowBorder: { borderTopWidth: 1, borderTopColor: COLORS.border },
   rowLabel: { color: COLORS.textPrimary, fontSize: 15, fontWeight: '500' },
+  rowHint: { color: COLORS.textMuted, fontSize: 12, marginTop: 4, lineHeight: 17 },
   rowValue: {
     color: COLORS.textMuted,
     fontSize: 14,

@@ -22,6 +22,7 @@ interface Props {
   redemption_code?: string | null
   is_sponsored?: boolean
   sponsor_reward?: string | null
+  status?: 'approved' | 'removed'
 }
 
 function formatCompletedDate(iso: string) {
@@ -90,6 +91,7 @@ export function QuestHistoryItem({
   redemption_code,
   is_sponsored,
   sponsor_reward,
+  status = 'approved',
 }: Props) {
   const color = CATEGORY_COLORS[category] ?? COLORS.accent
   const iconName = CATEGORY_IONICONS[category] ?? 'flag-outline'
@@ -103,15 +105,21 @@ export function QuestHistoryItem({
         <Text style={styles.title} numberOfLines={1}>{title}</Text>
         <Text style={styles.date}>{formatCompletedDate(completed_at)}</Text>
 
-        {is_sponsored && redemption_code ? (
-          <RedemptionCodeCard code={redemption_code} sponsor_reward={sponsor_reward} />
-        ) : is_sponsored ? (
-          <View style={styles.pendingBadge}>
-            <Text style={styles.pendingBadgeText}>🎁 Reward Pending</Text>
+        {status === 'removed' ? (
+          <View style={styles.removedBadge}>
+            <Text style={styles.removedBadgeText}>Removed after review</Text>
           </View>
         ) : null}
+
+        {is_sponsored && redemption_code && status === 'approved' ? (
+          <RedemptionCodeCard code={redemption_code} sponsor_reward={sponsor_reward} />
+        ) : null}
       </View>
-      <Text style={styles.xp}>+{xp_reward} XP</Text>
+      {status === 'removed' ? (
+        <Text style={styles.removedXp}>Revoked</Text>
+      ) : (
+        <Text style={styles.xp}>+{xp_reward} XP</Text>
+      )}
     </View>
   )
 }
@@ -136,6 +144,18 @@ const styles = StyleSheet.create({
   title: { color: COLORS.textPrimary, fontSize: 14, fontWeight: '600' },
   date: { color: COLORS.textMuted, fontSize: 12, marginTop: 2 },
   xp: { color: COLORS.accent, fontSize: 13, fontWeight: '700', alignSelf: 'flex-start', marginTop: 2 },
+  removedXp: { color: COLORS.textMuted, fontSize: 12, fontWeight: '600', alignSelf: 'flex-start', marginTop: 2 },
+  removedBadge: {
+    alignSelf: 'flex-start',
+    marginTop: 6,
+    backgroundColor: COLORS.bgWarm,
+    borderRadius: RADIUS.pill,
+    paddingHorizontal: SPACING.sm,
+    paddingVertical: 3,
+    borderWidth: 1,
+    borderColor: COLORS.danger + '40',
+  },
+  removedBadgeText: { color: COLORS.danger, fontWeight: '700', fontSize: 11 },
 
   // Pending badge (amber/gold pill)
   pendingBadge: {

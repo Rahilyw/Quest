@@ -34,6 +34,7 @@ interface RecentQuest {
   redemption_code: string | null
   is_sponsored: boolean
   sponsor_reward: string | null
+  status: 'approved' | 'removed'
 }
 
 export default function Profile() {
@@ -67,11 +68,11 @@ export default function Profile() {
         .eq('status', 'approved'),
       supabase
         .from('completions')
-        .select('id, completed_at, redemption_code, quest:quests(title, category, xp_reward, is_sponsored, sponsor_reward)')
+        .select('id, completed_at, redemption_code, status, quest:quests(title, category, xp_reward, is_sponsored, sponsor_reward)')
         .eq('user_id', profile.id)
-        .eq('status', 'approved')
+        .in('status', ['approved', 'removed'])
         .order('completed_at', { ascending: false })
-        .limit(3),
+        .limit(5),
       supabase.from('leaderboard').select('weekly_xp').eq('user_id', profile.id).maybeSingle(),
     ])
 
@@ -82,6 +83,7 @@ export default function Profile() {
       id: string
       completed_at: string
       redemption_code: string | null
+      status: 'approved' | 'removed'
       quest: {
         title: string
         category: string
@@ -97,6 +99,7 @@ export default function Profile() {
           id: r.id,
           completed_at: r.completed_at,
           redemption_code: r.redemption_code,
+          status: r.status,
           ...r.quest!,
         }))
     )
@@ -236,6 +239,7 @@ export default function Profile() {
                 redemption_code={q.redemption_code}
                 is_sponsored={q.is_sponsored}
                 sponsor_reward={q.sponsor_reward}
+                status={q.status}
               />
             </View>
           ))}

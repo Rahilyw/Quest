@@ -4,6 +4,8 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import MapView, { Marker } from 'react-native-maps'
 import { useQuests } from '@/hooks/useQuests'
 import { useActivityFeed } from '@/hooks/useActivityFeed'
+import { useBlockedUsers } from '@/hooks/useBlockedUsers'
+import { useAuth } from '@/hooks/useAuth'
 import { FeedPostCard } from '@/components/FeedPostCard'
 import { AppHeader } from '@/components/AppHeader'
 import { EmptyState } from '@/components/EmptyState'
@@ -13,7 +15,13 @@ export default function FeedScreen() {
   const router = useRouter()
   const insets = useSafeAreaInsets()
   const { quests } = useQuests()
-  const { posts, loading } = useActivityFeed()
+  const { profile } = useAuth()
+  const { blockedIds, refetch: refetchBlocks } = useBlockedUsers(profile?.id)
+  const { posts, loading, refetch } = useActivityFeed(profile?.id, blockedIds)
+
+  function handleFeedChange() {
+    refetch()
+  }
 
   return (
     <ScrollView
@@ -82,7 +90,16 @@ export default function FeedScreen() {
       ) : (
         <View style={styles.feedList}>
           {posts.map((post) => (
-            <FeedPostCard key={post.id} post={post} />
+            <FeedPostCard
+              key={post.id}
+              post={post}
+              currentUserId={profile?.id}
+              onReported={handleFeedChange}
+              onBlocked={() => {
+                refetchBlocks()
+                refetch()
+              }}
+            />
           ))}
         </View>
       )}
