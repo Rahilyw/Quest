@@ -15,13 +15,12 @@ import { BadgeTile } from '@/components/badges/BadgeTile'
 import { BadgeShowcase } from '@/components/badges/BadgeShowcase'
 import { COLORS, FONT_BRAND, RADIUS, SPACING } from '@/lib/constants'
 import {
-  BADGE_CATALOG,
-  CATALOG_BY_NAME,
   RARITY_META,
   RARITY_ORDER,
   type BadgeRarity,
   type BadgeSpec,
 } from '@/lib/badgeCatalog'
+import { resolveBadgeSpec } from '@/lib/badgeFromDb'
 import type { Badge } from '@/lib/types'
 
 /**
@@ -52,7 +51,7 @@ export default function BadgesScreen() {
 
   const load = useCallback(async () => {
     const [badgesResult, earnedResult] = await Promise.all([
-      supabase.from('badges').select('*').order('name'),
+      supabase.from('badges').select('*').eq('is_active', true).order('sort_order').order('name'),
       profile
         ? supabase
             .from('user_badges')
@@ -75,8 +74,7 @@ export default function BadgesScreen() {
     setRefreshing(false)
   }
 
-  const { byRarity, extras, earnedByName, total, earnedCount } = useMemo(() => {
-    const dbByName = new Map(dbBadges.map((b) => [b.name, b]))
+  const { byRarity, fieldFinds, earnedByName, total, earnedCount } = useMemo(() => {
     const earnedById = new Map(earnedRows.map((r) => [r.badge_id, r.earned_at]))
 
     const earnedByName = new Map<string, string>()
@@ -85,32 +83,23 @@ export default function BadgesScreen() {
       if (at) earnedByName.set(b.name, at)
     }
 
+    const specs = dbBadges.map(resolveBadgeSpec)
+    const fieldFinds = specs.filter((s) => !s.hasBuiltInArt && !s.iconUrl)
+
     const byRarity: Record<BadgeRarity, BadgeSpec[]> = {
       legendary: [],
       epic: [],
       rare: [],
       common: [],
     }
-    for (const spec of BADGE_CATALOG) byRarity[spec.rarity].push(spec)
+    for (const spec of specs) {
+      if (!fieldFinds.includes(spec)) byRarity[spec.rarity].push(spec)
+    }
 
-    // DB badges the catalog doesn't know yet — sealed until the app catches up
-    const extras: BadgeSpec[] = dbBadges
-      .filter((b) => !CATALOG_BY_NAME[b.name])
-      .map((b) => ({
-        key: `db-${b.id}`,
-        name: b.name,
-        rarity: 'rare' as const,
-        style: 'medal' as const,
-        description: b.description,
-        lockedHint: b.description,
-        unlock: b.unlock_condition,
-      }))
+    const total = specs.length
+    const earnedCount = specs.filter((s) => earnedByName.has(s.name)).length
 
-    const total = BADGE_CATALOG.length + extras.length
-    const allNames = [...BADGE_CATALOG.map((s) => s.name), ...extras.map((s) => s.name)]
-    const earnedCount = allNames.filter((n) => earnedByName.has(n)).length
-
-    return { byRarity, extras, earnedByName, total, earnedCount }
+    return { byRarity, fieldFinds, earnedByName, total, earnedCount }
   }, [dbBadges, earnedRows])
 
   const isEarned = (spec: BadgeSpec) => earnedByName.has(spec.name)
@@ -250,19 +239,19 @@ export default function BadgesScreen() {
             </View>
 
             {/* Anything the server knows that this build doesn't */}
-            {extras.length > 0 && (
+            {fieldFinds.length > 0 && (
               <View style={styles.section}>
                 <View style={styles.sectionHeadRow}>
                   <Text style={[styles.sectionLabel, { color: COLORS.textMuted }]}>
                     FIELD FINDS
                   </Text>
                   <Text style={styles.sectionCount}>
-                    {extras.filter(isEarned).length}/{extras.length}
+                    {fieldFinds.filter(isEarned).length}/{fieldFinds.length}
                   </Text>
                 </View>
                 <Text style={styles.sectionTagline}>New relics, still being catalogued</Text>
                 <View style={styles.grid}>
-                  {extras.map((spec) => (
+                  {fieldFinds.map((spec) => (
                     <View key={spec.key} style={styles.gridItemThird}>
                       <BadgeTile
                         spec={spec}

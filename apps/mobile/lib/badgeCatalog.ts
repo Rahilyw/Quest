@@ -25,6 +25,10 @@ export interface BadgeSpec {
   unlock: string
   /** Hidden until earned: name and hint are masked */
   secret?: boolean
+  /** Custom uploaded icon from admin (used when no built-in art) */
+  iconUrl?: string
+  /** @internal — badges without SVG art or upload */
+  hasBuiltInArt?: boolean
 }
 
 export const RARITY_META: Record<

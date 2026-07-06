@@ -1,4 +1,4 @@
-import { Text, View } from 'react-native'
+import { Image, Text, View } from 'react-native'
 import { FONT_BRAND } from '@/lib/constants'
 import type { BadgeSpec } from '@/lib/badgeCatalog'
 import { BADGE_ART } from './art'
@@ -45,33 +45,53 @@ export function MysterySeal({ size }: { size: number }) {
 }
 
 export function BadgeVisual({ spec, size, earned }: Props) {
-  const art = BADGE_ART[spec.key]
-
-  if (!art || (spec.secret && !earned)) {
+  if (spec.secret && !earned) {
     return <MysterySeal size={size} />
   }
 
-  const { Component, shape } = art
+  const art = BADGE_ART[spec.key]
 
-  if (earned) {
-    return <Component size={size} />
+  if (art) {
+    const { Component, shape } = art
+
+    if (earned) {
+      return <Component size={size} />
+    }
+
+    return (
+      <View style={{ width: size, height: size }}>
+        <Component size={size} />
+        <View
+          pointerEvents="none"
+          style={{
+            position: 'absolute',
+            left: 0,
+            top: 0,
+            width: size,
+            height: size,
+            borderRadius: shape === 'round' ? size / 2 : size * 0.14,
+            backgroundColor: 'rgba(26,43,74,0.62)',
+          }}
+        />
+      </View>
+    )
   }
 
-  return (
-    <View style={{ width: size, height: size }}>
-      <Component size={size} />
+  if (spec.iconUrl) {
+    return (
       <View
-        pointerEvents="none"
         style={{
-          position: 'absolute',
-          left: 0,
-          top: 0,
           width: size,
           height: size,
-          borderRadius: shape === 'round' ? size / 2 : size * 0.14,
-          backgroundColor: 'rgba(26,43,74,0.62)',
+          borderRadius: size * 0.14,
+          overflow: 'hidden',
+          opacity: earned ? 1 : 0.45,
         }}
-      />
-    </View>
-  )
+      >
+        <Image source={{ uri: spec.iconUrl }} style={{ width: size, height: size }} resizeMode="cover" />
+      </View>
+    )
+  }
+
+  return <MysterySeal size={size} />
 }

@@ -55,6 +55,14 @@ export interface Badge {
   description: string
   icon: string
   unlock_condition: string
+  icon_url?: string | null
+  rarity?: 'common' | 'rare' | 'epic' | 'legendary'
+  art_style?: 'medal' | 'animated' | 'pixel'
+  locked_hint?: string | null
+  is_secret?: boolean
+  art_key?: string | null
+  sort_order?: number
+  is_active?: boolean
 }
 
 export interface UserBadge {

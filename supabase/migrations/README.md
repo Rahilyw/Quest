@@ -23,6 +23,7 @@ Apply migrations in numeric/filename order:
 | `017_instant_verification.sql` | Auto-approve on insert, rewards on insert path, rate limits, in-DB redemption codes, XP revocation on `removed` |
 | `018_completion_reports.sql` | Reports, blocking, feed privacy (`feed_public`), auto-hide at 3 reports, moderation GPS evidence |
 | `019_expand_badges.sql` | Expands badge set and unlock trigger rules |
+| `020_admin_badge_system.sql` | Badge metadata columns, icon uploads, data-driven unlock rules from admin |
 
 ## Env var naming drift
 

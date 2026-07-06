@@ -13,6 +13,7 @@ function Sidebar() {
     { href: '/completions', label: 'Completions', icon: '◎' },
     { href: '/quests', label: 'Quests', icon: '⚡' },
     { href: '/quests/new', label: 'New Quest', icon: '＋' },
+    { href: '/badges', label: 'Badges', icon: '🏅' },
     { href: '/users', label: 'Users', icon: '◉' },
     { href: '/sponsors', label: 'Sponsors', icon: '★' },
   ]
@@ -43,7 +44,9 @@ function Sidebar() {
         const active =
           l.href === '/quests'
             ? pathname === '/quests'
-            : pathname === l.href
+            : l.href === '/badges'
+              ? pathname === '/badges' || pathname.startsWith('/badges/')
+              : pathname === l.href
         return (
           <Link
             key={l.href}
