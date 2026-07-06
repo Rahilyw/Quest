@@ -20,13 +20,13 @@ export default function TabLayout() {
         headerShown: false,
         tabBarStyle: {
           backgroundColor: COLORS.surface,
-          borderTopColor: 'rgba(67, 100, 247, 0.08)',
+          borderTopColor: 'rgba(14, 165, 233, 0.12)',
           borderTopWidth: 1,
           height: 72,
           paddingBottom: 14,
           paddingTop: 8,
         },
-        tabBarActiveTintColor: COLORS.primary,
+        tabBarActiveTintColor: COLORS.highlight,
         tabBarInactiveTintColor: COLORS.textMuted,
         tabBarLabelStyle: { fontWeight: '700', fontSize: 10 },
       }}
@@ -85,7 +85,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   iconWrapActive: {
-    backgroundColor: COLORS.primary,
+    backgroundColor: COLORS.highlight,
     marginTop: -8,
   },
 })

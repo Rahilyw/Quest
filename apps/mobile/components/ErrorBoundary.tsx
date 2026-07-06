@@ -1,6 +1,7 @@
 import { Component, type ErrorInfo, type ReactNode } from 'react'
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native'
-import { COLORS, SPACING, RADIUS, APP_NAME } from '@/lib/constants'
+import { COLORS, SPACING, RADIUS } from '@/lib/constants'
+import { BrandInline } from '@/components/BrandText'
 
 interface Props {
   children: ReactNode
@@ -32,7 +33,7 @@ export class ErrorBoundary extends Component<Props, State> {
         <View style={styles.container}>
           <Text style={styles.title}>Something went wrong</Text>
           <Text style={styles.message}>
-            {APP_NAME} hit a snag. Tap below to try again — if it keeps happening, restart the app.
+            <BrandInline /> hit a snag. Tap below to try again — if it keeps happening, restart the app.
           </Text>
           {__DEV__ && this.state.error && (
             <Text style={styles.devError} numberOfLines={4}>

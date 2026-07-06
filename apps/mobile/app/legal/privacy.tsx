@@ -2,6 +2,7 @@ import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Linking } from 'r
 import { useRouter } from 'expo-router'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { SectionHeader } from '@/components/SectionHeader'
+import { BrandInline } from '@/components/BrandText'
 import { COLORS, SPACING, RADIUS } from '@/lib/constants'
 
 const LAST_UPDATED = 'June 21, 2026'
@@ -16,7 +17,7 @@ function Section({ title, children }: { title: string; children: React.ReactNode
   )
 }
 
-function Paragraph({ children }: { children: string }) {
+function Paragraph({ children }: { children: React.ReactNode }) {
   return <Text style={styles.paragraph}>{children}</Text>
 }
 
@@ -45,7 +46,7 @@ export default function PrivacyPolicy(): JSX.Element {
         <Text style={styles.updated}>Last updated {LAST_UPDATED}</Text>
 
         <Paragraph>
-          Quest! is built for people who actually get out and explore Victoria — not for
+          <BrandInline /> is built for people who actually get out and explore Victoria — not for
           selling your data. Here is what we collect, why, and where it lives.
         </Paragraph>
 

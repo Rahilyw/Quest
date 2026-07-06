@@ -70,7 +70,7 @@ export function AppBrandHeader({
     <div className="flex items-center justify-between">
       <div>
         <div className="flex items-center gap-2">
-          <span className="text-2xl font-black tracking-tight" style={{ color: COLORS.primary }}>
+          <span className="tracking-tight brand-wordmark" style={{ color: COLORS.primary }}>
             QUEST!
           </span>
           <span

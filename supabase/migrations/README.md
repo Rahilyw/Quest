@@ -19,8 +19,10 @@ Apply migrations in numeric/filename order:
 | `013_geofence_system.sql` | PostGIS, `geofence_type` enum, `cities` table, completion geofence trigger |
 | `014_geofence_polygon_enum.sql` | Adds `polygon` to `geofence_type` (enum value must land in its own transaction) |
 | `015_geofence_polygon.sql` | `quests.boundary` + generated `boundary_geojson`, `set_quest_boundary()` validated write path, polygon branch in `check_completion_geofence()` |
-| `016_instant_verification.sql` | Auto-approve on insert, rewards on insert path, rate limits, in-DB redemption codes, `removed` status + XP revocation |
-| `017_completion_reports.sql` | Reports, blocking, feed privacy (`feed_public`), auto-hide at 3 reports, moderation GPS evidence |
+| `016_completion_status_removed.sql` | Adds `removed` to `completion_status` (enum value must land in its own transaction) |
+| `017_instant_verification.sql` | Auto-approve on insert, rewards on insert path, rate limits, in-DB redemption codes, XP revocation on `removed` |
+| `018_completion_reports.sql` | Reports, blocking, feed privacy (`feed_public`), auto-hide at 3 reports, moderation GPS evidence |
+| `019_expand_badges.sql` | Expands badge set and unlock trigger rules |
 
 ## Env var naming drift
 

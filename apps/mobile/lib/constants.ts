@@ -1,47 +1,58 @@
 export const APP_NAME = 'Quest!'
 
-/** Figma redesign palette — Poppins-weight hierarchy on sky-blue canvas */
+/** Official brand wordmark — Skyscapers */
+export const FONT_BRAND = 'Skyscapers'
+
+/** Summer 2026 palette — bright sky, coral pops, warm sunshine canvas */
 export const COLORS = {
-  bg: '#E8F3FF',
-  bgOuter: '#C4DBFF',
-  bgWarm: '#FFF7ED',
+  bg: '#FFFBF0',
+  bgOuter: '#FFE8A3',
+  bgWarm: '#FFF4D6',
 
   surface: '#FFFFFF',
-  surfaceElevated: '#F8FAFF',
+  surfaceElevated: '#FFFDF7',
 
-  border: 'rgba(67, 100, 247, 0.12)',
+  border: 'rgba(14, 165, 233, 0.14)',
 
-  textPrimary: '#0D1B3E',
-  textMuted: '#546E8C',
+  textPrimary: '#1A2B4A',
+  textMuted: '#5C7A99',
 
-  /** Primary brand blue */
-  primary: '#4364F7',
-  primaryLight: '#6B8EFF',
-  primarySoft: '#D6E9FF',
+  /** Summer sky blue */
+  primary: '#0EA5E9',
+  primaryLight: '#7DD3FC',
+  primarySoft: '#E0F7FF',
 
-  /** Earned / active accent (kept for XP bar, CTAs) */
-  accent: '#4364F7',
-  accentSoft: '#E8F3FF',
-  accentText: '#4364F7',
+  accent: '#0EA5E9',
+  accentSoft: '#E0F7FF',
+  accentText: '#0284C7',
 
-  /** Orange highlight — city badge, notifications, featured */
+  /** Coral — badges, notifications, energy */
   highlight: '#FF6B35',
+  sunshine: '#FBBF24',
+  coral: '#FF8A65',
+  mint: '#2DD4BF',
 
-  navy: '#0D1B3E',
-  navyMid: '#1a2d6d',
+  navy: '#1E3A5F',
+  navyMid: '#2563EB',
 
   success: '#22C55E',
   warning: '#F59E0B',
   danger: '#EF4444',
   sponsor: '#FF6B35',
 
-  /** Local Signal indigo — redemption codes, sponsored accent */
   indigo: '#6366F1',
   indigoSoft: '#EEF2FF',
 
-  /** Semantic tint surfaces for pending/approved states */
   warningSoft: '#FEF3C7',
-  successSoft: '#F0FDF4',
+  successSoft: '#ECFDF5',
+
+  /** Leaderboard medal tints */
+  gold: '#FBBF24',
+  goldSoft: '#FEF3C7',
+  silver: '#94A3B8',
+  silverSoft: '#F1F5F9',
+  bronze: '#D97706',
+  bronzeSoft: '#FFEDD5',
 } as const
 
 export const SPACING = { xs: 4, sm: 8, md: 12, lg: 16, xl: 20, xxl: 24 } as const

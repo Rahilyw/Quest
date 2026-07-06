@@ -15,17 +15,24 @@ import { useAuth } from '@/hooks/useAuth'
 import { Avatar } from '@/components/Avatar'
 import { Podium } from '@/components/Podium'
 import { EmptyState } from '@/components/EmptyState'
-import { COLORS, SPACING, RADIUS, CITY, getLevelTitle, getISOWeek } from '@/lib/constants'
+import { BrandText } from '@/components/BrandText'
+import {
+  COLORS,
+  SPACING,
+  RADIUS,
+  CITY,
+  getLevelTitle,
+  getISOWeek,
+  getDaysLeftInWeek,
+} from '@/lib/constants'
 import type { LeaderboardEntry, UserBadgeWithBadge } from '@/lib/types'
 
-
-/** Returns a compact rank-delta label and its colour given a user's delta. */
 function getRankDelta(
   currentRank: number,
   lastWeekRank: number | null,
 ): { label: string; color: string } {
   if (lastWeekRank === null) {
-    return { label: '–', color: COLORS.textMuted }
+    return { label: 'new', color: COLORS.primary }
   }
   const delta = lastWeekRank - currentRank
   if (delta > 0) {
@@ -34,14 +41,23 @@ function getRankDelta(
   if (delta < 0) {
     return { label: `↓${Math.abs(delta)}`, color: COLORS.danger }
   }
-  return { label: '–', color: COLORS.textMuted }
+  return { label: '—', color: COLORS.textMuted }
+}
+
+function estimateLevel(weeklyXp: number): number {
+  if (weeklyXp >= 3500) return 9
+  if (weeklyXp >= 2000) return 7
+  if (weeklyXp >= 1000) return 5
+  if (weeklyXp >= 500) return 4
+  return 3
 }
 
 export default function RankingsScreen() {
   const insets = useSafeAreaInsets()
   const router = useRouter()
   const { profile } = useAuth()
-  const weekLabel = useMemo(() => `WEEK ${getISOWeek()} · ${CITY.name.toUpperCase()}`, [])
+  const weekNum = getISOWeek()
+  const daysLeft = getDaysLeftInWeek()
   const [entries, setEntries] = useState<LeaderboardEntry[]>([])
   const [badges, setBadges] = useState<UserBadgeWithBadge[]>([])
   const [loading, setLoading] = useState(true)
@@ -63,7 +79,6 @@ export default function RankingsScreen() {
     ]).then(async ([lbResult, badgeResult]) => {
       const lbRows = lbResult.data ?? []
 
-      // Fetch last_week_rank for each user on the leaderboard.
       let rankMap: Record<string, number | null> = {}
       if (lbRows.length > 0) {
         const userIds = lbRows.map((r: { user_id: string }) => r.user_id)
@@ -77,7 +92,7 @@ export default function RankingsScreen() {
       }
 
       setEntries(
-        lbRows.map((e: any, i: number) => ({
+        lbRows.map((e: LeaderboardEntry, i: number) => ({
           ...e,
           rank: i + 1,
           last_week_rank: rankMap[e.user_id] ?? null,
@@ -88,113 +103,219 @@ export default function RankingsScreen() {
     })
   }, [profile?.id])
 
-  const rest = entries.slice(3)
+  const myEntry = useMemo(
+    () => (profile ? entries.find((e) => e.user_id === profile.id) : undefined),
+    [entries, profile],
+  )
 
-  const ListHeaderComponent = useMemo(() => (
-    <>
-      <View style={[styles.hero, { paddingTop: insets.top + 12 }]}>
-        <View style={styles.heroTop}>
-          <View style={styles.menuIcon}>
-            <View style={styles.menuLine} />
-            <View style={[styles.menuLine, { width: 28 }]} />
-            <View style={[styles.menuLine, { width: 16 }]} />
-          </View>
-          <Text style={styles.heroTitle}>QUEST! RANKINGS</Text>
-          <Ionicons name="trophy" size={20} color={COLORS.warning} />
-        </View>
+  const listEntries = entries.length > 3 ? entries.slice(3) : []
 
-        <Text style={styles.weekLabel}>{weekLabel}</Text>
-        <Text style={styles.headline}>THE CITY&apos;S ELITE</Text>
-        <Text style={styles.tagline}>Off the couch and onto the board.</Text>
+  const ListHeaderComponent = useMemo(
+    () => (
+      <>
+        <View style={[styles.hero, { paddingTop: insets.top + 14 }]}>
+          <View style={styles.heroBlobA} />
+          <View style={styles.heroBlobB} />
 
-        {!loading && entries.length >= 3 && <Podium entries={entries} />}
-      </View>
-
-      {badges.length > 0 && (
-        <View style={styles.badgesSection}>
-          <View style={styles.badgesHeader}>
-            <Text style={styles.badgesTitle}>FEATURED BADGES</Text>
-            <View style={styles.newBadge}>
-              <Text style={styles.newBadgeText}>New</Text>
+          <View style={styles.heroTop}>
+            <View style={styles.weekPill}>
+              <Text style={styles.weekPillText}>☀️ WEEK {weekNum}</Text>
+            </View>
+            <View style={styles.cityPill}>
+              <Text style={styles.cityPillText}>{CITY.name}</Text>
             </View>
           </View>
-          <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-            {badges.map((ub) => (
-              <View key={ub.badge_id} style={styles.featuredBadge}>
-                <View style={styles.featuredBadgeIcon}>
-                  <Text style={styles.featuredEmoji}>{ub.badge?.icon ?? '🏅'}</Text>
+
+          <Text style={styles.heroTitle}>
+            <BrandText uppercase color={COLORS.navy} size="compact" />
+            <Text style={styles.heroTitleSuffix}> Rankings</Text>
+          </Text>
+          <Text style={styles.headline}>Who&apos;s owning the city?</Text>
+          <Text style={styles.tagline}>
+            Complete quests · earn XP · climb before Monday
+          </Text>
+
+          <View style={styles.heroStats}>
+            <View style={styles.heroStat}>
+              <Text style={styles.heroStatValue}>{loading ? '—' : entries.length}</Text>
+              <Text style={styles.heroStatLabel}>playing</Text>
+            </View>
+            <View style={styles.heroStatDivider} />
+            <View style={styles.heroStat}>
+              <Text style={styles.heroStatValue}>{daysLeft}</Text>
+              <Text style={styles.heroStatLabel}>days left</Text>
+            </View>
+          </View>
+        </View>
+
+        <View style={styles.howItWorks}>
+          <Ionicons name="information-circle" size={18} color={COLORS.primary} />
+          <Text style={styles.howItWorksText}>
+            Weekly XP from quest completions resets every Monday. Top players get bragging rights all week.
+          </Text>
+        </View>
+
+        {profile && !loading && (
+          <View style={styles.yourCard}>
+            <View style={styles.yourCardHeader}>
+              <Text style={styles.yourCardTitle}>Your week</Text>
+              {myEntry ? (
+                <View style={styles.yourRankPill}>
+                  <Text style={styles.yourRankPillText}>#{myEntry.rank}</Text>
                 </View>
-                <Text style={styles.featuredName} numberOfLines={2}>
-                  {ub.badge?.name}
+              ) : (
+                <Text style={styles.yourUnranked}>Not ranked yet</Text>
+              )}
+            </View>
+            <View style={styles.yourCardBody}>
+              <Avatar username={profile.username} uri={profile.avatar_url} size={44} />
+              <View style={styles.yourCardInfo}>
+                <Text style={styles.yourCardName}>@{profile.username}</Text>
+                <Text style={styles.yourCardXp}>
+                  {myEntry
+                    ? `${myEntry.weekly_xp.toLocaleString()} XP this week`
+                    : '0 XP — time to get out there'}
                 </Text>
               </View>
-            ))}
-          </ScrollView>
-        </View>
-      )}
+              {!myEntry && (
+                <TouchableOpacity
+                  style={styles.yourCardCta}
+                  onPress={() => router.push('/')}
+                  activeOpacity={0.85}
+                >
+                  <Text style={styles.yourCardCtaText}>Go →</Text>
+                </TouchableOpacity>
+              )}
+            </View>
+          </View>
+        )}
 
-      <View style={styles.chasersHeader}>
-        <Text style={styles.chasersTitle}>UPCOMING CHASERS</Text>
-      </View>
+        {!loading && entries.length > 0 && (
+          <View style={styles.podiumSection}>
+            <Text style={styles.sectionTitle}>🏆 Top players</Text>
+            <Podium entries={entries} />
+          </View>
+        )}
 
-      {loading ? (
-        <Text style={styles.loading}>Loading…</Text>
-      ) : entries.length === 0 ? (
-        <EmptyState
-          icon="🏆"
-          title="No rankings yet"
-          subtitle="Complete quests this week to appear on the board."
-        />
-      ) : null}
-    </>
-  ), [loading, entries, badges, insets.top, weekLabel])
+        {badges.length > 0 && (
+          <View style={styles.badgesSection}>
+            <Text style={styles.sectionTitle}>Your badges</Text>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+              {badges.map((ub) => (
+                <View key={ub.badge_id} style={styles.featuredBadge}>
+                  <View style={styles.featuredBadgeIcon}>
+                    <Text style={styles.featuredEmoji}>{ub.badge?.icon ?? '🏅'}</Text>
+                  </View>
+                  <Text style={styles.featuredName} numberOfLines={2}>
+                    {ub.badge?.name}
+                  </Text>
+                </View>
+              ))}
+            </ScrollView>
+          </View>
+        )}
 
-  const ListFooterComponent = entries.length > 0 ? (
-    <TouchableOpacity
-      style={styles.boostBtn}
-      activeOpacity={0.85}
-      onPress={() => router.push('/')}
-      accessibilityRole="button"
-      accessibilityLabel="Boost your rank — go to Explore"
-    >
-      <Text style={styles.boostText}>Boost Your Rank →</Text>
-    </TouchableOpacity>
-  ) : null
+        {!loading && entries.length > 3 && (
+          <View style={styles.listHeader}>
+            <Text style={styles.sectionTitle}>The chase pack</Text>
+            <Text style={styles.sectionSubtitle}>Everyone fighting for a podium spot</Text>
+          </View>
+        )}
+
+        {loading ? (
+          <Text style={styles.loading}>Loading rankings…</Text>
+        ) : entries.length === 0 ? (
+          <EmptyState
+            icon="☀️"
+            title="The board is wide open"
+            subtitle="Be the first to complete a quest this week and claim #1."
+            ctaLabel="Browse quests"
+            onCtaPress={() => router.push('/')}
+          />
+        ) : entries.length <= 3 ? (
+          <View style={styles.fewPlayersCard}>
+            <Text style={styles.fewPlayersEmoji}>🌊</Text>
+            <Text style={styles.fewPlayersTitle}>
+              {entries.length === 1 ? 'Solo at the top — for now' : 'Small crew, big energy'}
+            </Text>
+            <Text style={styles.fewPlayersBody}>
+              More explorers join every week. Complete quests to hold your spot or steal the crown.
+            </Text>
+            <TouchableOpacity
+              style={styles.questCta}
+              onPress={() => router.push('/')}
+              activeOpacity={0.88}
+            >
+              <Ionicons name="compass" size={20} color="#FFFFFF" />
+              <View style={styles.questCtaText}>
+                <Text style={styles.questCtaTitle}>Find a quest</Text>
+                <Text style={styles.questCtaSub}>Earn XP and move up the board</Text>
+              </View>
+              <Ionicons name="chevron-forward" size={20} color="rgba(255,255,255,0.8)" />
+            </TouchableOpacity>
+          </View>
+        ) : null}
+      </>
+    ),
+    [loading, entries, badges, insets.top, weekNum, daysLeft, profile, myEntry, router],
+  )
 
   return (
     <View style={styles.container}>
       <FlatList<LeaderboardEntry>
-        data={loading || entries.length === 0 ? [] : rest}
+        data={loading || entries.length <= 3 ? [] : listEntries}
         keyExtractor={(item) => item.user_id}
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{ paddingBottom: 100 }}
         ListHeaderComponent={ListHeaderComponent}
-        ListFooterComponent={ListFooterComponent}
+        ListFooterComponent={
+          !loading && entries.length > 3 ? (
+            <TouchableOpacity
+              style={styles.questCtaFooter}
+              onPress={() => router.push('/')}
+              activeOpacity={0.88}
+            >
+              <Ionicons name="compass" size={20} color="#FFFFFF" />
+              <View style={styles.questCtaText}>
+                <Text style={styles.questCtaTitle}>Earn more XP</Text>
+                <Text style={styles.questCtaSub}>Complete quests on Explore to climb the board</Text>
+              </View>
+              <Ionicons name="chevron-forward" size={20} color="rgba(255,255,255,0.8)" />
+            </TouchableOpacity>
+          ) : null
+        }
         renderItem={({ item }) => {
           const { label: deltaLabel, color: deltaColor } = getRankDelta(
             item.rank,
             item.last_week_rank,
           )
+          const isMe = item.user_id === profile?.id
           return (
-            <View style={[
-              styles.chaserRow,
-              item.user_id === profile?.id && styles.chaserHighlight,
-              { marginHorizontal: SPACING.xl },
-            ]}>
+            <View
+              style={[
+                styles.row,
+                isMe && styles.rowMe,
+                { marginHorizontal: SPACING.lg },
+              ]}
+            >
               <View style={styles.rankBlock}>
-                <Text style={styles.chaserRank}>{item.rank}</Text>
+                <Text style={styles.rankNum}>{item.rank}</Text>
                 <Text style={[styles.rankDelta, { color: deltaColor }]}>{deltaLabel}</Text>
               </View>
-              <Avatar username={item.username} uri={item.avatar_url} size={40} />
-              <View style={styles.chaserInfo}>
-                <Text style={styles.chaserName}>@{item.username}</Text>
-                <Text style={styles.chaserLevel}>
-                  LV {estimateLevel(item.weekly_xp)} {getLevelTitle(estimateLevel(item.weekly_xp))}
+              <Avatar username={item.username} uri={item.avatar_url} size={44} />
+              <View style={styles.rowInfo}>
+                <Text style={styles.rowName}>
+                  @{item.username}
+                  {isMe ? ' · you' : ''}
+                </Text>
+                <Text style={styles.rowLevel}>
+                  LV {estimateLevel(item.weekly_xp)}{' '}
+                  {getLevelTitle(estimateLevel(item.weekly_xp))}
                 </Text>
               </View>
-              <View style={styles.chaserXpBlock}>
-                <Text style={styles.chaserXp}>{item.weekly_xp.toLocaleString()}</Text>
-                <Text style={styles.chaserXpLabel}>XP</Text>
+              <View style={styles.xpBlock}>
+                <Text style={styles.xpValue}>{item.weekly_xp.toLocaleString()}</Text>
+                <Text style={styles.xpLabel}>XP</Text>
               </View>
             </View>
           )
@@ -204,91 +325,239 @@ export default function RankingsScreen() {
   )
 }
 
-function estimateLevel(weeklyXp: number): number {
-  if (weeklyXp >= 3500) return 9
-  if (weeklyXp >= 2000) return 7
-  if (weeklyXp >= 1000) return 5
-  if (weeklyXp >= 500) return 4
-  return 3
-}
-
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: COLORS.bg },
   hero: {
-    backgroundColor: COLORS.navy,
-    paddingHorizontal: SPACING.xl,
-    paddingBottom: SPACING.xxl,
+    backgroundColor: COLORS.bgOuter,
+    paddingHorizontal: SPACING.lg,
+    paddingBottom: SPACING.xl,
     borderBottomLeftRadius: RADIUS.xxl,
     borderBottomRightRadius: RADIUS.xxl,
+    overflow: 'hidden',
+    borderBottomWidth: 3,
+    borderBottomColor: COLORS.sunshine,
+  },
+  heroBlobA: {
+    position: 'absolute',
+    top: -40,
+    right: -30,
+    width: 140,
+    height: 140,
+    borderRadius: 70,
+    backgroundColor: 'rgba(255,255,255,0.35)',
+  },
+  heroBlobB: {
+    position: 'absolute',
+    bottom: 20,
+    left: -50,
+    width: 100,
+    height: 100,
+    borderRadius: 50,
+    backgroundColor: 'rgba(251,191,36,0.25)',
   },
   heroTop: {
     flexDirection: 'row',
-    alignItems: 'center',
     justifyContent: 'space-between',
-    marginBottom: SPACING.xl,
+    alignItems: 'center',
+    marginBottom: SPACING.md,
   },
-  menuIcon: { gap: 5, width: 32 },
-  menuLine: { height: 2, width: 20, borderRadius: 1, backgroundColor: 'rgba(255,255,255,0.5)' },
-  heroTitle: { color: '#FFFFFF', fontSize: 14, fontWeight: '900', letterSpacing: 2 },
-  weekLabel: {
-    color: 'rgba(255,255,255,0.45)',
-    fontSize: 11,
-    fontWeight: '700',
-    letterSpacing: 2,
-    textAlign: 'center',
-    marginBottom: SPACING.sm,
+  weekPill: {
+    backgroundColor: COLORS.sunshine,
+    borderRadius: RADIUS.pill,
+    paddingHorizontal: SPACING.md,
+    paddingVertical: 6,
+  },
+  weekPillText: { color: COLORS.navy, fontSize: 11, fontWeight: '900', letterSpacing: 0.5 },
+  cityPill: {
+    backgroundColor: 'rgba(255,255,255,0.7)',
+    borderRadius: RADIUS.pill,
+    paddingHorizontal: SPACING.md,
+    paddingVertical: 6,
+  },
+  cityPillText: { color: COLORS.textMuted, fontSize: 11, fontWeight: '700' },
+  heroTitle: { marginBottom: 4 },
+  heroTitleSuffix: {
+    color: COLORS.navy,
+    fontSize: 22,
+    fontWeight: '800',
   },
   headline: {
-    color: '#FFFFFF',
-    fontSize: 28,
+    color: COLORS.navy,
+    fontSize: 26,
     fontWeight: '900',
-    textAlign: 'center',
     letterSpacing: -0.5,
+    marginBottom: 6,
   },
-  tagline: {
-    color: 'rgba(255,255,255,0.5)',
-    fontSize: 12,
-    textAlign: 'center',
-    marginTop: 4,
-    marginBottom: SPACING.xl,
-  },
-  badgesSection: { paddingTop: SPACING.xl, paddingLeft: SPACING.xl },
-  badgesHeader: {
+  tagline: { color: COLORS.textMuted, fontSize: 13, fontWeight: '600', lineHeight: 18 },
+  heroStats: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: SPACING.sm,
-    marginBottom: SPACING.md,
-    paddingRight: SPACING.xl,
+    marginTop: SPACING.lg,
+    backgroundColor: 'rgba(255,255,255,0.65)',
+    borderRadius: RADIUS.xl,
+    paddingVertical: SPACING.md,
+    paddingHorizontal: SPACING.xl,
+    alignSelf: 'flex-start',
+    gap: SPACING.lg,
   },
-  badgesTitle: { color: COLORS.textPrimary, fontSize: 11, fontWeight: '900', letterSpacing: 1 },
-  newBadge: {
+  heroStat: { alignItems: 'center' },
+  heroStatValue: { color: COLORS.navy, fontSize: 22, fontWeight: '900' },
+  heroStatLabel: {
+    color: COLORS.textMuted,
+    fontSize: 10,
+    fontWeight: '700',
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+  },
+  heroStatDivider: { width: 1, height: 28, backgroundColor: 'rgba(30,58,95,0.15)' },
+  howItWorks: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: SPACING.sm,
+    marginHorizontal: SPACING.lg,
+    marginTop: SPACING.lg,
+    backgroundColor: COLORS.primarySoft,
+    borderRadius: RADIUS.lg,
+    padding: SPACING.md,
+    borderWidth: 1,
+    borderColor: 'rgba(14,165,233,0.2)',
+  },
+  howItWorksText: {
+    flex: 1,
+    color: COLORS.accentText,
+    fontSize: 12,
+    fontWeight: '600',
+    lineHeight: 17,
+  },
+  yourCard: {
+    marginHorizontal: SPACING.lg,
+    marginTop: SPACING.lg,
+    backgroundColor: COLORS.surface,
+    borderRadius: RADIUS.xl,
+    padding: SPACING.lg,
+    borderWidth: 2,
+    borderColor: COLORS.sunshine,
+    shadowColor: COLORS.sunshine,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
+    elevation: 3,
+  },
+  yourCardHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: SPACING.md,
+  },
+  yourCardTitle: {
+    color: COLORS.textMuted,
+    fontSize: 11,
+    fontWeight: '800',
+    letterSpacing: 1,
+    textTransform: 'uppercase',
+  },
+  yourRankPill: {
     backgroundColor: COLORS.highlight,
     borderRadius: RADIUS.pill,
-    paddingHorizontal: SPACING.sm,
-    paddingVertical: 2,
+    paddingHorizontal: SPACING.md,
+    paddingVertical: 4,
   },
-  newBadgeText: { color: '#FFFFFF', fontSize: 10, fontWeight: '700' },
-  featuredBadge: { alignItems: 'center', width: 80, marginRight: SPACING.md },
+  yourRankPillText: { color: '#FFFFFF', fontSize: 13, fontWeight: '900' },
+  yourUnranked: { color: COLORS.textMuted, fontSize: 12, fontWeight: '700' },
+  yourCardBody: { flexDirection: 'row', alignItems: 'center', gap: SPACING.md },
+  yourCardInfo: { flex: 1 },
+  yourCardName: { color: COLORS.textPrimary, fontSize: 15, fontWeight: '800' },
+  yourCardXp: { color: COLORS.textMuted, fontSize: 12, fontWeight: '600', marginTop: 2 },
+  yourCardCta: {
+    backgroundColor: COLORS.primary,
+    borderRadius: RADIUS.md,
+    paddingHorizontal: SPACING.md,
+    paddingVertical: SPACING.sm,
+  },
+  yourCardCtaText: { color: '#FFFFFF', fontWeight: '800', fontSize: 13 },
+  podiumSection: { marginTop: SPACING.xl, paddingHorizontal: SPACING.lg },
+  sectionTitle: { color: COLORS.textPrimary, fontSize: 15, fontWeight: '900', marginBottom: SPACING.md },
+  sectionSubtitle: {
+    color: COLORS.textMuted,
+    fontSize: 12,
+    fontWeight: '600',
+    marginTop: -8,
+    marginBottom: SPACING.md,
+  },
+  badgesSection: { marginTop: SPACING.xl, paddingLeft: SPACING.lg },
+  featuredBadge: { alignItems: 'center', width: 76, marginRight: SPACING.md },
   featuredBadgeIcon: {
     width: 56,
     height: 56,
     borderRadius: RADIUS.lg,
-    backgroundColor: COLORS.surface,
+    backgroundColor: COLORS.goldSoft,
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: SPACING.xs,
+    borderWidth: 2,
+    borderColor: COLORS.gold,
   },
   featuredEmoji: { fontSize: 24 },
-  featuredName: {
-    color: COLORS.textPrimary,
-    fontSize: 10,
-    fontWeight: '700',
-    textAlign: 'center',
+  featuredName: { color: COLORS.textPrimary, fontSize: 10, fontWeight: '700', textAlign: 'center' },
+  listHeader: { paddingHorizontal: SPACING.lg, paddingTop: SPACING.xl },
+  fewPlayersCard: {
+    marginHorizontal: SPACING.lg,
+    marginTop: SPACING.lg,
+    backgroundColor: COLORS.surface,
+    borderRadius: RADIUS.xl,
+    padding: SPACING.xl,
+    alignItems: 'center',
+    borderWidth: 2,
+    borderColor: COLORS.primarySoft,
   },
-  chasersHeader: { paddingHorizontal: SPACING.xl, paddingTop: SPACING.lg, paddingBottom: SPACING.sm },
-  chasersTitle: { color: COLORS.textPrimary, fontSize: 11, fontWeight: '900', letterSpacing: 1 },
-  chaserList: { paddingHorizontal: SPACING.xl },
-  chaserRow: {
+  fewPlayersEmoji: { fontSize: 36, marginBottom: SPACING.sm },
+  fewPlayersTitle: {
+    color: COLORS.textPrimary,
+    fontSize: 17,
+    fontWeight: '900',
+    textAlign: 'center',
+    marginBottom: SPACING.sm,
+  },
+  fewPlayersBody: {
+    color: COLORS.textMuted,
+    fontSize: 13,
+    textAlign: 'center',
+    lineHeight: 19,
+    marginBottom: SPACING.lg,
+  },
+  questCta: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: SPACING.md,
+    backgroundColor: COLORS.highlight,
+    borderRadius: RADIUS.xl,
+    padding: SPACING.lg,
+    width: '100%',
+    shadowColor: COLORS.highlight,
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.35,
+    shadowRadius: 10,
+    elevation: 5,
+  },
+  questCtaFooter: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: SPACING.md,
+    backgroundColor: COLORS.highlight,
+    borderRadius: RADIUS.xl,
+    padding: SPACING.lg,
+    marginHorizontal: SPACING.lg,
+    marginTop: SPACING.lg,
+    shadowColor: COLORS.highlight,
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.35,
+    shadowRadius: 10,
+    elevation: 5,
+  },
+  questCtaText: { flex: 1 },
+  questCtaTitle: { color: '#FFFFFF', fontSize: 15, fontWeight: '900' },
+  questCtaSub: { color: 'rgba(255,255,255,0.85)', fontSize: 11, fontWeight: '600', marginTop: 2 },
+  row: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: SPACING.md,
@@ -296,37 +565,18 @@ const styles = StyleSheet.create({
     borderRadius: RADIUS.xl,
     padding: SPACING.md,
     marginBottom: SPACING.sm,
+    borderWidth: 1,
+    borderColor: COLORS.border,
   },
-  chaserHighlight: { borderWidth: 1, borderColor: COLORS.primary },
-  rankBlock: {
-    alignItems: 'center',
-    width: 32,
-  },
-  chaserRank: {
-    textAlign: 'center',
-    color: COLORS.textMuted,
-    fontSize: 14,
-    fontWeight: '900',
-  },
-  rankDelta: {
-    fontSize: 11,
-    fontWeight: '700',
-    marginTop: 1,
-  },
-  chaserInfo: { flex: 1, minWidth: 0 },
-  chaserName: { color: COLORS.textPrimary, fontSize: 14, fontWeight: '700' },
-  chaserLevel: { color: COLORS.textMuted, fontSize: 11, fontWeight: '600', marginTop: 2 },
-  chaserXpBlock: { alignItems: 'flex-end' },
-  chaserXp: { color: COLORS.textPrimary, fontSize: 14, fontWeight: '900' },
-  chaserXpLabel: { color: COLORS.textMuted, fontSize: 10 },
-  boostBtn: {
-    marginHorizontal: SPACING.xl,
-    marginTop: SPACING.lg,
-    backgroundColor: COLORS.primary,
-    borderRadius: RADIUS.xl,
-    paddingVertical: SPACING.lg,
-    alignItems: 'center',
-  },
-  boostText: { color: '#FFFFFF', fontSize: 14, fontWeight: '900', letterSpacing: 0.5 },
-  loading: { color: COLORS.textMuted, textAlign: 'center', marginTop: SPACING.xxl },
+  rowMe: { borderColor: COLORS.primary, borderWidth: 2, backgroundColor: COLORS.primarySoft },
+  rankBlock: { alignItems: 'center', width: 36 },
+  rankNum: { color: COLORS.textPrimary, fontSize: 16, fontWeight: '900' },
+  rankDelta: { fontSize: 10, fontWeight: '800', marginTop: 1, textTransform: 'uppercase' },
+  rowInfo: { flex: 1, minWidth: 0 },
+  rowName: { color: COLORS.textPrimary, fontSize: 14, fontWeight: '800' },
+  rowLevel: { color: COLORS.textMuted, fontSize: 11, fontWeight: '600', marginTop: 2 },
+  xpBlock: { alignItems: 'flex-end' },
+  xpValue: { color: COLORS.highlight, fontSize: 15, fontWeight: '900' },
+  xpLabel: { color: COLORS.textMuted, fontSize: 9, fontWeight: '700' },
+  loading: { color: COLORS.textMuted, textAlign: 'center', marginTop: SPACING.xxl, fontWeight: '600' },
 })

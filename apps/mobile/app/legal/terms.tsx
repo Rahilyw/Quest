@@ -2,6 +2,7 @@ import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-nati
 import { useRouter } from 'expo-router'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { SectionHeader } from '@/components/SectionHeader'
+import { BrandInline } from '@/components/BrandText'
 import { COLORS, SPACING, RADIUS } from '@/lib/constants'
 
 const LAST_UPDATED = 'July 4, 2026'
@@ -15,7 +16,7 @@ function Section({ title, children }: { title: string; children: React.ReactNode
   )
 }
 
-function Paragraph({ children }: { children: string }) {
+function Paragraph({ children }: { children: React.ReactNode }) {
   return <Text style={styles.paragraph}>{children}</Text>
 }
 
@@ -48,7 +49,7 @@ export default function TermsOfService(): JSX.Element {
         <Text style={styles.updated}>Last updated {LAST_UPDATED}</Text>
 
         <Paragraph>
-          By using Quest! you agree to play fair, explore for real, and treat the community
+          By using <BrandInline /> you agree to play fair, explore for real, and treat the community
           (and Victoria's spots) with respect. If that sounds reasonable, read on.
         </Paragraph>
 
@@ -79,7 +80,7 @@ export default function TermsOfService(): JSX.Element {
 
         <Section title="Community & objectionable content">
           <Paragraph>
-            Quest! is a user-generated feed of real-world proof photos. You must not post content that is illegal, harassing, sexually explicit, violent, or otherwise objectionable. Report tools exist on every feed post; we block and remove content that breaks these rules.
+            <BrandInline /> is a user-generated feed of real-world proof photos. You must not post content that is illegal, harassing, sexually explicit, violent, or otherwise objectionable. Report tools exist on every feed post; we block and remove content that breaks these rules.
           </Paragraph>
           <Paragraph>
             Abusing the report system or farming fake completions may result in account suspension. Contact support to appeal a removal during the pilot.
@@ -103,7 +104,7 @@ export default function TermsOfService(): JSX.Element {
 
         <Section title="Changes to these terms">
           <Paragraph>
-            We may update these terms as Quest! grows beyond Victoria. We will bump the "Last
+            We may update these terms as <BrandInline /> grows beyond Victoria. We will bump the "Last
             updated" date at the top. Continued use after changes means you accept the new
             terms.
           </Paragraph>

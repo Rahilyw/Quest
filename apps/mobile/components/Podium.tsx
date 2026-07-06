@@ -1,9 +1,14 @@
 import { View, Text, StyleSheet } from 'react-native'
 import { Avatar } from '@/components/Avatar'
 import { COLORS, SPACING, RADIUS, getLevelTitle } from '@/lib/constants'
+import type { LeaderboardEntry } from '@/lib/types'
 
 const RANK_LABELS: Record<number, string> = { 1: '1st', 2: '2nd', 3: '3rd' }
-import type { LeaderboardEntry } from '@/lib/types'
+const PEDESTAL_COLORS: Record<number, { bg: string; border: string }> = {
+  1: { bg: COLORS.goldSoft, border: COLORS.gold },
+  2: { bg: COLORS.silverSoft, border: COLORS.silver },
+  3: { bg: COLORS.bronzeSoft, border: COLORS.bronze },
+}
 
 interface Props {
   entries: LeaderboardEntry[]
@@ -11,15 +16,31 @@ interface Props {
 
 export function Podium({ entries }: Props) {
   const top3 = entries.slice(0, 3)
-  if (top3.length < 3) return null
+  if (top3.length === 0) return null
+
+  if (top3.length === 1) {
+    return (
+      <View style={styles.soloWrap}>
+        <PodiumSlot entry={top3[0]} rank={1} size="lg" crown pedestalHeight={72} />
+      </View>
+    )
+  }
+
+  if (top3.length === 2) {
+    return (
+      <View style={styles.podium}>
+        <PodiumSlot entry={top3[0]} rank={1} size="lg" crown pedestalHeight={64} />
+        <PodiumSlot entry={top3[1]} rank={2} size="md" pedestalHeight={48} />
+      </View>
+    )
+  }
 
   const [first, second, third] = top3
-
   return (
     <View style={styles.podium}>
-      <PodiumSlot entry={second} rank={2} size="md" />
-      <PodiumSlot entry={first} rank={1} size="lg" crown />
-      <PodiumSlot entry={third} rank={3} size="md" />
+      <PodiumSlot entry={second} rank={2} size="md" pedestalHeight={52} />
+      <PodiumSlot entry={first} rank={1} size="lg" crown pedestalHeight={72} />
+      <PodiumSlot entry={third} rank={3} size="md" pedestalHeight={44} />
     </View>
   )
 }
@@ -29,14 +50,17 @@ function PodiumSlot({
   rank,
   size,
   crown,
+  pedestalHeight,
 }: {
   entry: LeaderboardEntry
   rank: number
   size: 'md' | 'lg'
   crown?: boolean
+  pedestalHeight: number
 }) {
-  const avatarSize = size === 'lg' ? 80 : 56
+  const avatarSize = size === 'lg' ? 72 : 56
   const isLarge = size === 'lg'
+  const pedestal = PEDESTAL_COLORS[rank] ?? PEDESTAL_COLORS[3]
 
   return (
     <View
@@ -47,21 +71,31 @@ function PodiumSlot({
       {crown && <Text style={styles.crown}>👑</Text>}
       <View style={styles.avatarWrap}>
         <Avatar username={entry.username} uri={entry.avatar_url} size={avatarSize} />
-        <View style={[styles.rankBadge, isLarge && styles.rankBadgeLg]}>
-          <Text style={[styles.rankNum, isLarge && styles.rankNumLg]}>{rank}</Text>
+        <View style={[styles.rankBadge, { borderColor: pedestal.border }]}>
+          <Text style={[styles.rankNum, { color: pedestal.border }]}>{rank}</Text>
         </View>
       </View>
-      <Text style={[styles.name, isLarge && styles.nameLg]} numberOfLines={1}>
+      <Text style={styles.name} numberOfLines={1}>
         @{entry.username}
       </Text>
       <Text style={styles.levelMeta}>
-        LV {getLevelFromEntry(entry)} {getLevelTitle(getLevelFromEntry(entry))}
+        LV {getLevelFromEntry(entry)} · {getLevelTitle(getLevelFromEntry(entry))}
       </Text>
-      <View style={[styles.xpBox, isLarge && styles.xpBoxLg]}>
+      <View
+        style={[
+          styles.pedestal,
+          {
+            height: pedestalHeight,
+            backgroundColor: pedestal.bg,
+            borderColor: pedestal.border,
+          },
+          isLarge && styles.pedestalLg,
+        ]}
+      >
         <Text style={[styles.xpValue, isLarge && styles.xpValueLg]}>
           {entry.weekly_xp.toLocaleString()}
         </Text>
-        <Text style={styles.xpLabel}>XP</Text>
+        <Text style={styles.xpLabel}>XP this week</Text>
       </View>
     </View>
   )
@@ -81,57 +115,60 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'flex-end',
     justifyContent: 'center',
-    gap: SPACING.md,
+    gap: SPACING.sm,
     paddingHorizontal: SPACING.sm,
   },
-  slot: { alignItems: 'center', width: 96 },
-  slotLarge: { width: 112, marginBottom: -8 },
-  crown: { fontSize: 24, marginBottom: 4 },
+  soloWrap: {
+    alignItems: 'center',
+    paddingHorizontal: SPACING.xl,
+  },
+  slot: { alignItems: 'center', flex: 1, maxWidth: 110 },
+  slotLarge: { maxWidth: 124 },
+  crown: { fontSize: 22, marginBottom: 2 },
   avatarWrap: { position: 'relative', marginBottom: SPACING.sm },
   rankBadge: {
     position: 'absolute',
-    bottom: -6,
-    right: -6,
-    width: 24,
-    height: 24,
-    borderRadius: 12,
+    bottom: -4,
+    right: -4,
+    width: 26,
+    height: 26,
+    borderRadius: 13,
     backgroundColor: '#FFFFFF',
+    borderWidth: 2,
     alignItems: 'center',
     justifyContent: 'center',
     shadowColor: COLORS.navy,
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.15,
+    shadowOpacity: 0.12,
     shadowRadius: 4,
     elevation: 3,
   },
-  rankBadgeLg: { width: 28, height: 28, borderRadius: 14 },
-  rankNum: { color: COLORS.navy, fontSize: 12, fontWeight: '900' },
-  rankNumLg: { fontSize: 14 },
+  rankNum: { fontSize: 12, fontWeight: '900' },
   name: {
-    color: '#FFFFFF',
+    color: COLORS.navy,
     fontSize: 12,
-    fontWeight: '700',
+    fontWeight: '800',
     textAlign: 'center',
     marginBottom: 2,
   },
-  nameLg: { fontSize: 14 },
   levelMeta: {
-    color: 'rgba(255,255,255,0.45)',
-    fontSize: 10,
+    color: COLORS.textMuted,
+    fontSize: 9,
     fontWeight: '700',
-    letterSpacing: 0.5,
+    letterSpacing: 0.3,
     marginBottom: SPACING.sm,
+    textAlign: 'center',
   },
-  xpBox: {
-    backgroundColor: 'rgba(255,255,255,0.12)',
-    borderRadius: RADIUS.lg,
-    paddingHorizontal: SPACING.md,
-    paddingVertical: SPACING.sm,
-    alignItems: 'center',
+  pedestal: {
     width: '100%',
+    borderRadius: RADIUS.lg,
+    borderWidth: 2,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: SPACING.xs,
   },
-  xpBoxLg: { backgroundColor: COLORS.primary, paddingVertical: SPACING.md },
-  xpValue: { color: '#FFFFFF', fontSize: 14, fontWeight: '900' },
+  pedestalLg: { borderWidth: 2.5 },
+  xpValue: { color: COLORS.navy, fontSize: 15, fontWeight: '900' },
   xpValueLg: { fontSize: 18 },
-  xpLabel: { color: 'rgba(255,255,255,0.45)', fontSize: 9, marginTop: 2 },
+  xpLabel: { color: COLORS.textMuted, fontSize: 8, fontWeight: '700', marginTop: 2 },
 })

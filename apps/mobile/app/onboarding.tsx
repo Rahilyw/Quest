@@ -9,7 +9,8 @@ import {
 import { useRouter } from 'expo-router'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { Ionicons } from '@expo/vector-icons'
-import { COLORS, SPACING, RADIUS, CITY, APP_NAME } from '@/lib/constants'
+import { COLORS, SPACING, RADIUS, CITY } from '@/lib/constants'
+import { BrandInline } from '@/components/BrandText'
 import { completeOnboarding, PILOT_CITIES } from '@/lib/onboarding'
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window')
@@ -18,7 +19,7 @@ const STEPS = [
   {
     icon: '🗺️',
     title: 'Your city is the game board',
-    body: 'Quest! turns real places into weekly challenges. Run a trail, grab coffee, meet someone new — then prove you showed up.',
+    body: '',
   },
   {
     icon: '📍',
@@ -78,7 +79,13 @@ export default function Onboarding() {
         </View>
 
         <Text style={styles.title}>{current.title}</Text>
-        <Text style={styles.body}>{current.body}</Text>
+        {step === 0 ? (
+          <Text style={styles.body}>
+            <BrandInline /> turns real places into weekly challenges. Run a trail, grab coffee, meet someone new — then prove you showed up.
+          </Text>
+        ) : (
+          <Text style={styles.body}>{current.body}</Text>
+        )}
 
         {isCityStep && (
           <View style={styles.cityList}>

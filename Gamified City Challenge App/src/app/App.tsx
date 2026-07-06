@@ -305,7 +305,10 @@ function RankingsScreen() {
             <span className="w-7 h-0.5 rounded bg-white/50" />
             <span className="w-4 h-0.5 rounded bg-white/50" />
           </div>
-          <span className="text-sm font-black tracking-widest text-white">QUEST! RANKINGS</span>
+          <span className="text-sm tracking-widest text-white">
+            <span className="brand-wordmark-sm">QUEST!</span>
+            <span className="text-sm font-bold tracking-widest text-white"> RANKINGS</span>
+          </span>
           <Trophy size={20} color="#F59E0B" />
         </div>
 
@@ -436,7 +439,7 @@ function BadgesScreen() {
   return (
     <div className="flex flex-col" style={{ fontFamily: "'Poppins', sans-serif" }}>
       <div className="px-5 pt-12 pb-4 flex items-center justify-between">
-        <span className="text-2xl font-black tracking-tight" style={{ color: "#4364F7" }}>QUEST!</span>
+        <span className="tracking-tight brand-wordmark" style={{ color: "#4364F7" }}>QUEST!</span>
         <span className="text-sm font-black" style={{ color: "#0D1B3E" }}>Badges</span>
       </div>
 

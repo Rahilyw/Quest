@@ -3,7 +3,8 @@ import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert } from 'reac
 import { useRouter } from 'expo-router'
 import { supabase } from '@/lib/supabase'
 import { passwordResetRedirectUrl } from '@/lib/auth-linking'
-import { APP_NAME, COLORS } from '@/lib/constants'
+import { BrandText } from '@/components/BrandText'
+import { COLORS } from '@/lib/constants'
 
 export default function ForgotPassword() {
   const router = useRouter()
@@ -44,7 +45,7 @@ export default function ForgotPassword() {
       </TouchableOpacity>
 
       <View style={styles.hero}>
-        <Text style={styles.logo}>{APP_NAME}</Text>
+        <BrandText size="logo" style={styles.logo} />
         <Text style={styles.tagline}>Reset your password</Text>
       </View>
 
@@ -99,7 +100,7 @@ const styles = StyleSheet.create({
   back: { position: 'absolute', top: 56, left: 24 },
   backText: { color: COLORS.accent, fontWeight: '600', fontSize: 16 },
   hero: { alignItems: 'center', marginBottom: 40 },
-  logo: { fontSize: 52, fontWeight: '800', color: COLORS.primary, letterSpacing: -1, marginBottom: 6 },
+  logo: { marginBottom: 6 },
   tagline: { color: '#94A3B8', fontSize: 16, textAlign: 'center' },
   input: {
     backgroundColor: '#FFFFFF',

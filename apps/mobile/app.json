@@ -1,7 +1,7 @@
 {
   "expo": {
     "name": "Quest!",
-    "slug": "quest",
+    "slug": "kuest",
     "version": "1.0.0",
     "runtimeVersion": {
       "policy": "appVersion"
@@ -35,11 +35,9 @@
     "android": {
       "package": "com.quest.app",
       "permissions": [
-        "ACCESS_FINE_LOCATION",
-        "CAMERA",
-        "android.permission.ACCESS_COARSE_LOCATION",
         "android.permission.ACCESS_FINE_LOCATION",
         "android.permission.CAMERA",
+        "android.permission.ACCESS_COARSE_LOCATION",
         "android.permission.RECORD_AUDIO"
       ]
     },

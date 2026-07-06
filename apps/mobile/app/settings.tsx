@@ -7,7 +7,8 @@ import AsyncStorage from '@react-native-async-storage/async-storage'
 import * as Notifications from 'expo-notifications'
 import { useAuth } from '@/hooks/useAuth'
 import { SectionHeader } from '@/components/SectionHeader'
-import { COLORS, SPACING, RADIUS, APP_NAME, LEGAL_URLS } from '@/lib/constants'
+import { COLORS, SPACING, RADIUS, LEGAL_URLS } from '@/lib/constants'
+import { BrandText } from '@/components/BrandText'
 import { supabase } from '@/lib/supabase'
 import { registerForPushNotifications, clearPushToken } from '@/lib/notifications'
 
@@ -176,7 +177,7 @@ export default function Settings(): JSX.Element {
         <View style={styles.sectionCard}>
           <View style={styles.row}>
             <Text style={styles.rowLabel}>App</Text>
-            <Text style={styles.rowValue}>{APP_NAME}</Text>
+            <BrandText size="inline" color={COLORS.textPrimary} />
           </View>
           <View style={[styles.row, styles.rowBorder]}>
             <Text style={styles.rowLabel}>Version</Text>

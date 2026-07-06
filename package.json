@@ -9,6 +9,7 @@
   "scripts": {
     "mobile": "yarn workspace mobile start",
     "admin": "yarn workspace admin dev",
-    "test:geofence": "yarn workspace @quest/geofence test"
+    "test:geofence": "yarn workspace @quest/geofence test",
+    "postinstall": "node scripts/link-expo-deps.js"
   }
 }

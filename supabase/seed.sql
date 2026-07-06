@@ -37,7 +37,14 @@ insert into badges (name, description, icon, unlock_condition) values
 ('Early Bird', 'Completed a quest before 8am', '🌅', 'complete a quest before 8am'),
 ('Weekend Warrior', 'Completed 3 quests in a single weekend', '⚡', 'complete 3 quests in 1 weekend'),
 ('Top 10', 'Reached top 10 on the weekly leaderboard', '🎯', 'reach top 10 on weekly leaderboard'),
-('Season Veteran', 'Participated in 2 full seasons', '🎖️', 'participate in 2 seasons');
+('Season Veteran', 'Participated in 2 full seasons', '🎖️', 'participate in 2 seasons'),
+('Touch Grass', 'Completed a nature quest. The internet is proud.', '🌱', 'complete 1 nature quest'),
+('Night Owl', 'Completed a quest after 10pm', '🦉', 'complete a quest after 10pm'),
+('Gotta Go Fast', 'Completed 3 quests in a single day', '👟', 'complete 3 quests in 1 day'),
+('Tourist In Your Own Town', 'Completed 3 sponsored quests', '📸', 'complete 3 sponsored quests'),
+('One Does Not Simply', 'Completed quests 7 days in a row', '🌋', 'complete quests 7 days in a row'),
+('Main Character', 'First in the city to complete a quest', '😎', 'be first to complete a quest'),
+('It''s Over 9000!', 'Earned 9,000 lifetime XP', '💥', 'earn 9,000 lifetime XP');
 
 -- Sponsored Victoria, BC quests
 insert into quests (title, description, category, lat, lng, xp_reward, is_sponsored, sponsor_name, sponsor_reward, status, radius_meters) values

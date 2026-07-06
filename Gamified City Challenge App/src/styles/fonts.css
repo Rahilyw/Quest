@@ -1,1 +1,25 @@
 @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800;900&display=swap');
+
+@font-face {
+  font-family: 'Skyscapers';
+  src: url('/fonts/Skyscapers.ttf') format('truetype');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+.brand-wordmark {
+  font-family: 'Skyscapers', 'Poppins', sans-serif;
+  font-weight: 400;
+  font-size: 1.65rem;
+  letter-spacing: 0.02em;
+  line-height: 1.1;
+}
+
+.brand-wordmark-sm {
+  font-family: 'Skyscapers', 'Poppins', sans-serif;
+  font-weight: 400;
+  font-size: 1.15rem;
+  letter-spacing: 0.02em;
+  line-height: 1.15;
+}

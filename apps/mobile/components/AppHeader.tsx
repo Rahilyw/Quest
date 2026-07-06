@@ -1,6 +1,7 @@
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native'
 import { Ionicons } from '@expo/vector-icons'
-import { APP_NAME, CITY, COLORS, SPACING, RADIUS } from '@/lib/constants'
+import { BrandText } from '@/components/BrandText'
+import { CITY, COLORS, SPACING, RADIUS } from '@/lib/constants'
 
 interface Props {
   subtitle?: string
@@ -25,7 +26,7 @@ export function AppHeader({ subtitle, showBell, notificationCount = 0, trailing,
     <View style={styles.row}>
       <View style={styles.brandBlock}>
         <View style={styles.brandRow}>
-          <Text style={styles.brand}>{APP_NAME}</Text>
+          <BrandText size="header" />
           <View style={styles.cityBadge}>
             <Text style={styles.cityText}>{CITY.name}</Text>
           </View>
@@ -62,12 +63,6 @@ const styles = StyleSheet.create({
   },
   brandBlock: { flex: 1 },
   brandRow: { flexDirection: 'row', alignItems: 'center', gap: SPACING.sm },
-  brand: {
-    fontSize: 24,
-    fontWeight: '900',
-    color: COLORS.primary,
-    letterSpacing: -0.5,
-  },
   cityBadge: {
     backgroundColor: COLORS.highlight,
     borderRadius: RADIUS.pill,

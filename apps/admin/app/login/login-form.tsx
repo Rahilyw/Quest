@@ -56,8 +56,8 @@ export default function LoginForm({ initialError }: { initialError?: string }) {
       }}
     >
       <div style={{ width: '100%', maxWidth: 400 }}>
-        <div style={{ fontSize: 28, fontWeight: 900, color: '#4364F7', marginBottom: 8, textAlign: 'center' }}>
-          Quest! Admin
+        <div style={{ fontSize: 28, color: '#4364F7', marginBottom: 8, textAlign: 'center' }}>
+          <span className="brand-wordmark">Quest!</span> Admin
         </div>
         <p style={{ color: '#64748B', textAlign: 'center', marginBottom: 32 }}>Sign in to continue</p>
 

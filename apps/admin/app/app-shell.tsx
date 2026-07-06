@@ -31,7 +31,7 @@ function Sidebar() {
       }}
     >
       <div style={{ padding: '0 10px', marginBottom: 28 }}>
-        <div style={{ fontSize: 22, fontWeight: 900, color: theme.primary, letterSpacing: -0.5 }}>
+        <div style={{ color: theme.primary, letterSpacing: 0.5 }} className="brand-wordmark">
           QUEST!
         </div>
         <div style={{ fontSize: 11, color: theme.textDim, fontWeight: 600, letterSpacing: 1, marginTop: 2 }}>

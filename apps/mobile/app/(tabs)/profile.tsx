@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import {
   View,
   Text,
@@ -15,6 +15,7 @@ import { Ionicons } from '@expo/vector-icons'
 import { useAuth } from '@/hooks/useAuth'
 import { supabase } from '@/lib/supabase'
 import { Avatar } from '@/components/Avatar'
+import { BrandText } from '@/components/BrandText'
 import { useUserCompletions } from '@/hooks/useUserCompletions'
 import { QuestHistoryItem } from '@/components/QuestHistoryItem'
 import {
@@ -37,6 +38,13 @@ interface RecentQuest {
   status: 'approved' | 'removed'
 }
 
+const STAT_TILES = [
+  { key: 'quests', label: 'Quests', icon: '🎯', tint: COLORS.primarySoft, accent: COLORS.primary },
+  { key: 'xp', label: 'Total XP', icon: '⚡', tint: COLORS.goldSoft, accent: COLORS.highlight },
+  { key: 'badges', label: 'Badges', icon: '🏅', tint: '#F3E8FF', accent: '#A855F7' },
+  { key: 'streak', label: 'Streak', icon: '🔥', tint: COLORS.successSoft, accent: COLORS.success },
+] as const
+
 export default function Profile() {
   const insets = useSafeAreaInsets()
   const { width } = useWindowDimensions()
@@ -44,8 +52,8 @@ export default function Profile() {
 
   const isWide = width >= 600
   const numCols = isWide ? 4 : 2
-  const tileWidth = (width - 2 * SPACING.xl - (numCols - 1) * SPACING.md) / numCols
-  const heroHPad = Math.max(SPACING.xl, insets.left + SPACING.sm)
+  const tileWidth = (width - 2 * SPACING.lg - (numCols - 1) * SPACING.md) / numCols
+  const heroHPad = Math.max(SPACING.lg, insets.left + SPACING.sm)
   const { profile, loading, profileError, refreshProfile } = useAuth()
   const { refetch: refetchCompletions } = useUserCompletions(profile?.id)
   const [badgesCount, setBadgesCount] = useState(0)
@@ -101,7 +109,7 @@ export default function Profile() {
           redemption_code: r.redemption_code,
           status: r.status,
           ...r.quest!,
-        }))
+        })),
     )
 
     const userWeeklyXp = userXpResult.data?.weekly_xp ?? null
@@ -125,6 +133,7 @@ export default function Profile() {
 
   const goToSettings = useCallback(() => router.push('/settings'), [router])
   const goToEditProfile = useCallback(() => router.push('/edit-profile'), [router])
+  const goToExplore = useCallback(() => router.push('/'), [router])
 
   async function handleRefresh() {
     setRefreshing(true)
@@ -135,7 +144,7 @@ export default function Profile() {
   if (loading) {
     return (
       <View style={[styles.loadingScreen, { paddingTop: insets.top }]}>
-        <ActivityIndicator size="large" color={COLORS.primary} />
+        <ActivityIndicator size="large" color={COLORS.highlight} />
       </View>
     )
   }
@@ -145,12 +154,7 @@ export default function Profile() {
       <View style={[styles.loadingScreen, { paddingTop: insets.top }]}>
         <Text style={styles.errorTitle}>Could not load profile</Text>
         <Text style={styles.errorMessage}>{profileError ?? 'Try again or sign out and back in.'}</Text>
-        <TouchableOpacity
-          style={styles.retryBtn}
-          onPress={refreshProfile}
-          accessibilityRole="button"
-          accessibilityLabel="Try again"
-        >
+        <TouchableOpacity style={styles.retryBtn} onPress={refreshProfile} accessibilityRole="button">
           <Text style={styles.retryBtnText}>Try Again</Text>
         </TouchableOpacity>
       </View>
@@ -158,93 +162,170 @@ export default function Profile() {
   }
 
   const streakValue = profile.current_streak > 0 ? `${profile.current_streak}w` : '—'
+  const levelTitle = getLevelTitle(profile.level)
 
-  const stats = useMemo(() => [
-    { label: 'Quests Done', value: statsLoading ? '—' : String(completionCount), icon: '🎯', color: COLORS.primary },
-    { label: 'Total XP', value: statsLoading ? '—' : profile.total_xp.toLocaleString(), icon: '⚡', color: COLORS.highlight },
-    { label: 'Badges', value: statsLoading ? '—' : String(badgesCount), icon: '🏅', color: '#A855F7' },
-    { label: 'Streak', value: streakValue, icon: '🔥', color: COLORS.success },
-  ], [statsLoading, completionCount, profile.total_xp, badgesCount, streakValue])
+  const statValues: Record<string, string> = {
+    quests: statsLoading ? '—' : String(completionCount),
+    xp: statsLoading ? '—' : profile.total_xp.toLocaleString(),
+    badges: statsLoading ? '—' : String(badgesCount),
+    streak: streakValue,
+  }
+
+  const statAccents: Record<string, string> = {
+    quests: COLORS.primary,
+    xp: COLORS.highlight,
+    badges: '#A855F7',
+    streak: COLORS.success,
+  }
 
   return (
     <ScrollView
       style={styles.container}
-      contentContainerStyle={{ paddingBottom: insets.bottom + 80 }}
+      contentContainerStyle={{ paddingBottom: insets.bottom + 88 }}
       refreshControl={
-        <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} tintColor={COLORS.primary} />
+        <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} tintColor={COLORS.highlight} />
       }
     >
-      <View style={[styles.hero, { paddingTop: insets.top + 16, paddingHorizontal: heroHPad }]}>
+      {/* Summer hero */}
+      <View style={[styles.hero, { paddingTop: insets.top + 14, paddingHorizontal: heroHPad }]}>
+        <View style={styles.heroBlobA} />
+        <View style={styles.heroBlobB} />
+
         <TouchableOpacity
-          style={[styles.settingsBtn, { top: insets.top + 16, right: heroHPad }]}
+          style={[styles.settingsBtn, { top: insets.top + 12, right: heroHPad }]}
           onPress={goToSettings}
           hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
           accessibilityRole="button"
           accessibilityLabel="Settings"
         >
-          <Ionicons name="settings-outline" size={22} color="rgba(255,255,255,0.6)" />
+          <View style={styles.settingsPill}>
+            <Ionicons name="settings-outline" size={20} color={COLORS.navy} />
+          </View>
         </TouchableOpacity>
 
         <View style={styles.avatarRing}>
-          <Avatar username={profile.username} uri={profile.avatar_url} size={80} />
+          <Avatar username={profile.username} uri={profile.avatar_url} size={88} />
+          <View style={styles.levelBadge}>
+            <Text style={styles.levelBadgeText}>LV {profile.level}</Text>
+          </View>
         </View>
+
+        <BrandText size="display" color={COLORS.navy} style={styles.levelTitle}>
+          {levelTitle}
+        </BrandText>
+
         <Text style={styles.heroName}>@{profile.username}</Text>
         <Text style={styles.heroMeta}>
-          LV {profile.level} · {CITY.name}{profile.current_streak > 0 ? ` · 🔥 ${profile.current_streak}w streak` : ''}
+          {CITY.name}
+          {profile.current_streak > 0 ? ` · 🔥 ${profile.current_streak} week streak` : ''}
         </Text>
+
         <View style={styles.heroPills}>
-          <View style={styles.heroPill}>
-            <Text style={styles.heroPillText}>{profile.total_xp.toLocaleString()} XP</Text>
+          <View style={[styles.heroPill, styles.heroPillXp]}>
+            <Text style={styles.heroPillLabel}>Total XP</Text>
+            <Text style={styles.heroPillValue}>{profile.total_xp.toLocaleString()}</Text>
           </View>
-          {weeklyRank && (
-            <View style={[styles.heroPill, styles.heroPillAccent]}>
-              <Text style={styles.heroPillText}>Rank #{weeklyRank}</Text>
+          {weeklyRank ? (
+            <View style={[styles.heroPill, styles.heroPillRank]}>
+              <Text style={styles.heroPillLabel}>This week</Text>
+              <Text style={styles.heroPillValue}>#{weeklyRank}</Text>
+            </View>
+          ) : (
+            <View style={[styles.heroPill, styles.heroPillRankMuted]}>
+              <Text style={styles.heroPillLabelMuted}>This week</Text>
+              <Text style={styles.heroPillValueMuted}>Unranked</Text>
             </View>
           )}
         </View>
-        <Text style={styles.heroTitle}>{getLevelTitle(profile.level)}</Text>
       </View>
 
-      <View style={styles.statsGrid}>
-        {stats.map((s) => (
-          <View key={s.label} style={[styles.statTile, { width: tileWidth }]}>
-            <Text style={styles.statIcon}>{s.icon}</Text>
-            <Text style={[styles.statValue, { color: s.color }]}>{s.value}</Text>
-            <Text style={styles.statLabel}>{s.label}</Text>
-          </View>
-        ))}
-      </View>
-
-      <TouchableOpacity
-        style={styles.editLink}
-        onPress={goToEditProfile}
-        accessibilityRole="button"
-        accessibilityLabel="Edit profile"
-      >
-        <Text style={styles.editLinkText}>Edit Profile →</Text>
-      </TouchableOpacity>
-
-      <Text style={styles.sectionTitle}>RECENT ACTIVITY</Text>
-      {recentQuests.length === 0 ? (
-        <Text style={styles.emptyActivity}>No completed quests yet. Start exploring!</Text>
-      ) : (
-        <View style={styles.activityList}>
-          {recentQuests.map((q) => (
-            <View key={q.id} style={styles.activityRow}>
-              <QuestHistoryItem
-                title={q.title}
-                category={q.category}
-                xp_reward={q.xp_reward}
-                completed_at={q.completed_at}
-                redemption_code={q.redemption_code}
-                is_sponsored={q.is_sponsored}
-                sponsor_reward={q.sponsor_reward}
-                status={q.status}
-              />
+      {/* Stats bento */}
+      <View style={styles.statsSection}>
+        <BrandText size="compact" color={COLORS.navy} style={styles.statsHeading}>
+          Your stats
+        </BrandText>
+        <View style={styles.statsGrid}>
+          {STAT_TILES.map((tile) => (
+            <View
+              key={tile.key}
+              style={[
+                styles.statTile,
+                { width: tileWidth, backgroundColor: tile.tint, borderColor: `${tile.accent}33` },
+              ]}
+            >
+              <Text style={styles.statIcon}>{tile.icon}</Text>
+              <Text style={[styles.statValue, { color: statAccents[tile.key] }]}>
+                {statValues[tile.key]}
+              </Text>
+              <Text style={styles.statLabel}>{tile.label}</Text>
             </View>
           ))}
         </View>
-      )}
+      </View>
+
+      {/* Quick actions */}
+      <View style={styles.actionsRow}>
+        <TouchableOpacity
+          style={styles.editBtn}
+          onPress={goToEditProfile}
+          activeOpacity={0.88}
+          accessibilityRole="button"
+          accessibilityLabel="Edit profile"
+        >
+          <Ionicons name="create-outline" size={18} color="#FFFFFF" />
+          <Text style={styles.editBtnText}>Edit profile</Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={styles.rankBtn}
+          onPress={() => router.push('/leaderboard')}
+          activeOpacity={0.88}
+          accessibilityRole="button"
+          accessibilityLabel="View rankings"
+        >
+          <Ionicons name="trophy-outline" size={18} color={COLORS.navy} />
+          <Text style={styles.rankBtnText}>Rankings</Text>
+        </TouchableOpacity>
+      </View>
+
+      {/* Recent activity */}
+      <View style={styles.activitySection}>
+        <View style={styles.activityHeader}>
+          <BrandText size="compact" color={COLORS.navy}>
+            Trail log
+          </BrandText>
+          <Text style={styles.activitySub}>Recent quests you crushed</Text>
+        </View>
+
+        {recentQuests.length === 0 ? (
+          <View style={styles.emptyCard}>
+            <Text style={styles.emptyEmoji}>🧭</Text>
+            <Text style={styles.emptyTitle}>No trails yet</Text>
+            <Text style={styles.emptyBody}>
+              Your completed quests show up here. Grab one from Explore and get out there.
+            </Text>
+            <TouchableOpacity style={styles.emptyCta} onPress={goToExplore} activeOpacity={0.88}>
+              <Text style={styles.emptyCtaText}>Find a quest →</Text>
+            </TouchableOpacity>
+          </View>
+        ) : (
+          <View style={styles.activityList}>
+            {recentQuests.map((q) => (
+              <View key={q.id} style={styles.activityRow}>
+                <QuestHistoryItem
+                  title={q.title}
+                  category={q.category}
+                  xp_reward={q.xp_reward}
+                  completed_at={q.completed_at}
+                  redemption_code={q.redemption_code}
+                  is_sponsored={q.is_sponsored}
+                  sponsor_reward={q.sponsor_reward}
+                  status={q.status}
+                />
+              </View>
+            ))}
+          </View>
+        )}
+      </View>
     </ScrollView>
   )
 }
@@ -261,89 +342,251 @@ const styles = StyleSheet.create({
   errorTitle: { color: COLORS.textPrimary, fontSize: 18, fontWeight: '800', marginBottom: SPACING.sm },
   errorMessage: { color: COLORS.textMuted, textAlign: 'center', marginBottom: SPACING.lg },
   retryBtn: {
-    backgroundColor: COLORS.primary,
+    backgroundColor: COLORS.highlight,
     borderRadius: RADIUS.md,
     paddingVertical: SPACING.md,
     paddingHorizontal: SPACING.xl,
   },
   retryBtnText: { color: '#FFFFFF', fontWeight: '700' },
+
   hero: {
-    backgroundColor: COLORS.navy,
+    backgroundColor: COLORS.bgOuter,
     alignItems: 'center',
-    paddingBottom: SPACING.xxl,
+    paddingBottom: SPACING.xxl + 8,
     borderBottomLeftRadius: RADIUS.xxl,
     borderBottomRightRadius: RADIUS.xxl,
+    overflow: 'hidden',
+    borderBottomWidth: 3,
+    borderBottomColor: COLORS.sunshine,
   },
-  settingsBtn: { position: 'absolute', padding: SPACING.sm, zIndex: 1 },
+  heroBlobA: {
+    position: 'absolute',
+    top: -30,
+    left: -40,
+    width: 120,
+    height: 120,
+    borderRadius: 60,
+    backgroundColor: 'rgba(255,255,255,0.4)',
+  },
+  heroBlobB: {
+    position: 'absolute',
+    top: 40,
+    right: -50,
+    width: 130,
+    height: 130,
+    borderRadius: 65,
+    backgroundColor: 'rgba(251,191,36,0.3)',
+  },
+  settingsBtn: { position: 'absolute', zIndex: 2 },
+  settingsPill: {
+    backgroundColor: 'rgba(255,255,255,0.75)',
+    borderRadius: RADIUS.pill,
+    padding: SPACING.sm,
+  },
   avatarRing: {
     borderWidth: 3,
-    borderColor: COLORS.primary,
-    borderRadius: 44,
+    borderColor: COLORS.sunshine,
+    borderRadius: 50,
+    marginBottom: SPACING.sm,
+    position: 'relative',
+    shadowColor: COLORS.sunshine,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.35,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  levelBadge: {
+    position: 'absolute',
+    bottom: -6,
+    alignSelf: 'center',
+    backgroundColor: COLORS.highlight,
+    borderRadius: RADIUS.pill,
+    paddingHorizontal: SPACING.sm,
+    paddingVertical: 3,
+    borderWidth: 2,
+    borderColor: COLORS.bgOuter,
+  },
+  levelBadgeText: {
+    color: '#FFFFFF',
+    fontSize: 10,
+    fontWeight: '900',
+    letterSpacing: 0.5,
+  },
+  levelTitle: {
+    textAlign: 'center',
+    marginBottom: 2,
+  },
+  heroName: {
+    color: COLORS.navy,
+    fontSize: 18,
+    fontWeight: '800',
+    marginTop: SPACING.xs,
+  },
+  heroMeta: {
+    color: COLORS.textMuted,
+    fontSize: 13,
+    fontWeight: '600',
+    marginTop: 4,
+    textAlign: 'center',
+  },
+  heroPills: {
+    flexDirection: 'row',
+    gap: SPACING.sm,
+    marginTop: SPACING.lg,
+  },
+  heroPill: {
+    borderRadius: RADIUS.lg,
+    paddingHorizontal: SPACING.lg,
+    paddingVertical: SPACING.sm,
+    minWidth: 110,
+    alignItems: 'center',
+  },
+  heroPillXp: {
+    backgroundColor: COLORS.primary,
+  },
+  heroPillRank: {
+    backgroundColor: COLORS.highlight,
+  },
+  heroPillRankMuted: {
+    backgroundColor: 'rgba(255,255,255,0.65)',
+    borderWidth: 1,
+    borderColor: 'rgba(30,58,95,0.12)',
+  },
+  heroPillLabel: {
+    color: 'rgba(255,255,255,0.85)',
+    fontSize: 9,
+    fontWeight: '700',
+    textTransform: 'uppercase',
+    letterSpacing: 0.8,
+    marginBottom: 2,
+  },
+  heroPillLabelMuted: {
+    color: COLORS.textMuted,
+    fontSize: 9,
+    fontWeight: '700',
+    textTransform: 'uppercase',
+    letterSpacing: 0.8,
+    marginBottom: 2,
+  },
+  heroPillValue: {
+    color: '#FFFFFF',
+    fontSize: 18,
+    fontWeight: '900',
+  },
+  heroPillValueMuted: {
+    color: COLORS.textMuted,
+    fontSize: 14,
+    fontWeight: '800',
+  },
+
+  statsSection: {
+    paddingHorizontal: SPACING.lg,
+    marginTop: SPACING.lg,
+  },
+  statsHeading: {
     marginBottom: SPACING.md,
   },
-  heroName: { color: '#FFFFFF', fontSize: 20, fontWeight: '900' },
-  heroMeta: { color: 'rgba(255,255,255,0.5)', fontSize: 13, fontWeight: '600', marginTop: 4 },
-  heroTitle: {
-    color: COLORS.highlight,
-    fontSize: 11,
-    fontWeight: '800',
-    letterSpacing: 2,
-    marginTop: SPACING.sm,
-  },
-  heroPills: { flexDirection: 'row', gap: SPACING.sm, marginTop: SPACING.md },
-  heroPill: {
-    backgroundColor: 'rgba(255,255,255,0.15)',
-    borderRadius: RADIUS.pill,
-    paddingHorizontal: SPACING.md,
-    paddingVertical: 6,
-  },
-  heroPillAccent: { backgroundColor: COLORS.primary },
-  heroPillText: { color: '#FFFFFF', fontSize: 12, fontWeight: '700' },
   statsGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    paddingHorizontal: SPACING.xl,
-    marginTop: -SPACING.lg,
     gap: SPACING.md,
   },
   statTile: {
-    backgroundColor: COLORS.surface,
     borderRadius: RADIUS.xl,
     padding: SPACING.lg,
-    shadowColor: COLORS.navy,
+    borderWidth: 2,
+  },
+  statIcon: { fontSize: 24, marginBottom: SPACING.xs },
+  statValue: { fontSize: 22, fontWeight: '900' },
+  statLabel: { color: COLORS.textMuted, fontSize: 11, fontWeight: '700', marginTop: 2 },
+
+  actionsRow: {
+    flexDirection: 'row',
+    gap: SPACING.md,
+    paddingHorizontal: SPACING.lg,
+    marginTop: SPACING.lg,
+  },
+  editBtn: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: SPACING.sm,
+    backgroundColor: COLORS.highlight,
+    borderRadius: RADIUS.xl,
+    paddingVertical: SPACING.md,
+    shadowColor: COLORS.highlight,
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.06,
-    shadowRadius: 12,
-    elevation: 3,
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 4,
   },
-  statIcon: { fontSize: 22, marginBottom: SPACING.xs },
-  statValue: { color: COLORS.textPrimary, fontSize: 20, fontWeight: '900' },
-  statLabel: { color: COLORS.textMuted, fontSize: 11, fontWeight: '600', marginTop: 2 },
-  editLink: { alignItems: 'center', paddingVertical: SPACING.lg },
-  editLinkText: { color: COLORS.primary, fontWeight: '700', fontSize: 14 },
-  sectionTitle: {
-    color: COLORS.primary,
-    fontSize: 11,
-    fontWeight: '900',
-    letterSpacing: 1,
-    paddingHorizontal: SPACING.xl,
-    marginBottom: SPACING.md,
+  editBtnText: { color: '#FFFFFF', fontWeight: '800', fontSize: 14 },
+  rankBtn: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: SPACING.sm,
+    backgroundColor: COLORS.surface,
+    borderRadius: RADIUS.xl,
+    paddingVertical: SPACING.md,
+    borderWidth: 2,
+    borderColor: COLORS.sunshine,
   },
-  emptyActivity: {
+  rankBtnText: { color: COLORS.navy, fontWeight: '800', fontSize: 14 },
+
+  activitySection: {
+    marginTop: SPACING.xl,
+    paddingHorizontal: SPACING.lg,
+  },
+  activityHeader: { marginBottom: SPACING.md },
+  activitySub: {
     color: COLORS.textMuted,
-    textAlign: 'center',
-    paddingHorizontal: SPACING.xl,
-    marginBottom: SPACING.xl,
+    fontSize: 12,
+    fontWeight: '600',
+    marginTop: 2,
   },
-  activityList: { paddingHorizontal: SPACING.sm, gap: SPACING.xs },
-  // Outer wrapper carries elevation — no overflow clip to avoid Android shadow bug
+  emptyCard: {
+    backgroundColor: COLORS.surface,
+    borderRadius: RADIUS.xl,
+    padding: SPACING.xl,
+    alignItems: 'center',
+    borderWidth: 2,
+    borderColor: COLORS.primarySoft,
+    borderStyle: 'dashed',
+  },
+  emptyEmoji: { fontSize: 36, marginBottom: SPACING.sm },
+  emptyTitle: {
+    color: COLORS.textPrimary,
+    fontSize: 17,
+    fontWeight: '900',
+    marginBottom: SPACING.xs,
+  },
+  emptyBody: {
+    color: COLORS.textMuted,
+    fontSize: 13,
+    textAlign: 'center',
+    lineHeight: 19,
+    marginBottom: SPACING.lg,
+  },
+  emptyCta: {
+    backgroundColor: COLORS.primarySoft,
+    borderRadius: RADIUS.pill,
+    paddingHorizontal: SPACING.lg,
+    paddingVertical: SPACING.sm,
+  },
+  emptyCtaText: {
+    color: COLORS.accentText,
+    fontWeight: '800',
+    fontSize: 13,
+  },
+  activityList: { gap: SPACING.sm },
   activityRow: {
     backgroundColor: COLORS.surface,
     borderRadius: RADIUS.xl,
-    shadowColor: COLORS.navy,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 8,
-    elevation: 2,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    overflow: 'hidden',
   },
 })

@@ -3,6 +3,7 @@ import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert } from 'reac
 import { useRouter } from 'expo-router'
 import { supabase } from '@/lib/supabase'
 import { getOnboardingCity } from '@/lib/onboarding'
+import { BrandText } from '@/components/BrandText'
 import { APP_NAME, COLORS } from '@/lib/constants'
 
 export default function SignUp() {
@@ -53,7 +54,7 @@ export default function SignUp() {
   return (
     <View style={styles.container}>
       <View style={styles.hero}>
-        <Text style={styles.logo}>{APP_NAME}</Text>
+        <BrandText size="logo" style={styles.logo} />
         <Text style={styles.tagline}>Join the city challenge.</Text>
       </View>
 
@@ -117,13 +118,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   hero: { alignItems: 'center', marginBottom: 40 },
-  logo: {
-    fontSize: 52,
-    fontWeight: '800',
-    color: COLORS.primary,
-    letterSpacing: -1,
-    marginBottom: 6,
-  },
+  logo: { marginBottom: 6 },
   tagline: { color: '#94A3B8', fontSize: 16 },
   input: {
     backgroundColor: COLORS.surface,

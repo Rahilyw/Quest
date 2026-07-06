@@ -1,4 +1,4 @@
--- 017: Reports, blocking, feed privacy (Spec 03)
+-- 018: Reports, blocking, feed privacy (Spec 03)
 
 -- ─── ENUMS ───────────────────────────────────────────────────────────────────
 

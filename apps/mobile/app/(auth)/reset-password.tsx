@@ -2,7 +2,8 @@ import { useState } from 'react'
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert } from 'react-native'
 import { useRouter } from 'expo-router'
 import { supabase } from '@/lib/supabase'
-import { APP_NAME, COLORS } from '@/lib/constants'
+import { BrandText } from '@/components/BrandText'
+import { COLORS } from '@/lib/constants'
 
 export default function ResetPassword() {
   const router = useRouter()
@@ -37,7 +38,7 @@ export default function ResetPassword() {
   return (
     <View style={styles.container}>
       <View style={styles.hero}>
-        <Text style={styles.logo}>{APP_NAME}</Text>
+        <BrandText size="logo" style={styles.logo} />
         <Text style={styles.tagline}>Choose a new password</Text>
       </View>
 
@@ -75,7 +76,7 @@ export default function ResetPassword() {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#F0F9FF', padding: 24, justifyContent: 'center' },
   hero: { alignItems: 'center', marginBottom: 40 },
-  logo: { fontSize: 52, fontWeight: '800', color: '#4364F7', letterSpacing: -1, marginBottom: 6 },
+  logo: { marginBottom: 6 },
   tagline: { color: '#94A3B8', fontSize: 16 },
   input: {
     backgroundColor: '#FFFFFF',

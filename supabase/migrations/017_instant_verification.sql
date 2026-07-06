@@ -1,9 +1,8 @@
--- 016: Instant verification — auto-approve on insert, rewards on insert path,
+-- 017: Instant verification — auto-approve on insert, rewards on insert path,
 -- in-DB redemption codes, rate limits, removal + XP revocation (Spec 02)
 
--- ─── STATUS ENUM ─────────────────────────────────────────────────────────────
-
-ALTER TYPE completion_status ADD VALUE IF NOT EXISTS 'removed';
+-- ─── COLUMNS ─────────────────────────────────────────────────────────────────
+-- 'removed' enum value is added in 016_completion_status_removed.sql (separate migration)
 
 ALTER TABLE completions ADD COLUMN IF NOT EXISTS redeemed_at TIMESTAMPTZ;
 

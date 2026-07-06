@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { Stack, useRouter, useSegments } from 'expo-router'
 import { SafeAreaProvider } from 'react-native-safe-area-context'
 import { ErrorBoundary } from '@/components/ErrorBoundary'
+import { FontProvider } from '@/components/FontProvider'
 import { AuthProvider, useAuth } from '@/hooks/useAuth'
 import { registerForPushNotifications } from '@/lib/notifications'
 import { hasCompletedOnboarding } from '@/lib/onboarding'
@@ -88,10 +89,12 @@ function RootLayoutNav() {
 
 export default function RootLayout() {
   return (
-    <SafeAreaProvider>
-      <AuthProvider>
-        <RootLayoutNav />
-      </AuthProvider>
-    </SafeAreaProvider>
+    <FontProvider>
+      <SafeAreaProvider>
+        <AuthProvider>
+          <RootLayoutNav />
+        </AuthProvider>
+      </SafeAreaProvider>
+    </FontProvider>
   )
 }
