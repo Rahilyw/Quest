@@ -21,6 +21,7 @@ export type AnalyticsEvent =
   | 'streak_broken'
   | 'redemption_code_viewed'
   | 'share_completed'
+  | 'account_deleted'
 
 export type QuestSource = 'explore' | 'map' | 'feed' | 'deep_link' | 'unknown'
 

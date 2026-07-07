@@ -26,13 +26,12 @@ The manual approval queue is **gone**. Completions are verified by the server-si
 | Growth loop | ❌ Zero acquisition features ([Spec 06](docs/specs/06-growth-engagement.md)) |
 | Production readiness | ⚠️ CI + tests green (105 mobile + 44 geofence); EAS project ID set; iOS submit creds still placeholders |
 
-**Highest-impact blockers before real users:**
+**Highest-impact blockers before real users** (step-by-step: [LAUNCH-RUNBOOK.md](LAUNCH-RUNBOOK.md)):
 
 1. **iOS App Store submit credentials** — `eas.json` still has `REPLACE_WITH_*` placeholders
-2. **Analytics instrumentation** — the pilot exists to learn; today nothing is measured (Spec 04)
-3. **`ADMIN_ALLOWED_EMAILS`** must be set in production
-4. **Apply migrations `014`–`017` on live Supabase** (and confirm `005`–`013`) — instant verification and moderation exist only as files until then
-5. **Real Victoria boundary** — 013's placeholder bounding box matters more now that geofence = proof
+2. **Apply migration `023` (account deletion) on live Supabase** — `npx supabase db push` (022 applied Jul 6; history repaired and synced through 022)
+3. **PostHog + Sentry keys** — SDKs are wired but emit nothing until `EXPO_PUBLIC_POSTHOG_KEY` / `EXPO_PUBLIC_SENTRY_DSN` are set; build the 4 Spec 04 dashboards in PostHog
+4. **`ADMIN_ALLOWED_EMAILS`** must be set in production (Vercel)
 
 ---
 
@@ -42,7 +41,7 @@ Four findings reframed the roadmap — none were on any earlier list. Two are no
 
 1. **Approval latency is reward latency.** ✅ **Fixed.** Geofence pass **is** the proof; completions auto-approve at insert with rewards applied before the celebration renders; rate limits + in-app-camera-only + mock-location block guard the gate. → Specs 01 ✅ / 02 ✅ / 03 ✅
 2. **The feed is UGC.** ✅ **Fixed.** Report on every post, block-user, feed privacy opt-out (`feed_public`), auto-hide at 3 independent reports, admin moderation with GPS evidence, removal revokes XP. → Spec 03 ✅
-3. **Unmeasured success metrics.** ❌ WAU retention, week-2 leaderboard return, sponsor renewal — defined in PRODUCT.md, recorded nowhere. Fix: PostHog + a ~15-event schema. → Spec 04 — **now the top priority**
+3. **Unmeasured success metrics.** ✅ **Wired.** PostHog + ~16-event schema shipped through the mobile app; Sentry alongside. Remaining: set the production keys and build the 4 dashboards in PostHog (runbook). → Spec 04
 4. **The content treadmill.** ❌ ~29 quests ≈ 4–6 weeks of engaged play, then churn. Fix: community-suggested quests with credit + a Monday drop / Sunday expiry ritual + quest chains. → Spec 05
 
 Plus: duo quests as the referral loop (word-of-mouth **is** the distribution strategy in a 90k city), the Sunday recap share card as the organic marketing engine, merchant redemption validation as the sponsor-renewal proof, and XP economy events as cheap retention levers. → Specs 06 / 07
@@ -128,19 +127,16 @@ Plus: duo quests as the referral loop (word-of-mouth **is** the distribution str
 
 | Gap | Severity | Impact | Fix |
 |---|---|---|---|
-| **iOS submit credentials not configured** | 🔴 Critical (ship) | Blocks TestFlight / App Store | Ops: fill `eas.json` |
-| **No analytics** | 🔴 Critical (learning) | Pilot generates no data | Spec 04 |
-| **Migrations 014–017 not applied on live DB** | 🔴 Critical (ops) | Instant verification + moderation are files-only until applied; confirm 005–013 too | Ops check |
-| **`ADMIN_ALLOWED_EMAILS` unset in prod** | 🔴 Critical (ops) | All admin logins denied | Set on deploy |
+| **iOS submit credentials not configured** | 🔴 Critical (ship) | Blocks TestFlight / App Store | Ops: fill `eas.json` (runbook step 1) |
+| **Migration 023 not applied on live DB** | 🔴 Critical (ops) | Account deletion RPC missing → App Store 5.1.1(v) fails at review | `npx supabase db push` (runbook step 0) |
+| **PostHog/Sentry keys unset** | 🔴 Critical (learning) | SDKs wired but no events/crashes recorded; dashboards unbuilt | Runbook steps 2–3 |
+| **`ADMIN_ALLOWED_EMAILS` unset in prod** | 🔴 Critical (ops) | All admin logins denied | Set on Vercel deploy (runbook step 4) |
 | **Content treadmill (~29 quests)** | 🟠 High (retention) | Engaged players exhaust content in weeks | Spec 05 |
 | **Merchant can't validate redemption codes** | 🟠 High (revenue) | No proof of value for sponsor renewals | Spec 07 (`redeemed_at` already in 016) |
 | **No acquisition features** | 🟠 High (growth) | Word-of-mouth unassisted | Spec 06 (duo quests, recap card) |
-| **Placeholder Victoria city boundary** | 🟠 High | 013 seeded a bounding box; geofence = proof now | Load real boundary from `supabase/seeds/victoria-bc-boundary.geojson` |
 | **Mock-location / bypass release checks** | 🟠 High (integrity) | Gate is now unattended | Verify Android `mocked` block + `bypassGeofence` stripped in release builds (Spec 02 §6) |
 | **Sponsored quest E2E untested** | 🟡 Medium | Codes auto-issue (016) but full loop unverified on a device | With Spec 07 |
 | **Offline submission failure** | 🟡 Medium | Bad signal at trail/breakwater loses the moment | Spec 06 §5 queue |
-| **Push tap navigation** | 🟡 Medium | `mountPushListeners` not mounted in `_layout` | Mount in Phase 0 (removal push now exists) |
-| **Crash reporting** | 🟡 Medium | No Sentry | Phase 0 |
 | **Season Veteran badge** | 🟢 Low | Needs seasons table | Deferred |
 | **In-app quest search** | 🟢 Low | Category filter only | Deferred |
 
@@ -154,6 +150,11 @@ Plus: duo quests as the referral loop (word-of-mouth **is** the distribution str
 | Streak celebration showed stale count | ✅ Celebration reads post-reward profile (`lib/celebration.ts`) |
 | Duplicate completion dead-end after rejection | ✅ Rejection no longer exists pre-award; moderation offers "remove + allow retry" |
 | Redemption not wired E2E | ✅ Codes auto-issued in-DB at verification for sponsored quests |
+| Placeholder Victoria city boundary | ✅ Migration `022` applied to live DB Jul 6 — official municipal polygon |
+| Push tap navigation unmounted | ✅ `mountPushListeners` mounted in `_layout.tsx` |
+| No crash reporting | ✅ Sentry SDK wired (production-only; DSN via EAS secret) |
+| No in-app account deletion (App Store 5.1.1(v)) | ✅ Migration `023` `delete_own_account()` RPC + Settings → Danger Zone flow (apply 023 live) |
+| Placeholder 1×1 app icons | ✅ Brand-mark icon/adaptive-icon/splash generated (`scripts/gen-app-icons.js`), wired in `app.json` |
 
 ---
 
@@ -173,7 +174,9 @@ Status key: ✅ Done · ⚠️ Partial · ❌ Not started
 | 0.6 | CI pipeline | ✅ | |
 | 0.7 | Mount push tap listeners | ✅ | `lib/push-navigation.ts` mounted in `_layout.tsx` |
 | 0.8 | Real Victoria boundary polygon | ✅ | Migration `022` + updated `seeds/victoria-bc-boundary.geojson` |
-| 0.9 | Migration/env-var doc cleanup | ⚠️ | 014/015 documented; env drift remains |
+| 0.9 | Migration/env-var doc cleanup | ⚠️ | Migrations README covers 001–023; env drift remains |
+| 0.10 | Account deletion (App Store 5.1.1(v)) | ✅ | Migration `023` RPC + Settings Danger Zone flow; **apply 023 live** |
+| 0.11 | Real app icons + adaptive icon + splash | ✅ | Generated brand mark; `app.json` wired (adaptive icon, notification icon, navy splash) |
 
 ### Phase A — Geofence Drawing ([Spec 01](docs/specs/01-geofence-drawing.md)) — ✅ SHIPPED July 2026
 
@@ -206,7 +209,7 @@ Status key: ✅ Done · ⚠️ Partial · ❌ Not started
 | C.4 | Feed privacy opt-out (`feed_public` toggle in Settings, enforced by RLS) | ✅ |
 | C.5 | EULA/objectionable-content line in legal screens | ✅ (`legal/terms.tsx` updated) |
 
-### Phase D — Analytics ([Spec 04](docs/specs/04-analytics-instrumentation.md)) — NEXT · BEFORE LAUNCH
+### Phase D — Analytics ([Spec 04](docs/specs/04-analytics-instrumentation.md)) — ✅ CODE SHIPPED July 2026 (keys + dashboards: runbook steps 2–3)
 
 | # | Task | Status |
 |---|---|---|
@@ -260,11 +263,12 @@ Status key: ✅ Done · ⚠️ Partial · ❌ Not started
 | Feature | Effort | Impact | Priority | Status |
 |---|---|---|---|---|
 | iOS submit creds + first store build | Low | Critical (ship) | **P0** | ❌ |
-| Analytics (Spec 04) | Low | Critical (learning) | **P0** | ❌ Specced — **next up** |
-| Apply migrations 014–017 live (confirm 005–013) | Low | Critical (ops) | **P0** | ⚠️ Ops |
+| Analytics (Spec 04) | Low | Critical (learning) | **P0** | ✅ Wired — set key + build dashboards |
+| Apply migration 023 live (022 applied; history synced) | Low | Critical (ops) | **P0** | ⚠️ `npx supabase db push` |
 | `ADMIN_ALLOWED_EMAILS` in prod | Trivial | Critical | **P0** | ⚠️ Set on deploy |
-| Real Victoria boundary | Low | High | **P0** | ❌ |
-| Sentry | Low | High | **P0** | ❌ |
+| Account deletion (App Store 5.1.1(v)) | Low | Critical (review) | **P0** | ✅ Code shipped — apply 023 |
+| Real Victoria boundary | Low | High | **P0** | ✅ Applied live (022) |
+| Sentry | Low | High | **P0** | ✅ Wired — set DSN |
 | Instant verification (Spec 02) | Medium | Critical (retention) | — | ✅ Shipped |
 | Reports & moderation + block + opt-out (Spec 03) | Medium | Critical (store review) | — | ✅ Shipped |
 | Geofence drawing (Spec 01) | Medium | High | — | ✅ Shipped |
@@ -277,7 +281,7 @@ Status key: ✅ Done · ⚠️ Partial · ❌ Not started
 | Offline submission queue (F.4) | Medium | Medium | **P2** | ❌ |
 | Quest chains (E.3) | Medium | Medium | **P2** | ❌ |
 | Duo quests + referral (F.5) | High | High (growth) | **P2** | ❌ |
-| Push tap navigation | Low | Medium | **P2** | ❌ |
+| Push tap navigation | Low | Medium | **P2** | ✅ Mounted in `_layout.tsx` |
 
 ---
 
@@ -290,7 +294,7 @@ Status key: ✅ Done · ⚠️ Partial · ❌ Not started
 | No React Query / SWR | Hooks re-fetch on every mount | Phase E (before content surfaces multiply) |
 | Manual TypeScript types | `lib/types.ts` vs `supabase gen types` | Phase 0.9 |
 | Duplicate `push_token` migrations | `004` + timestamped duplicate | Phase 0.9 |
-| Placeholder app icons | 1×1 PNGs | Before store submit |
+| App icon art | Generated brand mark (`scripts/gen-app-icons.js`) — swap in designed art anytime by replacing the three PNGs | Optional, pre-1.0 polish |
 | Leaderboard weekly-only | No all-time/monthly scope | Post-pilot |
 | No integration tests | Pure-logic tests only | Before first production build |
 | `sponsors` identity on `sponsor_name` string | Formal FK deferred | Spec 07 §2 note / sponsor portal |
@@ -331,6 +335,8 @@ Mobile submit → geofence trigger validates (013–015, all 4 zone types, unbyp
 
 | Date | Change |
 |---|---|
+| Jul 6, 2026 (2) | **Store-readiness sweep.** Account deletion shipped (migration `023` `delete_own_account()` RPC + Settings Danger Zone flow with destructive confirm + local sign-out; report-count trigger extended to DELETE so cascades can't leave phantom counts). Real app icons: `scripts/gen-app-icons.js` renders the Q! brand mark → icon/adaptive-icon/splash; `app.json` gains adaptive icon, alpha-correct notification icon, navy splash. Migration history repaired + `022` (real Victoria boundary) applied to live DB via CLI. `LAUNCH-RUNBOOK.md` added — step-by-step owner guide for Apple creds, PostHog, Sentry, Vercel env, release spot-checks. Tests 105+44 green, tsc clean both apps. |
+| Jul 6, 2026 | **Pre-launch hardening + analytics.** PostHog wrapper (`lib/analytics.ts`) + ~15 events wired; Sentry SDK; push tap listeners mounted; removal push includes navigation payload; migration `022` real Victoria boundary; privacy policy analytics section. Remaining: PostHog dashboards (manual), iOS submit creds, live migration apply, `ADMIN_ALLOWED_EMAILS`. |
 | Jul 5, 2026 | **Instant verification era shipped (Phases B+C).** Migration 016: auto-approve on insert, rewards on insert path, in-DB redemption codes, rate limits, `removed` status + XP revocation, pending backfill. Migration 017: reports (reasons, rate limits, auto-hide at 3), `blocked_users`, `feed_public` privacy opt-out, feed RLS, GPS-evidence RPC. Mobile: pending UI deleted, real-XP celebration, `ReportPostSheet`, block user, settings privacy toggle. Admin: approval queue → completions log, `/moderation` queue with dismiss/remove/remove-and-retry, flagged dashboard stat, owner removal push. Edge fns `award-xp` + `generate-redemption-code` retired. Tests 105 mobile + 44 geofence, tsc clean. Remaining before launch: analytics (Spec 04), store creds, live migration apply. |
 | Jul 4, 2026 | **Strategic reframe + spec set.** Docs/specs 01–07 authored. Phase A (geofence drawing: migrations 014–015, admin draw UI, mobile polygon support, 44 package tests) shipped. Roadmap restructured around instant verification (removes approval queue), reports/moderation (Apple 1.2 + block + privacy opt-out), analytics instrumentation, content engine (community quests, weekly drops, chains), growth loop (duo quests, recap card, XP events, starter quest, offline queue), and merchant redemption validation. Multi-city, sponsor portal, and follow graph explicitly deferred. |
 | Jun 21, 2026 | Figma UI reimagining shipped: 5-tab nav, Harbour Electric design system, hero quest cards, activity feed, podium rankings, badges tab, profile simplification. Migration `008` for feed RLS. |

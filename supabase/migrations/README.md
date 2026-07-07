@@ -26,6 +26,7 @@ Apply migrations in numeric/filename order:
 | `020_admin_badge_system.sql` | Badge metadata columns, icon uploads, data-driven unlock rules from admin |
 | `021_per_badge_unlock_thresholds.sql` | Fixes badge unlock evaluation: precomputes raw per-user metrics, per-badge threshold comparison (fixes shared-rule-type collision where 2+ badges couldn't have different limits) |
 | `022_victoria_boundary.sql` | Replaces placeholder bounding box with official Victoria municipal boundary |
+| `023_account_deletion.sql` | `delete_own_account()` RPC (App Store 5.1.1(v)); report-count trigger now fires on DELETE so cascade-deleted reports can't leave phantom counts |
 
 ## Env var naming drift
 

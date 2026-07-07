@@ -1,5 +1,15 @@
 import { useState, useEffect } from 'react'
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Switch, Linking } from 'react-native'
+import {
+  View,
+  Text,
+  StyleSheet,
+  TouchableOpacity,
+  ScrollView,
+  Switch,
+  Linking,
+  Alert,
+  ActivityIndicator,
+} from 'react-native'
 import { useRouter } from 'expo-router'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { Ionicons } from '@expo/vector-icons'
@@ -11,6 +21,7 @@ import { COLORS, SPACING, RADIUS, LEGAL_URLS } from '@/lib/constants'
 import { BrandText } from '@/components/BrandText'
 import { supabase } from '@/lib/supabase'
 import { registerForPushNotifications, clearPushToken } from '@/lib/notifications'
+import { track, resetAnalytics } from '@/lib/analytics'
 
 const WEEKLY_DIGEST_KEY = 'pref_weekly_digest'
 
@@ -21,6 +32,7 @@ export default function Settings(): JSX.Element {
   const [questNearby, setQuestNearby] = useState(false)
   const [weeklyDigest, setWeeklyDigest] = useState(true)
   const [feedPublic, setFeedPublic] = useState(true)
+  const [deleting, setDeleting] = useState(false)
 
   useEffect(() => {
     if (!session?.user?.id) return
@@ -74,6 +86,37 @@ export default function Settings(): JSX.Element {
   async function handleSignOut() {
     await signOut()
     router.replace('/(auth)/sign-in')
+  }
+
+  function confirmDeleteAccount() {
+    Alert.alert(
+      'Delete your account?',
+      'This permanently deletes your profile, XP, badges, streaks, and proof photos. This cannot be undone.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        { text: 'Delete Account', style: 'destructive', onPress: handleDeleteAccount },
+      ]
+    )
+  }
+
+  async function handleDeleteAccount() {
+    setDeleting(true)
+    try {
+      track('account_deleted')
+      const { error } = await supabase.rpc('delete_own_account')
+      if (error) throw error
+      resetAnalytics()
+      // The auth user no longer exists, so a global sign-out would 403 —
+      // clear the local session only.
+      await supabase.auth.signOut({ scope: 'local' }).catch(() => {})
+      router.replace('/(auth)/sign-in')
+    } catch {
+      setDeleting(false)
+      Alert.alert(
+        'Something went wrong',
+        'Your account was not deleted. Check your connection and try again.'
+      )
+    }
   }
 
   return (
@@ -227,7 +270,25 @@ export default function Settings(): JSX.Element {
           >
             <Text style={styles.signOutText}>Sign Out</Text>
           </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.signOutRow, styles.rowBorder]}
+            onPress={confirmDeleteAccount}
+            disabled={deleting}
+            activeOpacity={0.7}
+            accessibilityRole="button"
+            accessibilityLabel="Delete account"
+          >
+            {deleting ? (
+              <ActivityIndicator color="#EF4444" />
+            ) : (
+              <Text style={styles.deleteText}>Delete Account</Text>
+            )}
+          </TouchableOpacity>
         </View>
+        <Text style={styles.deleteHint}>
+          Deleting your account permanently removes your profile, completions, XP, badges, and
+          photos.
+        </Text>
       </ScrollView>
     </View>
   )
@@ -289,4 +350,14 @@ const styles = StyleSheet.create({
   },
   signOutRow: { height: 52, alignItems: 'center', justifyContent: 'center' },
   signOutText: { color: '#EF4444', fontSize: 15, fontWeight: '600' },
+  deleteText: { color: '#EF4444', fontSize: 15, fontWeight: '700' },
+  deleteHint: {
+    color: COLORS.textMuted,
+    fontSize: 12,
+    lineHeight: 17,
+    textAlign: 'center',
+    paddingHorizontal: SPACING.lg,
+    marginTop: -SPACING.md,
+    marginBottom: SPACING.lg,
+  },
 })

@@ -65,6 +65,9 @@ Replace `REPLACE_WITH_REAL_VALUE` in each build profile's `env` block with your 
 
 - `EXPO_PUBLIC_SUPABASE_URL`
 - `EXPO_PUBLIC_SUPABASE_ANON_KEY`
+- `EXPO_PUBLIC_POSTHOG_KEY` (production/preview — analytics no-ops without it)
+- `EXPO_PUBLIC_POSTHOG_HOST` (default `https://us.i.posthog.com`)
+- `EXPO_PUBLIC_SENTRY_DSN` (production — crash reporting; disabled in `__DEV__`)
 
 Alternatively, store secrets in EAS and remove inline values:
 
