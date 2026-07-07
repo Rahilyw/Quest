@@ -1,4 +1,4 @@
-/** Unlock rule types — must stay in sync with evaluate_badge_unlock() in migration 020 */
+/** Unlock rule types — must stay in sync with evaluate_badge_unlock() in migration 021 */
 
 export type UnlockRuleType =
   | 'completion_count'

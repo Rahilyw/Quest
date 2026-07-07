@@ -183,8 +183,9 @@ export function BadgeForm({ badge, iconUrl, onSubmit, submitLabel, error, submit
           </div>
           <div style={{ flex: 1, minWidth: 200 }}>
             <div className="admin-field">
-              <label>Emoji fallback</label>
+              <label className="admin-label">Emoji fallback</label>
               <input
+                className="admin-input"
                 value={form.icon}
                 onChange={(e) => set('icon', e.target.value)}
                 maxLength={8}
@@ -223,12 +224,13 @@ export function BadgeForm({ badge, iconUrl, onSubmit, submitLabel, error, submit
       <section className="admin-card" style={{ marginBottom: 20 }}>
         <h2 style={{ margin: '0 0 16px', fontSize: 16, fontWeight: 800 }}>Details</h2>
         <div className="admin-field">
-          <label>Name</label>
-          <input value={form.name} onChange={(e) => set('name', e.target.value)} required placeholder="First Quest" />
+          <label className="admin-label">Name</label>
+          <input className="admin-input" value={form.name} onChange={(e) => set('name', e.target.value)} required placeholder="First Quest" />
         </div>
         <div className="admin-field">
-          <label>Description (earned)</label>
+          <label className="admin-label">Description (earned)</label>
           <textarea
+            className="admin-textarea"
             value={form.description}
             onChange={(e) => set('description', e.target.value)}
             required
@@ -237,8 +239,9 @@ export function BadgeForm({ badge, iconUrl, onSubmit, submitLabel, error, submit
           />
         </div>
         <div className="admin-field">
-          <label>Locked hint</label>
+          <label className="admin-label">Locked hint</label>
           <input
+            className="admin-input"
             value={form.locked_hint}
             onChange={(e) => set('locked_hint', e.target.value)}
             placeholder="Teaser shown while locked — not the full spec."
@@ -246,8 +249,8 @@ export function BadgeForm({ badge, iconUrl, onSubmit, submitLabel, error, submit
         </div>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 12 }}>
           <div className="admin-field">
-            <label>Rarity</label>
-            <select value={form.rarity} onChange={(e) => set('rarity', e.target.value as BadgeRarity)}>
+            <label className="admin-label">Rarity</label>
+            <select className="admin-select" value={form.rarity} onChange={(e) => set('rarity', e.target.value as BadgeRarity)}>
               {RARITY_OPTIONS.map((o) => (
                 <option key={o.value} value={o.value}>
                   {o.label}
@@ -256,8 +259,8 @@ export function BadgeForm({ badge, iconUrl, onSubmit, submitLabel, error, submit
             </select>
           </div>
           <div className="admin-field">
-            <label>Art style</label>
-            <select value={form.art_style} onChange={(e) => set('art_style', e.target.value as BadgeArtStyle)}>
+            <label className="admin-label">Art style</label>
+            <select className="admin-select" value={form.art_style} onChange={(e) => set('art_style', e.target.value as BadgeArtStyle)}>
               {ART_STYLE_OPTIONS.map((o) => (
                 <option key={o.value} value={o.value}>
                   {o.label}
@@ -266,8 +269,9 @@ export function BadgeForm({ badge, iconUrl, onSubmit, submitLabel, error, submit
             </select>
           </div>
           <div className="admin-field">
-            <label>Sort order</label>
+            <label className="admin-label">Sort order</label>
             <input
+              className="admin-input"
               type="number"
               value={form.sort_order}
               onChange={(e) => set('sort_order', parseInt(e.target.value, 10) || 0)}
@@ -275,8 +279,9 @@ export function BadgeForm({ badge, iconUrl, onSubmit, submitLabel, error, submit
           </div>
         </div>
         <div className="admin-field">
-          <label>Art key (mobile SVG registry)</label>
+          <label className="admin-label">Art key (mobile SVG registry)</label>
           <input
+            className="admin-input"
             value={form.art_key}
             onChange={(e) => set('art_key', e.target.value)}
             placeholder="first-quest"
@@ -317,8 +322,9 @@ export function BadgeForm({ badge, iconUrl, onSubmit, submitLabel, error, submit
           Defines when the database automatically awards this badge after XP updates.
         </p>
         <div className="admin-field">
-          <label>Rule type</label>
+          <label className="admin-label">Rule type</label>
           <select
+            className="admin-select"
             value={form.unlock_rule_type}
             onChange={(e) => set('unlock_rule_type', e.target.value as UnlockRuleType)}
           >
@@ -337,9 +343,10 @@ export function BadgeForm({ badge, iconUrl, onSubmit, submitLabel, error, submit
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 12 }}>
             {ruleDef.fields.map((field) => (
               <div className="admin-field" key={field.key}>
-                <label>{field.label}</label>
+                <label className="admin-label">{field.label}</label>
                 {field.type === 'select' ? (
                   <select
+                    className="admin-select"
                     value={form.ruleConfig[field.key] ?? String(field.default ?? '')}
                     onChange={(e) => setRuleField(field.key, e.target.value)}
                   >
@@ -351,6 +358,7 @@ export function BadgeForm({ badge, iconUrl, onSubmit, submitLabel, error, submit
                   </select>
                 ) : (
                   <input
+                    className="admin-input"
                     type={field.type}
                     value={form.ruleConfig[field.key] ?? String(field.default ?? '')}
                     onChange={(e) => setRuleField(field.key, e.target.value)}
@@ -364,11 +372,12 @@ export function BadgeForm({ badge, iconUrl, onSubmit, submitLabel, error, submit
         )}
 
         <div className="admin-field" style={{ marginTop: 12 }}>
-          <label>
+          <label className="admin-label">
             Unlock label (player-facing)
-            <span style={{ fontWeight: 400, color: theme.textDim, marginLeft: 8 }}>shown in app</span>
+            <span style={{ fontWeight: 400, color: theme.textDim, marginLeft: 8, textTransform: 'none' }}>shown in app</span>
           </label>
           <input
+            className="admin-input"
             value={form.unlock_condition}
             onChange={(e) => {
               setAutoUnlockLabel(false)
