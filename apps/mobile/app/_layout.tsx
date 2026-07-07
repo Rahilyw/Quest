@@ -2,12 +2,17 @@ import { useEffect, useState } from 'react'
 import { Stack, useRouter, useSegments } from 'expo-router'
 import { SafeAreaProvider } from 'react-native-safe-area-context'
 import { ErrorBoundary } from '@/components/ErrorBoundary'
+import { AnalyticsProvider } from '@/components/AnalyticsProvider'
 import { FontProvider } from '@/components/FontProvider'
 import { AuthProvider, useAuth } from '@/hooks/useAuth'
 import { registerForPushNotifications } from '@/lib/notifications'
 import { hasCompletedOnboarding } from '@/lib/onboarding'
 import { subscribeToAuthDeepLinks } from '@/lib/auth-linking'
+import { mountPushListeners } from '@/lib/push-navigation'
+import { initSentry } from '@/lib/sentry'
 import { supabase } from '@/lib/supabase'
+
+initSentry()
 
 function RootLayoutNav() {
   const { session, loading } = useAuth()
@@ -54,6 +59,8 @@ function RootLayoutNav() {
     registerForPushNotifications(session.user.id)
   }, [session?.user.id])
 
+  useEffect(() => mountPushListeners(router), [router])
+
   useEffect(() => {
     if (loading || !onboardingChecked) return
 
@@ -91,9 +98,11 @@ export default function RootLayout() {
   return (
     <FontProvider>
       <SafeAreaProvider>
-        <AuthProvider>
-          <RootLayoutNav />
-        </AuthProvider>
+        <AnalyticsProvider>
+          <AuthProvider>
+            <RootLayoutNav />
+          </AuthProvider>
+        </AnalyticsProvider>
       </SafeAreaProvider>
     </FontProvider>
   )

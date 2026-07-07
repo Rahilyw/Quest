@@ -4,7 +4,7 @@ import type { Router } from 'expo-router'
 type NotificationData = Record<string, unknown>
 
 function handleNotificationTap(data: NotificationData, router: Router) {
-  if (data?.completion_id || data?.type === 'approval') {
+  if (data?.type === 'removal' || data?.completion_id || data?.type === 'approval') {
     router.push('/(tabs)/profile')
   }
 }

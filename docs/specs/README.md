@@ -7,7 +7,7 @@ The spec set behind the post-MVP strategy: make rewards instant, let the communi
 | [01](01-geofence-drawing.md) | **Geofence Drawing** | Admin draws quest perimeters on a map — none / circle / city / custom polygon | ✅ **Shipped** (migrations 014–015, admin draw UI, mobile rendering) |
 | [02](02-instant-verification.md) | **Instant Verification** | Geofence pass = proof. Completions auto-approve on submit; XP, streaks, badges, redemption codes fire instantly. Manual approval removed. | ✅ **Shipped** (migration 016, instant celebration, admin log, rate limits) |
 | [03](03-report-moderation.md) | **Reports & Moderation** | Report button on feed posts, block user, feed privacy opt-out, admin moderation queue with XP revocation — Apple Guideline 1.2 compliance | ✅ **Shipped** (migration 017, ReportPostSheet, /moderation, feed_public) |
-| [04](04-analytics-instrumentation.md) | **Analytics** | PostHog + ~15-event schema so the success metrics in PRODUCT.md are actually measurable | Draft |
+| [04](04-analytics-instrumentation.md) | **Analytics** | PostHog + ~15-event schema so the success metrics in PRODUCT.md are actually measurable | ✅ **Mobile wired** — dashboards manual |
 | [05](05-community-quests.md) | **Community Quests & Drops** | Player-suggested quests with credit, Monday drop ritual, quest chains — solves the content treadmill | Draft |
 | [06](06-growth-engagement.md) | **Growth & Engagement** | Duo quests + referral loop, Sunday recap share card, XP economy events, first-quest onboarding, offline queue | Draft |
 | [07](07-merchant-redemption.md) | **Merchant Redemption** | No-login merchant page to validate & redeem sponsor codes; redemption-rate reporting | Draft |

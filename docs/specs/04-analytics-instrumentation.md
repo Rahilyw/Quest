@@ -1,6 +1,6 @@
 # Spec 04 — Analytics Instrumentation
 
-**Status:** Draft
+**Status:** Draft → **Implemented in mobile** (dashboards still manual in PostHog UI)
 **Depends on:** nothing (ship before or alongside anything else)
 **Priority:** P0 before launch — the pilot's entire purpose is learning, and today there are zero instruments
 

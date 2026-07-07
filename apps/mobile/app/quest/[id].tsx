@@ -1,8 +1,10 @@
+import { useEffect } from 'react'
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Image } from 'react-native'
 import { useLocalSearchParams, useRouter } from 'expo-router'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useQuest } from '@/hooks/useQuests'
 import { formatGeofenceLabel } from '@quest/geofence'
+import { track, type QuestSource } from '@/lib/analytics'
 import {
   CATEGORY_COLORS,
   CATEGORY_TAGS,
@@ -14,10 +16,24 @@ import {
 } from '@/lib/constants'
 
 export default function QuestDetail() {
-  const { id } = useLocalSearchParams<{ id: string }>()
+  const { id, source } = useLocalSearchParams<{ id: string; source?: string }>()
   const router = useRouter()
   const insets = useSafeAreaInsets()
   const { quest, loading } = useQuest(id)
+
+  useEffect(() => {
+    if (!quest) return
+    const questSource: QuestSource =
+      source === 'explore' || source === 'map' || source === 'feed' || source === 'deep_link'
+        ? source
+        : 'unknown'
+    track('quest_viewed', {
+      quest_id: quest.id,
+      category: quest.category,
+      is_sponsored: quest.is_sponsored,
+      source: questSource,
+    })
+  }, [quest?.id, source])
 
   if (loading || !quest) {
     return (
@@ -113,7 +129,7 @@ export default function QuestDetail() {
             <Text style={styles.rulesText}>1. Go to the quest location</Text>
             <Text style={styles.rulesText}>2. Tap "Start Quest" when you arrive</Text>
             <Text style={styles.rulesText}>3. Take a photo as proof</Text>
-            <Text style={styles.rulesText}>4. Submit. We'll review within 2 hours.</Text>
+            <Text style={styles.rulesText}>4. Submit — XP lands instantly when you're in the zone.</Text>
           </View>
         </View>
       </ScrollView>

@@ -109,7 +109,7 @@ export default function ExploreScreen() {
           renderItem={({ item }) => (
             <QuestHeroCard
               quest={item}
-              onPress={() => router.push(`/quest/${item.id}`)}
+              onPress={() => router.push(`/quest/${item.id}?source=explore`)}
             />
           )}
           contentContainerStyle={styles.list}

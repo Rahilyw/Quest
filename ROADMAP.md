@@ -19,8 +19,8 @@ The manual approval queue is **gone**. Completions are verified by the server-si
 | UGC moderation (Apple 1.2) | ✅ **Shipped:** report + block + feed privacy opt-out + admin moderation queue with GPS evidence and XP revocation (migration 017) |
 | Mobile profile & settings | ✅ Profile, edit profile, avatar upload, feed-privacy toggle, legal screens |
 | Admin operations | ✅ Completions log + moderation queue + quest management (set `ADMIN_ALLOWED_EMAILS` before prod deploy) |
-| Engagement plumbing | ⚠️ Approval push retired (reward is in-app now); removal push shipped; new-quest/streak pushes not built; tap listeners unmounted |
-| Analytics | ❌ **None** — success metrics are defined but unmeasured ([Spec 04](docs/specs/04-analytics-instrumentation.md)) — **the top remaining pre-launch gap** |
+| Engagement plumbing | ⚠️ Removal push shipped + tap listeners mounted; new-quest/streak/Monday-drop pushes not built |
+| Analytics | ✅ **PostHog wired** — `lib/analytics.ts` + ~15 events; build PostHog dashboards manually ([Spec 04](docs/specs/04-analytics-instrumentation.md)) |
 | Sponsor / B2B loop | ⚠️ Codes now auto-issued in-DB (016) but merchants can't validate them ([Spec 07](docs/specs/07-merchant-redemption.md)) |
 | Content pipeline | ❌ ~29 seeded quests, no refresh cadence or community input ([Spec 05](docs/specs/05-community-quests.md)) |
 | Growth loop | ❌ Zero acquisition features ([Spec 06](docs/specs/06-growth-engagement.md)) |
@@ -119,8 +119,8 @@ Plus: duo quests as the referral loop (word-of-mouth **is** the distribution str
 | EAS build profiles + project ID | ✅ Set |
 | EAS submit (iOS) | ❌ Apple ID / ASC / team placeholders in `eas.json` |
 | EAS submit (Android) | ⚠️ Expects `./google-service-account.json` (not in repo) |
-| Crash reporting (Sentry) | ❌ Error boundary only |
-| Analytics | ❌ None — Spec 04 |
+| Crash reporting (Sentry) | ✅ SDK wired — set `EXPO_PUBLIC_SENTRY_DSN` in prod builds |
+| Analytics | ✅ PostHog wrapper + event schema (Spec 04) |
 
 ---
 
@@ -169,10 +169,10 @@ Status key: ✅ Done · ⚠️ Partial · ❌ Not started
 | 0.2 | Service role server-side only | ✅ | |
 | 0.3 | Badge unlock aligned (12/13) | ⚠️ | Confirm `005` applied live |
 | 0.4 | EAS first real build + iOS submit creds | ⚠️ | Project ID done; creds are placeholders |
-| 0.5 | Sentry / crash reporting | ❌ | Error boundary shipped |
+| 0.5 | Sentry / crash reporting | ✅ | Set `EXPO_PUBLIC_SENTRY_DSN` in EAS env |
 | 0.6 | CI pipeline | ✅ | |
-| 0.7 | Mount push tap listeners | ❌ | `lib/push-navigation.ts` exists |
-| 0.8 | Real Victoria boundary polygon | ❌ | Replace 013 placeholder box |
+| 0.7 | Mount push tap listeners | ✅ | `lib/push-navigation.ts` mounted in `_layout.tsx` |
+| 0.8 | Real Victoria boundary polygon | ✅ | Migration `022` + updated `seeds/victoria-bc-boundary.geojson` |
 | 0.9 | Migration/env-var doc cleanup | ⚠️ | 014/015 documented; env drift remains |
 
 ### Phase A — Geofence Drawing ([Spec 01](docs/specs/01-geofence-drawing.md)) — ✅ SHIPPED July 2026
@@ -210,10 +210,10 @@ Status key: ✅ Done · ⚠️ Partial · ❌ Not started
 
 | # | Task | Status |
 |---|---|---|
-| D.1 | PostHog + `lib/analytics.ts` wrapper (no-op without key) | ❌ |
-| D.2 | ~15-event schema wired through mobile | ❌ |
-| D.3 | 4 dashboards: activation funnel, WAU retention post-first-quest, week-2 leaderboard return, per-quest content conversion | ❌ |
-| D.4 | Privacy policy analytics line | ❌ |
+| D.1 | PostHog + `lib/analytics.ts` wrapper (no-op without key) | ✅ |
+| D.2 | ~15-event schema wired through mobile | ✅ |
+| D.3 | 4 dashboards: activation funnel, WAU retention post-first-quest, week-2 leaderboard return, per-quest content conversion | ⚠️ | Build in PostHog UI |
+| D.4 | Privacy policy analytics line | ✅ |
 
 ### Phase E — Content Engine ([Spec 05](docs/specs/05-community-quests.md)) — POST-LAUNCH WEEKS 1–4
 

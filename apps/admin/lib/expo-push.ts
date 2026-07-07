@@ -3,7 +3,8 @@ import 'server-only'
 export async function sendExpoPush(
   pushToken: string,
   title: string,
-  body: string
+  body: string,
+  data?: Record<string, unknown>
 ): Promise<void> {
   try {
     await fetch('https://exp.host/--/api/v2/push/send', {
@@ -14,6 +15,7 @@ export async function sendExpoPush(
         title,
         body,
         sound: 'default',
+        data,
       }),
     })
   } catch (err) {

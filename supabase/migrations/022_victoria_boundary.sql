@@ -1,4 +1,8 @@
-{
+-- 022: Replace placeholder Victoria bounding box with official municipal boundary (simplified)
+-- Source: City of Victoria Open Data (VicMap/City Boundary)
+
+UPDATE cities
+SET boundary = ST_SetSRID(ST_GeomFromGeoJSON('{
   "type": "Polygon",
   "coordinates": [
     [
@@ -440,4 +444,5 @@
       ]
     ]
   ]
-}
+}'), 4326)::geography
+WHERE id = 'victoria-bc';

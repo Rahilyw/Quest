@@ -1,6 +1,7 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from 'react'
 import { Session } from '@supabase/supabase-js'
 import { supabase } from '@/lib/supabase'
+import { identify, resetAnalytics } from '@/lib/analytics'
 import { clearPushToken } from '@/lib/notifications'
 import { ensureUserProfile } from '@/lib/profiles'
 import type { UserProfile } from '@/lib/types'
@@ -26,6 +27,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const { profile: data, error } = await ensureUserProfile(activeSession)
     setProfile(data)
     setProfileError(error)
+    if (data) {
+      identify(data.id, {
+        city: data.city,
+        level: data.level,
+        created_at: data.created_at,
+      })
+    }
     setLoading(false)
   }
 
@@ -62,6 +70,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (session?.user.id) {
       await clearPushToken(session.user.id)
     }
+    resetAnalytics()
     await supabase.auth.signOut()
   }
 

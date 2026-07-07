@@ -182,7 +182,7 @@ export async function dismissReports(completionId: string): Promise<void> {
     .eq('id', completionId)
 }
 
-async function notifyRemoval(userId: string, questTitle: string): Promise<void> {
+async function notifyRemoval(userId: string, questTitle: string, completionId: string): Promise<void> {
   const { data: profile } = await supabaseAdmin
     .from('profiles')
     .select('push_token')
@@ -193,7 +193,8 @@ async function notifyRemoval(userId: string, questTitle: string): Promise<void> 
     await sendExpoPush(
       profile.push_token,
       'Completion removed',
-      `Your "${questTitle}" completion was removed after review. The XP has been returned.`
+      `Your "${questTitle}" completion was removed after review. The XP has been returned.`,
+      { type: 'removal', completion_id: completionId }
     )
   }
 }
@@ -226,7 +227,7 @@ export async function removeCompletionModeration(completionId: string): Promise<
     .eq('completion_id', completionId)
     .eq('status', 'open')
 
-  await notifyRemoval(completion.user_id, questTitle)
+  await notifyRemoval(completion.user_id, questTitle, completionId)
 }
 
 export async function removeAndAllowRetry(completionId: string): Promise<void> {
@@ -258,7 +259,7 @@ export async function removeAndAllowRetry(completionId: string): Promise<void> {
       .eq('completion_id', completionId)
       .eq('status', 'open')
 
-    await notifyRemoval(completion.user_id, questTitle)
+    await notifyRemoval(completion.user_id, questTitle, completionId)
   }
 
   await supabaseAdmin.from('completions').delete().eq('id', completionId)

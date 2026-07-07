@@ -12,6 +12,7 @@ import { Ionicons } from '@expo/vector-icons'
 import { COLORS, SPACING, RADIUS, CITY } from '@/lib/constants'
 import { BrandInline } from '@/components/BrandText'
 import { completeOnboarding, PILOT_CITIES } from '@/lib/onboarding'
+import { track } from '@/lib/analytics'
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window')
 
@@ -41,6 +42,7 @@ export default function Onboarding() {
 
   async function finish(destination: '/(auth)/sign-up' | '/(auth)/sign-in') {
     await completeOnboarding(city)
+    track('onboarding_completed', { city })
     router.replace(destination)
   }
 

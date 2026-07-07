@@ -5,7 +5,7 @@ import { SectionHeader } from '@/components/SectionHeader'
 import { BrandInline } from '@/components/BrandText'
 import { COLORS, SPACING, RADIUS } from '@/lib/constants'
 
-const LAST_UPDATED = 'June 21, 2026'
+const LAST_UPDATED = 'July 6, 2026'
 const CONTACT_EMAIL = 'hello@quest.app'
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
@@ -62,9 +62,19 @@ export default function PrivacyPolicy(): JSX.Element {
         <Section title="How we use it">
           <Paragraph>
             Your email is for signing in and occasional product updates if you opt in. Your
-            username and city show on the weekly leaderboard. Photo proof and GPS are reviewed
-            by our team to verify you really did the quest — honest visits only. We do not use
-            your location in the background; it is only captured when you submit.
+            username and city show on the weekly leaderboard. Photo proof and GPS are verified
+            server-side when you submit — honest visits only. We do not use your location in the
+            background; it is only captured when you submit.
+          </Paragraph>
+        </Section>
+
+        <Section title="Analytics">
+          <Paragraph>
+            We use PostHog for product analytics — things like which quests you view, whether you
+            complete one, and how often you check the leaderboard. This helps us improve Quest! for
+            Victoria. We do not use ad tracking, sell your data, or send your email or photos to
+            analytics. Events are tied to your profile ID only. Data is hosted in the United States
+            by PostHog.
           </Paragraph>
         </Section>
 

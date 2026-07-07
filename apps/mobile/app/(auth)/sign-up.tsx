@@ -5,6 +5,7 @@ import { supabase } from '@/lib/supabase'
 import { getOnboardingCity } from '@/lib/onboarding'
 import { BrandText } from '@/components/BrandText'
 import { APP_NAME, COLORS } from '@/lib/constants'
+import { track } from '@/lib/analytics'
 
 export default function SignUp() {
   const router = useRouter()
@@ -46,6 +47,7 @@ export default function SignUp() {
       }
     }
     setLoading(false)
+    track('signed_up')
     Alert.alert('Welcome to Quest!', 'Your account is ready. Sign in to start exploring.', [
       { text: 'Sign In', onPress: () => router.back() },
     ])

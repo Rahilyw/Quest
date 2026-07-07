@@ -1,5 +1,6 @@
 import { View, Text, ScrollView, TouchableOpacity, StyleSheet } from 'react-native'
-import { useRouter } from 'expo-router'
+import { useRouter, useFocusEffect } from 'expo-router'
+import { useCallback } from 'react'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import MapView, { Marker } from 'react-native-maps'
 import { useQuests } from '@/hooks/useQuests'
@@ -10,6 +11,7 @@ import { FeedPostCard } from '@/components/FeedPostCard'
 import { AppHeader } from '@/components/AppHeader'
 import { EmptyState } from '@/components/EmptyState'
 import { COLORS, SPACING, RADIUS, CITY, CATEGORY_COLORS } from '@/lib/constants'
+import { track } from '@/lib/analytics'
 
 export default function FeedScreen() {
   const router = useRouter()
@@ -22,6 +24,12 @@ export default function FeedScreen() {
   function handleFeedChange() {
     refetch()
   }
+
+  useFocusEffect(
+    useCallback(() => {
+      track('feed_viewed', { post_count: posts.length })
+    }, [posts.length])
+  )
 
   return (
     <ScrollView

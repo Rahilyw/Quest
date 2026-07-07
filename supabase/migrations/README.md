@@ -24,6 +24,8 @@ Apply migrations in numeric/filename order:
 | `018_completion_reports.sql` | Reports, blocking, feed privacy (`feed_public`), auto-hide at 3 reports, moderation GPS evidence |
 | `019_expand_badges.sql` | Expands badge set and unlock trigger rules |
 | `020_admin_badge_system.sql` | Badge metadata columns, icon uploads, data-driven unlock rules from admin |
+| `021_per_badge_unlock_thresholds.sql` | Fixes badge unlock evaluation: precomputes raw per-user metrics, per-badge threshold comparison (fixes shared-rule-type collision where 2+ badges couldn't have different limits) |
+| `022_victoria_boundary.sql` | Replaces placeholder bounding box with official Victoria municipal boundary |
 
 ## Env var naming drift
 

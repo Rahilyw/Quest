@@ -14,6 +14,7 @@ import { ReportPostSheet } from '@/components/ReportPostSheet'
 import { COLORS, SPACING, RADIUS } from '@/lib/constants'
 import { supabase } from '@/lib/supabase'
 import { reportErrorMessage, type ReportReason } from '@/lib/moderation'
+import { track } from '@/lib/analytics'
 import type { FeedPost } from '@/hooks/useActivityFeed'
 import { formatTimeAgo } from '@/hooks/useActivityFeed'
 
@@ -52,6 +53,7 @@ export function FeedPostCard({ post, currentUserId, onReported, onBlocked }: Pro
 
     setReported(true)
     onReported?.(post.id)
+    track('post_reported', { reason })
   }
 
   async function handleBlock() {

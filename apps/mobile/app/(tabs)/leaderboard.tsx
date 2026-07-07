@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useState, useCallback } from 'react'
 import {
   View,
   Text,
@@ -8,7 +8,7 @@ import {
   StyleSheet,
 } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
-import { useRouter } from 'expo-router'
+import { useRouter, useFocusEffect } from 'expo-router'
 import { Ionicons } from '@expo/vector-icons'
 import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/hooks/useAuth'
@@ -26,6 +26,7 @@ import {
   getDaysLeftInWeek,
 } from '@/lib/constants'
 import type { LeaderboardEntry, UserBadgeWithBadge } from '@/lib/types'
+import { track } from '@/lib/analytics'
 
 function getRankDelta(
   currentRank: number,
@@ -106,6 +107,12 @@ export default function RankingsScreen() {
   const myEntry = useMemo(
     () => (profile ? entries.find((e) => e.user_id === profile.id) : undefined),
     [entries, profile],
+  )
+
+  useFocusEffect(
+    useCallback(() => {
+      track('leaderboard_viewed', { own_rank: myEntry?.rank ?? null })
+    }, [myEntry?.rank])
   )
 
   const listEntries = entries.length > 3 ? entries.slice(3) : []

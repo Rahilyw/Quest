@@ -17,6 +17,7 @@ import { useQuest } from '@/hooks/useQuests'
 import { useGeofenceCheck } from '@/hooks/useGeofenceCheck'
 import { COLORS } from '@/lib/constants'
 import { didLevelUp } from '@/lib/celebration'
+import { track, type SubmissionBlockReason } from '@/lib/analytics'
 import { ensureCameraPermission } from '@/lib/permissions'
 import { paramAsString } from '@/lib/routeParams'
 import { readUriAsArrayBuffer } from '@/lib/uploadImage'
@@ -70,6 +71,11 @@ export default function Submit() {
   )
 
   useEffect(() => {
+    if (!questId || !quest) return
+    track('quest_started', { quest_id: questId })
+  }, [questId, quest?.id])
+
+  useEffect(() => {
     if (!userId || !questId) return
 
     supabase
@@ -112,6 +118,11 @@ export default function Submit() {
     await ensurePermission()
   }
 
+  function trackSubmissionBlocked(reason: SubmissionBlockReason) {
+    if (!questId) return
+    track('submission_blocked', { quest_id: questId, reason })
+  }
+
   function submissionBlockReason(): string | null {
     if (alreadyCompleted) return 'You already completed this quest.'
     if (isMocked) return 'Turn off mock location to submit.'
@@ -127,6 +138,15 @@ export default function Submit() {
   function openCelebration(state: CelebrationState) {
     setCelebration(state)
     setShowCelebration(true)
+    if (state.variant === 'success') {
+      track('celebration_viewed', { level_up: state.levelUp, streak: state.streakCount })
+      if (state.redemptionCode && quest) {
+        track('redemption_code_viewed', {
+          quest_id: quest.id,
+          sponsor_name: quest.sponsor_name ?? 'unknown',
+        })
+      }
+    }
   }
 
   function handleCelebrationDone() {
@@ -155,6 +175,10 @@ export default function Submit() {
 
     const blockReason = submissionBlockReason()
     if (blockReason) {
+      if (isMocked) trackSubmissionBlocked('mock_location')
+      else if (!hasPhoto) trackSubmissionBlocked('no_photo')
+      else if (!hasLocation && requiresLocation) trackSubmissionBlocked('no_gps')
+      else if (alreadyCompleted) trackSubmissionBlocked('already_completed')
       Alert.alert('Not ready to submit', blockReason)
       return
     }
@@ -162,6 +186,7 @@ export default function Submit() {
     if (!photo || !effectiveCoords || !quest || !userId || !questId || !profile) return
 
     if (!insideGeofence) {
+      trackSubmissionBlocked('outside_zone')
       Alert.alert(
         'Too far away',
         `You need to be ${geofenceLabel.toLowerCase()} to submit.`
@@ -170,6 +195,7 @@ export default function Submit() {
     }
 
     const previousXp = profile.total_xp
+    const previousStreak = profile.current_streak
     setSubmitting(true)
 
     try {
@@ -188,6 +214,13 @@ export default function Submit() {
       const { data: { publicUrl } } = supabase.storage
         .from('proof-photos')
         .getPublicUrl(fileName)
+
+      track('proof_submitted', {
+        quest_id: questId,
+        category: quest.category,
+        gps_accuracy: effectiveCoords.accuracy,
+        is_sponsored: quest.is_sponsored,
+      })
 
       const { data: completion, error: insertError } = await supabase
         .from('completions')
@@ -219,6 +252,7 @@ export default function Submit() {
           insertError.message?.includes('GEOFENCE_VIOLATION') ||
           insertError.code === '23514'
         ) {
+          trackSubmissionBlocked('outside_zone')
           Alert.alert(
             'Too far away',
             `Your location is outside the quest zone. ${geofenceLabel}.`
@@ -227,6 +261,7 @@ export default function Submit() {
           insertError.message?.includes('RATE_LIMITED') ||
           insertError.hint === 'RATE_LIMITED'
         ) {
+          trackSubmissionBlocked('rate_limited')
           Alert.alert(
             'Slow down',
             'You are submitting quests too quickly. Take a breather and try again in a few minutes.'
@@ -248,6 +283,18 @@ export default function Submit() {
       const newXp = freshProfile?.total_xp ?? previousXp + quest.xp_reward
       const newLevel = freshProfile?.level ?? profile.level
       const newStreak = freshProfile?.current_streak ?? profile.current_streak
+
+      track('completion_verified', {
+        quest_id: questId,
+        xp: quest.xp_reward,
+        instant: true,
+      })
+
+      if (newStreak > previousStreak) {
+        track('streak_extended', { length: newStreak })
+      } else if (newStreak < previousStreak) {
+        track('streak_broken', { length: previousStreak })
+      }
 
       setAlreadyCompleted(true)
       openCelebration({
