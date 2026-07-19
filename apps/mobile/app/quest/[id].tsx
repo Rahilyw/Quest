@@ -55,7 +55,8 @@ export default function QuestDetail() {
       radius_meters: quest.radius_meters,
       city_id: quest.city_id ?? null,
     },
-    'Victoria, BC'
+    'Victoria, BC',
+    quest.quest_geofences?.length
   )
 
   return (
@@ -99,6 +100,21 @@ export default function QuestDetail() {
             </View>
             <Text style={styles.radiusText}>{geofenceLabel}</Text>
           </View>
+
+          {(quest.geofence_type ?? 'circle') === 'multi' &&
+            (quest.quest_geofences?.length ?? 0) > 0 && (
+              <View style={styles.areasBox}>
+                <Text style={styles.sectionTitle}>Completion areas</Text>
+                {quest.quest_geofences!.map((area) => (
+                  <Text key={area.id} style={styles.areaRow}>
+                    {area.shape === 'polygon' ? '✏️' : '📍'} {area.label}
+                    {area.shape === 'circle' && area.radius_meters
+                      ? ` · ${area.radius_meters}m`
+                      : ''}
+                  </Text>
+                ))}
+              </View>
+            )}
 
           <Text style={styles.description}>{quest.description}</Text>
 
@@ -210,6 +226,15 @@ const styles = StyleSheet.create({
   },
   xpText: { color: '#FFFFFF', fontWeight: '800', fontSize: 14 },
   radiusText: { color: COLORS.textMuted, fontSize: 12, fontWeight: '600' },
+  areasBox: {
+    backgroundColor: COLORS.surface,
+    borderRadius: RADIUS.lg,
+    padding: SPACING.lg,
+    marginBottom: SPACING.lg,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+  },
+  areaRow: { color: COLORS.textMuted, fontSize: 13, lineHeight: 20, marginBottom: 4 },
   description: { color: COLORS.textMuted, fontSize: 16, lineHeight: 25, marginBottom: SPACING.xl },
   rewardBox: {
     backgroundColor: COLORS.surface,

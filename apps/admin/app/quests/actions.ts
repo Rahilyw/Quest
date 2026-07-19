@@ -12,6 +12,18 @@ export interface Badge {
   unlock_condition: string
 }
 
+export interface QuestGeofenceRow {
+  id: string
+  quest_id: string
+  label: string
+  shape: 'circle' | 'polygon'
+  lat: number | null
+  lng: number | null
+  radius_meters: number | null
+  boundary_geojson: { type: 'Polygon'; coordinates: number[][][] } | null
+  sort_order: number
+}
+
 export interface Quest {
   id: string
   title: string
@@ -20,7 +32,7 @@ export interface Quest {
   lat: number
   lng: number
   radius_meters: number
-  geofence_type: 'none' | 'circle' | 'city' | 'polygon'
+  geofence_type: 'none' | 'circle' | 'city' | 'polygon' | 'multi'
   city_id: string | null
   /** GeoJSON Polygon from the generated boundary_geojson column; read-only. */
   boundary_geojson: { type: 'Polygon'; coordinates: number[][][] } | null
@@ -32,16 +44,26 @@ export interface Quest {
   status: string
   created_at: string
   quest_badges?: { badge_id: string; badge: Badge | null }[]
+  quest_geofences?: QuestGeofenceRow[]
 }
+
+const QUEST_SELECT =
+  '*, quest_badges(badge_id, badge:badges(*)), quest_geofences(id, quest_id, label, shape, lat, lng, radius_meters, boundary_geojson, sort_order)'
 
 export async function getQuests(): Promise<Quest[]> {
   const { data, error } = await supabaseAdmin
     .from('quests')
-    .select('*, quest_badges(badge_id, badge:badges(*))')
+    .select(QUEST_SELECT)
     .order('created_at', { ascending: false })
 
   if (error) throw new Error(error.message)
-  return (data as Quest[]) ?? []
+  const quests = (data as Quest[]) ?? []
+  for (const q of quests) {
+    if (q.quest_geofences) {
+      q.quest_geofences.sort((a, b) => a.sort_order - b.sort_order)
+    }
+  }
+  return quests
 }
 
 export async function getBadges(): Promise<Badge[]> {
@@ -50,7 +72,16 @@ export async function getBadges(): Promise<Badge[]> {
   return (data as Badge[]) ?? []
 }
 
-type GeofenceType = 'none' | 'circle' | 'city' | 'polygon'
+type GeofenceType = 'none' | 'circle' | 'city' | 'polygon' | 'multi'
+
+export type MultiAreaPayload = {
+  shape: 'circle' | 'polygon'
+  label: string
+  lat?: number | null
+  lng?: number | null
+  radius_meters?: number | null
+  boundary?: { type: 'Polygon'; coordinates: number[][][] } | null
+}
 
 /**
  * Parse a boundary_geojson form value into a validated GeoJSON Polygon.
@@ -75,6 +106,28 @@ function parseBoundaryGeojson(
   return { geojson: { type: 'Polygon', coordinates: [validation.ring] } }
 }
 
+function validateMultiAreasPayload(areas: MultiAreaPayload[] | null | undefined): string | null {
+  if (!areas || areas.length < 1) return 'Add at least one completion area.'
+  for (let i = 0; i < areas.length; i++) {
+    const a = areas[i]
+    const name = a.label?.trim() || `Area ${i + 1}`
+    if (a.shape === 'circle') {
+      if (a.lat == null || a.lng == null || Number.isNaN(a.lat) || Number.isNaN(a.lng)) {
+        return `${name}: missing coordinates.`
+      }
+      const r = a.radius_meters ?? 0
+      if (r < 50 || r > 2000) return `${name}: radius must be 50–2000 m.`
+    } else if (a.shape === 'polygon') {
+      if (!a.boundary?.coordinates?.[0]) return `${name}: draw the zone first.`
+      const v = validatePolygonRing(a.boundary.coordinates[0])
+      if (!v.ok) return `${name}: ${v.error}`
+    } else {
+      return `${name}: unknown shape.`
+    }
+  }
+  return null
+}
+
 function validateGeofence(input: {
   geofence_type: GeofenceType
   lat: number
@@ -82,8 +135,9 @@ function validateGeofence(input: {
   radius_meters: number
   city_id: string | null
   boundary_geojson?: string | null
+  multi_areas?: MultiAreaPayload[] | null
 }): string | null {
-  if (Number.isNaN(input.lat) || Number.isNaN(input.lng)) {
+  if (input.geofence_type !== 'multi' && (Number.isNaN(input.lat) || Number.isNaN(input.lng))) {
     return 'Valid latitude and longitude are required.'
   }
   switch (input.geofence_type) {
@@ -101,7 +155,25 @@ function validateGeofence(input: {
       const result = parseBoundaryGeojson(input.boundary_geojson ?? null)
       return 'error' in result ? result.error : null
     }
+    case 'multi':
+      return validateMultiAreasPayload(input.multi_areas)
   }
+}
+
+async function applyMultiAreas(
+  questId: string,
+  areas: MultiAreaPayload[]
+): Promise<{ ok: true } | { ok: false; error: string }> {
+  const { error } = await supabaseAdmin.rpc('replace_quest_geofences', {
+    p_quest_id: questId,
+    p_areas: areas,
+  })
+  if (error) return { ok: false, error: `Multi-area save failed: ${error.message}` }
+  return { ok: true }
+}
+
+async function clearMultiAreas(questId: string) {
+  await supabaseAdmin.from('quest_geofences').delete().eq('quest_id', questId)
 }
 
 async function uploadQuestCover(
@@ -154,6 +226,15 @@ export async function createQuest(formData: FormData): Promise<{ ok: true; quest
     if (geofence_type !== 'circle') {
       radius_meters = 0
     }
+    let multi_areas: MultiAreaPayload[] | null = null
+    const multiRaw = String(formData.get('multi_areas') ?? '').trim()
+    if (multiRaw) {
+      try {
+        multi_areas = JSON.parse(multiRaw) as MultiAreaPayload[]
+      } catch {
+        return { ok: false, error: 'Multi-area data is malformed.' }
+      }
+    }
     const xp_reward = parseInt(String(formData.get('xp_reward') ?? '100'), 10)
     const is_sponsored = formData.get('is_sponsored') === 'true'
     const sponsor_name = String(formData.get('sponsor_name') ?? '').trim()
@@ -164,7 +245,15 @@ export async function createQuest(formData: FormData): Promise<{ ok: true; quest
     if (!title || !description) {
       return { ok: false, error: 'Title and description are required.' }
     }
-    const geofenceError = validateGeofence({ geofence_type, lat, lng, radius_meters, city_id, boundary_geojson })
+    const geofenceError = validateGeofence({
+      geofence_type,
+      lat,
+      lng,
+      radius_meters,
+      city_id,
+      boundary_geojson,
+      multi_areas,
+    })
     if (geofenceError) return { ok: false, error: geofenceError }
     if (is_sponsored && !sponsor_name) {
       return { ok: false, error: 'Sponsor name is required for sponsored quests.' }
@@ -178,14 +267,25 @@ export async function createQuest(formData: FormData): Promise<{ ok: true; quest
       cover_image_url = uploaded.url
     }
 
+    // For multi, use first area as provisional pin; RPC overwrites lat/lng.
+    let insertLat = lat
+    let insertLng = lng
+    if (geofence_type === 'multi' && multi_areas?.[0]) {
+      const first = multi_areas[0]
+      if (first.lat != null && first.lng != null) {
+        insertLat = first.lat
+        insertLng = first.lng
+      }
+    }
+
     const { data: quest, error: insertError } = await supabaseAdmin
       .from('quests')
       .insert({
         title,
         description,
         category,
-        lat,
-        lng,
+        lat: insertLat,
+        lng: insertLng,
         radius_meters,
         geofence_type,
         city_id: geofence_type === 'city' ? city_id : null,
@@ -221,6 +321,14 @@ export async function createQuest(formData: FormData): Promise<{ ok: true; quest
       }
     }
 
+    if (geofence_type === 'multi' && multi_areas) {
+      const applied = await applyMultiAreas(quest.id, multi_areas)
+      if (!applied.ok) {
+        await supabaseAdmin.from('quests').delete().eq('id', quest.id)
+        return applied
+      }
+    }
+
     if (badgeIds.length > 0) {
       const rows = badgeIds.map((badge_id) => ({ quest_id: quest.id, badge_id }))
       const { error: badgeError } = await supabaseAdmin.from('quest_badges').insert(rows)
@@ -234,7 +342,7 @@ export async function createQuest(formData: FormData): Promise<{ ok: true; quest
 
     const full = await supabaseAdmin
       .from('quests')
-      .select('*, quest_badges(badge_id, badge:badges(*))')
+      .select(QUEST_SELECT)
       .eq('id', quest.id)
       .single()
 
@@ -260,7 +368,7 @@ export interface UpdateQuestInput {
   lat: number
   lng: number
   radius_meters: number
-  geofence_type: 'none' | 'circle' | 'city' | 'polygon'
+  geofence_type: 'none' | 'circle' | 'city' | 'polygon' | 'multi'
   city_id: string | null
   /** Stringified GeoJSON Polygon; required when geofence_type is 'polygon'. */
   boundary_geojson: string | null
@@ -270,6 +378,8 @@ export interface UpdateQuestInput {
   sponsor_reward: string | null
   /** Clear cover_image_url when true and no new cover is provided. */
   remove_cover?: boolean
+  /** Child areas when geofence_type is multi */
+  multi_areas?: MultiAreaPayload[] | null
 }
 
 export async function updateQuest(
@@ -294,12 +404,21 @@ export async function updateQuest(
       sponsor_name,
       sponsor_reward,
       remove_cover,
+      multi_areas,
     } = input
 
     if (!title.trim() || !description.trim()) {
       return { ok: false, error: 'Title and description are required.' }
     }
-    const geofenceError = validateGeofence({ geofence_type, lat, lng, radius_meters, city_id, boundary_geojson })
+    const geofenceError = validateGeofence({
+      geofence_type,
+      lat,
+      lng,
+      radius_meters,
+      city_id,
+      boundary_geojson,
+      multi_areas,
+    })
     if (geofenceError) return { ok: false, error: geofenceError }
     if (Number.isNaN(xp_reward) || xp_reward < 25 || xp_reward > 1000) {
       return { ok: false, error: 'XP reward must be between 25 and 1000.' }
@@ -325,14 +444,24 @@ export async function updateQuest(
       await deleteQuestCoverIfOwned(existing?.cover_image_url)
     }
 
+    let updateLat = lat
+    let updateLng = lng
+    if (geofence_type === 'multi' && multi_areas?.[0]) {
+      const first = multi_areas[0]
+      if (first.lat != null && first.lng != null) {
+        updateLat = first.lat
+        updateLng = first.lng
+      }
+    }
+
     const { error: updateError } = await supabaseAdmin
       .from('quests')
       .update({
         title: title.trim(),
         description: description.trim(),
         category,
-        lat,
-        lng,
+        lat: updateLat,
+        lng: updateLng,
         radius_meters: geofence_type === 'circle' ? radius_meters : 0,
         geofence_type,
         city_id: geofence_type === 'city' ? city_id : null,
@@ -363,9 +492,16 @@ export async function updateQuest(
       }
     }
 
+    if (geofence_type === 'multi' && multi_areas) {
+      const applied = await applyMultiAreas(id, multi_areas)
+      if (!applied.ok) return applied
+    } else {
+      await clearMultiAreas(id)
+    }
+
     const { data: quest, error: fetchError } = await supabaseAdmin
       .from('quests')
-      .select('*, quest_badges(badge_id, badge:badges(*))')
+      .select(QUEST_SELECT)
       .eq('id', id)
       .single()
 

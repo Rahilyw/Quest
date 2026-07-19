@@ -5,8 +5,9 @@ import { useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
 import { createQuest, getBadges, type Badge } from '../actions'
 import { theme, VICTORIA_DEFAULT } from '@/lib/theme'
-import GeofenceEditor from '@/components/GeofenceEditor'
+import GeofenceEditor, { type GeofenceType } from '@/components/GeofenceEditor'
 import QuestCoverPicker, { type CoverPickerValue } from '@/components/QuestCoverPicker'
+import { areasToRpcPayload, validateMultiAreas, type MultiArea } from '@/lib/multiAreas'
 
 const CATEGORIES = Object.entries(theme.categories)
 
@@ -21,8 +22,9 @@ export default function NewQuestPage() {
   const [selectedBadges, setSelectedBadges] = useState<Set<string>>(new Set())
   const [isSponsored, setIsSponsored] = useState(false)
   const [category, setCategory] = useState('fitness')
-  const [geofenceType, setGeofenceType] = useState<'none' | 'circle' | 'city' | 'polygon'>('circle')
+  const [geofenceType, setGeofenceType] = useState<GeofenceType>('circle')
   const [boundaryRing, setBoundaryRing] = useState<number[][] | null>(null)
+  const [multiAreas, setMultiAreas] = useState<MultiArea[]>([])
   const [lat, setLat] = useState(VICTORIA_DEFAULT.lat)
   const [lng, setLng] = useState(VICTORIA_DEFAULT.lng)
   const [radiusMeters, setRadiusMeters] = useState(300)
@@ -46,13 +48,26 @@ export default function NewQuestPage() {
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
     setError(null)
+
+    if (geofenceType === 'multi') {
+      const multiErr = validateMultiAreas(multiAreas)
+      if (multiErr) {
+        setError(multiErr)
+        return
+      }
+    }
+
     setSubmitting(true)
 
     const form = e.currentTarget
     const fd = new FormData(form)
     fd.set('category', category)
     fd.set('is_sponsored', String(isSponsored))
+    fd.set('geofence_type', geofenceType)
     if (cover.file) fd.set('cover', cover.file)
+    if (geofenceType === 'multi') {
+      fd.set('multi_areas', JSON.stringify(areasToRpcPayload(multiAreas)))
+    }
     selectedBadges.forEach((id) => fd.append('badge_ids', id))
 
     const result = await createQuest(fd)
@@ -141,6 +156,8 @@ export default function NewQuestPage() {
             onCityIdChange={setCityId}
             boundaryRing={boundaryRing}
             onBoundaryChange={setBoundaryRing}
+            multiAreas={multiAreas}
+            onMultiAreasChange={setMultiAreas}
             renderHiddenInputs
           />
           <div className="admin-field" style={{ marginTop: 16 }}>

@@ -24,7 +24,7 @@ export function useQuests(category?: QuestCategory) {
     setLoading(true)
     let query = supabase
       .from('quests')
-      .select('*')
+      .select('*, quest_geofences(id, label, shape, lat, lng, radius_meters, boundary_geojson, sort_order)')
       .eq('status', 'active')
       .order('created_at', { ascending: false })
 
@@ -32,7 +32,15 @@ export function useQuests(category?: QuestCategory) {
 
     const { data, error } = await query
     if (error) setError(error.message)
-    else setQuests(data ?? [])
+    else {
+      const rows = (data ?? []) as Quest[]
+      for (const q of rows) {
+        if (q.quest_geofences) {
+          q.quest_geofences.sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0))
+        }
+      }
+      setQuests(rows)
+    }
     setLoading(false)
   }
 
@@ -54,16 +62,24 @@ export function useQuest(id: string | string[] | undefined) {
     setLoading(true)
     supabase
       .from('quests')
-      .select('*, quest_badges(badge_id, badge:badges(*))')
+      .select(
+        '*, quest_badges(badge_id, badge:badges(*)), quest_geofences(id, label, shape, lat, lng, radius_meters, boundary_geojson, sort_order)'
+      )
       .eq('id', questId)
       .single()
       .then(({ data, error }) => {
         if (error || !data) {
           setQuest(null)
         } else {
-          const { quest_badges, ...rest } = data as Quest & { quest_badges?: QuestBadgeRow[] }
+          const { quest_badges, quest_geofences, ...rest } = data as Quest & {
+            quest_badges?: QuestBadgeRow[]
+          }
+          const areas = [...(quest_geofences ?? [])].sort(
+            (a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0)
+          )
           setQuest({
             ...rest,
+            quest_geofences: areas,
             badges: mapQuestBadges(quest_badges),
           })
         }

@@ -13,14 +13,18 @@ export function QuestCard({ quest, onPress }: Props) {
   const softBg = CATEGORY_SOFT[quest.category] ?? '#F1F5F9'
   const icon = CATEGORY_ICONS[quest.category]
   const geofenceType = quest.geofence_type ?? 'circle'
-  const geofenceShort = formatGeofenceShort({
-    geofence_type: geofenceType,
-    lat: quest.lat,
-    lng: quest.lng,
-    radius_meters: quest.radius_meters,
-    city_id: quest.city_id ?? null,
-  })
-  const geofenceIcon = geofenceType === 'none' ? '🌐' : geofenceType === 'city' ? '🌆' : '📍'
+  const geofenceShort = formatGeofenceShort(
+    {
+      geofence_type: geofenceType,
+      lat: quest.lat,
+      lng: quest.lng,
+      radius_meters: quest.radius_meters,
+      city_id: quest.city_id ?? null,
+    },
+    quest.quest_geofences?.length
+  )
+  const geofenceIcon =
+    geofenceType === 'none' ? '🌐' : geofenceType === 'city' ? '🌆' : geofenceType === 'multi' ? '📌' : '📍'
 
   return (
     <TouchableOpacity

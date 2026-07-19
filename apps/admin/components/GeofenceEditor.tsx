@@ -14,10 +14,12 @@ import {
   closeRing,
   POLYGON_MIN_VERTICES,
 } from '@quest/geofence'
+import MultiAreaEditor from '@/components/MultiAreaEditor'
+import type { MultiArea } from '@/lib/multiAreas'
 
 import 'leaflet/dist/leaflet.css'
 
-export type GeofenceType = 'none' | 'circle' | 'city' | 'polygon'
+export type GeofenceType = 'none' | 'circle' | 'city' | 'polygon' | 'multi'
 
 interface GeofenceEditorProps {
   geofenceType: GeofenceType
@@ -32,6 +34,9 @@ interface GeofenceEditorProps {
   /** Closed GeoJSON ring [lng, lat][] for polygon quests; null when not drawn. */
   boundaryRing: number[][] | null
   onBoundaryChange: (ring: number[][] | null) => void
+  /** Child areas when geofenceType is multi */
+  multiAreas?: MultiArea[]
+  onMultiAreasChange?: (areas: MultiArea[]) => void
   /** When true, emit hidden inputs for FormData (create form). When false, parent manages state only (edit form). */
   renderHiddenInputs?: boolean
 }
@@ -123,6 +128,8 @@ export default function GeofenceEditor({
   onCityIdChange,
   boundaryRing,
   onBoundaryChange,
+  multiAreas = [],
+  onMultiAreasChange,
   renderHiddenInputs = false,
 }: GeofenceEditorProps) {
   const [isMounted, setIsMounted] = useState(false)
@@ -162,6 +169,9 @@ export default function GeofenceEditor({
       onCityIdChange(DEFAULT_CITY_ID)
       onRadiusChange(0)
     } else if (type === 'polygon') {
+      onRadiusChange(0)
+      onCityIdChange(null)
+    } else if (type === 'multi') {
       onRadiusChange(0)
       onCityIdChange(null)
     }
@@ -417,12 +427,13 @@ export default function GeofenceEditor({
 
       {/* Type selection pills */}
       <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-        {(['none', 'circle', 'city', 'polygon'] as const).map((type) => {
+        {(['none', 'circle', 'city', 'polygon', 'multi'] as const).map((type) => {
           const active = geofenceType === type
           let label = 'Anywhere'
           if (type === 'circle') label = 'Radius'
           if (type === 'city') label = 'Victoria'
           if (type === 'polygon') label = 'Draw'
+          if (type === 'multi') label = 'Multiple'
 
           return (
             <button
@@ -445,14 +456,22 @@ export default function GeofenceEditor({
               {type === 'circle' && '⭕ '}
               {type === 'city' && '🌆 '}
               {type === 'polygon' && '✏️ '}
+              {type === 'multi' && '📌 '}
               {label}
             </button>
           )
         })}
       </div>
 
-      {/* Map preview */}
-      {mapContent}
+      {geofenceType === 'multi' && onMultiAreasChange ? (
+        <MultiAreaEditor
+          areas={multiAreas}
+          onAreasChange={onMultiAreasChange}
+          onRepresentativeLatLng={onLatLngChange}
+        />
+      ) : null}
+
+      {geofenceType !== 'multi' && mapContent}
 
       {/* Conditional: Polygon draw controls */}
       {geofenceType === 'polygon' && (
@@ -520,7 +539,8 @@ export default function GeofenceEditor({
         </div>
       )}
 
-      {/* Coordinate settings */}
+      {/* Coordinate settings (single-area modes) */}
+      {geofenceType !== 'multi' && (
       <div>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
           <span className="admin-label" style={{ margin: 0 }}>
@@ -560,6 +580,7 @@ export default function GeofenceEditor({
           </div>
         </div>
       </div>
+      )}
 
       {/* Conditional: Circle Radius Control */}
       {geofenceType === 'circle' && (
@@ -616,7 +637,14 @@ export default function GeofenceEditor({
 
       {/* Live Preview description text */}
       <div style={{ fontSize: 13, color: theme.textMuted, fontStyle: 'italic', borderTop: `1px solid ${theme.border}`, paddingTop: 10 }}>
-        Geofence type: <span style={{ color: theme.text, fontWeight: 600 }}>{formatGeofenceLabel({ geofence_type: geofenceType, lat, lng, radius_meters: radiusMeters, city_id: cityId }, 'Victoria, BC')}</span>
+        Geofence type:{' '}
+        <span style={{ color: theme.text, fontWeight: 600 }}>
+          {formatGeofenceLabel(
+            { geofence_type: geofenceType, lat, lng, radius_meters: radiusMeters, city_id: cityId },
+            'Victoria, BC',
+            multiAreas.length
+          )}
+        </span>
       </div>
     </div>
   )

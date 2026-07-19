@@ -1,11 +1,25 @@
 export type QuestCategory = 'fitness' | 'social' | 'food' | 'community' | 'nature'
 
-export type GeofenceType = 'none' | 'circle' | 'city' | 'polygon'
+export type GeofenceType = 'none' | 'circle' | 'city' | 'polygon' | 'multi'
 
 /** GeoJSON Polygon geometry, as exposed by quests.boundary_geojson (migration 015). */
 export interface PolygonGeometry {
   type: 'Polygon'
   coordinates: number[][][]
+}
+
+export type QuestGeofenceShape = 'circle' | 'polygon'
+
+/** One completion area on a multi-geofence quest (migration 025). */
+export interface QuestGeofenceLocation {
+  id: string
+  label: string
+  shape: QuestGeofenceShape
+  lat: number | null
+  lng: number | null
+  radius_meters: number | null
+  boundary_geojson?: PolygonGeometry | null
+  sort_order?: number
 }
 
 export type QuestStatus = 'active' | 'inactive'
@@ -31,6 +45,8 @@ export interface Quest {
   cover_image_url?: string | null
   /** Drawn perimeter for polygon quests; generated server-side, read-only. */
   boundary_geojson?: PolygonGeometry | null
+  /** Child areas when geofence_type is multi */
+  quest_geofences?: QuestGeofenceLocation[] | null
 }
 
 export interface QuestWithBadges extends Quest {

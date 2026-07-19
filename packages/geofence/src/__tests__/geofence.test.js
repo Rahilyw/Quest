@@ -329,6 +329,55 @@ assert(
 )
 assert('formatGeofenceShort polygon', formatGeofenceShort(polygonQuest), 'Custom zone')
 
+console.log('\n--- Geofence: multi ---')
+const multiQuest = {
+  geofence_type: 'multi',
+  lat: mountDoug.lat,
+  lng: mountDoug.lng,
+  radius_meters: 0,
+  city_id: null,
+}
+const multiLocations = [
+  {
+    shape: 'circle',
+    lat: mountDoug.lat,
+    lng: mountDoug.lng,
+    radius_meters: 50,
+    label: 'Mount Doug',
+  },
+  {
+    shape: 'polygon',
+    boundary: { type: 'Polygon', coordinates: [kmSquare] },
+    label: 'Downtown square',
+  },
+]
+assert(
+  'multi — inside first circle',
+  isWithinGeofence({ quest: multiQuest, user: inside30m, locations: multiLocations }),
+  true
+)
+assert(
+  'multi — inside second polygon',
+  isWithinGeofence({ quest: multiQuest, user: squareCentre, locations: multiLocations }),
+  true
+)
+assert(
+  'multi — outside all areas',
+  isWithinGeofence({ quest: multiQuest, user: vancouver, locations: multiLocations }),
+  false
+)
+assert(
+  'multi — fails with empty locations',
+  isWithinGeofence({ quest: multiQuest, user: inside30m, locations: [] }),
+  false
+)
+assert(
+  'formatGeofenceLabel multi',
+  formatGeofenceLabel(multiQuest, undefined, 6),
+  'At any of 6 areas'
+)
+assert('formatGeofenceShort multi', formatGeofenceShort(multiQuest, 6), '6 areas')
+
 console.log('\n--- Geofence: constants ---')
 assert('MAX_GPS_ACCURACY_BUFFER is 30', MAX_GPS_ACCURACY_BUFFER, 30)
 

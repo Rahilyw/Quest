@@ -27,6 +27,8 @@ Apply migrations in numeric/filename order:
 | `021_per_badge_unlock_thresholds.sql` | Fixes badge unlock evaluation: precomputes raw per-user metrics, per-badge threshold comparison (fixes shared-rule-type collision where 2+ badges couldn't have different limits) |
 | `022_victoria_boundary.sql` | Replaces placeholder bounding box with official Victoria municipal boundary |
 | `023_account_deletion.sql` | `delete_own_account()` RPC (App Store 5.1.1(v)); report-count trigger now fires on DELETE so cascade-deleted reports can't leave phantom counts |
+| `024_geofence_multi_enum.sql` | Adds `multi` to `geofence_type` (enum value must land in its own transaction) |
+| `025_quest_multi_geofences.sql` | `quest_geofences` child areas (circle/polygon), `replace_quest_geofences()`, multi OR-match in `check_completion_geofence()` |
 
 ## Env var naming drift
 

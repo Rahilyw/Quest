@@ -4,8 +4,14 @@ import Link from 'next/link'
 import { useEffect, useState } from 'react'
 import { getQuests, toggleQuestStatus, updateQuest, type Quest } from './actions'
 import { theme, VICTORIA_DEFAULT } from '@/lib/theme'
-import GeofenceEditor from '@/components/GeofenceEditor'
+import GeofenceEditor, { type GeofenceType } from '@/components/GeofenceEditor'
 import QuestCoverPicker, { type CoverPickerValue } from '@/components/QuestCoverPicker'
+import {
+  areasToRpcPayload,
+  newClientId,
+  validateMultiAreas,
+  type MultiArea,
+} from '@/lib/multiAreas'
 
 const CATEGORIES = Object.entries(theme.categories)
 
@@ -16,13 +22,26 @@ interface EditFormState {
   lat: string
   lng: string
   radius_meters: string
-  geofence_type: 'none' | 'circle' | 'city' | 'polygon'
+  geofence_type: GeofenceType
   city_id: string
   boundary_ring: number[][] | null
+  multi_areas: MultiArea[]
   xp_reward: string
   is_sponsored: boolean
   sponsor_name: string
   sponsor_reward: string
+}
+
+function questGeofencesToMultiAreas(q: Quest): MultiArea[] {
+  return (q.quest_geofences ?? []).map((g) => ({
+    clientId: g.id || newClientId(),
+    label: g.label,
+    shape: g.shape,
+    lat: g.lat ?? undefined,
+    lng: g.lng ?? undefined,
+    radius_meters: g.radius_meters ?? undefined,
+    boundaryRing: g.boundary_geojson?.coordinates?.[0] ?? null,
+  }))
 }
 
 function questToFormState(q: Quest): EditFormState {
@@ -36,6 +55,7 @@ function questToFormState(q: Quest): EditFormState {
     geofence_type: q.geofence_type ?? 'circle',
     city_id: q.city_id ?? '',
     boundary_ring: q.boundary_geojson?.coordinates?.[0] ?? null,
+    multi_areas: questGeofencesToMultiAreas(q),
     xp_reward: String(q.xp_reward),
     is_sponsored: q.is_sponsored,
     sponsor_name: q.sponsor_name ?? '',
@@ -60,6 +80,15 @@ function EditForm({ quest, onSave, onCancel }: { quest: Quest; onSave: (updated:
   async function handleSave(e: React.FormEvent) {
     e.preventDefault()
     setError(null)
+
+    if (form.geofence_type === 'multi') {
+      const multiErr = validateMultiAreas(form.multi_areas)
+      if (multiErr) {
+        setError(multiErr)
+        return
+      }
+    }
+
     setSubmitting(true)
 
     try {
@@ -88,6 +117,8 @@ function EditForm({ quest, onSave, onCancel }: { quest: Quest; onSave: (updated:
           sponsor_name: form.is_sponsored ? form.sponsor_name || null : null,
           sponsor_reward: form.is_sponsored ? form.sponsor_reward || null : null,
           remove_cover: cover.remove && !cover.file,
+          multi_areas:
+            form.geofence_type === 'multi' ? areasToRpcPayload(form.multi_areas) : null,
         },
         cover.file
       )
@@ -190,6 +221,8 @@ function EditForm({ quest, onSave, onCancel }: { quest: Quest; onSave: (updated:
           onCityIdChange={(id) => set('city_id', id ?? '')}
           boundaryRing={form.boundary_ring}
           onBoundaryChange={(ring) => set('boundary_ring', ring)}
+          multiAreas={form.multi_areas}
+          onMultiAreasChange={(areas) => set('multi_areas', areas)}
         />
 
         <div className="admin-field" style={{ marginTop: 16 }}>
@@ -376,6 +409,11 @@ export default function QuestsPage() {
                     )}
                     {(q.geofence_type ?? 'circle') === 'polygon' && (
                       <span style={{ fontSize: 10, fontWeight: 700, color: theme.primaryLight }}>✏️ Custom zone</span>
+                    )}
+                    {(q.geofence_type ?? 'circle') === 'multi' && (
+                      <span style={{ fontSize: 10, fontWeight: 700, color: theme.primaryLight }}>
+                        📌 {q.quest_geofences?.length ?? 0} areas
+                      </span>
                     )}
                   </div>
                   <h3 style={{ margin: '0 0 6px', fontSize: 16, fontWeight: 800, lineHeight: 1.3 }}>{q.title}</h3>
