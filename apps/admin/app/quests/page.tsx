@@ -5,6 +5,7 @@ import { useEffect, useState } from 'react'
 import { getQuests, toggleQuestStatus, updateQuest, type Quest } from './actions'
 import { theme, VICTORIA_DEFAULT } from '@/lib/theme'
 import GeofenceEditor from '@/components/GeofenceEditor'
+import QuestCoverPicker, { type CoverPickerValue } from '@/components/QuestCoverPicker'
 
 const CATEGORIES = Object.entries(theme.categories)
 
@@ -44,6 +45,11 @@ function questToFormState(q: Quest): EditFormState {
 
 function EditForm({ quest, onSave, onCancel }: { quest: Quest; onSave: (updated: Quest) => void; onCancel: () => void }) {
   const [form, setForm] = useState<EditFormState>(questToFormState(quest))
+  const [cover, setCover] = useState<CoverPickerValue>({
+    file: null,
+    previewUrl: quest.cover_image_url,
+    remove: false,
+  })
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -62,25 +68,29 @@ function EditForm({ quest, onSave, onCancel }: { quest: Quest; onSave: (updated:
       const radius_meters = parseInt(form.radius_meters, 10)
       const xp_reward = parseInt(form.xp_reward, 10)
 
-      const result = await updateQuest({
-        id: quest.id,
-        title: form.title,
-        description: form.description,
-        category: form.category,
-        lat,
-        lng,
-        radius_meters,
-        geofence_type: form.geofence_type,
-        city_id: form.city_id || null,
-        boundary_geojson:
-          form.geofence_type === 'polygon' && form.boundary_ring
-            ? JSON.stringify({ type: 'Polygon', coordinates: [form.boundary_ring] })
-            : null,
-        xp_reward,
-        is_sponsored: form.is_sponsored,
-        sponsor_name: form.is_sponsored ? form.sponsor_name || null : null,
-        sponsor_reward: form.is_sponsored ? form.sponsor_reward || null : null,
-      })
+      const result = await updateQuest(
+        {
+          id: quest.id,
+          title: form.title,
+          description: form.description,
+          category: form.category,
+          lat,
+          lng,
+          radius_meters,
+          geofence_type: form.geofence_type,
+          city_id: form.city_id || null,
+          boundary_geojson:
+            form.geofence_type === 'polygon' && form.boundary_ring
+              ? JSON.stringify({ type: 'Polygon', coordinates: [form.boundary_ring] })
+              : null,
+          xp_reward,
+          is_sponsored: form.is_sponsored,
+          sponsor_name: form.is_sponsored ? form.sponsor_name || null : null,
+          sponsor_reward: form.is_sponsored ? form.sponsor_reward || null : null,
+          remove_cover: cover.remove && !cover.file,
+        },
+        cover.file
+      )
 
       if (!result.ok) {
         setError(result.error)
@@ -101,6 +111,14 @@ function EditForm({ quest, onSave, onCancel }: { quest: Quest; onSave: (updated:
         <p style={{ margin: '0 0 14px', fontWeight: 800, fontSize: 12, color: theme.textMuted, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
           Edit Quest
         </p>
+
+        <div className="admin-field">
+          <QuestCoverPicker
+            currentUrl={quest.cover_image_url}
+            compact
+            onChange={setCover}
+          />
+        </div>
 
         {/* Title */}
         <div className="admin-field">

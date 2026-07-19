@@ -2,19 +2,22 @@
 
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { createQuest, getBadges, type Badge } from '../actions'
 import { theme, VICTORIA_DEFAULT } from '@/lib/theme'
 import GeofenceEditor from '@/components/GeofenceEditor'
+import QuestCoverPicker, { type CoverPickerValue } from '@/components/QuestCoverPicker'
 
 const CATEGORIES = Object.entries(theme.categories)
 
 export default function NewQuestPage() {
   const router = useRouter()
-  const fileRef = useRef<HTMLInputElement>(null)
   const [badges, setBadges] = useState<Badge[]>([])
-  const [coverPreview, setCoverPreview] = useState<string | null>(null)
-  const [coverFile, setCoverFile] = useState<File | null>(null)
+  const [cover, setCover] = useState<CoverPickerValue>({
+    file: null,
+    previewUrl: null,
+    remove: false,
+  })
   const [selectedBadges, setSelectedBadges] = useState<Set<string>>(new Set())
   const [isSponsored, setIsSponsored] = useState(false)
   const [category, setCategory] = useState('fitness')
@@ -30,13 +33,6 @@ export default function NewQuestPage() {
   useEffect(() => {
     getBadges().then(setBadges)
   }, [])
-
-  function handleCoverChange(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0]
-    if (!file) return
-    setCoverFile(file)
-    setCoverPreview(URL.createObjectURL(file))
-  }
 
   function toggleBadge(id: string) {
     setSelectedBadges((prev) => {
@@ -56,7 +52,7 @@ export default function NewQuestPage() {
     const fd = new FormData(form)
     fd.set('category', category)
     fd.set('is_sponsored', String(isSponsored))
-    if (coverFile) fd.set('cover', coverFile)
+    if (cover.file) fd.set('cover', cover.file)
     selectedBadges.forEach((id) => fd.append('badge_ids', id))
 
     const result = await createQuest(fd)
@@ -86,32 +82,7 @@ export default function NewQuestPage() {
       <form onSubmit={handleSubmit}>
         {/* Cover image */}
         <section className="admin-card" style={{ marginBottom: 20 }}>
-          <h2 style={{ margin: '0 0 4px', fontSize: 16, fontWeight: 800 }}>Cover photo</h2>
-          <p style={{ margin: '0 0 16px', color: theme.textMuted, fontSize: 13 }}>
-            This image appears on the Explore hero card and quest detail in the app.
-          </p>
-          <div
-            role="button"
-            tabIndex={0}
-            onClick={() => fileRef.current?.click()}
-            onKeyDown={(ev) => ev.key === 'Enter' && fileRef.current?.click()}
-            style={{
-              height: 200,
-              borderRadius: 14,
-              border: `2px dashed ${theme.border}`,
-              background: coverPreview ? `url(${coverPreview}) center/cover` : theme.primarySoft,
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              color: theme.textMuted,
-              fontSize: 14,
-              fontWeight: 600,
-            }}
-          >
-            {!coverPreview && '📷 Click to upload cover image'}
-          </div>
-          <input ref={fileRef} type="file" accept="image/jpeg,image/png,image/webp" onChange={handleCoverChange} style={{ display: 'none' }} />
+          <QuestCoverPicker currentUrl={null} onChange={setCover} />
         </section>
 
         {/* Details */}

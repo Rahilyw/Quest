@@ -104,6 +104,42 @@ function validateGeofence(input: {
   }
 }
 
+async function uploadQuestCover(
+  coverFile: File
+): Promise<{ ok: true; url: string } | { ok: false; error: string }> {
+  if (!coverFile.size) return { ok: false, error: 'Cover file is empty.' }
+  const ext = coverFile.name.split('.').pop()?.toLowerCase() || 'jpg'
+  const safeExt = ['jpg', 'jpeg', 'png', 'webp'].includes(ext) ? ext : 'jpg'
+  const path = `${crypto.randomUUID()}.${safeExt}`
+  const buffer = Buffer.from(await coverFile.arrayBuffer())
+
+  const { error: uploadError } = await supabaseAdmin.storage
+    .from('quest-covers')
+    .upload(path, buffer, { contentType: coverFile.type || 'image/jpeg', upsert: false })
+
+  if (uploadError) {
+    return { ok: false, error: `Cover upload failed: ${uploadError.message}` }
+  }
+
+  const { data: urlData } = supabaseAdmin.storage.from('quest-covers').getPublicUrl(path)
+  return { ok: true, url: urlData.publicUrl }
+}
+
+/** Best-effort cleanup of a previous cover object in the quest-covers bucket. */
+async function deleteQuestCoverIfOwned(url: string | null | undefined) {
+  if (!url) return
+  try {
+    const marker = '/quest-covers/'
+    const idx = url.indexOf(marker)
+    if (idx === -1) return
+    const path = decodeURIComponent(url.slice(idx + marker.length).split('?')[0] ?? '')
+    if (!path || path.includes('..')) return
+    await supabaseAdmin.storage.from('quest-covers').remove([path])
+  } catch {
+    // Non-fatal — DB URL update still proceeds.
+  }
+}
+
 export async function createQuest(formData: FormData): Promise<{ ok: true; quest: Quest } | { ok: false; error: string }> {
   try {
     const title = String(formData.get('title') ?? '').trim()
@@ -137,21 +173,9 @@ export async function createQuest(formData: FormData): Promise<{ ok: true; quest
     let cover_image_url: string | null = null
 
     if (coverFile && coverFile.size > 0) {
-      const ext = coverFile.name.split('.').pop()?.toLowerCase() || 'jpg'
-      const safeExt = ['jpg', 'jpeg', 'png', 'webp'].includes(ext) ? ext : 'jpg'
-      const path = `${crypto.randomUUID()}.${safeExt}`
-      const buffer = Buffer.from(await coverFile.arrayBuffer())
-
-      const { error: uploadError } = await supabaseAdmin.storage
-        .from('quest-covers')
-        .upload(path, buffer, { contentType: coverFile.type || 'image/jpeg', upsert: false })
-
-      if (uploadError) {
-        return { ok: false, error: `Cover upload failed: ${uploadError.message}` }
-      }
-
-      const { data: urlData } = supabaseAdmin.storage.from('quest-covers').getPublicUrl(path)
-      cover_image_url = urlData.publicUrl
+      const uploaded = await uploadQuestCover(coverFile)
+      if (!uploaded.ok) return uploaded
+      cover_image_url = uploaded.url
     }
 
     const { data: quest, error: insertError } = await supabaseAdmin
@@ -244,11 +268,33 @@ export interface UpdateQuestInput {
   is_sponsored: boolean
   sponsor_name: string | null
   sponsor_reward: string | null
+  /** Clear cover_image_url when true and no new cover is provided. */
+  remove_cover?: boolean
 }
 
-export async function updateQuest(input: UpdateQuestInput): Promise<{ ok: true; quest: Quest } | { ok: false; error: string }> {
+export async function updateQuest(
+  input: UpdateQuestInput,
+  /** Optional new cover file (cropped JPEG/PNG/WebP). Passed separately so Next can serialize File. */
+  cover: File | null = null
+): Promise<{ ok: true; quest: Quest } | { ok: false; error: string }> {
   try {
-    const { id, title, description, category, lat, lng, radius_meters, geofence_type, city_id, boundary_geojson, xp_reward, is_sponsored, sponsor_name, sponsor_reward } = input
+    const {
+      id,
+      title,
+      description,
+      category,
+      lat,
+      lng,
+      radius_meters,
+      geofence_type,
+      city_id,
+      boundary_geojson,
+      xp_reward,
+      is_sponsored,
+      sponsor_name,
+      sponsor_reward,
+      remove_cover,
+    } = input
 
     if (!title.trim() || !description.trim()) {
       return { ok: false, error: 'Title and description are required.' }
@@ -260,6 +306,23 @@ export async function updateQuest(input: UpdateQuestInput): Promise<{ ok: true; 
     }
     if (is_sponsored && (!sponsor_name?.trim() || !sponsor_reward?.trim())) {
       return { ok: false, error: 'Sponsor name and reward are required for sponsored quests.' }
+    }
+
+    const { data: existing } = await supabaseAdmin
+      .from('quests')
+      .select('cover_image_url')
+      .eq('id', id)
+      .single()
+
+    let coverPatch: { cover_image_url: string | null } | Record<string, never> = {}
+    if (cover && cover.size > 0) {
+      const uploaded = await uploadQuestCover(cover)
+      if (!uploaded.ok) return uploaded
+      coverPatch = { cover_image_url: uploaded.url }
+      await deleteQuestCoverIfOwned(existing?.cover_image_url)
+    } else if (remove_cover) {
+      coverPatch = { cover_image_url: null }
+      await deleteQuestCoverIfOwned(existing?.cover_image_url)
     }
 
     const { error: updateError } = await supabaseAdmin
@@ -280,6 +343,7 @@ export async function updateQuest(input: UpdateQuestInput): Promise<{ ok: true; 
         is_sponsored,
         sponsor_name: is_sponsored ? (sponsor_name?.trim() ?? null) : null,
         sponsor_reward: is_sponsored ? (sponsor_reward?.trim() ?? null) : null,
+        ...coverPatch,
       })
       .eq('id', id)
 
