@@ -1,24 +1,7 @@
 import React from 'react'
 
-const XP_LEVELS = [
-  { level: 1, minXp: 0 },
-  { level: 2, minXp: 200 },
-  { level: 3, minXp: 500 },
-  { level: 4, minXp: 1000 },
-  { level: 5, minXp: 2000 },
-  { level: 6, minXp: 3500 },
-  { level: 7, minXp: 5500 },
-  { level: 8, minXp: 8000 },
-  { level: 9, minXp: 11000 },
-  { level: 10, minXp: 15000 },
-]
-
-function getLevelFromXp(xp) {
-  for (let i = XP_LEVELS.length - 1; i >= 0; i--) {
-    if (xp >= XP_LEVELS[i].minXp) return XP_LEVELS[i].level
-  }
-  return 1
-}
+// Single source: apps/mobile/lib/xpLevels.js (_ds_bundle.js may still embed a generated copy)
+const { XP_LEVELS, getLevelFromXp } = require('../../apps/mobile/lib/xpLevels.js')
 
 /**
  * Signature XP progress bar.

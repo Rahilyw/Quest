@@ -34,7 +34,7 @@ export function PlayerCard({ profile, weeklyRank, todayXp = 0 }: Props) {
           </View>
           <Text style={styles.xpMeta}>
             {profile.total_xp.toLocaleString()} / {maxXp.toLocaleString()} XP
-            {weeklyRank ? ` · Rank #${weeklyRank} this week` : ''}
+            {weeklyRank != null ? ` · Rank #${weeklyRank} this week` : ''}
           </Text>
         </View>
         <View style={styles.todayBlock}>

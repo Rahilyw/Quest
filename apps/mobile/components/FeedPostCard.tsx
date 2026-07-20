@@ -12,6 +12,7 @@ import {
 import { Avatar } from '@/components/Avatar'
 import { ReportPostSheet } from '@/components/ReportPostSheet'
 import { COLORS, SPACING, RADIUS } from '@/lib/constants'
+import { sizedImageUrl } from '@/lib/sizedImageUrl'
 import { supabase } from '@/lib/supabase'
 import { reportErrorMessage, type ReportReason } from '@/lib/moderation'
 import { track } from '@/lib/analytics'
@@ -122,7 +123,7 @@ export function FeedPostCard({ post, currentUserId, onReported, onBlocked }: Pro
         ) : null}
       </View>
       <Image
-        source={{ uri: post.photo_url }}
+        source={{ uri: sizedImageUrl(post.photo_url, { width: 800, height: 800 }) }}
         style={styles.photo}
         resizeMode="cover"
         accessibilityLabel={`${post.user.username}'s proof photo for ${post.quest.title}`}

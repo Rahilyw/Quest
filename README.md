@@ -118,8 +118,8 @@ Quest! (monorepo root)
 ├── supabase/
 │   ├── migrations/               001–017 (geofence 013–015 · instant verification 016 · moderation 017)
 │   ├── functions/
-│   │   └── snapshot-ranks/       Weekly rank snapshot (award-xp + generate-redemption-code
-│   │                             retired — absorbed into 016 DB triggers)
+│   │   └── snapshot-ranks/       Weekly rank snapshot (generate-redemption-code
+│   │                             retired — absorbed into 017 DB triggers)
 │   ├── seed.sql                  ~29 Victoria quests + 13 badges + geofence examples
 │   └── config.toml               Edge function config
 │
@@ -653,7 +653,7 @@ There is no approval step — completions verify instantly at submission. The ad
 
 Captures weekly leaderboard positions into `profiles.last_week_rank` for the rank-delta display.
 
-**Retired:** `award-xp` and `generate-redemption-code` were absorbed into database triggers by migration 016 — rewards, badge checks, and redemption codes now run in-DB on the insert path, with no network hop between submission and reward. The function folders remain in the repo for reference only.
+**Retired:** `award-xp` and `generate-redemption-code` were absorbed into database triggers by migration 017 — rewards, badge checks, and redemption codes now run in-DB on the insert path, with no network hop between submission and reward. The `award-xp` function folder was removed; `generate-redemption-code` remains retired in config.
 
 ### Deploying Edge Functions
 

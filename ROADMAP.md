@@ -119,7 +119,7 @@ Plus: duo quests as the referral loop (word-of-mouth **is** the distribution str
 | Rank snapshot (011) | `last_week_rank` for rank delta |
 | Migrations 001–023 | Documented in `supabase/migrations/README.md`; remote history repaired + synced through 022 (Jul 6) |
 | Seed data | 20 Victoria quests + 5 sponsored + 4 geofence examples (incl. polygon) + 13 badges |
-| Edge functions | `snapshot-ranks` active; `award-xp` + `generate-redemption-code` **retired** — absorbed into 017 DB triggers (folders kept for reference) |
+| Edge functions | `snapshot-ranks` active; `award-xp` removed; `generate-redemption-code` **retired** — absorbed into 017 DB triggers |
 | Shared package | `@quest/geofence` — haversine, point-in-polygon, polygon area/centroid/edge-distance/validation, labels; 44 tests |
 
 ### Tests & Infrastructure

@@ -60,6 +60,7 @@ export interface Completion {
   photo_url: string
   lat: number
   lng: number
+  gps_accuracy?: number | null
   completed_at: string
   status: CompletionStatus
   redemption_code: string | null
@@ -116,12 +117,12 @@ export interface LeaderboardRow {
   username: string
   avatar_url: string | null
   weekly_xp: number
+  level: number
+  last_week_rank: number | null
 }
 
 export interface LeaderboardEntry extends LeaderboardRow {
   rank: number
-  /** Rank position from the previous week's snapshot; null for new users. */
-  last_week_rank: number | null
 }
 
 export type Database = {

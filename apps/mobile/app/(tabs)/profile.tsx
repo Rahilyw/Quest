@@ -225,7 +225,7 @@ export default function Profile() {
             <Text style={styles.heroPillLabel}>Total XP</Text>
             <Text style={styles.heroPillValue}>{profile.total_xp.toLocaleString()}</Text>
           </View>
-          {weeklyRank ? (
+          {weeklyRank != null ? (
             <View style={[styles.heroPill, styles.heroPillRank]}>
               <Text style={styles.heroPillLabel}>This week</Text>
               <Text style={styles.heroPillValue}>#{weeklyRank}</Text>

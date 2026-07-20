@@ -1,5 +1,2 @@
-[functions.award-xp]
-verify_jwt = false
-
 [functions.generate-redemption-code]
 verify_jwt = false

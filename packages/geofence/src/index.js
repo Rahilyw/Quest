@@ -25,18 +25,7 @@ const {
   POLYGON_MAX_AREA_M2,
 } = require('./constants')
 
-/** Victoria, BC placeholder bounding box — matches migration 013 seed. */
-const VICTORIA_BOUNDARY = {
-  id: DEFAULT_CITY_ID,
-  name: 'Victoria, BC',
-  coordinates: [[
-    [-123.4120, 48.4720],
-    [-123.2980, 48.4720],
-    [-123.2980, 48.3820],
-    [-123.4120, 48.3820],
-    [-123.4120, 48.4720],
-  ]],
-}
+const { VICTORIA_BOUNDARY } = require('./victoriaBoundary')
 
 module.exports = {
   isWithinGeofence,

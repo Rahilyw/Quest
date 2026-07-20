@@ -2,16 +2,23 @@
  * Logic tests for the UI/UX overhaul.
  *
  * These tests run in plain Node.js (no React Native, no bundler needed).
- * They replicate the pure-logic functions and constants verbatim from the
- * source files so they can be verified without installing native dependencies.
+ * XP thresholds come from apps/mobile/lib/xpLevels.js (single source).
  *
  * Run: node apps/mobile/__tests__/logic.test.js
  */
 
 'use strict'
 
+const path = require('path')
+const {
+  XP_LEVELS,
+  getLevelFromXp,
+  getXpToNextLevel,
+  getMinXpForLevel,
+} = require(path.join(__dirname, '../lib/xpLevels.js'))
+
 // ---------------------------------------------------------------------------
-// Replicated from apps/mobile/lib/constants.ts
+// Local display tokens for assertion helpers (not XP math)
 // ---------------------------------------------------------------------------
 
 const COLORS = {
@@ -34,19 +41,6 @@ const COLORS = {
 
 const SPACING = { xs: 4, sm: 8, md: 12, lg: 16, xl: 20, xxl: 24 }
 const RADIUS = { sm: 8, md: 12, lg: 16, xl: 20, xxl: 28, pill: 999 }
-
-const XP_LEVELS = [
-  { level: 1, minXp: 0 },
-  { level: 2, minXp: 200 },
-  { level: 3, minXp: 500 },
-  { level: 4, minXp: 1000 },
-  { level: 5, minXp: 2000 },
-  { level: 6, minXp: 3500 },
-  { level: 7, minXp: 5500 },
-  { level: 8, minXp: 8000 },
-  { level: 9, minXp: 11000 },
-  { level: 10, minXp: 15000 },
-]
 
 const CATEGORY_COLORS = {
   fitness: '#16A34A',
@@ -71,28 +65,6 @@ const CITY = {
   lat: 48.4284,
   lng: -123.3656,
   defaultZoom: 13,
-}
-
-function getLevelFromXp(xp) {
-  for (let i = XP_LEVELS.length - 1; i >= 0; i--) {
-    if (xp >= XP_LEVELS[i].minXp) return XP_LEVELS[i].level
-  }
-  return 1
-}
-
-function getXpToNextLevel(xp) {
-  const current = getLevelFromXp(xp)
-  const next = XP_LEVELS.find((l) => l.level === current + 1)
-  return next ? next.minXp - xp : 0
-}
-
-// ---------------------------------------------------------------------------
-// Replicated from apps/mobile/app/(tabs)/index.tsx
-// ---------------------------------------------------------------------------
-
-function getMinXpForLevel(level) {
-  const XP_LEVELS_LOCAL = [0, 200, 500, 1000, 2000, 3500, 5500, 8000, 11000, 15000]
-  return XP_LEVELS_LOCAL[Math.min(level - 1, XP_LEVELS_LOCAL.length - 1)] ?? 0
 }
 
 // XP strip progress calculation from index.tsx (patched: guards denom === 0 at max level)

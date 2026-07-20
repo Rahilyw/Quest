@@ -27,7 +27,7 @@ export function XPBar({ totalXp }: Props) {
 
       {/* Track */}
       <View style={styles.track}>
-        {/* Fill: indigo base */}
+        {/* Fill: accent base */}
         <View style={[styles.fill, { width: fillPct }]}>
           {/* Violet accent on right portion — fakes a gradient without expo-linear-gradient */}
           <View style={styles.fillAccent} />

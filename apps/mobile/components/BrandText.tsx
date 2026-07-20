@@ -3,7 +3,7 @@ import { APP_NAME, COLORS, FONT_BRAND } from '@/lib/constants'
 
 type BrandSize = 'display' | 'header' | 'logo' | 'inline' | 'compact'
 
-/** Skyscapers is a display face — slightly larger than UI text, but kept restrained. */
+/** Bispo Nova is a display face — slightly larger than UI text, but kept restrained. */
 const SIZE_MAP: Record<BrandSize, number> = {
   display: 32,
   header: 28,

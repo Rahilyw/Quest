@@ -282,13 +282,13 @@ const styles = StyleSheet.create({
   },
   codeCard: {
     marginTop: 16,
-    backgroundColor: COLORS.indigoSoft,
+    backgroundColor: COLORS.accentSoft,
     borderRadius: 16,
     padding: 16,
     width: '100%',
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: COLORS.indigo + '33',
+    borderColor: COLORS.accent + '33',
   },
   codeLabel: {
     color: COLORS.textMuted,
@@ -297,7 +297,7 @@ const styles = StyleSheet.create({
     marginBottom: 6,
   },
   codeValue: {
-    color: COLORS.indigo,
+    color: COLORS.accentText,
     fontSize: 28,
     fontWeight: '900',
     letterSpacing: 4,

@@ -230,6 +230,7 @@ export default function Submit() {
           photo_url: publicUrl,
           lat: effectiveCoords.lat,
           lng: effectiveCoords.lng,
+          gps_accuracy: effectiveCoords.accuracy ?? null,
           completed_at: new Date().toISOString(),
         })
         .select('redemption_code')

@@ -1,7 +1,16 @@
+import {
+  XP_LEVELS,
+  getLevelFromXp,
+  getXpToNextLevel,
+  getMinXpForLevel,
+} from './xpLevels'
+
+export { XP_LEVELS, getLevelFromXp, getXpToNextLevel, getMinXpForLevel }
+
 export const APP_NAME = 'Quest!'
 
-/** Official brand wordmark — Skyscapers */
-export const FONT_BRAND = 'Skyscapers'
+/** Official brand wordmark — Bispo Nova (commercial-safe; replaces CC-NC Skyscapers) */
+export const FONT_BRAND = 'BispoNova'
 
 /** Summer 2026 palette — bright sky, coral pops, warm sunshine canvas */
 export const COLORS = {
@@ -40,9 +49,6 @@ export const COLORS = {
   danger: '#EF4444',
   sponsor: '#FF6B35',
 
-  indigo: '#6366F1',
-  indigoSoft: '#EEF2FF',
-
   warningSoft: '#FEF3C7',
   successSoft: '#ECFDF5',
 
@@ -63,36 +69,6 @@ export const CITY = {
   lat: 48.4284,
   lng: -123.3656,
   defaultZoom: 13,
-}
-
-export const XP_LEVELS = [
-  { level: 1, minXp: 0 },
-  { level: 2, minXp: 200 },
-  { level: 3, minXp: 500 },
-  { level: 4, minXp: 1000 },
-  { level: 5, minXp: 2000 },
-  { level: 6, minXp: 3500 },
-  { level: 7, minXp: 5500 },
-  { level: 8, minXp: 8000 },
-  { level: 9, minXp: 11000 },
-  { level: 10, minXp: 15000 },
-]
-
-export function getLevelFromXp(xp: number) {
-  for (let i = XP_LEVELS.length - 1; i >= 0; i--) {
-    if (xp >= XP_LEVELS[i].minXp) return XP_LEVELS[i].level
-  }
-  return 1
-}
-
-export function getXpToNextLevel(xp: number) {
-  const current = getLevelFromXp(xp)
-  const next = XP_LEVELS.find((l) => l.level === current + 1)
-  return next ? next.minXp - xp : 0
-}
-
-export function getMinXpForLevel(level: number): number {
-  return XP_LEVELS[Math.min(level - 1, XP_LEVELS.length - 1)]?.minXp ?? 0
 }
 
 export function getLevelTitle(level: number): string {

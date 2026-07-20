@@ -1,19 +1,19 @@
 /* Quest! Typography Tokens
-   Skyscapers for brand wordmark; Poppins for UI on web; system stack on mobile.
+   Bispo Nova for brand wordmark; Poppins for UI on web; system stack on mobile.
    Source: DESIGN.md §3 Typography
 */
 @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800;900&display=swap');
 
 @font-face {
-  font-family: 'Skyscapers';
-  src: url('../assets/fonts/Skyscapers.ttf') format('truetype');
+  font-family: 'BispoNova';
+  src: url('../assets/fonts/BispoNova-Regular.otf') format('opentype');
   font-weight: 400;
   font-style: normal;
   font-display: swap;
 }
 
 :root {
-  --font-brand: 'Skyscapers', 'Poppins', sans-serif;
+  --font-brand: 'BispoNova', 'Poppins', sans-serif;
   --font-system: 'Poppins', -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, Roboto, sans-serif;
 
   --font-size-display:     48px;

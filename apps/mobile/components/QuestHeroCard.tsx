@@ -7,6 +7,7 @@ import {
   getDifficulty,
   getQuestCoverImage,
 } from '@/lib/constants'
+import { sizedImageUrl } from '@/lib/sizedImageUrl'
 import type { Quest } from '@/lib/types'
 
 interface Props {
@@ -17,7 +18,7 @@ interface Props {
 
 export function QuestHeroCard({ quest, onPress, completionCount = 0 }: Props) {
   const diff = getDifficulty(quest.xp_reward)
-  const imageUri = getQuestCoverImage(quest)
+  const imageUri = sizedImageUrl(getQuestCoverImage(quest), { width: 700, height: 440 })
   const tag = CATEGORY_TAGS[quest.category] ?? quest.category.toUpperCase()
 
   return (

@@ -198,7 +198,7 @@ Quest!/
 ├── ROADMAP.md               Phase plan and status
 └── supabase/
     ├── migrations/          001–017 (geofence 013–015 · instant verification 016 · moderation 017)
-    ├── functions/           snapshot-ranks (award-xp + generate-redemption-code retired by 016)
+    ├── functions/           snapshot-ranks (award-xp removed; generate-redemption-code retired by 017)
     └── seed.sql
 ```
 

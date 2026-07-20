@@ -8,7 +8,7 @@ export function FontProvider({ children }: { children: ReactNode }) {
   const [ready, setReady] = useState(false)
 
   const [loaded, fontError] = useFonts({
-    Skyscapers: require('../assets/fonts/Skyscapers.ttf'),
+    BispoNova: require('../assets/fonts/BispoNova-Regular.otf'),
   })
 
   useEffect(() => {

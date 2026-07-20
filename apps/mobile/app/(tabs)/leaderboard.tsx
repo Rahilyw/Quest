@@ -45,14 +45,6 @@ function getRankDelta(
   return { label: '—', color: COLORS.textMuted }
 }
 
-function estimateLevel(weeklyXp: number): number {
-  if (weeklyXp >= 3500) return 9
-  if (weeklyXp >= 2000) return 7
-  if (weeklyXp >= 1000) return 5
-  if (weeklyXp >= 500) return 4
-  return 3
-}
-
 export default function RankingsScreen() {
   const insets = useSafeAreaInsets()
   const router = useRouter()
@@ -77,26 +69,14 @@ export default function RankingsScreen() {
             .eq('user_id', profile.id)
             .limit(6)
         : Promise.resolve({ data: [] }),
-    ]).then(async ([lbResult, badgeResult]) => {
+    ]).then(([lbResult, badgeResult]) => {
       const lbRows = lbResult.data ?? []
-
-      let rankMap: Record<string, number | null> = {}
-      if (lbRows.length > 0) {
-        const userIds = lbRows.map((r: { user_id: string }) => r.user_id)
-        const { data: profileRows } = await supabase
-          .from('profiles')
-          .select('id, last_week_rank')
-          .in('id', userIds)
-        for (const p of profileRows ?? []) {
-          rankMap[p.id] = p.last_week_rank ?? null
-        }
-      }
 
       setEntries(
         lbRows.map((e: LeaderboardEntry, i: number) => ({
           ...e,
           rank: i + 1,
-          last_week_rank: rankMap[e.user_id] ?? null,
+          last_week_rank: e.last_week_rank ?? null,
         })),
       )
       setBadges(badgeResult.data ?? [])
@@ -316,8 +296,7 @@ export default function RankingsScreen() {
                   {isMe ? ' · you' : ''}
                 </Text>
                 <Text style={styles.rowLevel}>
-                  LV {estimateLevel(item.weekly_xp)}{' '}
-                  {getLevelTitle(estimateLevel(item.weekly_xp))}
+                  LV {item.level} {getLevelTitle(item.level)}
                 </Text>
               </View>
               <View style={styles.xpBlock}>

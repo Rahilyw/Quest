@@ -48,7 +48,10 @@ export default function ExploreScreen() {
       .eq('user_id', profile.id)
       .maybeSingle()
       .then(({ data }) => {
-        if (!data?.weekly_xp) return
+        if (data == null || data.weekly_xp == null) {
+          setWeeklyRank(null)
+          return
+        }
         supabase
           .from('leaderboard')
           .select('user_id', { count: 'exact', head: true })

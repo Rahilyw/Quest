@@ -14,6 +14,7 @@ import {
   getDifficulty,
   getQuestCoverImage,
 } from '@/lib/constants'
+import { sizedImageUrl } from '@/lib/sizedImageUrl'
 
 export default function QuestDetail() {
   const { id, source } = useLocalSearchParams<{ id: string; source?: string }>()
@@ -35,7 +36,7 @@ export default function QuestDetail() {
     })
   }, [quest?.id, source])
 
-  if (loading || !quest) {
+  if (loading) {
     return (
       <View style={styles.container}>
         <Text style={styles.loading}>Loading…</Text>
@@ -43,10 +44,29 @@ export default function QuestDetail() {
     )
   }
 
+  if (!quest) {
+    return (
+      <View style={[styles.container, styles.notFoundWrap, { paddingTop: insets.top + 24 }]}>
+        <Text style={styles.notFoundTitle}>Quest not found</Text>
+        <Text style={styles.notFoundBody}>
+          This quest may have been removed or is no longer available.
+        </Text>
+        <TouchableOpacity
+          style={styles.notFoundBtn}
+          onPress={() => router.back()}
+          accessibilityRole="button"
+          accessibilityLabel="Go back"
+        >
+          <Text style={styles.notFoundBtnText}>Go back</Text>
+        </TouchableOpacity>
+      </View>
+    )
+  }
+
   const categoryColor = CATEGORY_COLORS[quest.category] ?? COLORS.primary
   const tag = CATEGORY_TAGS[quest.category] ?? quest.category.toUpperCase()
   const diff = getDifficulty(quest.xp_reward)
-  const coverUri = getQuestCoverImage(quest)
+  const coverUri = sizedImageUrl(getQuestCoverImage(quest), { width: 900, height: 560 })
   const geofenceLabel = formatGeofenceLabel(
     {
       geofence_type: quest.geofence_type ?? 'circle',
@@ -169,6 +189,35 @@ export default function QuestDetail() {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: COLORS.bg },
   loading: { color: COLORS.textMuted, textAlign: 'center', marginTop: 100 },
+  notFoundWrap: {
+    paddingHorizontal: SPACING.xl,
+    alignItems: 'center',
+  },
+  notFoundTitle: {
+    color: COLORS.textPrimary,
+    fontSize: 22,
+    fontWeight: '800',
+    marginBottom: SPACING.sm,
+    textAlign: 'center',
+  },
+  notFoundBody: {
+    color: COLORS.textMuted,
+    fontSize: 15,
+    lineHeight: 22,
+    textAlign: 'center',
+    marginBottom: SPACING.xl,
+  },
+  notFoundBtn: {
+    backgroundColor: COLORS.primary,
+    paddingHorizontal: SPACING.xl,
+    paddingVertical: SPACING.md,
+    borderRadius: RADIUS.lg,
+  },
+  notFoundBtnText: {
+    color: '#fff',
+    fontWeight: '700',
+    fontSize: 16,
+  },
   heroWrap: { height: 280, position: 'relative' },
   heroImage: { width: '100%', height: '100%' },
   heroOverlay: {

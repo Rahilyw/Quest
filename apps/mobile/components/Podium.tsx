@@ -79,7 +79,7 @@ function PodiumSlot({
         @{entry.username}
       </Text>
       <Text style={styles.levelMeta}>
-        LV {getLevelFromEntry(entry)} · {getLevelTitle(getLevelFromEntry(entry))}
+        LV {entry.level} · {getLevelTitle(entry.level)}
       </Text>
       <View
         style={[
@@ -99,15 +99,6 @@ function PodiumSlot({
       </View>
     </View>
   )
-}
-
-function getLevelFromEntry(entry: LeaderboardEntry): number {
-  const xp = entry.weekly_xp
-  if (xp >= 3500) return 9
-  if (xp >= 2000) return 7
-  if (xp >= 1000) return 5
-  if (xp >= 500) return 4
-  return 3
 }
 
 const styles = StyleSheet.create({

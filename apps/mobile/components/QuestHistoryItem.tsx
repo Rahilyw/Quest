@@ -72,7 +72,7 @@ function RedemptionCodeCard({ code, sponsor_reward }: { code: string; sponsor_re
           <Ionicons
             name={copied ? 'checkmark' : 'copy-outline'}
             size={13}
-            color={copied ? COLORS.success : COLORS.indigo}
+            color={copied ? COLORS.success : COLORS.accentText}
           />
           <Text style={[styles.copyBtnLabel, copied && styles.copyBtnLabelCopied]}>
             {copied ? 'Copied!' : 'Copy Code'}
@@ -178,11 +178,11 @@ const styles = StyleSheet.create({
   codeCardOuter: {
     marginTop: SPACING.sm,
     borderRadius: RADIUS.md,
-    backgroundColor: COLORS.indigoSoft,
+    backgroundColor: COLORS.accentSoft,
     borderWidth: 1,
-    borderColor: COLORS.indigo + '40',
+    borderColor: COLORS.accent + '40',
     // iOS shadow
-    shadowColor: COLORS.indigo,
+    shadowColor: COLORS.accent,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.12,
     shadowRadius: 6,
@@ -200,7 +200,7 @@ const styles = StyleSheet.create({
   sponsorReward: {
     fontSize: 11,
     fontWeight: '600',
-    color: COLORS.indigo,
+    color: COLORS.accentText,
     marginBottom: SPACING.xs,
     letterSpacing: 0.2,
   },
@@ -222,7 +222,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: SPACING.sm,
     paddingVertical: 5,
     borderWidth: 1,
-    borderColor: COLORS.indigo + '40',
+    borderColor: COLORS.accent + '40',
   },
   copyBtnCopied: {
     borderColor: COLORS.success + '60',
@@ -231,7 +231,7 @@ const styles = StyleSheet.create({
   copyBtnLabel: {
     fontSize: 12,
     fontWeight: '700',
-    color: COLORS.indigo,
+    color: COLORS.accentText,
   },
   copyBtnLabelCopied: {
     color: COLORS.success,
