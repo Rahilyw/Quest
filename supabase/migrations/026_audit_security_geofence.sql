@@ -154,8 +154,10 @@ CREATE INDEX IF NOT EXISTS completions_status_reviewed_at_idx
   ON completions (status, reviewed_at DESC);
 
 -- ─── A7: Leaderboard view exposes real level + last_week_rank ────────────────
+-- DROP required: CREATE OR REPLACE cannot rename/reorder columns (weekly_xp → level).
 
-CREATE OR REPLACE VIEW leaderboard AS
+DROP VIEW IF EXISTS leaderboard;
+CREATE VIEW leaderboard AS
 SELECT
   p.id AS user_id,
   p.username,
