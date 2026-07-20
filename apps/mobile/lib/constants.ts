@@ -144,9 +144,9 @@ export const CATEGORY_TAGS: Record<string, string> = {
 export const CATEGORY_IMAGES: Record<string, string> = {
   fitness: 'https://images.unsplash.com/photo-1629495063801-c1040fa82533?w=700&h=440&fit=crop&auto=format',
   social: 'https://images.unsplash.com/photo-1634709170162-23a76022e9c9?w=700&h=440&fit=crop&auto=format',
-  food: 'https://images.unsplash.com/photo-1634709170162-23a76022e9c9?w=700&h=440&fit=crop&auto=format',
+  food: 'https://images.unsplash.com/photo-1493770348161-369560ae357d?w=700&h=440&fit=crop&auto=format',
   community: 'https://images.unsplash.com/photo-1526268072039-3e33e8f0e379?w=700&h=440&fit=crop&auto=format',
-  nature: 'https://images.unsplash.com/photo-1526268072039-3e33e8f0e379?w=700&h=440&fit=crop&auto=format',
+  nature: 'https://images.unsplash.com/photo-1597709017586-66dcbbe9eabf?w=700&h=440&fit=crop&auto=format',
 }
 
 /** Admin-uploaded cover, or category placeholder for legacy quests */
