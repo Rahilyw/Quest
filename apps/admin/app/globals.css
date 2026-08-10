@@ -1,8 +1,9 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
 
 @font-face {
-  font-family: 'BispoNova';
-  src: url('/fonts/BispoNova-Regular.woff') format('woff');
+  font-family: 'Pilowlava';
+  src: url('/fonts/Pilowlava-Regular.woff2') format('woff2'),
+    url('/fonts/Pilowlava-Regular.woff') format('woff');
   font-weight: 400;
   font-style: normal;
   font-display: swap;
@@ -54,11 +55,11 @@ a {
 }
 
 .brand-wordmark {
-  font-family: 'BispoNova', Inter, system-ui, sans-serif;
+  font-family: 'Pilowlava', Inter, system-ui, sans-serif;
   font-weight: 400;
-  font-size: 1.65rem;
-  letter-spacing: 0.02em;
-  line-height: 1.1;
+  font-size: 1.75rem;
+  letter-spacing: 0;
+  line-height: 1.05;
 }
 
 .admin-card {

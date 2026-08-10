@@ -9,8 +9,10 @@ export { XP_LEVELS, getLevelFromXp, getXpToNextLevel, getMinXpForLevel }
 
 export const APP_NAME = 'Quest!'
 
-/** Official brand wordmark — Bispo Nova (commercial-safe; replaces CC-NC Skyscapers) */
-export const FONT_BRAND = 'BispoNova'
+/** Official display / brand face — Pilowlava (SIL OFL 1.1, Studio Triple) */
+export const FONT_BRAND = 'Pilowlava'
+/** Alternate Pilowlava cut for accent moments (badges, celebrations) */
+export const FONT_BRAND_ALT = 'PilowlavaAtome'
 
 /** Summer 2026 palette — bright sky, coral pops, warm sunshine canvas */
 export const COLORS = {

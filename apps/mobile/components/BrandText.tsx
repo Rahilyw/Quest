@@ -3,21 +3,21 @@ import { APP_NAME, COLORS, FONT_BRAND } from '@/lib/constants'
 
 type BrandSize = 'display' | 'header' | 'logo' | 'inline' | 'compact'
 
-/** Bispo Nova is a display face — slightly larger than UI text, but kept restrained. */
+/** Pilowlava display face — slightly larger than UI text; one weight only. */
 const SIZE_MAP: Record<BrandSize, number> = {
-  display: 32,
-  header: 28,
-  logo: 44,
-  inline: 18,
-  compact: 20,
+  display: 36,
+  header: 30,
+  logo: 48,
+  inline: 20,
+  compact: 22,
 }
 
 const LETTER_SPACING: Record<BrandSize, number> = {
-  display: 0.5,
+  display: 0,
   header: 0,
-  logo: 0.5,
+  logo: 0,
   inline: 0,
-  compact: 0.25,
+  compact: 0,
 }
 
 export interface BrandTextProps extends TextProps {

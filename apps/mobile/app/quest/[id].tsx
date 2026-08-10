@@ -9,6 +9,7 @@ import {
   CATEGORY_COLORS,
   CATEGORY_TAGS,
   COLORS,
+  FONT_BRAND,
   RADIUS,
   SPACING,
   getDifficulty,
@@ -250,7 +251,7 @@ const styles = StyleSheet.create({
   tagText: { color: '#FFFFFF', fontSize: 10, fontWeight: '900', letterSpacing: 0.5 },
   diffBadge: { borderRadius: RADIUS.pill, paddingHorizontal: 10, paddingVertical: 4 },
   diffText: { fontSize: 10, fontWeight: '800' },
-  heroTitle: { color: '#FFFFFF', fontSize: 24, fontWeight: '900', lineHeight: 30 },
+  heroTitle: { color: '#FFFFFF', fontSize: 26, fontFamily: FONT_BRAND, lineHeight: 32 },
   sponsoredBadge: {
     alignSelf: 'flex-start',
     marginTop: SPACING.sm,

@@ -1,44 +1,90 @@
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import {
   View,
   Text,
   StyleSheet,
   TouchableOpacity,
   Dimensions,
+  FlatList,
+  ScrollView,
+  type NativeSyntheticEvent,
+  type NativeScrollEvent,
 } from 'react-native'
 import { useRouter } from 'expo-router'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { Ionicons } from '@expo/vector-icons'
-import { COLORS, SPACING, RADIUS, CITY } from '@/lib/constants'
-import { BrandInline } from '@/components/BrandText'
+import { COLORS, FONT_BRAND, SPACING, RADIUS, CITY } from '@/lib/constants'
+import { WelcomeVisual, ExploreVisual, EarnVisual, CityVisual } from '@/components/onboarding/OnboardingVisuals'
 import { completeOnboarding, PILOT_CITIES } from '@/lib/onboarding'
 import { track } from '@/lib/analytics'
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window')
 
-const STEPS = [
+type SlideKind = 'welcome' | 'explore' | 'city' | 'earn'
+
+interface Slide {
+  id: string
+  kind: SlideKind
+  eyebrow: string
+  title: string
+  body: string
+}
+
+const SLIDES: Slide[] = [
   {
-    icon: '🗺️',
+    id: 'welcome',
+    kind: 'welcome',
+    eyebrow: 'Welcome',
+    title: 'Turn your city into a playground',
+    body: 'Quests are real-world challenges at places you already love. Show up, snap proof, stack XP.',
+  },
+  {
+    id: 'explore',
+    kind: 'explore',
+    eyebrow: 'Explore',
     title: 'Your city is the game board',
-    body: '',
+    body: 'Find fitness trails, coffee spots, social hangouts, and hidden gems — all pinned on your map.',
   },
   {
-    icon: '📍',
+    id: 'city',
+    kind: 'city',
+    eyebrow: 'Your city',
     title: 'Where do you play?',
-    body: 'We are piloting in Victoria first. Pick your city — more are on the way.',
+    body: 'We are piloting in Victoria first. More cities are rolling out soon.',
   },
   {
-    icon: '🏅',
+    id: 'earn',
+    kind: 'earn',
+    eyebrow: 'Compete',
     title: 'Earn XP for living your city',
-    body: 'Complete quests, collect badges, and climb the weekly leaderboard. Your first quest is waiting outside.',
+    body: 'Complete quests, unlock badges, and climb the weekly leaderboard. Your first adventure is waiting outside.',
   },
-] as const
+]
+
+function SlideVisual({ kind }: { kind: SlideKind }) {
+  switch (kind) {
+    case 'welcome':
+      return <WelcomeVisual />
+    case 'explore':
+      return <ExploreVisual />
+    case 'city':
+      return <CityVisual />
+    case 'earn':
+      return <EarnVisual />
+    default:
+      return null
+  }
+}
 
 export default function Onboarding() {
   const insets = useSafeAreaInsets()
   const router = useRouter()
+  const listRef = useRef<FlatList<Slide>>(null)
   const [step, setStep] = useState(0)
   const [city, setCity] = useState<string>(CITY.name)
+
+  const isCityStep = SLIDES[step]?.kind === 'city'
+  const isLastStep = step === SLIDES.length - 1
 
   async function finish(destination: '/(auth)/sign-up' | '/(auth)/sign-in') {
     await completeOnboarding(city)
@@ -46,50 +92,37 @@ export default function Onboarding() {
     router.replace(destination)
   }
 
-  async function handleSkip() {
-    await finish('/(auth)/sign-in')
+  function goTo(index: number) {
+    const next = Math.max(0, Math.min(index, SLIDES.length - 1))
+    setStep(next)
+    listRef.current?.scrollToIndex({ index: next, animated: true })
   }
 
   function handleNext() {
-    if (step < STEPS.length - 1) {
-      setStep(step + 1)
-    }
+    if (step < SLIDES.length - 1) goTo(step + 1)
   }
 
-  const isCityStep = step === 1
-  const isLastStep = step === STEPS.length - 1
-  const current = STEPS[step]
+  function handleBack() {
+    if (step > 0) goTo(step - 1)
+  }
 
-  return (
-    <View style={[styles.container, { paddingTop: insets.top + 12, paddingBottom: insets.bottom + 24 }]}>
-      <View style={styles.topBar}>
-        <View style={styles.dots}>
-          {STEPS.map((_, i) => (
-            <View key={i} style={[styles.dot, i === step && styles.dotActive]} />
-          ))}
-        </View>
-        {!isLastStep && (
-          <TouchableOpacity onPress={handleSkip} hitSlop={12} activeOpacity={0.7}>
-            <Text style={styles.skip}>Skip</Text>
-          </TouchableOpacity>
-        )}
-      </View>
+  function onScrollEnd(e: NativeSyntheticEvent<NativeScrollEvent>) {
+    const index = Math.round(e.nativeEvent.contentOffset.x / SCREEN_WIDTH)
+    if (index !== step) setStep(index)
+  }
 
-      <View style={styles.content}>
-        <View style={styles.iconWrap}>
-          <Text style={styles.icon}>{current.icon}</Text>
+  function renderSlide({ item }: { item: Slide }) {
+    const inner = (
+      <>
+        <SlideVisual kind={item.kind} />
+
+        <View style={styles.copy}>
+          <Text style={styles.eyebrow}>{item.eyebrow}</Text>
+          <Text style={styles.title}>{item.title}</Text>
+          <Text style={styles.body}>{item.body}</Text>
         </View>
 
-        <Text style={styles.title}>{current.title}</Text>
-        {step === 0 ? (
-          <Text style={styles.body}>
-            <BrandInline /> turns real places into weekly challenges. Run a trail, grab coffee, meet someone new — then prove you showed up.
-          </Text>
-        ) : (
-          <Text style={styles.body}>{current.body}</Text>
-        )}
-
-        {isCityStep && (
+        {item.kind === 'city' && (
           <View style={styles.cityList}>
             {PILOT_CITIES.map((name) => {
               const selected = city === name
@@ -99,50 +132,154 @@ export default function Onboarding() {
                   style={[styles.cityCard, selected && styles.cityCardSelected]}
                   onPress={() => setCity(name)}
                   activeOpacity={0.85}
+                  accessibilityRole="radio"
+                  accessibilityState={{ selected }}
+                  accessibilityLabel={`${name}, pilot city`}
                 >
+                  <View style={styles.cityIconWrap}>
+                    <Ionicons name="location" size={20} color={selected ? COLORS.primary : COLORS.textMuted} />
+                  </View>
                   <View style={styles.cityInfo}>
                     <Text style={styles.cityName}>{name}</Text>
-                    <Text style={styles.cityHint}>Pilot city</Text>
+                    <View style={styles.pilotBadge}>
+                      <Text style={styles.pilotBadgeText}>PILOT CITY</Text>
+                    </View>
                   </View>
-                  {selected && (
-                    <Ionicons name="checkmark-circle" size={22} color={COLORS.accent} />
+                  {selected ? (
+                    <Ionicons name="checkmark-circle" size={24} color={COLORS.primary} />
+                  ) : (
+                    <View style={styles.cityRadio} />
                   )}
                 </TouchableOpacity>
               )
             })}
             <View style={styles.cityCardDisabled}>
+              <View style={[styles.cityIconWrap, styles.cityIconMuted]}>
+                <Ionicons name="earth-outline" size={20} color={COLORS.textMuted} />
+              </View>
               <View style={styles.cityInfo}>
                 <Text style={styles.cityNameMuted}>More cities</Text>
-                <Text style={styles.cityHint}>Coming soon</Text>
+                <Text style={styles.cityHint}>Coming soon — Toronto, Vancouver, and beyond</Text>
               </View>
             </View>
           </View>
         )}
-      </View>
+      </>
+    )
 
-      <View style={[styles.footer, { paddingHorizontal: Math.max(SPACING.xl, (SCREEN_WIDTH - 400) / 2) }]}>
-        {isLastStep ? (
-          <>
-            <TouchableOpacity
-              style={styles.primaryBtn}
-              onPress={() => finish('/(auth)/sign-up')}
-              activeOpacity={0.85}
-            >
-              <Text style={styles.primaryBtnText}>Get Started</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={styles.secondaryBtn}
-              onPress={() => finish('/(auth)/sign-in')}
-              activeOpacity={0.7}
-            >
-              <Text style={styles.secondaryBtnText}>I already have an account</Text>
-            </TouchableOpacity>
-          </>
+    return (
+      <View style={[styles.slide, { width: SCREEN_WIDTH }]}>
+        {item.kind === 'city' ? (
+          <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.slideScroll}>
+            {inner}
+          </ScrollView>
         ) : (
-          <TouchableOpacity style={styles.primaryBtn} onPress={handleNext} activeOpacity={0.85}>
-            <Text style={styles.primaryBtnText}>Next</Text>
+          inner
+        )}
+      </View>
+    )
+  }
+
+  return (
+    <View style={[styles.container, { paddingTop: insets.top }]}>
+      <View style={styles.topBar}>
+        <View style={styles.progressRow}>
+          {SLIDES.map((s, i) => (
+            <TouchableOpacity
+              key={s.id}
+              style={styles.progressSegmentWrap}
+              onPress={() => goTo(i)}
+              activeOpacity={0.8}
+              accessibilityRole="button"
+              accessibilityLabel={`Go to slide ${i + 1} of ${SLIDES.length}`}
+            >
+              <View style={[styles.progressSegment, i <= step && styles.progressSegmentActive]} />
+            </TouchableOpacity>
+          ))}
+        </View>
+        {!isLastStep && (
+          <TouchableOpacity
+            onPress={() => finish('/(auth)/sign-in')}
+            hitSlop={12}
+            activeOpacity={0.7}
+            accessibilityRole="button"
+            accessibilityLabel="Skip onboarding"
+          >
+            <Text style={styles.skip}>Skip</Text>
           </TouchableOpacity>
         )}
+      </View>
+
+      <FlatList
+        ref={listRef}
+        data={SLIDES}
+        keyExtractor={(item) => item.id}
+        renderItem={renderSlide}
+        horizontal
+        pagingEnabled
+        showsHorizontalScrollIndicator={false}
+        bounces={false}
+        onMomentumScrollEnd={onScrollEnd}
+        getItemLayout={(_, index) => ({
+          length: SCREEN_WIDTH,
+          offset: SCREEN_WIDTH * index,
+          index,
+        })}
+        style={styles.list}
+        contentContainerStyle={styles.listContent}
+      />
+
+      <View style={[styles.footer, { paddingBottom: insets.bottom + 20 }]}>
+        <View style={styles.footerRow}>
+          {step > 0 ? (
+            <TouchableOpacity
+              style={styles.backBtn}
+              onPress={handleBack}
+              activeOpacity={0.7}
+              accessibilityRole="button"
+              accessibilityLabel="Previous slide"
+            >
+              <Ionicons name="arrow-back" size={20} color={COLORS.textPrimary} />
+            </TouchableOpacity>
+          ) : (
+            <View style={styles.backPlaceholder} />
+          )}
+
+          {isLastStep ? (
+            <View style={styles.ctaColumn}>
+              <TouchableOpacity
+                style={styles.primaryBtn}
+                onPress={() => finish('/(auth)/sign-up')}
+                activeOpacity={0.85}
+                accessibilityRole="button"
+                accessibilityLabel="Get started, create account"
+              >
+                <Text style={styles.primaryBtnText}>Get Started</Text>
+                <Ionicons name="arrow-forward" size={18} color="#FFF" />
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.secondaryBtn}
+                onPress={() => finish('/(auth)/sign-in')}
+                activeOpacity={0.7}
+                accessibilityRole="button"
+                accessibilityLabel="Sign in to existing account"
+              >
+                <Text style={styles.secondaryBtnText}>I already have an account</Text>
+              </TouchableOpacity>
+            </View>
+          ) : (
+            <TouchableOpacity
+              style={[styles.primaryBtn, styles.primaryBtnFlex]}
+              onPress={handleNext}
+              activeOpacity={0.85}
+              accessibilityRole="button"
+              accessibilityLabel={isCityStep ? 'Continue with selected city' : 'Next slide'}
+            >
+              <Text style={styles.primaryBtnText}>{isCityStep ? 'Continue' : 'Next'}</Text>
+              <Ionicons name="arrow-forward" size={18} color="#FFF" />
+            </TouchableOpacity>
+          )}
+        </View>
       </View>
     </View>
   )
@@ -158,128 +295,188 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: SPACING.xl,
-    minHeight: 36,
-    marginBottom: SPACING.lg,
+    paddingVertical: SPACING.md,
+    gap: SPACING.md,
   },
-  dots: {
+  progressRow: {
+    flex: 1,
     flexDirection: 'row',
-    gap: 8,
+    gap: 6,
   },
-  dot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
+  progressSegmentWrap: { flex: 1 },
+  progressSegment: {
+    height: 4,
+    borderRadius: 2,
     backgroundColor: COLORS.border,
   },
-  dotActive: {
-    width: 24,
-    backgroundColor: COLORS.accent,
+  progressSegmentActive: {
+    backgroundColor: COLORS.primary,
   },
   skip: {
     color: COLORS.textMuted,
-    fontSize: 15,
+    fontSize: 14,
     fontWeight: '600',
   },
-  content: {
-    flex: 1,
+  list: { flex: 1 },
+  listContent: { alignItems: 'flex-start' },
+  slide: {
     paddingHorizontal: SPACING.xl,
-    justifyContent: 'center',
+    paddingBottom: SPACING.md,
   },
-  iconWrap: {
-    width: 88,
-    height: 88,
-    borderRadius: 44,
-    backgroundColor: COLORS.accentSoft,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: SPACING.xxl,
+  slideScroll: {
+    paddingBottom: SPACING.xl,
   },
-  icon: { fontSize: 42 },
-  title: {
-    color: COLORS.textPrimary,
-    fontSize: 28,
+  copy: {
+    marginBottom: SPACING.lg,
+  },
+  eyebrow: {
+    color: COLORS.primary,
+    fontSize: 11,
     fontWeight: '800',
-    lineHeight: 34,
-    marginBottom: SPACING.md,
-    letterSpacing: -0.5,
+    letterSpacing: 1.2,
+    textTransform: 'uppercase',
+    marginBottom: SPACING.sm,
+  },
+  title: {
+    color: COLORS.navy,
+    fontSize: 26,
+    fontFamily: FONT_BRAND,
+    lineHeight: 32,
+    marginBottom: SPACING.sm,
   },
   body: {
     color: COLORS.textMuted,
-    fontSize: 16,
-    lineHeight: 24,
+    fontSize: 15,
+    lineHeight: 23,
     maxWidth: 340,
   },
   cityList: {
-    marginTop: SPACING.xxl,
     gap: SPACING.sm,
   },
   cityCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
+    gap: SPACING.md,
     backgroundColor: COLORS.surface,
-    borderRadius: RADIUS.md,
+    borderRadius: RADIUS.lg,
     padding: SPACING.lg,
-    borderWidth: 1.5,
+    borderWidth: 2,
     borderColor: COLORS.border,
   },
   cityCardSelected: {
-    borderColor: COLORS.accent,
-    backgroundColor: COLORS.accentSoft,
+    borderColor: COLORS.primary,
+    backgroundColor: COLORS.primarySoft,
   },
-  cityCardDisabled: {
-    flexDirection: 'row',
+  cityIconWrap: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: COLORS.primarySoft,
     alignItems: 'center',
-    backgroundColor: COLORS.surfaceElevated,
-    borderRadius: RADIUS.md,
-    padding: SPACING.lg,
-    borderWidth: 1,
-    borderColor: COLORS.border,
-    opacity: 0.6,
+    justifyContent: 'center',
   },
+  cityIconMuted: { backgroundColor: COLORS.surfaceElevated },
   cityInfo: { flex: 1 },
   cityName: {
     color: COLORS.textPrimary,
     fontSize: 16,
-    fontWeight: '700',
+    fontWeight: '800',
+    marginBottom: 4,
   },
   cityNameMuted: {
     color: COLORS.textMuted,
     fontSize: 16,
     fontWeight: '600',
+    marginBottom: 2,
   },
   cityHint: {
     color: COLORS.textMuted,
-    fontSize: 13,
-    marginTop: 2,
+    fontSize: 12,
+    lineHeight: 17,
+  },
+  pilotBadge: {
+    alignSelf: 'flex-start',
+    backgroundColor: COLORS.highlight,
+    borderRadius: RADIUS.pill,
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+  },
+  pilotBadgeText: {
+    color: '#FFF',
+    fontSize: 9,
+    fontWeight: '900',
+    letterSpacing: 0.6,
+  },
+  cityRadio: {
+    width: 22,
+    height: 22,
+    borderRadius: 11,
+    borderWidth: 2,
+    borderColor: COLORS.border,
+  },
+  cityCardDisabled: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: SPACING.md,
+    backgroundColor: COLORS.surfaceElevated,
+    borderRadius: RADIUS.lg,
+    padding: SPACING.lg,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    opacity: 0.65,
   },
   footer: {
-    gap: SPACING.sm,
-    paddingTop: SPACING.lg,
+    paddingHorizontal: SPACING.xl,
+    paddingTop: SPACING.md,
+    borderTopWidth: 1,
+    borderTopColor: COLORS.border,
+    backgroundColor: COLORS.bg,
   },
-  primaryBtn: {
-    backgroundColor: COLORS.accent,
-    borderRadius: RADIUS.md,
-    padding: SPACING.lg,
+  footerRow: {
+    flexDirection: 'row',
     alignItems: 'center',
-    shadowColor: COLORS.accent,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.28,
-    shadowRadius: 10,
-    elevation: 5,
+    gap: SPACING.md,
   },
+  backBtn: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: COLORS.surface,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  backPlaceholder: { width: 48 },
+  ctaColumn: { flex: 1, gap: SPACING.sm },
+  primaryBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    backgroundColor: COLORS.primary,
+    borderRadius: RADIUS.lg,
+    paddingVertical: SPACING.lg,
+    paddingHorizontal: SPACING.xl,
+    shadowColor: COLORS.primary,
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.35,
+    shadowRadius: 12,
+    elevation: 6,
+  },
+  primaryBtnFlex: { flex: 1 },
   primaryBtnText: {
     color: '#FFFFFF',
-    fontWeight: '700',
+    fontWeight: '800',
     fontSize: 16,
   },
   secondaryBtn: {
-    padding: SPACING.md,
+    padding: SPACING.sm,
     alignItems: 'center',
   },
   secondaryBtnText: {
-    color: COLORS.accent,
-    fontWeight: '600',
-    fontSize: 15,
+    color: COLORS.primary,
+    fontWeight: '700',
+    fontSize: 14,
   },
 })

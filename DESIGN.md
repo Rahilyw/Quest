@@ -159,17 +159,17 @@ Category colours appear on map pins, difficulty context, and category tags — n
 
 ## 3. Typography
 
-**Poppins** on web (Figma prototype). System font stack on mobile with matching weights.
+**Pilowlava** (SIL OFL 1.1) for brand wordmark, quest hero titles, and badge moments. **Poppins** on web prototype UI. System font stack on mobile for body, buttons, and forms.
 
-| Role | Size | Weight | Usage |
-|------|------|--------|-------|
-| Brand | 24px | 900 | `QUEST!` wordmark in header |
-| Title | 28px | 800–900 | Screen titles, podium headline |
-| Headline | 14–16px | 700–900 | Quest card titles, section headers |
-| Body | 12–13px | 400–600 | Descriptions, captions |
-| Label | 10–11px | 700–900 | Pills, XP values, difficulty, tracking labels |
+| Role | Font | Size | Usage |
+|------|------|------|-------|
+| Brand | Pilowlava | 30–48px | `Quest!` wordmark, auth logo |
+| Display title | Pilowlava | 18–26px | Quest hero card + detail titles |
+| Headline | System / Poppins | 14–16px | Section headers, tab labels |
+| Body | System / Poppins | 12–13px | Descriptions, captions |
+| Label | System / Poppins | 10–11px | Pills, XP values, difficulty |
 
-**The Weight-Over-Size Rule:** jump weight before jumping size.
+Font files live in `apps/mobile/assets/fonts/` (bundled via `FontProvider`). Web/admin use `tokens/typography.css` and `apps/admin/public/fonts/`.
 
 ## 4. Elevation
 
