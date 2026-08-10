@@ -16,6 +16,8 @@ interface Props {
   redemptionCode?: string | null
   sponsorReward?: string | null
   onDone: () => void
+  /** When provided, shows a "Share your quest" CTA (success variant only). */
+  onShare?: () => void
 }
 
 const CONFETTI = ['🎉', '⭐', '✨', '🏅', '🎊', '💫']
@@ -82,6 +84,7 @@ export default function CompletionCelebration({
   redemptionCode,
   sponsorReward,
   onDone,
+  onShare,
 }: Props) {
   const scaleAnim = useRef(new Animated.Value(0)).current
   const pulseAnim = useRef(new Animated.Value(1)).current
@@ -186,7 +189,17 @@ export default function CompletionCelebration({
             </Text>
           )}
 
-          <TouchableOpacity style={styles.doneBtn} onPress={onDone} activeOpacity={0.85}>
+          {!isAlreadyDone && onShare ? (
+            <TouchableOpacity style={styles.shareBtn} onPress={onShare} activeOpacity={0.85}>
+              <Text style={styles.shareBtnText}>Share your quest 📣</Text>
+            </TouchableOpacity>
+          ) : null}
+
+          <TouchableOpacity
+            style={[styles.doneBtn, !isAlreadyDone && onShare ? styles.doneBtnTight : null]}
+            onPress={onDone}
+            activeOpacity={0.85}
+          >
             <Text style={styles.doneBtnText}>
               {isAlreadyDone ? 'View Profile' : 'Keep Exploring'}
             </Text>
@@ -316,6 +329,20 @@ const styles = StyleSheet.create({
     marginTop: 12,
     lineHeight: 20,
   },
+  shareBtn: {
+    marginTop: 24,
+    backgroundColor: COLORS.highlight,
+    borderRadius: 999,
+    paddingVertical: 14,
+    width: '100%',
+    alignItems: 'center',
+  },
+  shareBtnText: {
+    color: COLORS.surface,
+    fontWeight: '800',
+    fontSize: 16,
+  },
+  doneBtnTight: { marginTop: 12 },
   doneBtn: {
     marginTop: 24,
     backgroundColor: COLORS.accent,

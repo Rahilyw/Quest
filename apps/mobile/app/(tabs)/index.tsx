@@ -17,7 +17,7 @@ import { CategoryChip } from '@/components/CategoryChip'
 import { EmptyState } from '@/components/EmptyState'
 import { AppHeader } from '@/components/AppHeader'
 import { PlayerCard } from '@/components/PlayerCard'
-import { COLORS, SPACING, getISOWeek, getDaysLeftInWeek } from '@/lib/constants'
+import { COLORS, SPACING, TAB_BAR_CLEARANCE, getISOWeek, getDaysLeftInWeek } from '@/lib/constants'
 import { supabase } from '@/lib/supabase'
 import type { QuestCategory } from '@/lib/types'
 
@@ -116,7 +116,10 @@ export default function ExploreScreen() {
               onPress={() => router.push(`/quest/${item.id}?source=explore`)}
             />
           )}
-          contentContainerStyle={styles.list}
+          contentContainerStyle={[
+            styles.list,
+            { paddingBottom: insets.bottom + TAB_BAR_CLEARANCE },
+          ]}
           showsVerticalScrollIndicator={false}
           refreshControl={
             <RefreshControl
@@ -143,5 +146,5 @@ const styles = StyleSheet.create({
     paddingHorizontal: SPACING.xl,
     paddingVertical: SPACING.sm,
   },
-  list: { paddingHorizontal: SPACING.xl, paddingBottom: 100 },
+  list: { paddingHorizontal: SPACING.xl },
 })

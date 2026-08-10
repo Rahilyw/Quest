@@ -22,6 +22,13 @@ export type AnalyticsEvent =
   | 'redemption_code_viewed'
   | 'share_completed'
   | 'account_deleted'
+  | 'post_liked'
+  | 'post_unliked'
+  | 'comment_created'
+  | 'comment_deleted'
+  | 'profile_opened'
+  | 'user_followed'
+  | 'user_unfollowed'
 
 export type QuestSource = 'explore' | 'map' | 'feed' | 'deep_link' | 'unknown'
 

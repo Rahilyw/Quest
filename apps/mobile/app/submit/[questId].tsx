@@ -22,6 +22,7 @@ import { ensureCameraPermission } from '@/lib/permissions'
 import { paramAsString } from '@/lib/routeParams'
 import { readUriAsArrayBuffer } from '@/lib/uploadImage'
 import CompletionCelebration, { type CelebrationVariant } from '@/components/CompletionCelebration'
+import { ShareStoryModal } from '@/components/ShareStoryModal'
 
 interface CelebrationState {
   variant: CelebrationVariant
@@ -54,6 +55,7 @@ export default function Submit() {
   const [showCelebration, setShowCelebration] = useState(false)
   const [celebration, setCelebration] = useState<CelebrationState | null>(null)
   const [alreadyCompleted, setAlreadyCompleted] = useState(false)
+  const [shareOpen, setShareOpen] = useState(false)
 
   const userId = profile?.id ?? session?.user?.id
   const submissionCoords = getSubmissionCoords(quest?.lat, quest?.lng)
@@ -423,7 +425,23 @@ export default function Submit() {
         redemptionCode={celebration?.redemptionCode}
         sponsorReward={celebration?.sponsorReward}
         onDone={handleCelebrationDone}
+        onShare={photo && profile && quest ? () => setShareOpen(true) : undefined}
       />
+
+      {photo && profile && quest ? (
+        <ShareStoryModal
+          visible={shareOpen}
+          onClose={() => setShareOpen(false)}
+          data={{
+            photoUri: photo,
+            questTitle: quest.title,
+            username: profile.username,
+            level: celebration?.level ?? profile.level,
+            xpReward: quest.xp_reward,
+            completedAt: new Date().toISOString(),
+          }}
+        />
+      ) : null}
     </View>
   )
 }

@@ -112,6 +112,29 @@ export interface UserProfile {
   created_at: string
 }
 
+export interface CompletionLike {
+  completion_id: string
+  user_id: string
+  created_at: string
+}
+
+export interface CompletionComment {
+  id: string
+  completion_id: string
+  user_id: string
+  /** null = top-level; replies are one level deep */
+  parent_id: string | null
+  body: string
+  hidden: boolean
+  created_at: string
+}
+
+export interface Follow {
+  follower_id: string
+  following_id: string
+  created_at: string
+}
+
 export interface LeaderboardRow {
   user_id: string
   username: string
@@ -164,6 +187,24 @@ export type Database = {
         Row: UserBadge
         Insert: UserBadge
         Update: Partial<UserBadge>
+        Relationships: []
+      }
+      completion_likes: {
+        Row: CompletionLike
+        Insert: Omit<CompletionLike, 'created_at'>
+        Update: never
+        Relationships: []
+      }
+      completion_comments: {
+        Row: CompletionComment
+        Insert: Omit<CompletionComment, 'id' | 'created_at' | 'hidden'> & { hidden?: boolean }
+        Update: Partial<Pick<CompletionComment, 'body' | 'hidden'>>
+        Relationships: []
+      }
+      follows: {
+        Row: Follow
+        Insert: Omit<Follow, 'created_at'>
+        Update: never
         Relationships: []
       }
     }

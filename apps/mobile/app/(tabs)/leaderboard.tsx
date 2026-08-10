@@ -24,6 +24,7 @@ import {
   getLevelTitle,
   getISOWeek,
   getDaysLeftInWeek,
+  TAB_BAR_CLEARANCE,
 } from '@/lib/constants'
 import type { LeaderboardEntry, UserBadgeWithBadge } from '@/lib/types'
 import { track } from '@/lib/analytics'
@@ -253,7 +254,7 @@ export default function RankingsScreen() {
         data={loading || entries.length <= 3 ? [] : listEntries}
         keyExtractor={(item) => item.user_id}
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={{ paddingBottom: 100 }}
+        contentContainerStyle={{ paddingBottom: insets.bottom + TAB_BAR_CLEARANCE }}
         ListHeaderComponent={ListHeaderComponent}
         ListFooterComponent={
           !loading && entries.length > 3 ? (
@@ -361,7 +362,7 @@ const styles = StyleSheet.create({
     paddingVertical: 6,
   },
   cityPillText: { color: COLORS.textMuted, fontSize: 11, fontWeight: '700' },
-  heroTitle: { marginBottom: 4 },
+  heroTitle: { marginBottom: 4, textAlign: 'center' },
   heroTitleSuffix: {
     color: COLORS.navy,
     fontSize: 22,
@@ -373,8 +374,15 @@ const styles = StyleSheet.create({
     fontWeight: '900',
     letterSpacing: -0.5,
     marginBottom: 6,
+    textAlign: 'center',
   },
-  tagline: { color: COLORS.textMuted, fontSize: 13, fontWeight: '600', lineHeight: 18 },
+  tagline: {
+    color: COLORS.textMuted,
+    fontSize: 13,
+    fontWeight: '600',
+    lineHeight: 18,
+    textAlign: 'center',
+  },
   heroStats: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -383,7 +391,7 @@ const styles = StyleSheet.create({
     borderRadius: RADIUS.xl,
     paddingVertical: SPACING.md,
     paddingHorizontal: SPACING.xl,
-    alignSelf: 'flex-start',
+    alignSelf: 'center',
     gap: SPACING.lg,
   },
   heroStat: { alignItems: 'center' },

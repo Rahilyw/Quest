@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react'
 import {
   View,
   Text,
+  Image,
   StyleSheet,
   TouchableOpacity,
   ScrollView,
@@ -14,9 +15,11 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { Ionicons } from '@expo/vector-icons'
 import { useAuth } from '@/hooks/useAuth'
 import { supabase } from '@/lib/supabase'
+import { sizedImageUrl } from '@/lib/sizedImageUrl'
 import { Avatar } from '@/components/Avatar'
 import { BrandText } from '@/components/BrandText'
 import { useUserCompletions } from '@/hooks/useUserCompletions'
+import { useFollow } from '@/hooks/useFollow'
 import { QuestHistoryItem } from '@/components/QuestHistoryItem'
 import {
   COLORS,
@@ -24,7 +27,13 @@ import {
   RADIUS,
   CITY,
   getLevelTitle,
+  TAB_BAR_CLEARANCE,
 } from '@/lib/constants'
+
+interface GridPost {
+  id: string
+  photo_url: string
+}
 
 interface RecentQuest {
   id: string
@@ -60,14 +69,16 @@ export default function Profile() {
   const [completionCount, setCompletionCount] = useState(0)
   const [weeklyRank, setWeeklyRank] = useState<number | null>(null)
   const [recentQuests, setRecentQuests] = useState<RecentQuest[]>([])
+  const [gridPosts, setGridPosts] = useState<GridPost[]>([])
   const [refreshing, setRefreshing] = useState(false)
   const [statsLoading, setStatsLoading] = useState(true)
+  const { followerCount, followingCount, refetch: refetchFollow } = useFollow(profile?.id, profile?.id)
 
   const loadStats = useCallback(async () => {
     if (!profile) return
     setStatsLoading(true)
 
-    const [badgesResult, countResult, historyResult, userXpResult] = await Promise.all([
+    const [badgesResult, countResult, historyResult, userXpResult, gridResult] = await Promise.all([
       supabase.from('user_badges').select('badge_id', { count: 'exact' }).eq('user_id', profile.id),
       supabase
         .from('completions')
@@ -82,7 +93,17 @@ export default function Profile() {
         .order('completed_at', { ascending: false })
         .limit(5),
       supabase.from('leaderboard').select('weekly_xp').eq('user_id', profile.id).maybeSingle(),
+      supabase
+        .from('completions')
+        .select('id, photo_url')
+        .eq('user_id', profile.id)
+        .eq('status', 'approved')
+        .not('photo_url', 'is', null)
+        .order('completed_at', { ascending: false })
+        .limit(30),
     ])
+
+    setGridPosts((gridResult.data ?? []) as GridPost[])
 
     setBadgesCount(badgesResult.count ?? 0)
     setCompletionCount(countResult.count ?? 0)
@@ -137,7 +158,7 @@ export default function Profile() {
 
   async function handleRefresh() {
     setRefreshing(true)
-    await Promise.all([refreshProfile(), loadStats(), refetchCompletions()])
+    await Promise.all([refreshProfile(), loadStats(), refetchCompletions(), refetchFollow()])
     setRefreshing(false)
   }
 
@@ -181,7 +202,7 @@ export default function Profile() {
   return (
     <ScrollView
       style={styles.container}
-      contentContainerStyle={{ paddingBottom: insets.bottom + 88 }}
+      contentContainerStyle={{ paddingBottom: insets.bottom + TAB_BAR_CLEARANCE }}
       refreshControl={
         <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} tintColor={COLORS.highlight} />
       }
@@ -219,6 +240,32 @@ export default function Profile() {
           {CITY.name}
           {profile.current_streak > 0 ? ` · 🔥 ${profile.current_streak} week streak` : ''}
         </Text>
+
+        {/* Social counts — Instagram-style Posts / Followers / Following */}
+        <View style={styles.socialRow}>
+          <View style={styles.socialCell}>
+            <Text style={styles.socialValue}>{statsLoading ? '—' : completionCount}</Text>
+            <Text style={styles.socialLabel}>Posts</Text>
+          </View>
+          <TouchableOpacity
+            style={styles.socialCell}
+            onPress={() => router.push(`/user/${profile.id}/followers`)}
+            accessibilityRole="button"
+            accessibilityLabel="View followers"
+          >
+            <Text style={styles.socialValue}>{followerCount}</Text>
+            <Text style={styles.socialLabel}>Followers</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.socialCell}
+            onPress={() => router.push(`/user/${profile.id}/following`)}
+            accessibilityRole="button"
+            accessibilityLabel="View following"
+          >
+            <Text style={styles.socialValue}>{followingCount}</Text>
+            <Text style={styles.socialLabel}>Following</Text>
+          </TouchableOpacity>
+        </View>
 
         <View style={styles.heroPills}>
           <View style={[styles.heroPill, styles.heroPillXp]}>
@@ -285,6 +332,48 @@ export default function Profile() {
           <Ionicons name="trophy-outline" size={18} color={COLORS.navy} />
           <Text style={styles.rankBtnText}>Rankings</Text>
         </TouchableOpacity>
+      </View>
+
+      {/* Quest photo grid */}
+      <View style={styles.gridSection}>
+        <View style={styles.activityHeader}>
+          <BrandText size="compact" color={COLORS.navy}>
+            Quest grid
+          </BrandText>
+          <Text style={styles.activitySub}>Every proof photo you've dropped</Text>
+        </View>
+
+        {gridPosts.length === 0 ? (
+          <View style={styles.emptyCard}>
+            <Text style={styles.emptyEmoji}>📸</Text>
+            <Text style={styles.emptyTitle}>Your grid is waiting</Text>
+            <Text style={styles.emptyBody}>
+              Finish quests and your proof photos build an explorer grid right here.
+            </Text>
+          </View>
+        ) : (
+          <View style={styles.grid}>
+            {gridPosts.map((post) => (
+              <TouchableOpacity
+                key={post.id}
+                onPress={() => router.push(`/completion/${post.id}`)}
+                activeOpacity={0.85}
+                accessibilityRole="button"
+                accessibilityLabel="View quest completion"
+              >
+                <Image
+                  source={{ uri: sizedImageUrl(post.photo_url, { width: 400, height: 400 }) }}
+                  style={{
+                    width: (width - 2 * SPACING.lg - 2 * 2) / 3,
+                    height: (width - 2 * SPACING.lg - 2 * 2) / 3,
+                    borderRadius: RADIUS.sm,
+                    backgroundColor: COLORS.bgWarm,
+                  }}
+                />
+              </TouchableOpacity>
+            ))}
+          </View>
+        )}
       </View>
 
       {/* Recent activity */}
@@ -429,10 +518,19 @@ const styles = StyleSheet.create({
     marginTop: 4,
     textAlign: 'center',
   },
+  socialRow: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    gap: SPACING.xl,
+    marginTop: SPACING.md,
+  },
+  socialCell: { alignItems: 'center', minWidth: 72, minHeight: 44, justifyContent: 'center' },
+  socialValue: { color: COLORS.navy, fontSize: 17, fontWeight: '900' },
+  socialLabel: { color: COLORS.textMuted, fontSize: 11, fontWeight: '700', marginTop: 1 },
   heroPills: {
     flexDirection: 'row',
     gap: SPACING.sm,
-    marginTop: SPACING.lg,
+    marginTop: SPACING.md,
   },
   heroPill: {
     borderRadius: RADIUS.lg,
@@ -536,6 +634,15 @@ const styles = StyleSheet.create({
   },
   rankBtnText: { color: COLORS.navy, fontWeight: '800', fontSize: 14 },
 
+  gridSection: {
+    marginTop: SPACING.xl,
+    paddingHorizontal: SPACING.lg,
+  },
+  grid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 2,
+  },
   activitySection: {
     marginTop: SPACING.xl,
     paddingHorizontal: SPACING.lg,

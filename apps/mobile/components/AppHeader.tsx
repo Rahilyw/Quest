@@ -24,6 +24,8 @@ export function AppHeader({ subtitle, showBell, notificationCount = 0, trailing,
 
   return (
     <View style={styles.row}>
+      {/* Wordmark sits dead-centre; actions float over the right edge so they
+          never pull the logo off axis. */}
       <View style={styles.brandBlock}>
         <View style={styles.brandRow}>
           <BrandText size="header" />
@@ -33,23 +35,26 @@ export function AppHeader({ subtitle, showBell, notificationCount = 0, trailing,
         </View>
         {subtitle ? <Text style={styles.subtitle}>{subtitle}</Text> : null}
       </View>
-      {showBell ? (
-        <TouchableOpacity
-          style={styles.bellWrap}
-          activeOpacity={0.7}
-          accessibilityRole="button"
-          accessibilityLabel={notificationCount > 0 ? `Notifications, ${notificationCount} unread` : 'Notifications'}
-        >
-          <Ionicons name="notifications-outline" size={22} color={COLORS.textPrimary} />
-          {notificationCount > 0 && (
-            <View style={styles.bellDot}>
-              <Text style={styles.bellCount}>{notificationCount}</Text>
-            </View>
-          )}
-        </TouchableOpacity>
-      ) : trailing ? (
-        <View>{trailing}</View>
-      ) : null}
+
+      <View style={styles.actionSlot} pointerEvents="box-none">
+        {showBell ? (
+          <TouchableOpacity
+            style={styles.bellWrap}
+            activeOpacity={0.7}
+            accessibilityRole="button"
+            accessibilityLabel={notificationCount > 0 ? `Notifications, ${notificationCount} unread` : 'Notifications'}
+          >
+            <Ionicons name="notifications-outline" size={22} color={COLORS.textPrimary} />
+            {notificationCount > 0 && (
+              <View style={styles.bellDot}>
+                <Text style={styles.bellCount}>{notificationCount}</Text>
+              </View>
+            )}
+          </TouchableOpacity>
+        ) : trailing ? (
+          <View>{trailing}</View>
+        ) : null}
+      </View>
     </View>
   )
 }
@@ -58,11 +63,23 @@ const styles = StyleSheet.create({
   row: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
+    justifyContent: 'center',
     marginBottom: SPACING.md,
   },
-  brandBlock: { flex: 1 },
-  brandRow: { flexDirection: 'row', alignItems: 'center', gap: SPACING.sm },
+  brandBlock: { flex: 1, alignItems: 'center' },
+  brandRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: SPACING.sm,
+  },
+  actionSlot: {
+    position: 'absolute',
+    right: 0,
+    top: 0,
+    bottom: 0,
+    justifyContent: 'center',
+  },
   cityBadge: {
     backgroundColor: COLORS.highlight,
     borderRadius: RADIUS.pill,

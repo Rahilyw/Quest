@@ -1,17 +1,19 @@
-import { View, Text, ScrollView, TouchableOpacity, StyleSheet } from 'react-native'
+import { View, Text, ScrollView, TouchableOpacity, StyleSheet, ActivityIndicator } from 'react-native'
 import { useRouter, useFocusEffect } from 'expo-router'
-import { useCallback } from 'react'
+import { useCallback, useState } from 'react'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import MapView, { Marker } from 'react-native-maps'
 import { useQuests } from '@/hooks/useQuests'
-import { useActivityFeed } from '@/hooks/useActivityFeed'
+import { useActivityFeed, type FeedMode } from '@/hooks/useActivityFeed'
 import { useBlockedUsers } from '@/hooks/useBlockedUsers'
 import { useAuth } from '@/hooks/useAuth'
 import { FeedPostCard } from '@/components/FeedPostCard'
 import { AppHeader } from '@/components/AppHeader'
 import { EmptyState } from '@/components/EmptyState'
-import { COLORS, SPACING, RADIUS, CITY, CATEGORY_COLORS } from '@/lib/constants'
+import { COLORS, SPACING, RADIUS, CITY, CATEGORY_COLORS, TAB_BAR_CLEARANCE } from '@/lib/constants'
 import { track } from '@/lib/analytics'
+
+const CITY_SHORT = CITY.name.split(',')[0]
 
 export default function FeedScreen() {
   const router = useRouter()
@@ -19,7 +21,12 @@ export default function FeedScreen() {
   const { quests } = useQuests()
   const { profile } = useAuth()
   const { blockedIds, refetch: refetchBlocks } = useBlockedUsers(profile?.id)
-  const { posts, loading, refetch } = useActivityFeed(profile?.id, blockedIds)
+  const [mode, setMode] = useState<FeedMode>('city')
+  const { posts, loading, loadingMore, hasMore, refetch, loadMore } = useActivityFeed(
+    profile?.id,
+    blockedIds,
+    mode
+  )
 
   function handleFeedChange() {
     refetch()
@@ -27,14 +34,14 @@ export default function FeedScreen() {
 
   useFocusEffect(
     useCallback(() => {
-      track('feed_viewed', { post_count: posts.length })
-    }, [posts.length])
+      track('feed_viewed', { post_count: posts.length, mode })
+    }, [posts.length, mode])
   )
 
   return (
     <ScrollView
       style={styles.container}
-      contentContainerStyle={{ paddingBottom: 100 }}
+      contentContainerStyle={{ paddingBottom: insets.bottom + TAB_BAR_CLEARANCE }}
       showsVerticalScrollIndicator={false}
     >
       <View style={[styles.header, { paddingTop: insets.top + 12 }]}>
@@ -82,19 +89,49 @@ export default function FeedScreen() {
         </View>
       </TouchableOpacity>
 
+      <View style={styles.modeTabs}>
+        {(
+          [
+            { key: 'city', label: CITY_SHORT },
+            { key: 'following', label: 'Following' },
+          ] as { key: FeedMode; label: string }[]
+        ).map((tab) => (
+          <TouchableOpacity
+            key={tab.key}
+            style={[styles.modeTab, mode === tab.key && styles.modeTabActive]}
+            onPress={() => setMode(tab.key)}
+            accessibilityRole="button"
+            accessibilityLabel={`Show ${tab.label} feed`}
+          >
+            <Text style={[styles.modeTabText, mode === tab.key && styles.modeTabTextActive]}>
+              {tab.label}
+            </Text>
+          </TouchableOpacity>
+        ))}
+      </View>
+
       <View style={styles.sectionRow}>
         <Text style={styles.sectionTitle}>Recent Completions</Text>
-        <Text style={styles.seeAll}>See all</Text>
       </View>
 
       {loading ? (
         <Text style={styles.loading}>Loading feed…</Text>
       ) : posts.length === 0 ? (
-        <EmptyState
-          icon="📸"
-          title="No completions yet"
-          subtitle="When players finish quests, their proof photos show up here."
-        />
+        mode === 'following' ? (
+          <EmptyState
+            icon="🫶"
+            title="Your following feed is quiet"
+            subtitle="Follow adventurers from the city feed and their quests land here."
+            ctaLabel={`Browse the ${CITY_SHORT} feed`}
+            onCtaPress={() => setMode('city')}
+          />
+        ) : (
+          <EmptyState
+            icon="📸"
+            title="No completions yet"
+            subtitle="When players finish quests, their proof photos show up here."
+          />
+        )
       ) : (
         <View style={styles.feedList}>
           {posts.map((post) => (
@@ -109,6 +146,22 @@ export default function FeedScreen() {
               }}
             />
           ))}
+          {hasMore ? (
+            <TouchableOpacity
+              style={styles.loadMoreBtn}
+              onPress={loadMore}
+              disabled={loadingMore}
+              activeOpacity={0.85}
+              accessibilityRole="button"
+              accessibilityLabel="Load more posts"
+            >
+              {loadingMore ? (
+                <ActivityIndicator size="small" color={COLORS.primary} />
+              ) : (
+                <Text style={styles.loadMoreText}>Load more</Text>
+              )}
+            </TouchableOpacity>
+          ) : null}
         </View>
       )}
     </ScrollView>
@@ -162,6 +215,27 @@ const styles = StyleSheet.create({
     paddingVertical: 6,
   },
   mapCtaText: { color: COLORS.primary, fontSize: 11, fontWeight: '700' },
+  modeTabs: {
+    flexDirection: 'row',
+    marginHorizontal: SPACING.xl,
+    marginBottom: SPACING.md,
+    backgroundColor: COLORS.surface,
+    borderRadius: RADIUS.pill,
+    padding: 4,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+  },
+  modeTab: {
+    flex: 1,
+    alignItems: 'center',
+    paddingVertical: SPACING.sm + 2,
+    borderRadius: RADIUS.pill,
+    minHeight: 40,
+    justifyContent: 'center',
+  },
+  modeTabActive: { backgroundColor: COLORS.primary },
+  modeTabText: { color: COLORS.textMuted, fontSize: 13, fontWeight: '800' },
+  modeTabTextActive: { color: '#FFFFFF' },
   sectionRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -170,7 +244,19 @@ const styles = StyleSheet.create({
     marginBottom: SPACING.md,
   },
   sectionTitle: { color: COLORS.textPrimary, fontSize: 14, fontWeight: '900' },
-  seeAll: { color: COLORS.primary, fontSize: 12, fontWeight: '600' },
   feedList: { paddingHorizontal: SPACING.xl },
   loading: { color: COLORS.textMuted, textAlign: 'center', marginTop: SPACING.xxl },
+  loadMoreBtn: {
+    alignSelf: 'center',
+    backgroundColor: COLORS.surface,
+    borderRadius: RADIUS.pill,
+    borderWidth: 1.5,
+    borderColor: COLORS.border,
+    paddingHorizontal: SPACING.xxl,
+    paddingVertical: SPACING.md,
+    minHeight: 44,
+    justifyContent: 'center',
+    marginTop: SPACING.xs,
+  },
+  loadMoreText: { color: COLORS.primary, fontSize: 13, fontWeight: '800' },
 })

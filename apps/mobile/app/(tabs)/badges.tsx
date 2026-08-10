@@ -13,7 +13,7 @@ import { useAuth } from '@/hooks/useAuth'
 import { AppHeader } from '@/components/AppHeader'
 import { BadgeTile } from '@/components/badges/BadgeTile'
 import { BadgeShowcase } from '@/components/badges/BadgeShowcase'
-import { COLORS, FONT_BRAND, FONT_DISPLAY, RADIUS, SPACING } from '@/lib/constants'
+import { COLORS, FONT_BRAND, FONT_DISPLAY, RADIUS, SPACING, TAB_BAR_CLEARANCE } from '@/lib/constants'
 import {
   RARITY_META,
   RARITY_ORDER,
@@ -108,7 +108,7 @@ export default function BadgesScreen() {
     <>
       <ScrollView
         style={styles.container}
-        contentContainerStyle={{ paddingBottom: 110 }}
+        contentContainerStyle={{ paddingBottom: insets.bottom + TAB_BAR_CLEARANCE }}
         refreshControl={
           <RefreshControl
             refreshing={refreshing}
@@ -293,6 +293,7 @@ const styles = StyleSheet.create({
     fontSize: 42,
     lineHeight: 48,
     color: COLORS.textPrimary,
+    textAlign: 'center',
   },
   subtitle: {
     color: COLORS.textMuted,
@@ -300,6 +301,8 @@ const styles = StyleSheet.create({
     lineHeight: 19,
     marginTop: 2,
     maxWidth: 280,
+    alignSelf: 'center',
+    textAlign: 'center',
   },
   trailRow: {
     flexDirection: 'row',
@@ -307,6 +310,7 @@ const styles = StyleSheet.create({
     gap: 6,
     marginTop: SPACING.lg,
     alignItems: 'center',
+    justifyContent: 'center',
   },
   trailDiamond: {
     width: 9,
@@ -327,6 +331,7 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: '800',
     letterSpacing: 0.5,
+    textAlign: 'center',
   },
 
   nightBand: {
