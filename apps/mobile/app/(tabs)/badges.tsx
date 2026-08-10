@@ -13,7 +13,7 @@ import { useAuth } from '@/hooks/useAuth'
 import { AppHeader } from '@/components/AppHeader'
 import { BadgeTile } from '@/components/badges/BadgeTile'
 import { BadgeShowcase } from '@/components/badges/BadgeShowcase'
-import { COLORS, FONT_DISPLAY, RADIUS, SPACING } from '@/lib/constants'
+import { COLORS, FONT_BRAND, FONT_DISPLAY, RADIUS, SPACING } from '@/lib/constants'
 import {
   RARITY_META,
   RARITY_ORDER,
@@ -289,7 +289,7 @@ const styles = StyleSheet.create({
     marginBottom: SPACING.xxl,
   },
   title: {
-    fontFamily: FONT_DISPLAY,
+    fontFamily: FONT_BRAND,
     fontSize: 42,
     lineHeight: 48,
     color: COLORS.textPrimary,

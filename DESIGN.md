@@ -143,7 +143,7 @@ This direction replaces the prior **Saltwater Saturday** glass-minimal spec (Jun
 - **Community Blue** (`#3B82F6`): Community
 - **Harbour Teal** (`#06B6D4`): Nature
 
-Category colours appear on map pins, difficulty context, and category tags — never as the primary brand accent.
+Category colours appear on map pins, category filters, and category tags. Filter pills pair a unique tint with a consistent line icon and subtle ring motif so every category is recognizable without relying on text alone.
 
 ### Status
 - **Success** (`#22C55E`): Approved XP, easy difficulty, live map dot.
@@ -153,7 +153,7 @@ Category colours appear on map pins, difficulty context, and category tags — n
 ### Named rules
 **The Quest Blue Rule.** Quest Blue should feel intentional, not decorative. Reserve it for brand moments, CTAs, active states, XP earned values, and the player progress card. If a screen feels flat, fix hierarchy and photography before adding more blue.
 
-**The Category Independence Rule.** Category colours identify quest type. They are never substituted for Quest Blue on interactive chrome.
+**The Category Independence Rule.** Category colours identify quest type. They may color category-specific controls, but never replace Quest Blue for general navigation or primary actions.
 
 **The Photo-First Rule.** Explore and Feed are image-led. Category placeholder images live in `CATEGORY_IMAGES` until per-quest cover art exists in the database.
 
@@ -163,8 +163,8 @@ Category colours appear on map pins, difficulty context, and category tags — n
 
 | Role | Font | Size | Usage |
 |------|------|------|-------|
-| Brand | Pilowlava | 30–48px | `Quest!` wordmark, auth logo |
-| Display title | Space Grotesk Bold | 18–42px | Quest hero + detail titles, section headers, badge names |
+| Brand | Pilowlava | 30–48px | `Quest!` wordmark, auth logo, page hero titles (e.g. THE VAULT) |
+| Display title | Space Grotesk Bold | 18–30px | Quest hero + detail titles, rarity section labels, badge names |
 | Headline | System / Poppins | 14–16px | Tab labels, dense UI headers |
 | Body | System / Poppins | 12–13px | Descriptions, captions |
 | Label | System / Poppins | 10–11px | Pills, XP values, difficulty |

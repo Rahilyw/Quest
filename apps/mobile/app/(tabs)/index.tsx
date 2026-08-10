@@ -17,7 +17,7 @@ import { CategoryChip } from '@/components/CategoryChip'
 import { EmptyState } from '@/components/EmptyState'
 import { AppHeader } from '@/components/AppHeader'
 import { PlayerCard } from '@/components/PlayerCard'
-import { COLORS, SPACING, CATEGORY_ICONS, getISOWeek, getDaysLeftInWeek } from '@/lib/constants'
+import { COLORS, SPACING, getISOWeek, getDaysLeftInWeek } from '@/lib/constants'
 import { supabase } from '@/lib/supabase'
 import type { QuestCategory } from '@/lib/types'
 
@@ -27,8 +27,8 @@ const CATEGORIES: { label: string; value: QuestCategory | undefined }[] = [
   { label: 'FITNESS', value: 'fitness' },
   { label: 'SOCIAL', value: 'social' },
   { label: 'FOOD', value: 'food' },
-  { label: `${CATEGORY_ICONS.community} COMMUNITY`, value: 'community' },
-  { label: `${CATEGORY_ICONS.nature} NATURE`, value: 'nature' },
+  { label: 'COMMUNITY', value: 'community' },
+  { label: 'NATURE', value: 'nature' },
 ]
 
 export default function ExploreScreen() {
@@ -88,6 +88,7 @@ export default function ExploreScreen() {
           <CategoryChip
             key={cat.label}
             label={cat.label}
+            category={cat.value}
             active={activeCategory === cat.value}
             onPress={() => setActiveCategory(cat.value)}
           />
