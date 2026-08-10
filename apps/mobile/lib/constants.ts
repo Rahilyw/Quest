@@ -9,10 +9,12 @@ export { XP_LEVELS, getLevelFromXp, getXpToNextLevel, getMinXpForLevel }
 
 export const APP_NAME = 'Quest!'
 
-/** Official display / brand face — Pilowlava (SIL OFL 1.1, Studio Triple) */
+/** Official brand wordmark face — Pilowlava (SIL OFL 1.1, Studio Triple). Logo only. */
 export const FONT_BRAND = 'Pilowlava'
-/** Alternate Pilowlava cut for accent moments (badges, celebrations) */
+/** Alternate Pilowlava cut for rare accent moments (celebrations) */
 export const FONT_BRAND_ALT = 'PilowlavaAtome'
+/** Sleek UI display face — quest titles, section headers, badges (not the logo) */
+export const FONT_DISPLAY = 'SpaceGrotesk_700Bold'
 
 /** Summer 2026 palette — bright sky, coral pops, warm sunshine canvas */
 export const COLORS = {

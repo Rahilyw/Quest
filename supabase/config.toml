@@ -1,2 +1,2 @@
-[functions.generate-redemption-code]
-verify_jwt = false
+# Edge function config. snapshot-ranks runs on a schedule with the default
+# verify_jwt = true, so it needs no stanza here.

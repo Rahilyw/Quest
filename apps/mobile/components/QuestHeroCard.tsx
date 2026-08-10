@@ -2,7 +2,7 @@ import { TouchableOpacity, Text, View, Image, StyleSheet } from 'react-native'
 import {
   CATEGORY_TAGS,
   COLORS,
-  FONT_BRAND,
+  FONT_DISPLAY,
   RADIUS,
   SPACING,
   getDifficulty,
@@ -121,7 +121,7 @@ const styles = StyleSheet.create({
     left: SPACING.lg,
     right: SPACING.lg,
   },
-  title: { color: '#FFFFFF', fontSize: 18, fontFamily: FONT_BRAND, lineHeight: 22 },
+  title: { color: '#FFFFFF', fontSize: 18, fontFamily: FONT_DISPLAY, lineHeight: 22 },
   body: { padding: SPACING.lg },
   desc: { color: COLORS.textMuted, fontSize: 12, lineHeight: 18, marginBottom: SPACING.md },
   footer: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },

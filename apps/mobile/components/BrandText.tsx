@@ -3,7 +3,7 @@ import { APP_NAME, COLORS, FONT_BRAND } from '@/lib/constants'
 
 type BrandSize = 'display' | 'header' | 'logo' | 'inline' | 'compact'
 
-/** Pilowlava display face — slightly larger than UI text; one weight only. */
+/** Pilowlava wordmark face — logo / brand name only. */
 const SIZE_MAP: Record<BrandSize, number> = {
   display: 36,
   header: 30,

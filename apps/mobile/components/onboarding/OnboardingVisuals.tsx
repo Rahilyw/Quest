@@ -4,7 +4,7 @@ import { BrandText } from '@/components/BrandText'
 import {
   CATEGORY_IMAGES,
   COLORS,
-  FONT_BRAND,
+  FONT_DISPLAY,
   RADIUS,
   SPACING,
 } from '@/lib/constants'
@@ -251,7 +251,7 @@ const styles = StyleSheet.create({
     right: SPACING.lg,
     color: '#FFF',
     fontSize: 17,
-    fontFamily: FONT_BRAND,
+    fontFamily: FONT_DISPLAY,
     lineHeight: 22,
   },
   floatingPill: {
@@ -383,7 +383,7 @@ const styles = StyleSheet.create({
   },
   cityPinLabel: {
     marginTop: SPACING.sm,
-    fontFamily: FONT_BRAND,
+    fontFamily: FONT_DISPLAY,
     fontSize: 22,
     color: COLORS.navy,
   },

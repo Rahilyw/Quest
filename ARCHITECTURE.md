@@ -10,7 +10,7 @@ flowchart TB
         direction TB
         Mobile["apps/mobile<br/>Expo · React Native · Expo Router"]
         Admin["apps/admin<br/>Next.js 14 · port 3000"]
-        Prototype["Gamified City Challenge App<br/>Vite · Figma Make prototype"]
+        Geofence["packages/geofence<br/>@quest/geofence — shared logic"]
     end
 
     subgraph Supabase["supabase/"]
@@ -72,7 +72,7 @@ flowchart LR
         FeedPostCard["FeedPostCard"]
         Podium["Podium"]
         AppHeader["AppHeader"]
-        Legacy["QuestCard · XPBar · BadgeGrid · …"]
+        Badges["badges/ BadgeTile · BadgeShowcase"]
     end
 
     Root["_layout.tsx<br/>auth guard"] --> Auth
@@ -191,14 +191,13 @@ Quest!/
 ├── packages/
 │   └── geofence/            @quest/geofence — shared client geofence logic (44 tests)
 ├── docs/specs/              01–07 feature specs (instant verification era)
-├── Gamified City Challenge App/   Figma Make web prototype
 ├── tokens/                  Shared CSS design tokens
 ├── DESIGN.md                Harbour Electric design system
 ├── PRODUCT.md               Product positioning, content engine, safety
 ├── ROADMAP.md               Phase plan and status
 └── supabase/
-    ├── migrations/          001–017 (geofence 013–015 · instant verification 016 · moderation 017)
-    ├── functions/           snapshot-ranks (award-xp removed; generate-redemption-code retired by 017)
+    ├── migrations/          001–026 (geofence 013–015 · instant verification 016 · moderation 017 · multi-geofence 024–026)
+    ├── functions/           snapshot-ranks (award-xp and generate-redemption-code retired — absorbed into DB triggers)
     └── seed.sql
 ```
 
@@ -208,7 +207,7 @@ Quest!/
 |-------|----------|
 | Spec | `DESIGN.md` |
 | Mobile tokens | `apps/mobile/lib/constants.ts` |
-| Web prototype tokens | `Gamified City Challenge App/src/styles/theme.css` |
+| Admin CSS | `apps/admin/app/globals.css` |
 | Shared CSS | `tokens/colors.css`, `typography.css`, `shadows.css` |
 
 Prior spec (**Saltwater Saturday**, indigo `#6366F1`, 4-tab layout) is superseded as of June 2026 Figma reimagining.

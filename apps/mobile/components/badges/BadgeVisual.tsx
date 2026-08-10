@@ -1,5 +1,5 @@
 import { Image, Text, View } from 'react-native'
-import { FONT_BRAND } from '@/lib/constants'
+import { FONT_DISPLAY } from '@/lib/constants'
 import type { BadgeSpec } from '@/lib/badgeCatalog'
 import { BADGE_ART } from './art'
 
@@ -32,7 +32,7 @@ export function MysterySeal({ size }: { size: number }) {
     >
       <Text
         style={{
-          fontFamily: FONT_BRAND,
+          fontFamily: FONT_DISPLAY,
           fontSize: size * 0.42,
           color: 'rgba(251,191,36,0.85)',
           lineHeight: size * 0.52,

@@ -18,7 +18,7 @@ import Animated, {
   withSpring,
   withTiming,
 } from 'react-native-reanimated'
-import { COLORS, FONT_BRAND, RADIUS, SPACING } from '@/lib/constants'
+import { COLORS, FONT_DISPLAY, RADIUS, SPACING } from '@/lib/constants'
 import { RARITY_META, type BadgeSpec } from '@/lib/badgeCatalog'
 import { BadgeVisual } from './BadgeVisual'
 import { BADGE_ART } from './art'
@@ -216,7 +216,7 @@ const styles = StyleSheet.create({
     letterSpacing: 2.5,
   },
   name: {
-    fontFamily: FONT_BRAND,
+    fontFamily: FONT_DISPLAY,
     fontSize: 30,
     lineHeight: 36,
     color: '#FFFFFF',

@@ -116,7 +116,8 @@ Quest! (monorepo root)
 │   └── specs/                    Feature specs 01–07 (instant verification era)
 │
 ├── supabase/
-│   ├── migrations/               001–017 (geofence 013–015 · instant verification 016 · moderation 017)
+│   ├── migrations/               001–026 (geofence 013–015 · instant verification 016 ·
+│   │                             moderation 017 · multi-geofence 024–026)
 │   ├── functions/
 │   │   └── snapshot-ranks/       Weekly rank snapshot (generate-redemption-code
 │   │                             retired — absorbed into 017 DB triggers)
@@ -124,8 +125,6 @@ Quest! (monorepo root)
 │   └── config.toml               Edge function config
 │
 ├── tokens/                       Shared CSS design tokens
-├── docs/                         Additional documentation
-├── Gamified City Challenge App/  Figma Make web prototype (design reference)
 ├── DESIGN.md                     Harbour Electric design system spec
 ├── ARCHITECTURE.md               Visual architecture maps
 ├── PRODUCT.md                    Product positioning, content engine, safety

@@ -74,7 +74,7 @@ function xpStripProgress(totalXp, level) {
 }
 
 // ---------------------------------------------------------------------------
-// Replicated from apps/mobile/components/XPBar.tsx
+// Replicated from apps/mobile/components/PlayerCard.tsx
 // ---------------------------------------------------------------------------
 
 function xpBarProgress(totalXp) {
@@ -268,9 +268,9 @@ assertEqual('15000 XP (max) → 0 to next', getXpToNextLevel(15000), 0)
 assertEqual('20000 XP (beyond max) → 0 to next', getXpToNextLevel(20000), 0)
 
 // ---------------------------------------------------------------------------
-// SECTION 5: XPBar component logic (XPBar.tsx)
+// SECTION 5: XP bar progress logic (PlayerCard.tsx)
 // ---------------------------------------------------------------------------
-console.log('\n--- Section 5: XPBar.tsx progress and label logic ---')
+console.log('\n--- Section 5: XP bar progress and label logic ---')
 
 const xpBarLevel1 = xpBarProgress(100)
 assertEqual('XPBar: level 1 at 100 XP, level should be 1', xpBarLevel1.level, 1)

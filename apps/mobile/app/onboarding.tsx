@@ -13,7 +13,7 @@ import {
 import { useRouter } from 'expo-router'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { Ionicons } from '@expo/vector-icons'
-import { COLORS, FONT_BRAND, SPACING, RADIUS, CITY } from '@/lib/constants'
+import { COLORS, FONT_DISPLAY, SPACING, RADIUS, CITY } from '@/lib/constants'
 import { WelcomeVisual, ExploreVisual, EarnVisual, CityVisual } from '@/components/onboarding/OnboardingVisuals'
 import { completeOnboarding, PILOT_CITIES } from '@/lib/onboarding'
 import { track } from '@/lib/analytics'
@@ -340,7 +340,7 @@ const styles = StyleSheet.create({
   title: {
     color: COLORS.navy,
     fontSize: 26,
-    fontFamily: FONT_BRAND,
+    fontFamily: FONT_DISPLAY,
     lineHeight: 32,
     marginBottom: SPACING.sm,
   },

@@ -21,21 +21,21 @@ colors:
   market-amber: "#F59E0B"
   danger-red: "#EF4444"
 typography:
-  display:
-    fontFamily: "Poppins (web) / System (mobile)"
-    fontSize: "48px"
-    fontWeight: 900
-    lineHeight: 1.0
   brand:
-    fontFamily: "Poppins (web) / System (mobile)"
-    fontSize: "24px"
-    fontWeight: 900
-    lineHeight: 1.1
-  title:
-    fontFamily: "Poppins (web) / System (mobile)"
+    fontFamily: "Pilowlava"
+    fontSize: "48px"
+    fontWeight: 400
+    lineHeight: 1.05
+  display:
+    fontFamily: "Space Grotesk"
     fontSize: "28px"
-    fontWeight: 800
-    lineHeight: 1.1
+    fontWeight: 700
+    lineHeight: 1.15
+  title:
+    fontFamily: "Space Grotesk"
+    fontSize: "22px"
+    fontWeight: 700
+    lineHeight: 1.2
   headline:
     fontFamily: "Poppins (web) / System (mobile)"
     fontSize: "16px"
@@ -159,13 +159,13 @@ Category colours appear on map pins, difficulty context, and category tags — n
 
 ## 3. Typography
 
-**Pilowlava** (SIL OFL 1.1) for brand wordmark, quest hero titles, and badge moments. **Poppins** on web prototype UI. System font stack on mobile for body, buttons, and forms.
+**Pilowlava** (SIL OFL 1.1) for the `Quest!` brand wordmark only. **Space Grotesk** for readable UI display titles (quests, sections, badges). **Poppins** on web prototype UI. System font stack on mobile for body, buttons, and forms.
 
 | Role | Font | Size | Usage |
 |------|------|------|-------|
 | Brand | Pilowlava | 30–48px | `Quest!` wordmark, auth logo |
-| Display title | Pilowlava | 18–26px | Quest hero card + detail titles |
-| Headline | System / Poppins | 14–16px | Section headers, tab labels |
+| Display title | Space Grotesk Bold | 18–42px | Quest hero + detail titles, section headers, badge names |
+| Headline | System / Poppins | 14–16px | Tab labels, dense UI headers |
 | Body | System / Poppins | 12–13px | Descriptions, captions |
 | Label | System / Poppins | 10–11px | Pills, XP values, difficulty |
 
