@@ -53,7 +53,9 @@ Four findings reframed the roadmap — none were on any earlier list. Two are no
 
 Plus: duo quests as the referral loop (word-of-mouth **is** the distribution strategy in a 90k city), the Sunday recap share card as the organic marketing engine, merchant redemption validation as the sponsor-renewal proof, and XP economy events as cheap retention levers. → Specs 06 / 07
 
-**Deliberately deferred:** multi-city, self-serve sponsor portal, follow/friend graph, feed likes/comments. One city with a shared leaderboard and public feed has all the social density the pilot needs; friends/follows would fragment a small community.
+**Deliberately deferred:** multi-city, self-serve sponsor portal. One city with a shared leaderboard and public feed has all the social density the pilot needs.
+
+**Deferral overridden (Aug 9, 2026):** the follow graph and feed likes/comments shipped as the Instagram-style social layer (migration `027`): likes, comments + one-level replies, follows, Victoria/Following feed modes, public profiles with photo grids, and Strava-style completion share cards via the OS share sheet. The city-wide feed remains the default; Following is an additional tab.
 
 ---
 

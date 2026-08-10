@@ -7,7 +7,9 @@
 
 -- ─── HELPERS ─────────────────────────────────────────────────────────────────
 
--- True when either user has blocked the other.
+-- True when either user has blocked the other. Every policy call includes
+-- auth.uid() as one side; direct RPC probes about two *other* users always get
+-- true so the block graph leaks nothing to third parties.
 CREATE OR REPLACE FUNCTION is_blocked_pair(a UUID, b UUID)
 RETURNS BOOLEAN
 LANGUAGE sql
@@ -15,11 +17,14 @@ STABLE
 SECURITY DEFINER
 SET search_path = public
 AS $$
-  SELECT EXISTS (
-    SELECT 1 FROM blocked_users
-    WHERE (blocker_id = a AND blocked_id = b)
-       OR (blocker_id = b AND blocked_id = a)
-  );
+  SELECT CASE
+    WHEN auth.uid() IS DISTINCT FROM a AND auth.uid() IS DISTINCT FROM b THEN true
+    ELSE EXISTS (
+      SELECT 1 FROM blocked_users
+      WHERE (blocker_id = a AND blocked_id = b)
+         OR (blocker_id = b AND blocked_id = a)
+    )
+  END;
 $$;
 
 -- Feed visibility for the calling user, bypassing completions RLS so it can be
@@ -238,3 +243,7 @@ CREATE TRIGGER trg_remove_follows_on_block
   AFTER INSERT ON blocked_users
   FOR EACH ROW
   EXECUTE FUNCTION remove_follows_on_block();
+
+-- Trigger functions run as table owner; nobody needs them over RPC.
+REVOKE EXECUTE ON FUNCTION enforce_comment_parent() FROM public, anon, authenticated;
+REVOKE EXECUTE ON FUNCTION remove_follows_on_block() FROM public, anon, authenticated;
