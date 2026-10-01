@@ -2,10 +2,14 @@
 
 import { useEffect, useState } from 'react'
 import {
+  dismissCommentReports,
   dismissReports,
+  getCommentModerationQueue,
   getModerationQueue,
+  removeCommentModeration,
   removeAndAllowRetry,
   removeCompletionModeration,
+  type CommentModerationItem,
   type ModerationItem,
 } from './actions'
 import { theme } from '@/lib/theme'
@@ -16,16 +20,20 @@ const REASON_LABELS: Record<string, string> = {
   inappropriate: 'Inappropriate',
   spam: 'Spam',
   other: 'Other',
+  harassment: 'Harassment',
+  hate: 'Hate speech',
 }
 
 export default function ModerationPage() {
   const [items, setItems] = useState<ModerationItem[]>([])
+  const [commentItems, setCommentItems] = useState<CommentModerationItem[]>([])
   const [loading, setLoading] = useState(true)
   const [processing, setProcessing] = useState<Set<string>>(new Set())
 
   useEffect(() => {
-    getModerationQueue().then((data) => {
-      setItems(data)
+    Promise.all([getModerationQueue(), getCommentModerationQueue()]).then(([posts, comments]) => {
+      setItems(posts)
+      setCommentItems(comments)
       setLoading(false)
     })
   }, [])
@@ -35,6 +43,7 @@ export default function ModerationPage() {
     try {
       await action()
       setItems((prev) => prev.filter((item) => item.id !== id))
+      setCommentItems((prev) => prev.filter((item) => item.id !== id))
     } catch (err) {
       console.error(err)
       alert(err instanceof Error ? err.message : 'Action failed')
@@ -53,8 +62,11 @@ export default function ModerationPage() {
     <div>
       <h1 className="admin-page-title">Moderation Queue</h1>
       <p className="admin-page-sub">
-        {items.length} flagged · community reports — dismiss or remove
+        {items.length} flagged post{items.length === 1 ? '' : 's'} · {commentItems.length} flagged comment
+        {commentItems.length === 1 ? '' : 's'} · community reports — dismiss or remove
       </p>
+
+      <h2 style={{ fontSize: 16, fontWeight: 800, margin: '24px 0 12px' }}>Posts</h2>
 
       {items.length === 0 && (
         <div className="admin-card" style={{ color: theme.textMuted, textAlign: 'center', padding: 40 }}>
@@ -153,6 +165,81 @@ export default function ModerationPage() {
                   onClick={() => runAction(item.id, () => removeAndAllowRetry(item.id))}
                 >
                   Remove + retry
+                </button>
+              </div>
+            </div>
+          )
+        })}
+      </div>
+
+      <h2 style={{ fontSize: 16, fontWeight: 800, margin: '32px 0 12px' }}>Comments</h2>
+
+      {commentItems.length === 0 && (
+        <div className="admin-card" style={{ color: theme.textMuted, textAlign: 'center', padding: 40 }}>
+          No flagged comments.
+        </div>
+      )}
+
+      <div style={{ display: 'grid', gap: 16 }}>
+        {commentItems.map((item) => {
+          const busy = processing.has(item.id)
+          return (
+            <div key={item.id} className="admin-card" style={{ display: 'flex', gap: 20, alignItems: 'flex-start' }}>
+              <div style={{ flex: 1 }}>
+                <div
+                  style={{
+                    fontSize: 15,
+                    lineHeight: 1.5,
+                    padding: '10px 14px',
+                    borderRadius: 12,
+                    border: `1px solid ${theme.border}`,
+                    marginBottom: 8,
+                    whiteSpace: 'pre-wrap',
+                  }}
+                >
+                  {item.body}
+                </div>
+                <div style={{ color: theme.textMuted, marginBottom: 4 }}>
+                  @{item.author?.username} · LV {item.author?.level} · on “{item.questTitle}” ·{' '}
+                  {new Date(item.created_at).toLocaleString()}
+                </div>
+                <div style={{ color: theme.textDim, fontSize: 13, marginBottom: 6 }}>
+                  {item.open_report_count} open report{item.open_report_count === 1 ? '' : 's'}
+                  {item.hidden ? ' · hidden pending review' : ''}
+                  {item.removedCount > 0 && (
+                    <span style={{ color: theme.danger, fontWeight: 700 }}>
+                      {' '}
+                      · {item.removedCount} comment{item.removedCount === 1 ? '' : 's'} previously removed
+                    </span>
+                  )}
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                  {item.reports.map((r) => (
+                    <div key={r.id} style={{ fontSize: 12, color: theme.textMuted }}>
+                      <strong>@{r.reporterUsername}</strong> — {REASON_LABELS[r.reason] ?? r.reason}
+                      {r.details ? `: ${r.details}` : ''}
+                    </div>
+                  ))}
+                </div>
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 8, minWidth: 140 }}>
+                <button
+                  type="button"
+                  className="admin-btn"
+                  style={{ background: theme.success, color: '#fff', opacity: busy ? 0.5 : 1 }}
+                  disabled={busy}
+                  onClick={() => runAction(item.id, () => dismissCommentReports(item.id))}
+                >
+                  Dismiss
+                </button>
+                <button
+                  type="button"
+                  className="admin-btn"
+                  style={{ background: theme.danger, color: '#fff', opacity: busy ? 0.5 : 1 }}
+                  disabled={busy}
+                  onClick={() => runAction(item.id, () => removeCommentModeration(item.id))}
+                >
+                  Remove
                 </button>
               </div>
             </div>

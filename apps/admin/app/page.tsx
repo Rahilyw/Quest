@@ -1,12 +1,13 @@
 import Link from 'next/link'
 import { supabaseAdmin } from '@/lib/supabase'
-import { getFlaggedCount } from '@/app/moderation/actions'
+import { getFlaggedCommentCount, getFlaggedCount } from '@/app/moderation/actions'
 import { theme } from '@/lib/theme'
 
 export const revalidate = 60
 
 export default async function Dashboard() {
-  const flaggedCount = await getFlaggedCount()
+  const [flaggedPosts, flaggedComments] = await Promise.all([getFlaggedCount(), getFlaggedCommentCount()])
+  const flaggedCount = flaggedPosts + flaggedComments
 
   const [
     { count: totalUsers },

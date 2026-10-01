@@ -213,6 +213,16 @@ export default function Settings(): JSX.Element {
               ios_backgroundColor="#CBD5E1"
             />
           </View>
+          <TouchableOpacity
+            style={[styles.row, styles.rowBorder]}
+            activeOpacity={0.7}
+            onPress={() => router.push('/blocked-users')}
+            accessibilityRole="button"
+            accessibilityLabel="Blocked accounts"
+          >
+            <Text style={styles.rowLabel}>Blocked accounts</Text>
+            <Ionicons name="chevron-forward" size={18} color={COLORS.textMuted} />
+          </TouchableOpacity>
         </View>
 
         {/* ABOUT */}

@@ -30,6 +30,8 @@ Apply migrations in numeric/filename order:
 | `024_geofence_multi_enum.sql` | Adds `multi` to `geofence_type` (enum value must land in its own transaction) |
 | `025_quest_multi_geofences.sql` | `quest_geofences` child areas (circle/polygon), `replace_quest_geofences()`, multi OR-match in `check_completion_geofence()` |
 | `026_audit_security_geofence.sql` | Column-level profile UPDATE lock; server-owned `completed_at`; `gps_accuracy` + geofence buffer; leaderboard view `level`/`last_week_rank`; completion indexes. Live XP path remains 017 triggers (award-xp edge function retired). |
+| `027_social_graph.sql` | Social layer: `completion_likes`, `completion_comments` (one-level replies), `follows`, `is_blocked_pair()`, `can_view_completion()` RLS helpers |
+| `028_comment_reports.sql` | Comment reports (Apple 1.2): `comment_reports`, auto-hide at 3 reporters, admin `removed_at`, report budget shared with post reports; clients can only UPDATE comment `body`; completions read policy now hides blocked pairs from each other |
 
 ## Env var naming drift
 

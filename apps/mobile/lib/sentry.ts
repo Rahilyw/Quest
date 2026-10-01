@@ -1,7 +1,8 @@
 import * as Sentry from '@sentry/react-native'
+import { publicKey } from '@/lib/publicKey'
 
 export function initSentry(): void {
-  const dsn = process.env.EXPO_PUBLIC_SENTRY_DSN
+  const dsn = publicKey(process.env.EXPO_PUBLIC_SENTRY_DSN)
   if (!dsn || __DEV__) return
 
   Sentry.init({

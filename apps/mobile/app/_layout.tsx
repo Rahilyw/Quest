@@ -89,6 +89,7 @@ function RootLayoutNav() {
         <Stack.Screen name="submit/[questId]" options={{ presentation: 'modal' }} />
         <Stack.Screen name="settings" options={{ presentation: 'card', headerShown: false }} />
         <Stack.Screen name="edit-profile" options={{ presentation: 'card', headerShown: false }} />
+        <Stack.Screen name="blocked-users" options={{ presentation: 'card', headerShown: false }} />
       </Stack>
     </ErrorBoundary>
   )

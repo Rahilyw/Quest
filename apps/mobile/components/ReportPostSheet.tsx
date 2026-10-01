@@ -12,18 +12,28 @@ import {
   Platform,
 } from 'react-native'
 import { COLORS, SPACING, RADIUS } from '@/lib/constants'
-import { REPORT_REASONS, type ReportReason } from '@/lib/moderation'
+import { REPORT_REASONS, reasonNeedsDetails, type ReasonOption, type ReportReason } from '@/lib/moderation'
 
-interface Props {
+interface Props<R extends string> {
   visible: boolean
+  /** Context line under the title — the quest title, or the reported comment. */
   questTitle: string
   onClose: () => void
-  onSubmit: (reason: ReportReason, details: string) => Promise<void>
+  onSubmit: (reason: R, details: string) => Promise<void>
+  title?: string
+  reasons?: ReasonOption<R>[]
 }
 
-export function ReportPostSheet({ visible, questTitle, onClose, onSubmit }: Props) {
+export function ReportPostSheet<R extends string = ReportReason>({
+  visible,
+  questTitle,
+  onClose,
+  onSubmit,
+  title = 'Report post',
+  reasons = REPORT_REASONS as unknown as ReasonOption<R>[],
+}: Props<R>) {
   const [step, setStep] = useState<'reason' | 'details'>('reason')
-  const [selectedReason, setSelectedReason] = useState<ReportReason | null>(null)
+  const [selectedReason, setSelectedReason] = useState<R | null>(null)
   const [details, setDetails] = useState('')
   const [submitting, setSubmitting] = useState(false)
 
@@ -34,16 +44,16 @@ export function ReportPostSheet({ visible, questTitle, onClose, onSubmit }: Prop
     onClose()
   }
 
-  function pickReason(reason: ReportReason) {
+  function pickReason(reason: R) {
     setSelectedReason(reason)
-    if (reason === 'other' || reason === 'inappropriate') {
+    if (reasonNeedsDetails(reason)) {
       setStep('details')
     } else {
       void confirmSubmit(reason, '')
     }
   }
 
-  async function confirmSubmit(reason: ReportReason, detailText: string) {
+  async function confirmSubmit(reason: R, detailText: string) {
     setSubmitting(true)
     try {
       await onSubmit(reason, detailText.trim())
@@ -62,7 +72,7 @@ export function ReportPostSheet({ visible, questTitle, onClose, onSubmit }: Prop
         <TouchableOpacity style={styles.backdrop} activeOpacity={1} onPress={handleClose} />
         <View style={styles.sheet}>
           <View style={styles.handle} />
-          <Text style={styles.title}>Report post</Text>
+          <Text style={styles.title}>{title}</Text>
           <Text style={styles.subtitle} numberOfLines={2}>
             {questTitle}
           </Text>
@@ -71,7 +81,7 @@ export function ReportPostSheet({ visible, questTitle, onClose, onSubmit }: Prop
             <ActivityIndicator color={COLORS.primary} style={{ marginVertical: 32 }} />
           ) : step === 'reason' ? (
             <ScrollView style={styles.list}>
-              {REPORT_REASONS.map((item) => (
+              {reasons.map((item) => (
                 <TouchableOpacity
                   key={item.value}
                   style={styles.reasonRow}

@@ -26,9 +26,12 @@ export type AnalyticsEvent =
   | 'post_unliked'
   | 'comment_created'
   | 'comment_deleted'
+  | 'comment_reported'
   | 'profile_opened'
   | 'user_followed'
   | 'user_unfollowed'
+  | 'user_blocked'
+  | 'user_unblocked'
 
 export type QuestSource = 'explore' | 'map' | 'feed' | 'deep_link' | 'unknown'
 

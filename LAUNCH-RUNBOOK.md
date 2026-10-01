@@ -74,6 +74,7 @@ Analytics code ships in the app but emits nothing until a key exists.
    npx eas-cli env:create --scope project --name EXPO_PUBLIC_POSTHOG_KEY --value phc_your_key_here --environment production
    npx eas-cli env:create --scope project --name EXPO_PUBLIC_POSTHOG_HOST --value https://us.i.posthog.com --environment production
    ```
+   > ⚠️ Don't add `EXPO_PUBLIC_POSTHOG_KEY` / `EXPO_PUBLIC_SENTRY_DSN` to the `env` block in `apps/mobile/eas.json` — values there override EAS environment variables. (The app also ignores `REPLACE_…` / `your_key` placeholder values, so a leftover placeholder disables the SDK instead of breaking it.)
 6. **Verify:** run the app (`npm start`), sign in, open a quest — events
    (`quest_viewed`, `feed_viewed`, …) appear in PostHog → Activity within ~1 min.
 7. **Build the 4 dashboards** (Spec 04, docs/specs/04-analytics-instrumentation.md):

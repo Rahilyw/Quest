@@ -133,6 +133,7 @@ export function FeedPostCard({ post, currentUserId, onReported, onBlocked }: Pro
               Alert.alert('Could not block user', error.message)
               return
             }
+            track('user_blocked', { source: 'feed' })
             onBlocked?.(post.user_id)
           },
         },

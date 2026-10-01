@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabase'
 import { track } from '@/lib/analytics'
+import { reportErrorMessage, type CommentReportReason } from '@/lib/moderation'
 
 export interface CommentUser {
   username: string
@@ -15,6 +16,8 @@ export interface CommentNode {
   parent_id: string | null
   body: string
   created_at: string
+  /** Only ever true on the viewer's own comments (RLS hides it from everyone else). */
+  hidden: boolean
   user: CommentUser
   replies: CommentNode[]
 }
@@ -26,6 +29,7 @@ type Row = {
   parent_id: string | null
   body: string
   created_at: string
+  hidden: boolean
   profile: CommentUser | null
 }
 
@@ -39,11 +43,16 @@ export function useComments(completionId: string | undefined, viewerId: string |
     if (!completionId) return
     setError(null)
 
-    const { data, error: fetchError } = await supabase
-      .from('completion_comments')
-      .select('id, completion_id, user_id, parent_id, body, created_at, profile:profiles(username, level, avatar_url)')
-      .eq('completion_id', completionId)
-      .order('created_at', { ascending: true })
+    const [{ data, error: fetchError }, { data: reportRows }] = await Promise.all([
+      supabase
+        .from('completion_comments')
+        .select('id, completion_id, user_id, parent_id, body, created_at, hidden, profile:profiles(username, level, avatar_url)')
+        .eq('completion_id', completionId)
+        .order('created_at', { ascending: true }),
+      viewerId
+        ? supabase.from('comment_reports').select('comment_id').eq('reporter_id', viewerId)
+        : Promise.resolve({ data: [] as { comment_id: string }[] }),
+    ])
 
     if (fetchError) {
       setError('Could not load comments. Pull to retry.')
@@ -51,7 +60,9 @@ export function useComments(completionId: string | undefined, viewerId: string |
       return
     }
 
-    const rows = ((data ?? []) as unknown as Row[]).filter((r) => r.profile)
+    // Comments the viewer reported disappear for them immediately, like reported posts.
+    const reported = new Set((reportRows ?? []).map((r) => r.comment_id))
+    const rows = ((data ?? []) as unknown as Row[]).filter((r) => r.profile && !reported.has(r.id))
     const nodes = new Map<string, CommentNode>()
     const topLevel: CommentNode[] = []
 
@@ -63,6 +74,7 @@ export function useComments(completionId: string | undefined, viewerId: string |
         parent_id: row.parent_id,
         body: row.body,
         created_at: row.created_at,
+        hidden: row.hidden,
         user: row.profile!,
         replies: [],
       })
@@ -77,7 +89,7 @@ export function useComments(completionId: string | undefined, viewerId: string |
 
     setComments(topLevel)
     setLoading(false)
-  }, [completionId])
+  }, [completionId, viewerId])
 
   useEffect(() => {
     setLoading(true)
@@ -126,7 +138,31 @@ export function useComments(completionId: string | undefined, viewerId: string |
     [viewerId, refetch]
   )
 
+  /** Returns null on success, or a user-facing error message. */
+  const reportComment = useCallback(
+    async (commentId: string, reason: CommentReportReason, details: string): Promise<string | null> => {
+      if (!viewerId) return 'Sign in to report comments.'
+
+      const { error: reportError } = await supabase.from('comment_reports').insert({
+        comment_id: commentId,
+        reporter_id: viewerId,
+        reason,
+        details: details || null,
+      })
+
+      // Already-reported still hides it locally; anything else surfaces.
+      if (reportError && reportError.code !== '23505') {
+        return reportErrorMessage(reportError.code, reportError.hint ?? undefined, 'comment')
+      }
+
+      if (!reportError) track('comment_reported', { reason })
+      await refetch()
+      return null
+    },
+    [viewerId, refetch]
+  )
+
   const totalCount = comments.reduce((sum, c) => sum + 1 + c.replies.length, 0)
 
-  return { comments, totalCount, loading, error, posting, refetch, addComment, deleteComment }
+  return { comments, totalCount, loading, error, posting, refetch, addComment, deleteComment, reportComment }
 }
