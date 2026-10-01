@@ -68,7 +68,7 @@ GRANT UPDATE (body) ON TABLE completion_comments TO authenticated;
 -- ─── COMMENT REPORTS ─────────────────────────────────────────────────────────
 
 CREATE TABLE IF NOT EXISTS comment_reports (
-  id          UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id          UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   comment_id  UUID NOT NULL REFERENCES completion_comments(id) ON DELETE CASCADE,
   reporter_id UUID NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
   reason      comment_report_reason NOT NULL,
