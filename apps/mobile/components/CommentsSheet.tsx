@@ -54,11 +54,14 @@ export function CommentsSheet({ visible, completionId, currentUserId, onClose, o
   }
 
   async function submit() {
-    const ok = await addComment(draft, replyTo?.id ?? null)
-    if (ok) {
-      setDraft('')
-      setReplyTo(null)
+    if (!draft.trim()) return
+    const failure = await addComment(draft, replyTo?.id ?? null)
+    if (failure) {
+      Alert.alert('Comment not posted', failure)
+      return
     }
+    setDraft('')
+    setReplyTo(null)
   }
 
   function confirmDelete(comment: CommentNode) {

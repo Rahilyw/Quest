@@ -1,9 +1,23 @@
 import * as Notifications from 'expo-notifications'
 import type { Router } from 'expo-router'
+import { notificationRoute, type SocialNotificationType } from './socialNotifications'
+import { track } from './analytics'
 
 type NotificationData = Record<string, unknown>
 
 function handleNotificationTap(data: NotificationData, router: Router) {
+  // Social pushes (029) carry completion_id too, so match them first.
+  if (data?.type === 'social') {
+    const type = data.notification_type as SocialNotificationType
+    const route = notificationRoute(
+      type,
+      (data.completion_id as string | null) ?? null,
+      (data.actor_id as string | null) ?? null
+    )
+    track('notification_opened', { type, source: 'push' })
+    router.push((route ?? '/notifications') as never)
+    return
+  }
   if (data?.type === 'removal' || data?.completion_id || data?.type === 'approval') {
     router.push('/(tabs)/profile')
   }

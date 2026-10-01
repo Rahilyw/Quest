@@ -7,6 +7,7 @@ import { useQuests } from '@/hooks/useQuests'
 import { useActivityFeed, type FeedMode } from '@/hooks/useActivityFeed'
 import { useBlockedUsers } from '@/hooks/useBlockedUsers'
 import { useAuth } from '@/hooks/useAuth'
+import { useUnreadNotificationCount } from '@/hooks/useNotifications'
 import { FeedPostCard } from '@/components/FeedPostCard'
 import { AppHeader } from '@/components/AppHeader'
 import { EmptyState } from '@/components/EmptyState'
@@ -22,6 +23,7 @@ export default function FeedScreen() {
   const { profile } = useAuth()
   const { blockedIds, refetch: refetchBlocks } = useBlockedUsers(profile?.id)
   const [mode, setMode] = useState<FeedMode>('city')
+  const { count: unreadCount, refetch: refetchUnread } = useUnreadNotificationCount(profile?.id)
   const { posts, loading, loadingMore, hasMore, refetch, loadMore } = useActivityFeed(
     profile?.id,
     blockedIds,
@@ -38,6 +40,12 @@ export default function FeedScreen() {
     }, [posts.length, mode])
   )
 
+  useFocusEffect(
+    useCallback(() => {
+      refetchUnread()
+    }, [refetchUnread])
+  )
+
   return (
     <ScrollView
       style={styles.container}
@@ -45,7 +53,11 @@ export default function FeedScreen() {
       showsVerticalScrollIndicator={false}
     >
       <View style={[styles.header, { paddingTop: insets.top + 12 }]}>
-        <AppHeader />
+        <AppHeader
+          showBell
+          notificationCount={unreadCount}
+          onBellPress={() => router.push('/notifications')}
+        />
         <Text style={styles.sectionLabel}>Activity Feed</Text>
       </View>
 

@@ -1,2 +1,7 @@
 # Edge function config. snapshot-ranks runs on a schedule with the default
 # verify_jwt = true, so it needs no stanza here.
+
+# Called by the notifications Database Webhook, which authenticates with the
+# x-webhook-secret header instead of a user JWT.
+[functions.send-social-push]
+verify_jwt = false

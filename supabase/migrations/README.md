@@ -32,6 +32,7 @@ Apply migrations in numeric/filename order:
 | `026_audit_security_geofence.sql` | Column-level profile UPDATE lock; server-owned `completed_at`; `gps_accuracy` + geofence buffer; leaderboard view `level`/`last_week_rank`; completion indexes. Live XP path remains 017 triggers (award-xp edge function retired). |
 | `027_social_graph.sql` | Social layer: `completion_likes`, `completion_comments` (one-level replies), `follows`, `is_blocked_pair()`, `can_view_completion()` RLS helpers |
 | `028_comment_reports.sql` | Comment reports (Apple 1.2): `comment_reports`, auto-hide at 3 reporters, admin `removed_at`, report budget shared with post reports; clients can only UPDATE comment `body`; completions read policy now hides blocked pairs from each other |
+| `029_social_rate_limits_notifications.sql` | Rate limits on comments (10/10 min, 100/day), likes (120/h), follows (60/h, 200/day); `notifications` activity inbox fed by like/comment/reply/follow triggers; `profiles.push_social`. Push via `send-social-push` + Database Webhook |
 
 ## Env var naming drift
 

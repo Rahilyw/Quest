@@ -32,6 +32,8 @@ export type AnalyticsEvent =
   | 'user_unfollowed'
   | 'user_blocked'
   | 'user_unblocked'
+  | 'notifications_viewed'
+  | 'notification_opened'
 
 export type QuestSource = 'explore' | 'map' | 'feed' | 'deep_link' | 'unknown'
 

@@ -758,6 +758,42 @@ assertEqual(
   publicKey('https://your-dsn@o0.ingest.sentry.io/0'),
   undefined
 )
+
+// ---------------------------------------------------------------------------
+// SECTION 19: Social inbox + rate limits (lib/socialNotifications.js, 029)
+// ---------------------------------------------------------------------------
+console.log('\n--- Section 19: social inbox ---')
+
+const {
+  notificationText,
+  notificationRoute,
+  formatBadgeCount,
+  socialRateLimitMessage,
+} = require(path.join(__dirname, '../lib/socialNotifications.js'))
+
+assertEqual('like copy', notificationText('like'), 'liked your quest completion.')
+assertEqual('reply copy leads into the quote', notificationText('reply'), 'replied to your comment:')
+assertEqual('follow copy', notificationText('follow'), 'started following you.')
+assertEqual('unknown type falls back', notificationText('poke'), 'interacted with you.')
+
+assertEqual('follow opens actor profile', notificationRoute('follow', null, 'u1'), '/user/u1')
+assertEqual('like opens the completion', notificationRoute('like', 'c1', 'u1'), '/completion/c1')
+assertEqual('comment opens the completion', notificationRoute('comment', 'c1', 'u1'), '/completion/c1')
+assertEqual('reply opens the completion', notificationRoute('reply', 'c1', 'u1'), '/completion/c1')
+assertEqual('missing completion falls back to profile', notificationRoute('comment', null, 'u1'), '/user/u1')
+assertEqual('nothing to open', notificationRoute('follow', null, null), null)
+
+assertEqual('badge hidden at 0', formatBadgeCount(0), '')
+assertEqual('badge hidden for negatives', formatBadgeCount(-2), '')
+assertEqual('badge shows single digit', formatBadgeCount(7), '7')
+assertEqual('badge shows 9', formatBadgeCount(9), '9')
+assertEqual('badge caps at 9+', formatBadgeCount(42), '9+')
+
+assertTruthy('comment rate limit has copy', socialRateLimitMessage('COMMENT_RATE_LIMITED'))
+assertTruthy('like rate limit has copy', socialRateLimitMessage('LIKE_RATE_LIMITED'))
+assertTruthy('follow rate limit has copy', socialRateLimitMessage('FOLLOW_RATE_LIMITED'))
+assertEqual('report hint is not a social rate limit', socialRateLimitMessage('REPORT_RATE_LIMITED'), null)
+assertEqual('no hint', socialRateLimitMessage(undefined), null)
 assertEqual('real PostHog key passes', publicKey('phc_AbC123xyz'), 'phc_AbC123xyz')
 assertEqual(
   'real Sentry DSN passes',

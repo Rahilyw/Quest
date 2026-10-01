@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useState } from 'react'
+import { Alert } from 'react-native'
 import { supabase } from '@/lib/supabase'
 import { track } from '@/lib/analytics'
+import { socialRateLimitMessage } from '@/lib/socialNotifications'
 
 export function useFollow(viewerId: string | undefined, targetUserId: string | undefined) {
   const [isFollowing, setIsFollowing] = useState(false)
@@ -60,6 +62,8 @@ export function useFollow(viewerId: string | undefined, targetUserId: string | u
       if (error && error.code !== '23505') {
         setIsFollowing(false)
         setFollowerCount((c) => Math.max(0, c - 1))
+        const limited = socialRateLimitMessage(error.hint)
+        if (limited) Alert.alert('Slow down', limited)
       } else {
         track('user_followed')
       }

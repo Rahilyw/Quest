@@ -11,6 +11,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useQuests } from '@/hooks/useQuests'
 import { useUserCompletions } from '@/hooks/useUserCompletions'
 import { useAuth } from '@/hooks/useAuth'
+import { useUnreadNotificationCount } from '@/hooks/useNotifications'
 import { QuestHeroCard } from '@/components/QuestHeroCard'
 import { QuestCardSkeleton } from '@/components/QuestCardSkeleton'
 import { CategoryChip } from '@/components/CategoryChip'
@@ -38,6 +39,7 @@ export default function ExploreScreen() {
   const { quests, loading, refetch } = useQuests(activeCategory)
   const { profile } = useAuth()
   const { excludedQuestIds, refetch: refetchCompletions } = useUserCompletions(profile?.id)
+  const { count: unreadCount, refetch: refetchUnread } = useUnreadNotificationCount(profile?.id)
   const [weeklyRank, setWeeklyRank] = useState<number | null>(null)
 
   useEffect(() => {
@@ -68,13 +70,19 @@ export default function ExploreScreen() {
   useFocusEffect(
     useCallback(() => {
       refetchCompletions()
-    }, [refetchCompletions])
+      refetchUnread()
+    }, [refetchCompletions, refetchUnread])
   )
 
   return (
     <View style={styles.container}>
       <View style={[styles.header, { paddingTop: insets.top + 12 }]}>
-        <AppHeader subtitle={`Week ${getISOWeek()} · ${getDaysLeftInWeek()} days left`} showBell />
+        <AppHeader
+          subtitle={`Week ${getISOWeek()} · ${getDaysLeftInWeek()} days left`}
+          showBell
+          notificationCount={unreadCount}
+          onBellPress={() => router.push('/notifications')}
+        />
         {profile && <PlayerCard profile={profile} weeklyRank={weeklyRank ?? undefined} />}
       </View>
 

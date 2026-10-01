@@ -32,6 +32,7 @@ export default function Settings(): JSX.Element {
   const [questNearby, setQuestNearby] = useState(false)
   const [weeklyDigest, setWeeklyDigest] = useState(true)
   const [feedPublic, setFeedPublic] = useState(true)
+  const [pushSocial, setPushSocial] = useState(true)
   const [deleting, setDeleting] = useState(false)
 
   useEffect(() => {
@@ -40,12 +41,13 @@ export default function Settings(): JSX.Element {
     // Derive questNearby from actual push token presence
     supabase
       .from('profiles')
-      .select('push_token, feed_public')
+      .select('push_token, feed_public, push_social')
       .eq('id', session.user.id)
       .single()
       .then(({ data }) => {
         setQuestNearby(!!data?.push_token)
         if (data?.feed_public != null) setFeedPublic(data.feed_public)
+        if (data?.push_social != null) setPushSocial(data.push_social)
       })
 
     // Restore weekly digest preference
@@ -69,6 +71,18 @@ export default function Settings(): JSX.Element {
   async function handleWeeklyDigestToggle(enabled: boolean) {
     setWeeklyDigest(enabled)
     await AsyncStorage.setItem(WEEKLY_DIGEST_KEY, String(enabled))
+  }
+
+  async function handlePushSocialToggle(enabled: boolean) {
+    if (!session?.user?.id) return
+    setPushSocial(enabled)
+    const { error } = await supabase
+      .from('profiles')
+      .update({ push_social: enabled })
+      .eq('id', session.user.id)
+    if (error) {
+      setPushSocial(!enabled)
+    }
   }
 
   async function handleFeedPublicToggle(enabled: boolean) {
@@ -178,6 +192,21 @@ export default function Settings(): JSX.Element {
             <Switch
               value={questNearby}
               onValueChange={handleQuestNearbyToggle}
+              thumbColor="#FFFFFF"
+              trackColor={{ false: '#CBD5E1', true: COLORS.accent }}
+              ios_backgroundColor="#CBD5E1"
+            />
+          </View>
+          <View style={[styles.row, styles.rowBorder]}>
+            <View style={{ flex: 1, paddingRight: SPACING.md }}>
+              <Text style={styles.rowLabel}>Comments & Followers</Text>
+              <Text style={styles.rowHint}>
+                Push when someone comments, replies to you, or follows you. Everything still shows in Activity.
+              </Text>
+            </View>
+            <Switch
+              value={pushSocial}
+              onValueChange={handlePushSocialToggle}
               thumbColor="#FFFFFF"
               trackColor={{ false: '#CBD5E1', true: COLORS.accent }}
               ios_backgroundColor="#CBD5E1"

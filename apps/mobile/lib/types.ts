@@ -109,6 +109,8 @@ export interface UserProfile {
   last_completion_week: string | null
   last_week_rank: number | null
   feed_public: boolean
+  /** Push for comments / replies / follows (029). Inbox is unaffected. */
+  push_social: boolean
   created_at: string
 }
 
@@ -132,6 +134,18 @@ export interface CompletionComment {
 export interface Follow {
   follower_id: string
   following_id: string
+  created_at: string
+}
+
+export interface AppNotification {
+  id: string
+  recipient_id: string
+  actor_id: string
+  type: 'like' | 'comment' | 'reply' | 'follow'
+  completion_id: string | null
+  comment_id: string | null
+  read_at: string | null
+  pushed_at: string | null
   created_at: string
 }
 
@@ -205,6 +219,12 @@ export type Database = {
         Row: Follow
         Insert: Omit<Follow, 'created_at'>
         Update: never
+        Relationships: []
+      }
+      notifications: {
+        Row: AppNotification
+        Insert: never
+        Update: Pick<AppNotification, 'read_at'>
         Relationships: []
       }
     }

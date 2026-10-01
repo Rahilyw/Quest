@@ -2,16 +2,18 @@ import { View, Text, TouchableOpacity, StyleSheet } from 'react-native'
 import { Ionicons } from '@expo/vector-icons'
 import { BrandText } from '@/components/BrandText'
 import { CITY, COLORS, SPACING, RADIUS } from '@/lib/constants'
+import { formatBadgeCount } from '@/lib/socialNotifications'
 
 interface Props {
   subtitle?: string
   showBell?: boolean
   notificationCount?: number
+  onBellPress?: () => void
   trailing?: React.ReactNode
   centerTitle?: string
 }
 
-export function AppHeader({ subtitle, showBell, notificationCount = 0, trailing, centerTitle }: Props) {
+export function AppHeader({ subtitle, showBell, notificationCount = 0, onBellPress, trailing, centerTitle }: Props) {
   if (centerTitle) {
     return (
       <View style={styles.row}>
@@ -41,13 +43,14 @@ export function AppHeader({ subtitle, showBell, notificationCount = 0, trailing,
           <TouchableOpacity
             style={styles.bellWrap}
             activeOpacity={0.7}
+            onPress={onBellPress}
             accessibilityRole="button"
             accessibilityLabel={notificationCount > 0 ? `Notifications, ${notificationCount} unread` : 'Notifications'}
           >
             <Ionicons name="notifications-outline" size={22} color={COLORS.textPrimary} />
             {notificationCount > 0 && (
               <View style={styles.bellDot}>
-                <Text style={styles.bellCount}>{notificationCount}</Text>
+                <Text style={styles.bellCount}>{formatBadgeCount(notificationCount)}</Text>
               </View>
             )}
           </TouchableOpacity>
@@ -93,8 +96,9 @@ const styles = StyleSheet.create({
     position: 'absolute',
     top: 0,
     right: 0,
-    width: 16,
+    minWidth: 16,
     height: 16,
+    paddingHorizontal: 3,
     borderRadius: 8,
     backgroundColor: COLORS.highlight,
     alignItems: 'center',

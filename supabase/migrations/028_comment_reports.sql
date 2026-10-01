@@ -10,6 +10,32 @@
 -- author flip their own `hidden` flag back to false. Clients may now only
 -- update `body`.
 
+-- ─── 027 AMENDMENTS THAT NEVER REACHED LIVE ──────────────────────────────────
+-- 027 was applied to the live DB before commit 7248295 amended it, so the
+-- live is_blocked_pair() answers direct RPC probes about any two users (leaks
+-- the block graph) and the trigger functions are still RPC-callable. Re-apply
+-- the amended definitions here; idempotent on databases that ran the final 027.
+
+CREATE OR REPLACE FUNCTION is_blocked_pair(a UUID, b UUID)
+RETURNS BOOLEAN
+LANGUAGE sql
+STABLE
+SECURITY DEFINER
+SET search_path = public
+AS $$
+  SELECT CASE
+    WHEN auth.uid() IS DISTINCT FROM a AND auth.uid() IS DISTINCT FROM b THEN true
+    ELSE EXISTS (
+      SELECT 1 FROM blocked_users
+      WHERE (blocker_id = a AND blocked_id = b)
+         OR (blocker_id = b AND blocked_id = a)
+    )
+  END;
+$$;
+
+REVOKE EXECUTE ON FUNCTION enforce_comment_parent() FROM public, anon, authenticated;
+REVOKE EXECUTE ON FUNCTION remove_follows_on_block() FROM public, anon, authenticated;
+
 -- ─── ENUM ────────────────────────────────────────────────────────────────────
 
 DO $$ BEGIN

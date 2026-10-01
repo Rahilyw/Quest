@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabase'
 import { track } from '@/lib/analytics'
 import { reportErrorMessage, type CommentReportReason } from '@/lib/moderation'
+import { socialRateLimitMessage } from '@/lib/socialNotifications'
 
 export interface CommentUser {
   username: string
@@ -96,10 +97,12 @@ export function useComments(completionId: string | undefined, viewerId: string |
     refetch()
   }, [refetch])
 
+  /** Returns null on success, or a user-facing error message. */
   const addComment = useCallback(
-    async (body: string, parentId: string | null): Promise<boolean> => {
+    async (body: string, parentId: string | null): Promise<string | null> => {
       const trimmed = body.trim()
-      if (!viewerId || !completionId || !trimmed) return false
+      if (!viewerId || !completionId) return 'Sign in to comment.'
+      if (!trimmed) return null
 
       setPosting(true)
       const { error: insertError } = await supabase.from('completion_comments').insert({
@@ -110,14 +113,14 @@ export function useComments(completionId: string | undefined, viewerId: string |
       })
       setPosting(false)
 
+      // Surfaced by the sheet as an alert so the thread (and the draft) stay put.
       if (insertError) {
-        setError('Could not post your comment. Try again.')
-        return false
+        return socialRateLimitMessage(insertError.hint) ?? 'Could not post your comment. Try again.'
       }
 
       track('comment_created', { has_parent: parentId != null })
       await refetch()
-      return true
+      return null
     },
     [viewerId, completionId, refetch]
   )

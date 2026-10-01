@@ -7,6 +7,7 @@ import {
   Image,
   TouchableOpacity,
   ActivityIndicator,
+  Alert,
 } from 'react-native'
 import { useLocalSearchParams, useRouter } from 'expo-router'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
@@ -21,6 +22,7 @@ import { supabase } from '@/lib/supabase'
 import { sizedImageUrl } from '@/lib/sizedImageUrl'
 import { paramAsString } from '@/lib/routeParams'
 import { track } from '@/lib/analytics'
+import { socialRateLimitMessage } from '@/lib/socialNotifications'
 import { COLORS, SPACING, RADIUS } from '@/lib/constants'
 
 interface CompletionDetail {
@@ -127,6 +129,8 @@ export default function CompletionScreen() {
       if (error && error.code !== '23505') {
         setLiked(false)
         setLikeCount((c) => Math.max(0, c - 1))
+        const limited = socialRateLimitMessage(error.hint)
+        if (limited) Alert.alert('Slow down', limited)
       } else {
         track('post_liked')
       }
