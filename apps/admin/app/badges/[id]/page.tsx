@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { useEffect, useState } from 'react'
+import { use, useEffect, useState } from 'react'
 import { BadgeForm } from '@/components/BadgeForm'
 import {
   deleteBadge,
@@ -17,8 +17,9 @@ import {
 } from '../actions'
 import { theme } from '@/lib/theme'
 
-export default function EditBadgePage({ params }: { params: { id: string } }) {
+export default function EditBadgePage({ params }: { params: Promise<{ id: string }> }) {
   const router = useRouter()
+  const { id } = use(params)
   const [badge, setBadge] = useState<BadgeWithStats | null>(null)
   const [earners, setEarners] = useState<BadgeEarner[]>([])
   const [loading, setLoading] = useState(true)
@@ -30,13 +31,13 @@ export default function EditBadgePage({ params }: { params: { id: string } }) {
   const [grantMsg, setGrantMsg] = useState<string | null>(null)
 
   useEffect(() => {
-    Promise.all([getBadge(params.id), getBadgeEarners(params.id)])
+    Promise.all([getBadge(id), getBadgeEarners(id)])
       .then(([b, e]) => {
         setBadge(b)
         setEarners(e)
       })
       .finally(() => setLoading(false))
-  }, [params.id])
+  }, [id])
 
   useEffect(() => {
     if (grantQuery.length < 2) {
@@ -52,20 +53,20 @@ export default function EditBadgePage({ params }: { params: { id: string } }) {
   async function handleSubmit(formData: FormData) {
     setError(null)
     setSubmitting(true)
-    const result = await updateBadge(params.id, formData)
+    const result = await updateBadge(id, formData)
     setSubmitting(false)
     if (!result.ok) {
       setError(result.error)
       return
     }
-    const refreshed = await getBadge(params.id)
+    const refreshed = await getBadge(id)
     setBadge(refreshed)
     router.refresh()
   }
 
   async function handleDelete() {
     if (!confirm('Delete this badge? Earned records and quest links will be removed.')) return
-    const result = await deleteBadge(params.id)
+    const result = await deleteBadge(id)
     if (!result.ok) {
       setError(result.error)
       return
@@ -77,7 +78,7 @@ export default function EditBadgePage({ params }: { params: { id: string } }) {
   async function handleGrant(userId: string, username: string) {
     setGrantBusy(true)
     setGrantMsg(null)
-    const result = await grantBadge(params.id, userId)
+    const result = await grantBadge(id, userId)
     setGrantBusy(false)
     if (!result.ok) {
       setGrantMsg(result.error)
@@ -86,19 +87,19 @@ export default function EditBadgePage({ params }: { params: { id: string } }) {
     setGrantMsg(`Granted to @${username}`)
     setGrantQuery('')
     setGrantResults([])
-    const [b, e] = await Promise.all([getBadge(params.id), getBadgeEarners(params.id)])
+    const [b, e] = await Promise.all([getBadge(id), getBadgeEarners(id)])
     setBadge(b)
     setEarners(e)
   }
 
   async function handleRevoke(userId: string) {
     if (!confirm('Revoke this badge from the player?')) return
-    const result = await revokeBadge(params.id, userId)
+    const result = await revokeBadge(id, userId)
     if (!result.ok) {
       setGrantMsg(result.error)
       return
     }
-    const [b, e] = await Promise.all([getBadge(params.id), getBadgeEarners(params.id)])
+    const [b, e] = await Promise.all([getBadge(id), getBadgeEarners(id)])
     setBadge(b)
     setEarners(e)
   }
