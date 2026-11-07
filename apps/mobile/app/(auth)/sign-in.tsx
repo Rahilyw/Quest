@@ -18,6 +18,21 @@ export default function SignIn() {
     setLoading(false)
   }
 
+  async function handleDemoSignIn() {
+    setLoading(true)
+    const demoEmail = 'explorer@demo.quest'
+    const demoPassword = 'demopassword123'
+    let { error } = await supabase.auth.signInWithPassword({ email: demoEmail, password: demoPassword })
+    if (error) {
+      // Auto create demo user if not existing in database
+      const { error: signUpErr } = await supabase.auth.signUp({ email: demoEmail, password: demoPassword })
+      if (signUpErr) {
+        Alert.alert('Demo Sign In', signUpErr.message)
+      }
+    }
+    setLoading(false)
+  }
+
   return (
     <View style={styles.container}>
       <View style={styles.hero}>
@@ -55,6 +70,17 @@ export default function SignIn() {
         accessibilityState={{ disabled: loading }}
       >
         <Text style={styles.buttonText}>{loading ? 'Signing in…' : 'Sign In'}</Text>
+      </TouchableOpacity>
+
+      <TouchableOpacity
+        style={[styles.button, styles.demoButton]}
+        onPress={handleDemoSignIn}
+        disabled={loading}
+        activeOpacity={0.85}
+        accessibilityRole="button"
+        accessibilityLabel="Explore with Demo Account"
+      >
+        <Text style={styles.demoButtonText}>⚡ Explore with Demo Account</Text>
       </TouchableOpacity>
 
       <TouchableOpacity
@@ -115,5 +141,12 @@ const styles = StyleSheet.create({
     elevation: 5,
   },
   buttonText: { color: COLORS.surface, fontWeight: '700', fontSize: 16 },
+  demoButton: {
+    backgroundColor: '#0F172A',
+    marginTop: 0,
+    marginBottom: 20,
+    shadowColor: '#0F172A',
+  },
+  demoButtonText: { color: '#F8FAFC', fontWeight: '700', fontSize: 15 },
   link: { color: COLORS.primary, textAlign: 'center', fontWeight: '600', marginBottom: 8 },
 })

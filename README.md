@@ -463,6 +463,36 @@ npm start
 
 Scan the QR code with Expo Go (Android) or the Camera app (iOS) to run on your device. Use `npm run ios` or `npm run android` to open in a simulator.
 
+#### Demoing on the Android emulator (Windows)
+
+1. Boot an AVD (e.g. `Pixel_8_Pro`; `adb`/`emulator` may not be on your PATH):
+
+   ```powershell
+   & "$env:LOCALAPPDATA\Android\Sdk\emulator\emulator.exe" -avd Pixel_8_Pro
+   ```
+
+2. Confirm adb sees it:
+
+   ```powershell
+   & "$env:LOCALAPPDATA\Android\Sdk\platform-tools\adb.exe" devices
+   ```
+
+3. Start Expo and open on the emulator (installs Expo Go if missing; you can also press `a` in the Expo terminal):
+
+   ```bash
+   cd apps/mobile
+   npm run android
+   ```
+
+   If the SDK isn't found, set `ANDROID_HOME` to `%LOCALAPPDATA%\Android\Sdk`.
+
+Demo tips:
+
+- **Geofence:** set `EXPO_PUBLIC_BYPASS_GEOFENCE=true` in `apps/mobile/.env` and restart with `npx expo start -c`, or set the emulator location (`...` menu → Location) to a quest site.
+- **Camera:** set the AVD camera to Virtual Scene or Webcam so photo quests work.
+- **Push notifications:** not supported in Expo Go on Android. Build a dev client with `npx eas-cli build --profile development --platform android` (see `apps/mobile/BUILDING.md`).
+- **Test data:** run `supabase/seed.sql` so quests and badges appear, and use a signed-in test account.
+
 ### 5. Start the admin dashboard
 
 ```bash
