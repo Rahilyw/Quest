@@ -319,7 +319,7 @@ export default function Submit() {
   }
 
   function locationStatusText() {
-    if (isMocked) return 'Mock location detected — turn it off to submit'
+    if (isMocked) return 'Mock location is on. Turn it off to submit.'
     if (quest?.geofence_type === 'none') {
       return 'No location required for this quest'
     }
@@ -327,8 +327,8 @@ export default function Submit() {
       if (bypassGeofence && !coords) {
         return 'Test mode: using quest location (no GPS needed)'
       }
-      const zoneStatus = insideGeofence ? 'Inside quest zone' : 'Outside quest zone'
-      return `${zoneStatus} · GPS ±${Math.round(effectiveCoords.accuracy ?? 0)}m`
+      const zoneStatus = insideGeofence ? 'You\u2019re in the zone' : 'Outside the zone'
+      return `${zoneStatus} (GPS accurate to ${Math.round(effectiveCoords.accuracy ?? 0)}\u00A0m)`
     }
     if (locationError) return locationError
     return 'Getting your location…'
@@ -382,12 +382,12 @@ export default function Submit() {
           ●
         </Text>
         <Text style={[styles.statusText, { flex: 1 }]}>{locationStatusText()}</Text>
-        {!hasLocation && !isMocked && <Text style={styles.statusAction}>Allow →</Text>}
+        {!hasLocation && !isMocked && <Text style={styles.statusAction}>Allow</Text>}
       </TouchableOpacity>
 
       {bypassGeofence && (
         <Text style={styles.devBanner}>
-          Dev mode: geofence bypass is on — set EXPO_PUBLIC_BYPASS_GEOFENCE=true in dev only.
+          Dev mode: geofence bypass is on. Set EXPO_PUBLIC_BYPASS_GEOFENCE=true in dev only.
         </Text>
       )}
 

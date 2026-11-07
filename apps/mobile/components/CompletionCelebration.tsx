@@ -1,6 +1,7 @@
 import { useEffect, useRef } from 'react'
 import { Modal, View, Text, TouchableOpacity, Animated, StyleSheet, Easing } from 'react-native'
 import { COLORS } from '@/lib/constants'
+import { xpLabel } from '@/lib/copy'
 
 export type CelebrationVariant = 'success' | 'alreadyDone'
 
@@ -157,7 +158,7 @@ export default function CompletionCelebration({
 
               {totalXp != null && (
                 <Text style={styles.totalXpText}>
-                  {totalXp.toLocaleString()} XP total{level != null ? ` · LV ${level}` : ''}
+                  {xpLabel(totalXp)} total{level != null ? `, level ${level}` : ''}
                 </Text>
               )}
 

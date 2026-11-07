@@ -26,7 +26,7 @@ export function PlayerCard({ profile, weeklyRank, todayXp = 0 }: Props) {
         <Avatar username={profile.username} uri={profile.avatar_url} size={44} />
         <View style={styles.info}>
           <View style={styles.levelRow}>
-            <Text style={styles.levelLabel}>LV {profile.level}</Text>
+            <Text style={styles.levelLabel}>Level {profile.level}</Text>
             <Text style={styles.titleLabel}>{getLevelTitle(profile.level)}</Text>
           </View>
           <View style={styles.track}>
@@ -34,7 +34,7 @@ export function PlayerCard({ profile, weeklyRank, todayXp = 0 }: Props) {
           </View>
           <Text style={styles.xpMeta}>
             {profile.total_xp.toLocaleString()} / {maxXp.toLocaleString()} XP
-            {weeklyRank != null ? ` · Rank #${weeklyRank} this week` : ''}
+            {weeklyRank != null ? `, #${weeklyRank} this week` : ''}
           </Text>
         </View>
         <View style={styles.todayBlock}>

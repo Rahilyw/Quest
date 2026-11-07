@@ -45,7 +45,7 @@ export function ShareCompletionCard({ data }: { data: ShareCompletionData }) {
       {/* Bottom stat panel */}
       <View style={styles.panel}>
         <View style={styles.panelAccent} />
-        <Text style={styles.completeLabel}>QUEST COMPLETE</Text>
+        <Text style={styles.completeLabel}>Quest complete</Text>
         <Text style={styles.questTitle} numberOfLines={2}>
           {data.questTitle}
         </Text>
@@ -53,17 +53,17 @@ export function ShareCompletionCard({ data }: { data: ShareCompletionData }) {
         <View style={styles.statsRow}>
           <View style={styles.stat}>
             <Text style={styles.statValue}>+{data.xpReward}</Text>
-            <Text style={styles.statLabel}>XP EARNED</Text>
+            <Text style={styles.statLabel}>XP earned</Text>
           </View>
           <View style={styles.statDivider} />
           <View style={styles.stat}>
-            <Text style={styles.statValue}>LV {data.level}</Text>
+            <Text style={styles.statValue}>Level {data.level}</Text>
             <Text style={styles.statLabel}>{getLevelTitle(data.level)}</Text>
           </View>
           <View style={styles.statDivider} />
           <View style={styles.stat}>
             <Text style={styles.statValueSmall}>{dateStr}</Text>
-            <Text style={styles.statLabel}>VICTORIA, BC</Text>
+            <Text style={styles.statLabel}>Victoria, BC</Text>
           </View>
         </View>
 

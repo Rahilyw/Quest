@@ -231,7 +231,7 @@ export default function Settings() {
             <View style={{ flex: 1, paddingRight: SPACING.md }}>
               <Text style={styles.rowLabel}>Show in activity feed</Text>
               <Text style={styles.rowHint}>
-                When off, your proof photos stay on your profile only — not the public city feed.
+                When off, your proof photos stay on your profile only, not on the public city feed.
               </Text>
             </View>
             <Switch

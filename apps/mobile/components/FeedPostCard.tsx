@@ -147,7 +147,7 @@ export function FeedPostCard({ post, currentUserId, onReported, onBlocked }: Pro
   if (reported) {
     return (
       <View style={styles.reportedStub}>
-        <Text style={styles.reportedText}>Reported — thanks for keeping Quest real.</Text>
+        <Text style={styles.reportedText}>Reported. Thanks for keeping Quest real.</Text>
       </View>
     )
   }

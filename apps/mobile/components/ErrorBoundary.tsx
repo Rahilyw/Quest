@@ -35,7 +35,7 @@ export class ErrorBoundary extends Component<Props, State> {
         <View style={styles.container}>
           <Text style={styles.title}>Something went wrong</Text>
           <Text style={styles.message}>
-            <BrandInline /> hit a snag. Tap below to try again — if it keeps happening, restart the app.
+            <BrandInline /> hit a snag. Tap below to try again. If it keeps happening, restart the app.
           </Text>
           {__DEV__ && this.state.error && (
             <Text style={styles.devError} numberOfLines={4}>

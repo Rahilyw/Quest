@@ -29,6 +29,7 @@ import {
   getLevelTitle,
   TAB_BAR_CLEARANCE,
 } from '@/lib/constants'
+import { plural } from '@/lib/copy'
 
 interface GridPost {
   id: string
@@ -238,7 +239,7 @@ export default function Profile() {
         <Text style={styles.heroName}>@{profile.username}</Text>
         <Text style={styles.heroMeta}>
           {CITY.name}
-          {profile.current_streak > 0 ? ` · 🔥 ${profile.current_streak} week streak` : ''}
+          {profile.current_streak > 0 ? `, ${plural(profile.current_streak, 'week')} streak` : ''}
         </Text>
 
         {/* Social counts — Instagram-style Posts / Followers / Following */}
@@ -393,7 +394,7 @@ export default function Profile() {
               Your completed quests show up here. Grab one from Explore and get out there.
             </Text>
             <TouchableOpacity style={styles.emptyCta} onPress={goToExplore} activeOpacity={0.88}>
-              <Text style={styles.emptyCtaText}>Find a quest →</Text>
+              <Text style={styles.emptyCtaText}>Find a quest</Text>
             </TouchableOpacity>
           </View>
         ) : (
@@ -554,7 +555,6 @@ const styles = StyleSheet.create({
     color: 'rgba(255,255,255,0.85)',
     fontSize: 9,
     fontWeight: '700',
-    textTransform: 'uppercase',
     letterSpacing: 0.8,
     marginBottom: 2,
   },
@@ -562,7 +562,6 @@ const styles = StyleSheet.create({
     color: COLORS.textMuted,
     fontSize: 9,
     fontWeight: '700',
-    textTransform: 'uppercase',
     letterSpacing: 0.8,
     marginBottom: 2,
   },

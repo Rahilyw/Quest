@@ -18,18 +18,19 @@ import { CategoryChip } from '@/components/CategoryChip'
 import { EmptyState } from '@/components/EmptyState'
 import { AppHeader } from '@/components/AppHeader'
 import { PlayerCard } from '@/components/PlayerCard'
-import { COLORS, SPACING, TAB_BAR_CLEARANCE, getISOWeek, getDaysLeftInWeek } from '@/lib/constants'
+import { COLORS, SPACING, TAB_BAR_CLEARANCE, getDaysLeftInWeek } from '@/lib/constants'
+import { daysLeftLabel } from '@/lib/copy'
 import { supabase } from '@/lib/supabase'
 import type { QuestCategory } from '@/lib/types'
 
 
 const CATEGORIES: { label: string; value: QuestCategory | undefined }[] = [
-  { label: 'ALL', value: undefined },
-  { label: 'FITNESS', value: 'fitness' },
-  { label: 'SOCIAL', value: 'social' },
-  { label: 'FOOD', value: 'food' },
-  { label: 'COMMUNITY', value: 'community' },
-  { label: 'NATURE', value: 'nature' },
+  { label: 'All', value: undefined },
+  { label: 'Fitness', value: 'fitness' },
+  { label: 'Social', value: 'social' },
+  { label: 'Food', value: 'food' },
+  { label: 'Community', value: 'community' },
+  { label: 'Nature', value: 'nature' },
 ]
 
 export default function ExploreScreen() {
@@ -78,7 +79,7 @@ export default function ExploreScreen() {
     <View style={styles.container}>
       <View style={[styles.header, { paddingTop: insets.top + 12 }]}>
         <AppHeader
-          subtitle={`Week ${getISOWeek()} · ${getDaysLeftInWeek()} days left`}
+          subtitle={daysLeftLabel(getDaysLeftInWeek())}
           showBell
           notificationCount={unreadCount}
           onBellPress={() => router.push('/notifications')}

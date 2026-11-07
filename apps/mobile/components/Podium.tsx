@@ -1,6 +1,7 @@
 import { View, Text, StyleSheet } from 'react-native'
 import { Avatar } from '@/components/Avatar'
-import { COLORS, SPACING, RADIUS, getLevelTitle } from '@/lib/constants'
+import { COLORS, SPACING, RADIUS } from '@/lib/constants'
+import { levelLabel } from '@/lib/copy'
 import type { LeaderboardEntry } from '@/lib/types'
 
 const RANK_LABELS: Record<number, string> = { 1: '1st', 2: '2nd', 3: '3rd' }
@@ -79,7 +80,7 @@ function PodiumSlot({
         @{entry.username}
       </Text>
       <Text style={styles.levelMeta}>
-        LV {entry.level} · {getLevelTitle(entry.level)}
+        {levelLabel(entry.level)}
       </Text>
       <View
         style={[

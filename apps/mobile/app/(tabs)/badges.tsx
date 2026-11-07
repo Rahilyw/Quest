@@ -123,7 +123,7 @@ export default function BadgesScreen() {
 
         {/* Hero */}
         <View style={styles.hero}>
-          <Text style={styles.title}>THE VAULT</Text>
+          <Text style={styles.title}>The vault</Text>
           <Text style={styles.subtitle}>
             Twenty relics are out there. The city keeps score.
           </Text>
@@ -163,7 +163,7 @@ export default function BadgesScreen() {
               ))}
               <View style={styles.sectionHeadRow}>
                 <Text style={[styles.sectionLabel, { color: RARITY_META.legendary.color }]}>
-                  LEGENDARY
+                  Legendary
                 </Text>
                 <Text style={styles.sectionCountDark}>
                   {byRarity.legendary.filter(isEarned).length}/{byRarity.legendary.length}

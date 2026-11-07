@@ -29,7 +29,7 @@ export function WelcomeVisual() {
         />
         <View style={styles.mockHeroOverlay} />
         <View style={styles.mockHeroTag}>
-          <Text style={styles.mockHeroTagText}>VIEWS</Text>
+          <Text style={styles.mockHeroTagText}>Nature</Text>
         </View>
         <View style={styles.mockHeroXp}>
           <Text style={styles.mockHeroXpText}>+150 XP</Text>
@@ -107,7 +107,7 @@ export function CityVisual() {
       <View style={styles.cityPinCard}>
         <Ionicons name="location-sharp" size={28} color={COLORS.highlight} />
         <Text style={styles.cityPinLabel}>Victoria, BC</Text>
-        <Text style={styles.cityPinSub}>Inner Harbour · James Bay · Fairfield</Text>
+        <Text style={styles.cityPinSub}>Inner Harbour, James Bay, Fairfield</Text>
       </View>
     </View>
   )
@@ -133,7 +133,7 @@ export function EarnVisual() {
 
       <View style={styles.xpCard}>
         <View style={styles.xpHeader}>
-          <Text style={styles.xpLevel}>LV 4 · SEEKER</Text>
+          <Text style={styles.xpLevel}>Seeker, level 4</Text>
           <Text style={styles.xpGain}>+120 XP</Text>
         </View>
         <View style={styles.xpTrack}>
