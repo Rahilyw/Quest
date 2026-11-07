@@ -7,7 +7,6 @@ import { formatGeofenceLabel } from '@quest/geofence'
 import { track, type QuestSource } from '@/lib/analytics'
 import {
   CATEGORY_COLORS,
-  CATEGORY_TAGS,
   COLORS,
   FONT_DISPLAY,
   RADIUS,
@@ -15,6 +14,7 @@ import {
   getDifficulty,
   getQuestCoverImage,
 } from '@/lib/constants'
+import { getCategory } from '@/lib/theme'
 import { sizedImageUrl } from '@/lib/sizedImageUrl'
 
 export default function QuestDetail() {
@@ -65,7 +65,7 @@ export default function QuestDetail() {
   }
 
   const categoryColor = CATEGORY_COLORS[quest.category] ?? COLORS.primary
-  const tag = CATEGORY_TAGS[quest.category] ?? quest.category.toUpperCase()
+  const tag = getCategory(quest.category).label
   const diff = getDifficulty(quest.xp_reward)
   const coverUri = sizedImageUrl(getQuestCoverImage(quest), { width: 900, height: 560 })
   const geofenceLabel = formatGeofenceLabel(
@@ -128,9 +128,9 @@ export default function QuestDetail() {
                 <Text style={styles.sectionTitle}>Completion areas</Text>
                 {quest.quest_geofences!.map((area) => (
                   <Text key={area.id} style={styles.areaRow}>
-                    {area.shape === 'polygon' ? '✏️' : '📍'} {area.label}
+                    {area.label}
                     {area.shape === 'circle' && area.radius_meters
-                      ? ` · ${area.radius_meters}m`
+                      ? ` (${area.radius_meters}\u00A0m radius)`
                       : ''}
                   </Text>
                 ))}
@@ -166,7 +166,7 @@ export default function QuestDetail() {
             <Text style={styles.rulesText}>1. Go to the quest location</Text>
             <Text style={styles.rulesText}>2. Tap "Start Quest" when you arrive</Text>
             <Text style={styles.rulesText}>3. Take a photo as proof</Text>
-            <Text style={styles.rulesText}>4. Submit — XP lands instantly when you're in the zone.</Text>
+            <Text style={styles.rulesText}>4. Submit. XP lands instantly when you're in the zone.</Text>
           </View>
         </View>
       </ScrollView>
@@ -299,7 +299,6 @@ const styles = StyleSheet.create({
     fontSize: 11,
     fontWeight: '700',
     marginBottom: 6,
-    textTransform: 'uppercase',
     letterSpacing: 0.5,
   },
   rewardValue: { fontSize: 18, fontWeight: '800' },

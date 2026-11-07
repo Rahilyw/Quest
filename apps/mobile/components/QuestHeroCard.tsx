@@ -1,6 +1,6 @@
 import { TouchableOpacity, Text, View, Image, StyleSheet } from 'react-native'
+import Svg, { Defs, LinearGradient, Rect, Stop } from 'react-native-svg'
 import {
-  CATEGORY_TAGS,
   COLORS,
   FONT_DISPLAY,
   RADIUS,
@@ -8,6 +8,7 @@ import {
   getDifficulty,
   getQuestCoverImage,
 } from '@/lib/constants'
+import { getCategory } from '@/lib/theme'
 import { sizedImageUrl } from '@/lib/sizedImageUrl'
 import type { Quest } from '@/lib/types'
 
@@ -20,7 +21,7 @@ interface Props {
 export function QuestHeroCard({ quest, onPress, completionCount = 0 }: Props) {
   const diff = getDifficulty(quest.xp_reward)
   const imageUri = sizedImageUrl(getQuestCoverImage(quest), { width: 700, height: 440 })
-  const tag = CATEGORY_TAGS[quest.category] ?? quest.category.toUpperCase()
+  const tag = getCategory(quest.category).label
 
   return (
     <TouchableOpacity
@@ -33,14 +34,23 @@ export function QuestHeroCard({ quest, onPress, completionCount = 0 }: Props) {
     >
       <View style={styles.imageWrap}>
         <Image source={{ uri: imageUri }} style={styles.image} />
-        <View style={styles.imageOverlay} />
+        <Svg style={styles.imageOverlay} pointerEvents="none">
+          <Defs>
+            <LinearGradient id="heroScrim" x1="0" y1="0" x2="0" y2="1">
+              <Stop offset="0" stopColor="#0D1B3E" stopOpacity="0.18" />
+              <Stop offset="0.45" stopColor="#0D1B3E" stopOpacity="0.1" />
+              <Stop offset="1" stopColor="#0D1B3E" stopOpacity="0.78" />
+            </LinearGradient>
+          </Defs>
+          <Rect x="0" y="0" width="100%" height="100%" fill="url(#heroScrim)" />
+        </Svg>
         <View style={styles.tagRow}>
           <View style={styles.tag}>
             <Text style={styles.tagText}>{tag}</Text>
           </View>
           {quest.is_sponsored && (
             <View style={[styles.tag, styles.sponsorTag]}>
-              <Text style={styles.sponsorTagText}>⭐ SPONSORED</Text>
+              <Text style={styles.sponsorTagText}>Sponsored</Text>
             </View>
           )}
         </View>
@@ -63,7 +73,7 @@ export function QuestHeroCard({ quest, onPress, completionCount = 0 }: Props) {
             )}
           </View>
           <View style={styles.cta}>
-            <Text style={styles.ctaText}>START QUEST</Text>
+            <Text style={styles.ctaText}>View quest</Text>
           </View>
         </View>
       </View>
@@ -85,10 +95,7 @@ const styles = StyleSheet.create({
   },
   imageWrap: { height: 176, position: 'relative' },
   image: { width: '100%', height: '100%' },
-  imageOverlay: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(13,27,62,0.55)',
-  },
+  imageOverlay: StyleSheet.absoluteFillObject,
   tagRow: {
     position: 'absolute',
     top: SPACING.md,

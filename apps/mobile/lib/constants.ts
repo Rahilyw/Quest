@@ -4,65 +4,73 @@ import {
   getXpToNextLevel,
   getMinXpForLevel,
 } from './xpLevels'
+import { CATEGORY, COLOR, FONT, SPONSORED } from './theme'
+import { levelTitle } from './copy'
 
 export { XP_LEVELS, getLevelFromXp, getXpToNextLevel, getMinXpForLevel }
 
 export const APP_NAME = 'Quest!'
 
-/** Official brand wordmark face — Pilowlava (SIL OFL 1.1, Studio Triple). Logo only. */
-export const FONT_BRAND = 'Pilowlava'
-/** Alternate Pilowlava cut for rare accent moments (celebrations) */
-export const FONT_BRAND_ALT = 'PilowlavaAtome'
-/** Sleek UI display face — quest titles, section headers, badges (not the logo) */
-export const FONT_DISPLAY = 'SpaceGrotesk_700Bold'
+/** Pilowlava (SIL OFL 1.1, Studio Triple). Wordmark only. */
+export const FONT_BRAND = FONT.brand
+/**
+ * @deprecated Display headings now use Figtree ExtraBold. Kept as an alias so screens keep
+ * working until they move to the text primitives in components/ui/Text.tsx.
+ */
+export const FONT_DISPLAY = FONT.black
 
-/** Summer 2026 palette — bright sky, coral pops, warm sunshine canvas */
+/**
+ * @deprecated Legacy colour names, now mapped onto the Cutouts tokens in lib/theme.ts.
+ * New code imports COLOR / CATEGORY from '@/lib/theme'. Screens migrate off this in
+ * Phases 3 and 4 of docs/design/UI-OVERHAUL-PLAN.md.
+ */
 export const COLORS = {
-  bg: '#FFFBF0',
-  bgOuter: '#FFE8A3',
-  bgWarm: '#FFF4D6',
+  bg: COLOR.paper,
+  bgOuter: COLOR.desk,
+  bgWarm: COLOR.desk,
 
-  surface: '#FFFFFF',
-  surfaceElevated: '#FFFDF7',
+  surface: COLOR.white,
+  surfaceElevated: COLOR.white,
 
-  border: 'rgba(14, 165, 233, 0.14)',
+  border: COLOR.rule,
 
-  textPrimary: '#1A2B4A',
-  textMuted: '#5C7A99',
+  textPrimary: COLOR.ink,
+  textMuted: COLOR.inkSoft,
 
-  /** Summer sky blue */
-  primary: '#0EA5E9',
-  primaryLight: '#7DD3FC',
-  primarySoft: '#E0F7FF',
+  /** Ink is the action colour now: buttons, active states, links. */
+  primary: COLOR.ink,
+  primaryLight: COLOR.inkPressed,
+  primarySoft: COLOR.paperDeep,
 
-  accent: '#0EA5E9',
-  accentSoft: '#E0F7FF',
-  accentText: '#0284C7',
+  accent: COLOR.ink,
+  accentSoft: COLOR.paperDeep,
+  accentText: COLOR.ink,
 
-  /** Coral — badges, notifications, energy */
-  highlight: '#FF6B35',
-  sunshine: '#FBBF24',
-  coral: '#FF8A65',
-  mint: '#2DD4BF',
+  /** Notification dots and "new" marks. Deep tomato so white text on it passes contrast. */
+  highlight: CATEGORY.food.deep,
+  sunshine: CATEGORY.fitness.color,
+  coral: CATEGORY.food.color,
+  mint: CATEGORY.nature.color,
 
-  navy: '#1E3A5F',
-  navyMid: '#2563EB',
+  /** Dark hero surfaces (This week, Rankings, Profile headers). */
+  navy: COLOR.ink,
+  navyMid: COLOR.inkPressed,
 
-  success: '#22C55E',
-  warning: '#F59E0B',
-  danger: '#EF4444',
-  sponsor: '#FF6B35',
+  success: CATEGORY.nature.deep,
+  warning: SPONSORED.deep,
+  danger: CATEGORY.food.deep,
+  sponsor: SPONSORED.color,
 
-  warningSoft: '#FEF3C7',
-  successSoft: '#ECFDF5',
+  warningSoft: '#FBEBD3',
+  successSoft: '#E1F1E6',
 
-  /** Leaderboard medal tints */
-  gold: '#FBBF24',
-  goldSoft: '#FEF3C7',
-  silver: '#94A3B8',
-  silverSoft: '#F1F5F9',
-  bronze: '#D97706',
-  bronzeSoft: '#FFEDD5',
+  /** Leaderboard medal tints (Rankings is redesigned in Phase 4). */
+  gold: CATEGORY.fitness.color,
+  goldSoft: '#FFF2C2',
+  silver: COLOR.inkFaint,
+  silverSoft: COLOR.paperDeep,
+  bronze: SPONSORED.deep,
+  bronzeSoft: '#FBE3C7',
 } as const
 
 export const SPACING = { xs: 4, sm: 8, md: 12, lg: 16, xl: 20, xxl: 24 } as const
@@ -148,51 +156,23 @@ export const CITY = {
   defaultZoom: 13,
 }
 
-export function getLevelTitle(level: number): string {
-  if (level >= 10) return 'LEGEND'
-  if (level >= 7) return 'EXPLORER'
-  if (level >= 4) return 'SEEKER'
-  if (level >= 2) return 'NOMAD'
-  return 'ROOKIE'
-}
+/** Sentence case: "Rookie", "Legend". See lib/copy.js. */
+export const getLevelTitle = levelTitle
 
+/**
+ * Interim difficulty label until quests carry distance and time (decision D5, Phase 2).
+ * Sentence case; colours come from the theme.
+ */
 export function getDifficulty(xp: number): { label: string; color: string } {
-  if (xp >= 300) return { label: 'HARD', color: COLORS.danger }
-  if (xp >= 150) return { label: 'MEDIUM', color: COLORS.warning }
-  return { label: 'EASY', color: COLORS.success }
+  if (xp >= 300) return { label: 'Hard', color: COLORS.danger }
+  if (xp >= 150) return { label: 'Medium', color: COLORS.warning }
+  return { label: 'Easy', color: COLORS.success }
 }
 
-export const CATEGORY_COLORS: Record<string, string> = {
-  fitness: '#22C55E',
-  social: '#A855F7',
-  food: '#F97316',
-  community: '#3B82F6',
-  nature: '#06B6D4',
-}
-
-export const CATEGORY_SOFT: Record<string, string> = {
-  fitness: '#DCFCE7',
-  social: '#F3E8FF',
-  food: '#FFEDD5',
-  community: '#DBEAFE',
-  nature: '#CFFAFE',
-}
-
-export const CATEGORY_ICONS: Record<string, string> = {
-  fitness: '🏃',
-  social: '🤝',
-  food: '🍽️',
-  community: '🏘️',
-  nature: '🌿',
-}
-
-export const CATEGORY_TAGS: Record<string, string> = {
-  fitness: 'TRAIL',
-  social: 'SOCIAL',
-  food: 'FOOD',
-  community: 'LOCAL',
-  nature: 'VIEWS',
-}
+/** @deprecated Use getCategory(key).color from '@/lib/theme'. */
+export const CATEGORY_COLORS: Record<string, string> = Object.fromEntries(
+  Object.entries(CATEGORY).map(([key, c]) => [key, c.color]),
+)
 
 export const CATEGORY_IMAGES: Record<string, string> = {
   fitness: 'https://images.unsplash.com/photo-1629495063801-c1040fa82533?w=700&h=440&fit=crop&auto=format',
