@@ -19,6 +19,7 @@ export default function SignIn() {
   }
 
   async function handleDemoSignIn() {
+    if (!__DEV__) return // dev-only: never create or use the demo account in release builds
     setLoading(true)
     const demoEmail = 'explorer@demo.quest'
     const demoPassword = 'demopassword123'
@@ -72,16 +73,18 @@ export default function SignIn() {
         <Text style={styles.buttonText}>{loading ? 'Signing in…' : 'Sign In'}</Text>
       </TouchableOpacity>
 
-      <TouchableOpacity
-        style={[styles.button, styles.demoButton]}
-        onPress={handleDemoSignIn}
-        disabled={loading}
-        activeOpacity={0.85}
-        accessibilityRole="button"
-        accessibilityLabel="Explore with Demo Account"
-      >
-        <Text style={styles.demoButtonText}>⚡ Explore with Demo Account</Text>
-      </TouchableOpacity>
+      {__DEV__ && (
+        <TouchableOpacity
+          style={[styles.button, styles.demoButton]}
+          onPress={handleDemoSignIn}
+          disabled={loading}
+          activeOpacity={0.85}
+          accessibilityRole="button"
+          accessibilityLabel="Explore with Demo Account"
+        >
+          <Text style={styles.demoButtonText}>⚡ Explore with Demo Account</Text>
+        </TouchableOpacity>
+      )}
 
       <TouchableOpacity
         onPress={() => router.push('/(auth)/forgot-password')}
