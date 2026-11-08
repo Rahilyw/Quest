@@ -520,7 +520,8 @@ Implemented in `apps/mobile/lib/theme.ts` (Phase 1, Nov 7, 2026), with copy help
 Category icons are Ionicons outline glyphs, already bundled with `@expo/vector-icons`.
 
 Replaces `COLORS`, `RADIUS`, `SPACING`, `TAB_THEMES` and the category maps in
-`apps/mobile/lib/constants.ts`, and `tokens/*.css` for admin.
+`apps/mobile/lib/constants.ts`. Admin gets matching CSS custom properties in
+`apps/admin/app/globals.css` (overhaul Phase 6).
 
 ```ts
 export const COLOR = {
