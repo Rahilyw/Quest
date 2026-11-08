@@ -89,7 +89,7 @@ export function BadgeTile({ spec, earned, artSize, onDark, compact, onOpen }: Pr
           <View style={styles.rarityRow}>
             <View style={[styles.rarityDot, { backgroundColor: earned ? meta.color : onDark ? 'rgba(255,255,255,0.35)' : 'rgba(92,122,153,0.4)' }]} />
             <Text style={[styles.rarityLabel, onDark && styles.rarityLabelDark]}>
-              {earned ? meta.label : 'LOCKED'}
+              {earned ? meta.label : 'Locked'}
             </Text>
           </View>
         )}

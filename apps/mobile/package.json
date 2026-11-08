@@ -11,10 +11,11 @@
     "build:prod": "npx eas-cli build --profile production --platform all",
     "submit:prod": "npx eas-cli submit --profile production --platform all",
     "update": "npx eas-cli update --branch production --message",
-    "test": "node __tests__/logic.test.js"
+    "test": "node __tests__/logic.test.js",
+    "lint:tokens": "node scripts/check-tokens.js"
   },
   "dependencies": {
-    "@expo-google-fonts/space-grotesk": "^0.4.1",
+    "@expo-google-fonts/figtree": "^0.4.1",
     "@expo/vector-icons": "^15.0.3",
     "@quest/geofence": "1.0.0",
     "@react-native-async-storage/async-storage": "2.2.0",

@@ -99,7 +99,7 @@ export function ReportPostSheet<R extends string = ReportReason>({
                 style={styles.detailsInput}
                 value={details}
                 onChangeText={setDetails}
-                placeholder="Keep it brief — 500 chars max"
+                placeholder="Keep it brief (500 characters max)"
                 placeholderTextColor={COLORS.textMuted}
                 multiline
                 maxLength={500}

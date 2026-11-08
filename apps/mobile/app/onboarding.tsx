@@ -43,7 +43,7 @@ const SLIDES: Slide[] = [
     kind: 'explore',
     eyebrow: 'Explore',
     title: 'Your city is the game board',
-    body: 'Find fitness trails, coffee spots, social hangouts, and hidden gems — all pinned on your map.',
+    body: 'Find fitness trails, coffee spots, social hangouts, and hidden gems, all pinned on your map.',
   },
   {
     id: 'city',
@@ -142,7 +142,7 @@ export default function Onboarding() {
                   <View style={styles.cityInfo}>
                     <Text style={styles.cityName}>{name}</Text>
                     <View style={styles.pilotBadge}>
-                      <Text style={styles.pilotBadgeText}>PILOT CITY</Text>
+                      <Text style={styles.pilotBadgeText}>Pilot city</Text>
                     </View>
                   </View>
                   {selected ? (
@@ -159,7 +159,7 @@ export default function Onboarding() {
               </View>
               <View style={styles.cityInfo}>
                 <Text style={styles.cityNameMuted}>More cities</Text>
-                <Text style={styles.cityHint}>Coming soon — Toronto, Vancouver, and beyond</Text>
+                <Text style={styles.cityHint}>Coming soon: Toronto, Vancouver, and beyond</Text>
               </View>
             </View>
           </View>
@@ -334,7 +334,6 @@ const styles = StyleSheet.create({
     fontSize: 11,
     fontWeight: '800',
     letterSpacing: 1.2,
-    textTransform: 'uppercase',
     marginBottom: SPACING.sm,
   },
   title: {

@@ -96,7 +96,7 @@ export default function FeedScreen() {
             <Text style={styles.mapPillText}>{quests.length} quests near you</Text>
           </View>
           <View style={styles.mapCta}>
-            <Text style={styles.mapCtaText}>Explore map →</Text>
+            <Text style={styles.mapCtaText}>See the map</Text>
           </View>
         </View>
       </TouchableOpacity>

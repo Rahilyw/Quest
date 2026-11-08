@@ -172,7 +172,7 @@ export function BadgeShowcase({ spec, earned, earnedAt, onClose }: Props) {
               ? `Unearthed ${formatEarnedDate(earnedAt)}`
               : earned
                 ? 'Unearthed'
-                : 'STILL OUT THERE'}
+                : 'Still out there'}
           </Text>
 
           <Text style={styles.dragHint}>drag the badge</Text>

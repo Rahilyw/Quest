@@ -165,17 +165,15 @@ export function QuestTabBar({ state, descriptors, navigation }: BottomTabBarProp
     >
       <View style={styles.shadowWrap}>
         <View style={styles.clip}>
-          {/* Frosted pane */}
-          <BlurView
-            intensity={Platform.OS === 'ios' ? 42 : 28}
-            tint="light"
-            style={StyleSheet.absoluteFill}
-            {...(Platform.OS === 'android'
-              ? { experimentalBlurMethod: 'dimezisBlurView' as const }
-              : null)}
-          />
-          <View style={styles.tintLayer} pointerEvents="none" />
-          <View style={styles.sheen} pointerEvents="none" />
+          {/* Frosted pane - iOS only. Android's experimental blur washes out the whole
+              screen, so there the bar is a near-solid white pill instead. */}
+          {Platform.OS === 'ios' && (
+            <>
+              <BlurView intensity={42} tint="light" style={StyleSheet.absoluteFill} />
+              <View style={styles.tintLayer} pointerEvents="none" />
+              <View style={styles.sheen} pointerEvents="none" />
+            </>
+          )}
 
           <View
             style={styles.row}
@@ -230,7 +228,7 @@ const styles = StyleSheet.create({
     // Android draws its elevation shadow from the view outline, which needs a
     // background to exist — and it doubles as the frosted base if the
     // experimental blur is unavailable on the device.
-    backgroundColor: Platform.OS === 'android' ? 'rgba(255,255,255,0.82)' : 'transparent',
+    backgroundColor: Platform.OS === 'android' ? 'rgba(255,255,255,0.97)' : 'transparent',
   },
   clip: {
     borderRadius: 30,

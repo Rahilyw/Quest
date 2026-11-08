@@ -21,11 +21,11 @@ import {
   SPACING,
   RADIUS,
   CITY,
-  getLevelTitle,
   getISOWeek,
   getDaysLeftInWeek,
   TAB_BAR_CLEARANCE,
 } from '@/lib/constants'
+import { levelLabel } from '@/lib/copy'
 import type { LeaderboardEntry, UserBadgeWithBadge } from '@/lib/types'
 import { track } from '@/lib/analytics'
 
@@ -120,7 +120,7 @@ export default function RankingsScreen() {
           </Text>
           <Text style={styles.headline}>Who&apos;s owning the city?</Text>
           <Text style={styles.tagline}>
-            Complete quests · earn XP · climb before Monday
+            Complete quests, earn XP, and climb before Monday.
           </Text>
 
           <View style={styles.heroStats}>
@@ -131,7 +131,7 @@ export default function RankingsScreen() {
             <View style={styles.heroStatDivider} />
             <View style={styles.heroStat}>
               <Text style={styles.heroStatValue}>{daysLeft}</Text>
-              <Text style={styles.heroStatLabel}>days left</Text>
+              <Text style={styles.heroStatLabel}>{daysLeft === 1 ? 'day left' : 'days left'}</Text>
             </View>
           </View>
         </View>
@@ -162,7 +162,7 @@ export default function RankingsScreen() {
                 <Text style={styles.yourCardXp}>
                   {myEntry
                     ? `${myEntry.weekly_xp.toLocaleString()} XP this week`
-                    : '0 XP — time to get out there'}
+                    : '0 XP so far. Time to get out there.'}
                 </Text>
               </View>
               {!myEntry && (
@@ -171,7 +171,7 @@ export default function RankingsScreen() {
                   onPress={() => router.push('/')}
                   activeOpacity={0.85}
                 >
-                  <Text style={styles.yourCardCtaText}>Go →</Text>
+                  <Text style={styles.yourCardCtaText}>Find a quest</Text>
                 </TouchableOpacity>
               )}
             </View>
@@ -224,7 +224,7 @@ export default function RankingsScreen() {
           <View style={styles.fewPlayersCard}>
             <Text style={styles.fewPlayersEmoji}>🌊</Text>
             <Text style={styles.fewPlayersTitle}>
-              {entries.length === 1 ? 'Solo at the top — for now' : 'Small crew, big energy'}
+              {entries.length === 1 ? 'Solo at the top, for now' : 'Small crew, big energy'}
             </Text>
             <Text style={styles.fewPlayersBody}>
               More explorers join every week. Complete quests to hold your spot or steal the crown.
@@ -294,10 +294,10 @@ export default function RankingsScreen() {
               <View style={styles.rowInfo}>
                 <Text style={styles.rowName}>
                   @{item.username}
-                  {isMe ? ' · you' : ''}
+                  {isMe ? ' (you)' : ''}
                 </Text>
                 <Text style={styles.rowLevel}>
-                  LV {item.level} {getLevelTitle(item.level)}
+                  {levelLabel(item.level)}
                 </Text>
               </View>
               <View style={styles.xpBlock}>
@@ -400,7 +400,6 @@ const styles = StyleSheet.create({
     color: COLORS.textMuted,
     fontSize: 10,
     fontWeight: '700',
-    textTransform: 'uppercase',
     letterSpacing: 0.5,
   },
   heroStatDivider: { width: 1, height: 28, backgroundColor: 'rgba(30,58,95,0.15)' },
@@ -448,7 +447,6 @@ const styles = StyleSheet.create({
     fontSize: 11,
     fontWeight: '800',
     letterSpacing: 1,
-    textTransform: 'uppercase',
   },
   yourRankPill: {
     backgroundColor: COLORS.highlight,
@@ -565,7 +563,7 @@ const styles = StyleSheet.create({
   rowMe: { borderColor: COLORS.primary, borderWidth: 2, backgroundColor: COLORS.primarySoft },
   rankBlock: { alignItems: 'center', width: 36 },
   rankNum: { color: COLORS.textPrimary, fontSize: 16, fontWeight: '900' },
-  rankDelta: { fontSize: 10, fontWeight: '800', marginTop: 1, textTransform: 'uppercase' },
+  rankDelta: { fontSize: 10, fontWeight: '800', marginTop: 1 },
   rowInfo: { flex: 1, minWidth: 0 },
   rowName: { color: COLORS.textPrimary, fontSize: 14, fontWeight: '800' },
   rowLevel: { color: COLORS.textMuted, fontSize: 11, fontWeight: '600', marginTop: 2 },

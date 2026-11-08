@@ -36,25 +36,25 @@ export const RARITY_META: Record<
   { label: string; tagline: string; color: string; soft: string }
 > = {
   legendary: {
-    label: 'LEGENDARY',
+    label: 'Legendary',
     tagline: 'Whispered about',
     color: COLORS.sunshine,
     soft: 'rgba(251,191,36,0.16)',
   },
   epic: {
-    label: 'EPIC',
+    label: 'Epic',
     tagline: 'The long hauls',
     color: COLORS.highlight,
     soft: 'rgba(255,107,53,0.14)',
   },
   rare: {
-    label: 'RARE',
+    label: 'Rare',
     tagline: 'Prove your lane',
     color: COLORS.primary,
     soft: 'rgba(14,165,233,0.13)',
   },
   common: {
-    label: 'COMMON',
+    label: 'Common',
     tagline: 'Everyone starts somewhere',
     color: COLORS.textMuted,
     soft: 'rgba(92,122,153,0.12)',

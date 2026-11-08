@@ -804,6 +804,30 @@ assertEqual(
 // ---------------------------------------------------------------------------
 // SUMMARY
 // ---------------------------------------------------------------------------
+console.log('\n--- Section 20: copy helpers (lib/copy.js) ---')
+
+const copy = require(path.join(__dirname, '../lib/copy.js'))
+const NB = copy.NBSP
+assertEqual('plural: 1 day is singular', copy.plural(1, 'day'), `1${NB}day`)
+assertEqual('plural: 3 days', copy.plural(3, 'day'), `3${NB}days`)
+assertEqual('plural: 0 weeks', copy.plural(0, 'week'), `0${NB}weeks`)
+assertEqual('plural: custom plural form', copy.plural(2, 'person', 'people'), `2${NB}people`)
+assertEqual('daysLeftLabel(1) has no "1 days" bug', copy.daysLeftLabel(1), `1${NB}day left this week`)
+assertEqual('daysLeftLabel(3)', copy.daysLeftLabel(3), `3${NB}days left this week`)
+assertEqual('daysLeftLabel(0) on Sunday', copy.daysLeftLabel(0), 'Last day this week')
+assertEqual('levelTitle(1) sentence case', copy.levelTitle(1), 'Rookie')
+assertEqual('levelTitle(4)', copy.levelTitle(4), 'Seeker')
+assertEqual('levelTitle(10)', copy.levelTitle(10), 'Legend')
+assertEqual('levelLabel(1)', copy.levelLabel(1), `Rookie, level${NB}1`)
+assertEqual('xpLabel groups thousands', copy.xpLabel(1240), `1,240${NB}XP`)
+for (const lvl of [1, 2, 4, 7, 10]) {
+  const t = copy.levelTitle(lvl)
+  assertTruthy(`levelTitle(${lvl}) is not all caps`, t !== t.toUpperCase())
+}
+for (const s of [copy.daysLeftLabel(2), copy.levelLabel(3), copy.xpLabel(5)]) {
+  assertTruthy(`no middle-dot separators in "${s}"`, !s.includes('·'))
+}
+
 console.log('\n=== SUMMARY ===')
 console.log(`Total: ${passed + failed}  Passed: ${passed}  Failed: ${failed}`)
 

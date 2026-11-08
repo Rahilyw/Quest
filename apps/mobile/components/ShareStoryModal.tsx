@@ -135,7 +135,7 @@ export function ShareStoryModal({ visible, data, onClose }: Props) {
             </>
           )}
         </TouchableOpacity>
-        <Text style={styles.hint}>Opens your share sheet — Instagram, Messages & more</Text>
+        <Text style={styles.hint}>Opens your share sheet: Instagram, Messages and more</Text>
       </View>
     </Modal>
   )

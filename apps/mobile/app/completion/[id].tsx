@@ -206,7 +206,7 @@ export default function CompletionScreen() {
           <View style={styles.userInfo}>
             <Text style={styles.userName}>@{detail.user.username}</Text>
             <Text style={styles.userMeta}>
-              LV {detail.user.level} · {formatTimeAgo(detail.completed_at)}
+              Level {detail.user.level}, {formatTimeAgo(detail.completed_at)}
             </Text>
           </View>
           <Text style={styles.xp}>+{detail.quest.xp_reward} XP</Text>
