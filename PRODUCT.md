@@ -43,7 +43,7 @@ The June 2026 Figma reimagining adds a **game-show layer**: photo proof in a pub
 
 ## Mobile information architecture
 
-Five primary tabs (see `DESIGN.md`):
+Five primary tabs today. The Cutouts overhaul (`docs/design/BRAND.md` §10) renames them to **This week, Quests, City, Rankings, You**, with Badges moving into You:
 
 | Tab | Job to be done |
 |-----|----------------|
@@ -67,7 +67,7 @@ Quest chains group existing quests into neighbourhood storylines ("The Old Town 
 
 ## Playing together
 
-The mission is real-world connection, so the game can't stay single-player. **Duo quests** require two people at the location — both submit, both earn bonus XP — and bringing someone who doesn't have Quest! yet is the growth loop (see `docs/specs/06-growth-engagement.md`). The **Sunday recap card** (rank, XP, streak, best photo) is the shareable unit: your week in the city, worth showing off. No follow graphs or DMs in the pilot — one city, one feed, one leaderboard is the social layer.
+The mission is real-world connection, so the game can't stay single-player. **Duo quests** require two people at the location — both submit, both earn bonus XP — and bringing someone who doesn't have Quest! yet is the growth loop (see `docs/specs/06-growth-engagement.md`). The **Sunday recap card** (rank, XP, streak, best photo) is the shareable unit: your week in the city, worth showing off. Since Aug 2026 the social layer also has follows, likes, comments and an activity inbox (no DMs). Proof is moving to two shots, the place then a selfie (decision D6), and every quest page shows the people who've been there.
 
 ## Safety, privacy & trust
 

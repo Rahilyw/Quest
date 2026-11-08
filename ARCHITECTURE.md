@@ -18,7 +18,7 @@ flowchart TB
         DB["PostgreSQL + RLS + PostGIS"]
         Storage["Storage: proof-photos · avatars · quest-covers"]
         Edge["Edge Functions"]
-        Migrations["migrations/001–017"]
+        Migrations["migrations/001–031"]
         Seed["seed.sql"]
     end
 
@@ -106,7 +106,7 @@ sequenceDiagram
     Feed->>Feed: render FeedPostCard list
 ```
 
-Requires migrations `008` (public feed RLS) and `017` (replaces the policy: feed now excludes `hidden_pending_review` posts and profiles with `feed_public = false`; client also filters blocked users).
+Requires migrations `008` (public feed RLS) and `018` (replaces the policy: feed now excludes `hidden_pending_review` posts and profiles with `feed_public = false`; client also filters blocked users).
 
 ## Geofence system (migrations 013–015)
 
@@ -123,7 +123,7 @@ Shape data flows to clients via the generated `quests.boundary_geojson` column (
 
 ## Core quest flow — instant verification (shipped)
 
-**Geofence pass = proof.** Completions auto-approve at insert (migration `016`); XP, level, streak, and sponsored redemption codes land before the celebration modal renders. Community reports + admin moderation (migration `017`) replace the old approval queue. Specs: [02](docs/specs/02-instant-verification.md) + [03](docs/specs/03-report-moderation.md).
+**Geofence pass = proof.** Completions auto-approve at insert (migrations `016`–`017`); XP, level, streak, and sponsored redemption codes land before the celebration modal renders. Community reports + admin moderation (migration `017`) replace the old approval queue. Specs: [02](docs/specs/02-instant-verification.md) + [03](docs/specs/03-report-moderation.md).
 
 ```mermaid
 sequenceDiagram
@@ -147,7 +147,7 @@ sequenceDiagram
     alt Outside zone
         GeoTrig-->>Mobile: INSERT rejected
     else Inside zone
-        Note over SB: 016: rate-limit check → status = approved, reviewed_at = now<br/>sponsored → redemption code assigned in-DB
+        Note over SB: 017: rate-limit check → status = approved, reviewed_at = now<br/>sponsored → redemption code assigned in-DB
         SB->>Reward: XP + level + streak (+ redemption code if sponsored)
         Reward->>SB: profiles.total_xp → badge trigger (005)
         Mobile->>Player: Celebration with real XP / streak (Spec 02)
@@ -166,8 +166,8 @@ Anti-abuse at the same layer: rate limits (2 per 10 min, 10 per 24 h) in the `BE
 | System | Spec | Status | Touches |
 |---|---|---|---|
 | Geofence drawing | [01](docs/specs/01-geofence-drawing.md) | ✅ Shipped (014–015) | `quests.boundary`, admin ✏️ Draw mode, `@quest/geofence` |
-| Instant verification | [02](docs/specs/02-instant-verification.md) | ✅ Shipped (016) | `completions` insert path, mobile celebration, admin queue → log |
-| Reports & moderation | [03](docs/specs/03-report-moderation.md) | ✅ Shipped (017) | `FeedPostCard` + `ReportPostSheet`, `/moderation`, feed RLS, `removed` status, `feed_public`, `blocked_users` |
+| Instant verification | [02](docs/specs/02-instant-verification.md) | ✅ Shipped (016–017) | `completions` insert path, mobile celebration, admin queue → log |
+| Reports & moderation | [03](docs/specs/03-report-moderation.md) | ✅ Shipped (018) | `FeedPostCard` + `ReportPostSheet`, `/moderation`, feed RLS, `removed` status, `feed_public`, `blocked_users` |
 | Analytics | [04](docs/specs/04-analytics-instrumentation.md) | Planned | `lib/analytics.ts`, PostHog in `_layout.tsx` |
 | Content engine | [05](docs/specs/05-community-quests.md) | Planned | `quest_suggestions`, weekly drops (012), `quest_chains` |
 | Growth & engagement | [06](docs/specs/06-growth-engagement.md) | Planned | duo parties, recap share card, `xp_events`, offline queue |
@@ -192,25 +192,36 @@ Quest!/
 │   └── geofence/            @quest/geofence — shared client geofence logic (44 tests)
 ├── docs/specs/              01–07 feature specs (instant verification era)
 ├── tokens/                  Shared CSS design tokens
-├── DESIGN.md                Harbour Electric design system
+├── docs/design/            Cutouts brand spec + UI overhaul plan
+├── DESIGN.md                Earlier Harbour Electric spec (superseded)
 ├── PRODUCT.md               Product positioning, content engine, safety
 ├── ROADMAP.md               Phase plan and status
 └── supabase/
-    ├── migrations/          001–026 (geofence 013–015 · instant verification 016 · moderation 017 · multi-geofence 024–026)
-    ├── functions/           snapshot-ranks (award-xp and generate-redemption-code retired — absorbed into DB triggers)
+    ├── migrations/          001–031 (geofence 013–015, instant verification 016–017, moderation 018, badges 019–021,
+    │                        account deletion 023, multi-geofence 024–026, social 027–029, hardening 030–031)
+    ├── functions/           send-social-push (rank snapshot moved to pg_cron in 031; award-xp and
+    │                        generate-redemption-code retired in 017)
     └── seed.sql
 ```
 
 ## Design system alignment
 
-| Layer | Location |
-|-------|----------|
-| Spec | `DESIGN.md` |
-| Mobile tokens | `apps/mobile/lib/constants.ts` |
-| Admin CSS | `apps/admin/app/globals.css` |
-| Shared CSS | `tokens/colors.css`, `typography.css`, `shadows.css` |
+Quest! uses the **Cutouts** design direction (approved Nov 7, 2026): warm paper and ink,
+one bright colour per quest category, Figtree for interface text with the Pilowlava
+wordmark, real photographed cutouts you collect, place photos on every quest, and
+pillow-shaped proof photos. The full spec is [docs/design/BRAND.md](docs/design/BRAND.md)
+and the build plan is [docs/design/UI-OVERHAUL-PLAN.md](docs/design/UI-OVERHAUL-PLAN.md).
 
-Prior spec (**Saltwater Saturday**, indigo `#6366F1`, 4-tab layout) is superseded as of June 2026 Figma reimagining.
+| Layer | Location |
+|---|---|
+| Spec | `docs/design/BRAND.md` |
+| Mobile tokens | `apps/mobile/lib/theme.ts` (legacy `COLORS` in `lib/constants.ts` maps onto it) |
+| Text primitives | `apps/mobile/components/ui/Text.tsx` |
+| Copy helpers | `apps/mobile/lib/copy.js` |
+| Token report | `cd apps/mobile && npm run lint:tokens` |
+| Admin / shared CSS | `apps/admin/app/globals.css`, `tokens/*.css` (restyled in overhaul Phase 6) |
+
+`DESIGN.md` describes the earlier Harbour Electric spec and is kept for history.
 
 ## Analytics data flow (Spec 04 — planned)
 
@@ -230,7 +241,7 @@ flowchart LR
 
 No server-side event forwarding in v1. Sponsor redemption counts come from Postgres (Spec 07), not PostHog.
 
-## Moderation data flow (Spec 03 — shipped, migration 017)
+## Moderation data flow (Spec 03 — shipped, migration 018)
 
 ```mermaid
 sequenceDiagram

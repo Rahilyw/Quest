@@ -1,5 +1,5 @@
-# Edge function config. snapshot-ranks runs on a schedule with the default
-# verify_jwt = true, so it needs no stanza here.
+# Edge function config. The weekly rank snapshot moved into the database
+# (snapshot_last_week_ranks() scheduled by pg_cron, migration 031).
 
 # Called by the notifications Database Webhook, which authenticates with the
 # x-webhook-secret header instead of a user JWT.

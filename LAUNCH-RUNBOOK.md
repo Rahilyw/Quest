@@ -1,6 +1,6 @@
 # Quest! Launch Runbook — Your Remaining Steps
 
-**Last updated:** July 6, 2026
+**Last updated:** November 7, 2026
 
 Everything code-side is done and committed. The steps below are the ones that need
 **your accounts** (Apple, PostHog, Sentry, Vercel) or **your approval** (production DB).
@@ -8,17 +8,30 @@ Work top to bottom; each step says what it unblocks.
 
 ---
 
-## Step 0 — Apply migration 023 to the live database (2 min) 🔴
+## Step 0 — Database migrations ✅ through 030, then 031 🟠
+
+**Status (Nov 7, 2026):** 001 to 030 are live, including 023 (account deletion) and 030
+(definer-function lockdown). **031** (audit fixes, rank snapshot cron, Pacific-time
+leaderboard week) is written and dry-run tested but not applied yet.
+
+The Supabase CLI now targets the local stack by default, so always pass `--remote`:
+
+```powershell
+npx supabase db push --remote --include-all --dry-run
+npx supabase db push --remote --include-all
+```
+
+The original Step 0 notes follow for reference.
 
 Account deletion (App Store requirement) exists in code but the RPC isn't on the
 remote database until you push it:
 
 ```powershell
 cd C:\Users\rahil\Documents\Projects\Quest
-npx supabase db push
+npx supabase db push --remote --include-all
 ```
 
-Confirm the prompt lists `023_account_deletion.sql` and answer `Y`.
+Confirm the prompt lists the migrations you expect and answer `Y`.
 
 **Verify:** in the Supabase dashboard → SQL Editor, run
 `select proname from pg_proc where proname = 'delete_own_account';` — one row expected.
@@ -125,7 +138,22 @@ Analytics code ships in the app but emits nothing until a key exists.
 
 ---
 
-## Step 4 — Admin dashboard production env on Vercel (10 min) 🔴
+## Step 4 — Admin dashboard production env on Vercel ✅ Done Nov 7, 2026
+
+Project `kuest-admin` (root directory `apps/admin`). All seven variables from
+`apps/admin/.env.example` are set for Production and Preview, and production is live at
+<https://kuest-admin.vercel.app>. Builds had failed since Aug 10 because the project had
+**no** variables; the table below previously listed the wrong names.
+
+| Name | Notes |
+|---|---|
+| `SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_URL` | Project URL |
+| `SUPABASE_PUBLISHABLE_KEY`, `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` | Publishable key |
+| `SUPABASE_JWKS_URL` | Auth JWKS endpoint |
+| `SUPABASE_SECRET_KEY` | Server-only. Switch it to **Sensitive** in Vercel (still Encrypted) |
+| `ADMIN_ALLOWED_EMAILS` | Comma-separated admin emails |
+
+Original instructions, kept for reference (variable names corrected above):
 
 The admin app denies **all** logins until `ADMIN_ALLOWED_EMAILS` is set.
 
@@ -157,14 +185,32 @@ The admin app denies **all** logins until `ADMIN_ALLOWED_EMAILS` is set.
 
 ---
 
+## Step 6 — Clean-up from the Nov 2026 audit 🟡
+
+- **Delete retired edge functions** still deployed: `award-xp` and
+  `generate-redemption-code` (retired by migration 017), and `snapshot-ranks` once 031 is
+  applied. All require the service-role secret, so they aren't publicly callable, but they're
+  dead code. `npx supabase functions delete <name>`.
+- **Enable leaked-password protection:** Supabase → Authentication → Settings.
+- **`send-social-push` is not deployed** and no notifications webhook exists (Step 0b), so
+  comment, reply and follow pushes don't send. The in-app inbox works.
+- **Known advisor notes, intentional:** `leaderboard` is a definer view so weekly XP counts
+  every player; PostGIS lives in `public` and `spatial_ref_sys` has no RLS (moving PostGIS is
+  risky and not needed for the pilot).
+
+---
+
 ## Done when
 
-- [ ] Migration 023 applied (`npx supabase db push`)
-- [ ] Migrations 027–029 applied + `send-social-push` deployed + notifications webhook created
+- [x] Migrations 023 and 027 to 030 applied
+- [ ] Migration 031 applied (`npx supabase db push --remote --include-all`)
+- [ ] `send-social-push` deployed + notifications webhook created
 - [ ] TestFlight build installed on your phone
 - [ ] PostHog shows live events + 4 dashboards exist
 - [ ] Sentry DSN set as EAS secret
-- [ ] Admin login works on the production Vercel URL
+- [x] Admin deployed to production on Vercel with env vars (Nov 7, 2026)
+- [ ] Admin login verified on <https://kuest-admin.vercel.app>
+- [ ] Retired edge functions deleted; leaked-password protection on
 - [ ] Account deletion verified on a device
 
 After this list, the remaining work is post-launch product (Specs 05–07): weekly

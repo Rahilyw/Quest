@@ -1,6 +1,14 @@
 # Migration run order
 
-Apply migrations in numeric/filename order:
+Apply migrations in numeric/filename order. The CLI defaults to the local stack, so pass
+`--remote` for the hosted project:
+
+```bash
+npx supabase db push --remote --include-all
+```
+
+`--include-all` is needed because the timestamp-named initial schema sorts after the
+numbered files. Check with `--dry-run` first.
 
 | File | Description |
 |------|-------------|
@@ -33,6 +41,8 @@ Apply migrations in numeric/filename order:
 | `027_social_graph.sql` | Social layer: `completion_likes`, `completion_comments` (one-level replies), `follows`, `is_blocked_pair()`, `can_view_completion()` RLS helpers |
 | `028_comment_reports.sql` | Comment reports (Apple 1.2): `comment_reports`, auto-hide at 3 reporters, admin `removed_at`, report budget shared with post reports; clients can only UPDATE comment `body`; completions read policy now hides blocked pairs from each other |
 | `029_social_rate_limits_notifications.sql` | Rate limits on comments (10/10 min, 100/day), likes (120/h), follows (60/h, 200/day); `notifications` activity inbox fed by like/comment/reply/follow triggers; `profiles.push_social`. Push via `send-social-push` + Database Webhook |
+| `030_lock_down_definer_functions.sql` | Revokes client EXECUTE on `apply_completion_rewards` (it was callable over RPC and could mint XP); restricts `get_completion_geofence_evidence` to `service_role`; pins `search_path` on 14 definer functions. Applied live Nov 7, 2026 |
+| `031_audit_fixes.sql` | Nov 2026 audit: weekly rank snapshot moved into SQL (`snapshot_last_week_ranks()` on pg_cron, replacing the never-scheduled `snapshot-ranks` edge function); leaderboard week in `America/Vancouver`; client EXECUTE revoked on trigger functions; `search_path` on 5 more functions; 9 foreign-key indexes; RLS policies evaluate `auth.uid()` once per query |
 
 ## Env var naming drift
 

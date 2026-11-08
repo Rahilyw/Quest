@@ -1,7 +1,9 @@
 # Quest! — Product Roadmap
 
-**Last updated:** July 7, 2026
-**Stage:** **Store-Ready Code** → Ops Checklist ([LAUNCH-RUNBOOK.md](LAUNCH-RUNBOOK.md)) → TestFlight
+**Last updated:** November 7, 2026
+**Stage:** **Store-Ready Code** → Ops Checklist ([LAUNCH-RUNBOOK.md](LAUNCH-RUNBOOK.md)) → TestFlight, with the **Cutouts** UI overhaul starting in parallel
+
+> **November 2026 status.** A full audit (Nov 7) found and fixed an RPC that let any signed-in user mint XP (migration 030, applied live), added server-side admin checks to every admin action, moved the weekly rank snapshot into the database and aligned the leaderboard week to Victoria time (migration 031, ready to apply), and got the admin dashboard building and live on Vercel for the first time since August. The app's visual direction was redesigned as **Cutouts** ([docs/design/BRAND.md](docs/design/BRAND.md)); Phase 1 of the rebuild (tokens, Figtree, copy pass) is in review. Open PRs: Rahilyw/Quest#9 to #12.
 
 All launch-blocking *code* is shipped: instant verification, moderation, analytics + crash reporting SDKs, account deletion (App Store 5.1.1(v)), real app icons, real Victoria boundary. What remains before real users is **operations, not engineering** — Apple credentials, PostHog/Sentry keys, one `db push`, and Vercel env vars; every step is written up in the runbook.
 
@@ -24,21 +26,26 @@ Completions are verified by the server-side geofence at the moment of submission
 | Badge system | ✅ **Admin-configurable:** badge CRUD with metadata/rarity/art, data-driven unlock rules, per-badge thresholds via raw-metric evaluator (migrations 019–021) |
 | Account deletion (Apple 5.1.1(v)) | ✅ `delete_own_account()` RPC (023) + Settings → Danger Zone flow — **apply 023 live** |
 | Mobile profile & settings | ✅ Profile, edit profile, avatar upload, feed-privacy toggle, account deletion, legal screens |
-| Admin operations | ✅ Completions log + moderation queue + quest management + badge management (set `ADMIN_ALLOWED_EMAILS` before prod deploy) |
-| Engagement plumbing | ⚠️ Removal push shipped + tap listeners mounted; new-quest/streak/Monday-drop pushes not built |
+| Admin operations | ✅ Completions log + moderation queue + quest management + badge management; every server action checks the admin allowlist itself (#10); **live at kuest-admin.vercel.app** with env vars set |
+| Engagement plumbing | ⚠️ Removal push shipped + tap listeners mounted; social inbox live (029) but `send-social-push` **not deployed** and no webhook, so comment/follow pushes don't send; new-quest/streak/Monday-drop pushes not built |
 | Analytics & crash reporting | ✅ **SDKs wired** — PostHog (`lib/analytics.ts`, ~16 events) + Sentry; keys + 4 dashboards pending ([Spec 04](docs/specs/04-analytics-instrumentation.md), runbook 2–3) |
 | Store assets | ✅ Real brand-mark icon / adaptive icon / splash (generated via `scripts/gen-app-icons.js`) |
 | Sponsor / B2B loop | ⚠️ Codes now auto-issued in-DB (017) but merchants can't validate them ([Spec 07](docs/specs/07-merchant-redemption.md)) |
 | Content pipeline | ❌ ~29 seeded quests, no refresh cadence or community input ([Spec 05](docs/specs/05-community-quests.md)) |
 | Growth loop | ❌ Zero acquisition features ([Spec 06](docs/specs/06-growth-engagement.md)) |
-| Production readiness | ⚠️ CI + tests green (105 mobile + 44 geofence); EAS project ID set; **remaining blockers are all ops** (runbook) |
+| Production readiness | ⚠️ CI + tests green (159 mobile + 50 geofence); EAS project ID set; admin live on Vercel; **remaining blockers are ops** (runbook) |
+| Visual design | 🔄 **Cutouts** direction approved Nov 7 ([BRAND.md](docs/design/BRAND.md), [UI-OVERHAUL-PLAN.md](docs/design/UI-OVERHAUL-PLAN.md)); Phase 1 foundations in review (#12) |
+| Rank deltas | ⚠️ `last_week_rank` never populated: the snapshot edge function was never scheduled. Fixed in SQL + pg_cron by migration 031 (apply pending) |
 
 **Highest-impact blockers before real users** (step-by-step: [LAUNCH-RUNBOOK.md](LAUNCH-RUNBOOK.md)):
 
 1. **iOS App Store submit credentials** — `eas.json` still has `REPLACE_WITH_*` placeholders
-2. **Apply migration `023` (account deletion) on live Supabase** — `npx supabase db push` (022 applied Jul 6; history repaired and synced through 022)
-3. **PostHog + Sentry keys** — SDKs are wired but emit nothing until `EXPO_PUBLIC_POSTHOG_KEY` / `EXPO_PUBLIC_SENTRY_DSN` are set; build the 4 Spec 04 dashboards in PostHog
-4. **`ADMIN_ALLOWED_EMAILS`** must be set in production (Vercel)
+2. **PostHog + Sentry keys** — SDKs are wired but emit nothing until `EXPO_PUBLIC_POSTHOG_KEY` / `EXPO_PUBLIC_SENTRY_DSN` are set; build the 4 Spec 04 dashboards in PostHog
+3. **Apply migration `031`** — `npx supabase db push --remote --include-all` (001 to 030 are live)
+4. **Deploy `send-social-push`** + notifications webhook (runbook Step 0b)
+5. **Merge the review stack** — #9 (Next 15 + demo-login gate), #10 (admin/RPC hardening), #11 (design docs), #12 (Cutouts Phase 1)
+
+Done since July: migration 023 and 027 to 030 applied live; `ADMIN_ALLOWED_EMAILS` and all admin env vars set on Vercel; admin production deploy live.
 
 ---
 
@@ -144,9 +151,12 @@ Plus: duo quests as the referral loop (word-of-mouth **is** the distribution str
 | Gap | Severity | Impact | Fix |
 |---|---|---|---|
 | **iOS submit credentials not configured** | 🔴 Critical (ship) | Blocks TestFlight / App Store | Ops: fill `eas.json` (runbook step 1) |
-| **Migration 023 not applied on live DB** | 🔴 Critical (ops) | Account deletion RPC missing → App Store 5.1.1(v) fails at review | `npx supabase db push` (runbook step 0) |
 | **PostHog/Sentry keys unset** | 🔴 Critical (learning) | SDKs wired but no events/crashes recorded; dashboards unbuilt | Runbook steps 2–3 |
-| **`ADMIN_ALLOWED_EMAILS` unset in prod** | 🔴 Critical (ops) | All admin logins denied | Set on Vercel deploy (runbook step 4) |
+| **Migration 031 not applied** | 🟠 High | No rank deltas; leaderboard week resets Sunday afternoon Pacific instead of midnight | `db push --remote` (runbook step 0) |
+| **Social push not deployed** | 🟠 High (engagement) | Comment/reply/follow pushes never send; inbox only | Runbook step 0b |
+| **Proof photos are public by URL** | 🟠 High (privacy) | `proof-photos` bucket is public, so files stay reachable after a post is hidden or opted out; matters more once selfies ship | Private bucket + signed URLs (UI-OVERHAUL-PLAN Phase 2, step 7) |
+| **Retired edge functions still deployed** | 🟡 Medium | `award-xp`, `generate-redemption-code` (service-role only, dead code) | Delete (runbook step 6) |
+| **Streak weeks use UTC** | 🟡 Medium | `apply_completion_rewards` computes ISO weeks in UTC; a Sunday-evening quest counts toward the next week | Align to `America/Vancouver` like the leaderboard (031) |
 | **Content treadmill (~29 quests)** | 🟠 High (retention) | Engaged players exhaust content in weeks | Spec 05 |
 | **Merchant can't validate redemption codes** | 🟠 High (revenue) | No proof of value for sponsor renewals | Spec 07 (`redeemed_at` already in 017) |
 | **No acquisition features** | 🟠 High (growth) | Word-of-mouth unassisted | Spec 06 (duo quests, recap card) |
@@ -171,6 +181,12 @@ Plus: duo quests as the referral loop (word-of-mouth **is** the distribution str
 | No crash reporting | ✅ Sentry SDK wired (production-only; DSN via EAS secret) |
 | No in-app account deletion (App Store 5.1.1(v)) | ✅ Migration `023` `delete_own_account()` RPC + Settings → Danger Zone flow (apply 023 live) |
 | Placeholder 1×1 app icons | ✅ Brand-mark icon/adaptive-icon/splash generated (`scripts/gen-app-icons.js`), wired in `app.json` |
+| Migration 023 + 027–029 not applied live | ✅ Applied (Nov 2026) |
+| `ADMIN_ALLOWED_EMAILS` unset in prod | ✅ Set with all admin env vars; production deployed Nov 7 |
+| Any signed-in user could call `apply_completion_rewards` over RPC (unlimited XP) | ✅ Migration 030, applied live and verified Nov 7 |
+| Admin server actions trusted middleware alone | ✅ `requireAdmin()` in every action (#10) |
+| Release builds shipped a demo login with hardcoded credentials | ✅ Gated to `__DEV__` (#9) |
+| Android tab bar blur hazed the whole screen | ✅ Blur removed on Android (#12) |
 
 ---
 
@@ -193,6 +209,9 @@ Status key: ✅ Done · ⚠️ Partial · ❌ Not started
 | 0.9 | Migration/env-var doc cleanup | ⚠️ | Migrations README covers 001–023; env drift remains |
 | 0.10 | Account deletion (App Store 5.1.1(v)) | ✅ | Migration `023` RPC + Settings Danger Zone flow; **apply 023 live** |
 | 0.11 | Real app icons + adaptive icon + splash | ✅ | Generated brand mark; `app.json` wired (adaptive icon, notification icon, navy splash) |
+| 0.12 | Definer-function lockdown + admin action auth | ✅ | Migration 030 (live) + `requireAdmin()` (#10) |
+| 0.13 | Nov 2026 audit fixes | ⚠️ | Migration 031: rank snapshot cron, Pacific leaderboard week, RPC surface, FK indexes, RLS perf. Apply pending |
+| 0.14 | Admin on Vercel | ✅ | Env vars set, production live Nov 7 |
 
 ### Phase A — Geofence Drawing ([Spec 01](docs/specs/01-geofence-drawing.md)) — ✅ SHIPPED July 2026
 
@@ -234,6 +253,20 @@ Status key: ✅ Done · ⚠️ Partial · ❌ Not started
 | D.3 | 4 dashboards: activation funnel, WAU retention post-first-quest, week-2 leaderboard return, per-quest content conversion | ⚠️ Build in PostHog UI (runbook step 2) |
 | D.4 | Privacy policy analytics line | ✅ |
 
+### Phase H — Cutouts UI overhaul ([BRAND.md](docs/design/BRAND.md), [plan](docs/design/UI-OVERHAUL-PLAN.md)) — STARTED NOV 2026
+
+| # | Task | Status |
+|---|---|---|
+| H.1 | Foundations: tokens, Figtree, text primitives, category model, copy pass, token report | 🔄 In review (#12) |
+| H.2 | Cutout pipeline: `cutout_url`, processing script, admin upload, `<Cutout>`, `<Pillow>`, quest-photos query, dual-camera proof data (private selfie bucket), collage kit components | ❌ |
+| H.3 | Core loop: floating tab bar + new tabs, This week, Quests folders, quest page + photo viewer, camera (place then selfie), Verified | ❌ |
+| H.4 | City bubbles, Rankings, You (collection shelf + badges) | ❌ |
+| H.5 | Brand surfaces: icon, splash, share card, onboarding | ❌ |
+| H.6 | Admin restyle | ❌ |
+| H.7 | Content: ~29 place photos, ~29 cutouts, action phrases, sprite set | ❌ (founder) |
+
+Decisions D1 to D8 are recorded in the plan (wordmark, tabs, category colours, distance/time, dual-camera proof approved Nov 7, place photos, sprites).
+
 ### Phase E — Content Engine ([Spec 05](docs/specs/05-community-quests.md)) — POST-LAUNCH WEEKS 1–4
 
 | # | Task | Status |
@@ -267,7 +300,7 @@ Status key: ✅ Done · ⚠️ Partial · ❌ Not started
 |---|---|
 | Multi-city support | Pilot must prove one city first |
 | Self-serve sponsor portal | Manual sponsor ops fine at pilot scale; Spec 07 provides the proof-of-value first |
-| Follow/friend graph, feed likes/comments | Fragments a small community; city-wide feed + leaderboard is the social layer for now |
+| ~~Follow/friend graph, feed likes/comments~~ | Un-deferred Aug 2026; shipped in 027 to 029 |
 | AI photo-content verification | Post-moderation covers it; the lighter **photo pre-screen auto-triage** (R2 below) is the first step if report volume demands |
 | Season Veteran badge / seasons table | With a future seasons feature |
 | iOS/Android widgets | Post-retention-mechanics |
@@ -340,7 +373,9 @@ Findings from a full codebase + docs review. **R-items** are process/tooling rec
 | Area | Issue | When to fix |
 |---|---|---|
 | ~~`award-xp` / badge logic duplication~~ | ✅ Resolved — edge fn retired by 017; badge logic single-sourced in 019–021 evaluator | — |
-| Doc drift: root README.md + ARCHITECTURE.md | Still describe 016 = instant verification / 017 = moderation and migrations "001–017"; badge system (019–021), account deletion (023), analytics not reflected | Phase 0.9 (R6) |
+| Doc drift: root README.md + ARCHITECTURE.md | Migration lists updated through 031 in Nov 2026; keep them in step with `supabase/migrations/README.md` (the source of truth) | Ongoing |
+| Hand-written DB types | `lib/types.ts` is a safe subset of the live schema (Nov audit found no mismatches across 100 queries) but drifts by hand | R5, `supabase gen types` |
+| Raw tokens in components | 580 hardcoded colours/font sizes (`npm run lint:tokens`) | UI overhaul Phases 3 to 4, then `--strict` in CI |
 | Env var naming drift | Root `.env.example` vs admin `SUPABASE_SECRET_KEY` | Phase 0.9 |
 | No React Query / SWR | Hooks re-fetch on every mount | Phase E kickoff (R4) |
 | Manual TypeScript types | `lib/types.ts` vs `supabase gen types` | Phase 0.9 (R5) |
@@ -388,6 +423,7 @@ Account deletion (023): Settings → delete_own_account() → storage objects + 
 
 | Date | Change |
 |---|---|
+| Nov 7, 2026 | **Audit, security and design.** Found any signed-in user could call `apply_completion_rewards` over RPC; migration `030` revokes it plus locks GPS evidence to the service role (applied live). Admin server actions now call `requireAdmin()`. Demo login gated to dev builds. Migration `031` (ready): weekly rank snapshot in SQL on pg_cron (the edge function never ran), leaderboard week in `America/Vancouver`, trimmed RPC surface, FK indexes, RLS `auth.uid()` once per query; `snapshot-ranks` edge function removed. Admin env vars set on Vercel and production deployed (builds had failed since Aug 10). New **Cutouts** design direction and 7-phase overhaul plan; Phase 1 foundations built (tokens, Figtree, copy pass, 159 tests). Docs updated: runbook (correct Vercel var names, `--remote`), migrations index, specs index, architecture, README, product. |
 | Oct 1, 2026 (2) | **Social rate limits + Activity inbox.** Migration `029`: per-user rate limits on comments (10/10 min, 100/day), likes (120/h), follows (60/h, 200/day) with client copy; `notifications` table fed by triggers (like → owner, comment → owner, reply → parent author, follow → followed user), deduped so re-like / re-follow never stack, hidden for blocked pairs and hidden/removed comments; `profiles.push_social`. Edge fn `send-social-push` (Database Webhook on insert) pushes comments, replies and follows — likes inbox-only — with a 5-per-10-min burst cap and dead-token cleanup. Mobile: Activity screen (`/notifications`), bell with unread badge on Explore + Feed, push taps deep-link to the completion / profile, Settings → "Comments & Followers" push toggle; comment failures now alert instead of blanking the thread. **Runbook Step 0b.** |
 | Oct 1, 2026 | **Comment moderation (Apple 1.2 for the 027 social layer).** Migration `028`: `comment_reports` (5 comment-specific reasons, one per user per comment, can't report own, 10/day budget shared with post reports), auto-hide at 3 distinct reporters, admin soft-removal via `removed_at`; clients restricted to updating comment `body` (027 let authors un-hide their own comments). Mobile: Report on others' comments in `CommentsSheet` (reported comments vanish for the reporter; authors see "hidden while under review"); `ReportPostSheet` made reusable. Admin: Comments section in `/moderation` (dismiss / remove) + flagged count includes comments. **Blocking:** 028 also makes the completions read policy block-aware both ways (a blocked user could previously still open the blocker's grid/completions); profile ⋯ menu with Block/Unblock + blocked state; new Settings → Blocked accounts screen (the feed's "unblock later in Settings" promise had no screen behind it). **Store config:** removed `REPLACE_WITH_*` PostHog/Sentry placeholders from `eas.json` (its `env` overrides EAS env vars, so they would have shadowed the real keys set per the runbook); `lib/publicKey.ts` ignores placeholder values. Tests 119 mobile. **Apply 027 + 028 live.** |
 | Jul 7, 2026 | **Roadmap refresh.** Stage advanced to Store-Ready Code → ops checklist; all remaining launch blockers are operations (runbook steps). Migration numbering drift fixed doc-wide (016–017 instant verification, 018 moderation — matching real files); shipped-but-undocumented **admin badge system (019–021)** now recorded across snapshot/implemented/architecture sections. New **Recommendations & Future Candidates** section: R1–R7 (TestFlight cohort, photo pre-screen auto-triage, OTA-first iteration, TanStack Query before Phase E, generated DB types, README/ARCHITECTURE sync, replay-off policy) and C1–C6 (streak freeze, save-for-later, quest-log map, flash quests, leagues, merchant QR); strongest candidates added to the priority matrix as P2/P3. |
