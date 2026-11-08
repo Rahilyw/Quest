@@ -24,7 +24,7 @@ export interface FeedPost {
 }
 
 const POST_SELECT =
-  'id, user_id, photo_url, completed_at, profile:profiles(username, level, avatar_url), quest:quests(title, xp_reward), likes:completion_likes(count), comments:completion_comments(count)'
+  'id, user_id, photo_url, completed_at, profile:profiles!completions_user_id_fkey(username, level, avatar_url), quest:quests(title, xp_reward), likes:completion_likes(count), comments:completion_comments(count)'
 
 type Row = {
   id: string
