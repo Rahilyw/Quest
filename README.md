@@ -116,16 +116,15 @@ Quest! (monorepo root)
 │   └── specs/                    Feature specs 01–07 (instant verification era)
 │
 ├── supabase/
-│   ├── migrations/               001–026 (geofence 013–015 · instant verification 016 ·
-│   │                             moderation 017 · multi-geofence 024–026)
+│   ├── migrations/               001–031 (index: supabase/migrations/README.md)
 │   ├── functions/
-│   │   └── snapshot-ranks/       Weekly rank snapshot (generate-redemption-code
-│   │                             retired — absorbed into 017 DB triggers)
+│   │   └── send-social-push/     Push for comments, replies and follows (Database Webhook)
 │   ├── seed.sql                  ~29 Victoria quests + 13 badges + geofence examples
 │   └── config.toml               Edge function config
 │
 ├── tokens/                       Shared CSS design tokens
-├── DESIGN.md                     Harbour Electric design system spec
+├── docs/design/                  Cutouts brand spec (BRAND.md) + UI overhaul plan
+├── DESIGN.md                     Earlier Harbour Electric spec (superseded)
 ├── ARCHITECTURE.md               Visual architecture maps
 ├── PRODUCT.md                    Product positioning, content engine, safety
 ├── ROADMAP.md                    Development status, phases, and blockers
@@ -678,17 +677,25 @@ There is no approval step — completions verify instantly at submission. The ad
 
 ### Edge Functions
 
-**`snapshot-ranks`**
+**`send-social-push`**
 
-Captures weekly leaderboard positions into `profiles.last_week_rank` for the rank-delta display.
+Called by a Database Webhook on inserts into `notifications` (migration 029). Sends Expo pushes for
+comments, replies and follows; likes stay inbox-only. Authenticates with the `x-webhook-secret`
+header (`verify_jwt = false`). Not deployed yet: see LAUNCH-RUNBOOK.md Step 0b.
 
-**Retired:** `award-xp` and `generate-redemption-code` were absorbed into database triggers by migration 017 — rewards, badge checks, and redemption codes now run in-DB on the insert path, with no network hop between submission and reward. The `award-xp` function folder was removed; `generate-redemption-code` remains retired in config.
+**Weekly rank snapshot** now runs in the database: `snapshot_last_week_ranks()` scheduled by pg_cron
+(migration 031) every Monday just before midnight Pacific. The `snapshot-ranks` edge function it
+replaces was never scheduled and has been removed.
+
+**Retired:** `award-xp` and `generate-redemption-code` were absorbed into database triggers by
+migration 017. Both are still deployed on the hosted project and should be deleted
+(runbook Step 6).
 
 ### Deploying Edge Functions
 
 ```bash
 # With Supabase CLI
-supabase functions deploy snapshot-ranks
+npx supabase functions deploy send-social-push
 ```
 
 ### Local Development with Supabase CLI
@@ -711,35 +718,22 @@ supabase functions serve
 
 ## Design System
 
-Quest! uses the **Harbour Electric** design system. Full spec in [DESIGN.md](DESIGN.md). Token files are in `tokens/`.
+Quest! uses the **Cutouts** design direction (approved Nov 7, 2026): warm paper and ink,
+one bright colour per quest category, Figtree for interface text with the Pilowlava
+wordmark, real photographed cutouts you collect, place photos on every quest, and
+pillow-shaped proof photos. The full spec is [docs/design/BRAND.md](docs/design/BRAND.md)
+and the build plan is [docs/design/UI-OVERHAUL-PLAN.md](docs/design/UI-OVERHAUL-PLAN.md).
 
-### Colour Palette
+| Layer | Location |
+|---|---|
+| Spec | `docs/design/BRAND.md` |
+| Mobile tokens | `apps/mobile/lib/theme.ts` (legacy `COLORS` in `lib/constants.ts` maps onto it) |
+| Text primitives | `apps/mobile/components/ui/Text.tsx` |
+| Copy helpers | `apps/mobile/lib/copy.js` |
+| Token report | `cd apps/mobile && npm run lint:tokens` |
+| Admin / shared CSS | `apps/admin/app/globals.css`, `tokens/*.css` (restyled in overhaul Phase 6) |
 
-| Token | Hex | Use |
-|-------|-----|-----|
-| Quest Sky | `#E8F3FF` | App background |
-| Quest Blue | `#4364F7` | Brand, CTAs, active tab pill |
-| City Orange | `#FF6B35` | City badge, notifications, highlights |
-| Navy | `#0D1B3E` | Primary text, Rankings/Profile headers |
-| Quest White | `#FFFFFF` | Card surfaces, form inputs |
-
-### Category Colours
-
-| Category | Colour | Hex |
-|----------|--------|-----|
-| Fitness | Green | `#22C55E` |
-| Social | Purple | `#A855F7` |
-| Food | Orange | `#F97316` |
-| Community | Blue | `#3B82F6` |
-| Nature | Teal | `#14B8A6` |
-
-### Design Principles
-
-- **Image-led** — every quest card shows a full-bleed hero photo
-- **Earned over given** — badges feel meaningful because they require real effort in the real world
-- **Realness** — social proof comes from actual player photos, not generated content
-- **Light mode, glass surfaces** — sky blue background with white cards and subtle shadows
-- **WCAG AA** — 44×44 pt minimum touch targets; sufficient colour contrast throughout
+`DESIGN.md` describes the earlier Harbour Electric spec and is kept for history.
 
 ---
 
@@ -832,10 +826,12 @@ The admin app uses Next.js ISR for the user directory page (60-second revalidati
 
 See [ROADMAP.md](ROADMAP.md) for the full phase plan and [docs/specs/README.md](docs/specs/README.md) for feature specs.
 
-**Shipped:** geofence system (four zone types, admin draw UI, `@quest/geofence` package), **instant verification** (Spec 02 — no approval queue, rewards on insert), **reports & moderation** (Spec 03 — report/block/feed-privacy, admin moderation queue, Apple 1.2 compliant), 5-tab Harbour Electric UI, activity feed, quest scheduling schema.
+**Shipped:** geofence system (four zone types, admin draw UI, `@quest/geofence` package), **instant verification** (Spec 02 — no approval queue, rewards on insert), **reports & moderation** (Spec 03 — report/block/feed-privacy, admin moderation queue, Apple 1.2 compliant), activity feed, social layer (likes, comments, follows, inbox; 027 to 029), quest scheduling schema, admin on Vercel. Security hardening in Nov 2026 (migration 030, admin action auth).
 
-**P0 before launch:** PostHog analytics (Spec 04), iOS submit credentials, applying migrations 014–017 on the live database, production admin allowlist, real Victoria boundary polygon.
+**P0 before launch:** iOS submit credentials, PostHog + Sentry keys, apply migration 031, deploy `send-social-push`. See LAUNCH-RUNBOOK.md.
+
+**In progress:** the Cutouts UI overhaul (docs/design/UI-OVERHAUL-PLAN.md); Phase 1 foundations in review.
 
 **Post-launch:** community quests & weekly drops (Spec 05), duo quests & recap card (Spec 06), merchant redemption validation (Spec 07).
 
-**Deliberately deferred:** multi-city, self-serve sponsor portal, follow/friend graph.
+**Deliberately deferred:** multi-city, self-serve sponsor portal.

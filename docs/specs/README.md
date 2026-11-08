@@ -12,6 +12,10 @@ The spec set behind the post-MVP strategy: make rewards instant, let the communi
 | [06](06-growth-engagement.md) | **Growth & Engagement** | Duo quests + referral loop, Sunday recap share card, XP economy events, first-quest onboarding, offline queue | Draft |
 | [07](07-merchant-redemption.md) | **Merchant Redemption** | No-login merchant page to validate & redeem sponsor codes; redemption-rate reporting | Draft |
 
+**Design.** The visual and UX direction ("Cutouts") lives in [`docs/design/BRAND.md`](../design/BRAND.md), with the
+build plan in [`docs/design/UI-OVERHAUL-PLAN.md`](../design/UI-OVERHAUL-PLAN.md). Phase 1 (tokens, Figtree, copy pass) is
+in review; specs 05 to 07 should be built in that visual language.
+
 ## Why (product rationale)
 
 Four findings drive this set, none of which were on the original roadmap:
@@ -46,14 +50,16 @@ Plus the growth reality: word-of-mouth in a ~90k city is the entire distribution
 | **A** | Polygon geofences: enum, `boundary` + generated `boundary_geojson`, `set_quest_boundary()`, admin draw UI, mobile display | `014`, `015` | ✅ Shipped |
 | **B** | Instant verification: auto-approve on insert, rewards on insert path, in-DB redemption codes, revocation, anti-abuse guards; mobile celebration with real XP/streak | `016` | ✅ Shipped |
 | **C** | Reports & moderation: `completion_reports`, feed report button, block user, feed privacy opt-out, admin moderation queue; **approval queue + pending UI removed in the same release** | `017` | ✅ Shipped (with B) |
-| **D** | Analytics: PostHog wrapper, event schema, 4 dashboards | — | **Next** — before launch |
-| **E** | Content engine: weekly drop surfacing + push, community suggestions, chains | `018+` | Post-launch weeks 1–4 |
-| **F** | Growth: starter quest, recap card, XP events, offline queue, duo quests | `019+` | Post-launch weeks 2–8 |
-| **G** | Sponsor loop: merchant redemption page, redemption reporting | `020+` | Before sponsor renewals |
+| **D** | Analytics: PostHog wrapper, event schema, 4 dashboards | — | Code shipped; keys + dashboards are ops (runbook) |
+| **E** | Content engine: weekly drop surfacing + push, community suggestions, chains | `032+` | Post-launch weeks 1–4 |
+| **F** | Growth: starter quest, recap card, XP events, offline queue, duo quests | `032+` | Post-launch weeks 2–8 |
+| **G** | Sponsor loop: merchant redemption page, redemption reporting | `032+` | Before sponsor renewals |
 
 ## Deliberately deferred
 
-Multi-city, self-serve sponsor portal, follow/friend graph, feed likes/comments. One pilot city with a city-wide leaderboard and public feed already has all the social density it needs — friends/follows would fragment a small community. The pilot's job is proving one city loves this.
+Multi-city and a self-serve sponsor portal. One pilot city with a city-wide leaderboard and public feed is the pilot's job.
+
+*Update Aug 2026:* the follow graph and feed likes/comments were un-deferred and shipped (migrations 027 to 029).
 
 ## Non-goals (v1, across specs)
 
