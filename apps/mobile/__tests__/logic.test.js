@@ -682,6 +682,126 @@ assertEqual('shouldShowPostMenu hides menu on own post', shouldShowPostMenu('a',
 assertEqual('shouldShowPostMenu shows menu on others', shouldShowPostMenu('a', 'b'), true)
 
 // ---------------------------------------------------------------------------
+// SECTION 17: Comment reports (mirrors lib/moderation.ts + hooks/useComments.ts)
+// ---------------------------------------------------------------------------
+console.log('\n--- Section 17: comment reports ---')
+
+function reasonNeedsDetails(reason) {
+  return reason === 'other' || reason === 'inappropriate' || reason === 'harassment' || reason === 'hate'
+}
+
+function reportErrorMessage(code, hint, noun = 'post') {
+  if (hint === 'CANNOT_REPORT_OWN') return `You can't report your own ${noun}.`
+  if (hint === 'REPORT_RATE_LIMITED' || code === '23514') {
+    return "You've filed a lot of reports today. Try again tomorrow."
+  }
+  if (code === '23505') return `You already reported this ${noun}.`
+  return 'Could not submit report. Try again.'
+}
+
+function buildCommentTree(rows, reportedIds) {
+  const nodes = new Map()
+  const topLevel = []
+  for (const row of rows) {
+    if (!row.profile || reportedIds.has(row.id)) continue
+    nodes.set(row.id, { ...row, replies: [] })
+  }
+  for (const node of nodes.values()) {
+    if (node.parent_id) nodes.get(node.parent_id)?.replies.push(node)
+    else topLevel.push(node)
+  }
+  return topLevel
+}
+
+assertEqual('harassment asks for details', reasonNeedsDetails('harassment'), true)
+assertEqual('spam submits directly', reasonNeedsDetails('spam'), false)
+assertEqual(
+  'own-comment report beats generic check_violation',
+  reportErrorMessage('23514', 'CANNOT_REPORT_OWN', 'comment'),
+  "You can't report your own comment."
+)
+assertEqual(
+  'rate limit message',
+  reportErrorMessage('23514', 'REPORT_RATE_LIMITED', 'comment'),
+  "You've filed a lot of reports today. Try again tomorrow."
+)
+assertEqual('duplicate comment report', reportErrorMessage('23505', undefined, 'comment'), 'You already reported this comment.')
+
+const commentRows = [
+  { id: 'c1', parent_id: null, profile: { username: 'a' } },
+  { id: 'c2', parent_id: 'c1', profile: { username: 'b' } },
+  { id: 'c3', parent_id: null, profile: { username: 'c' } },
+  { id: 'c4', parent_id: 'c3', profile: { username: 'd' } },
+]
+const tree = buildCommentTree(commentRows, new Set(['c2', 'c3']))
+assertEqual('reported comments drop from viewer tree', tree.map((c) => c.id).join(','), 'c1')
+assertEqual('reported reply removed from parent', tree[0].replies.length, 0)
+
+// ---------------------------------------------------------------------------
+// SECTION 18: Public key placeholder guard (mirrors lib/publicKey.ts)
+// ---------------------------------------------------------------------------
+console.log('\n--- Section 18: public key guard ---')
+
+function publicKey(value) {
+  const trimmed = value?.trim()
+  if (!trimmed) return undefined
+  if (/^REPLACE_/i.test(trimmed) || /your[-_]?(key|dsn)/i.test(trimmed)) return undefined
+  return trimmed
+}
+
+assertEqual('unset key is missing', publicKey(undefined), undefined)
+assertEqual('blank key is missing', publicKey('  '), undefined)
+assertEqual('eas.json placeholder is missing', publicKey('REPLACE_WITH_SENTRY_DSN'), undefined)
+assertEqual('runbook PostHog example is missing', publicKey('phc_your_key_here'), undefined)
+assertEqual(
+  'runbook Sentry example is missing',
+  publicKey('https://your-dsn@o0.ingest.sentry.io/0'),
+  undefined
+)
+
+// ---------------------------------------------------------------------------
+// SECTION 19: Social inbox + rate limits (lib/socialNotifications.js, 029)
+// ---------------------------------------------------------------------------
+console.log('\n--- Section 19: social inbox ---')
+
+const {
+  notificationText,
+  notificationRoute,
+  formatBadgeCount,
+  socialRateLimitMessage,
+} = require(path.join(__dirname, '../lib/socialNotifications.js'))
+
+assertEqual('like copy', notificationText('like'), 'liked your quest completion.')
+assertEqual('reply copy leads into the quote', notificationText('reply'), 'replied to your comment:')
+assertEqual('follow copy', notificationText('follow'), 'started following you.')
+assertEqual('unknown type falls back', notificationText('poke'), 'interacted with you.')
+
+assertEqual('follow opens actor profile', notificationRoute('follow', null, 'u1'), '/user/u1')
+assertEqual('like opens the completion', notificationRoute('like', 'c1', 'u1'), '/completion/c1')
+assertEqual('comment opens the completion', notificationRoute('comment', 'c1', 'u1'), '/completion/c1')
+assertEqual('reply opens the completion', notificationRoute('reply', 'c1', 'u1'), '/completion/c1')
+assertEqual('missing completion falls back to profile', notificationRoute('comment', null, 'u1'), '/user/u1')
+assertEqual('nothing to open', notificationRoute('follow', null, null), null)
+
+assertEqual('badge hidden at 0', formatBadgeCount(0), '')
+assertEqual('badge hidden for negatives', formatBadgeCount(-2), '')
+assertEqual('badge shows single digit', formatBadgeCount(7), '7')
+assertEqual('badge shows 9', formatBadgeCount(9), '9')
+assertEqual('badge caps at 9+', formatBadgeCount(42), '9+')
+
+assertTruthy('comment rate limit has copy', socialRateLimitMessage('COMMENT_RATE_LIMITED'))
+assertTruthy('like rate limit has copy', socialRateLimitMessage('LIKE_RATE_LIMITED'))
+assertTruthy('follow rate limit has copy', socialRateLimitMessage('FOLLOW_RATE_LIMITED'))
+assertEqual('report hint is not a social rate limit', socialRateLimitMessage('REPORT_RATE_LIMITED'), null)
+assertEqual('no hint', socialRateLimitMessage(undefined), null)
+assertEqual('real PostHog key passes', publicKey('phc_AbC123xyz'), 'phc_AbC123xyz')
+assertEqual(
+  'real Sentry DSN passes',
+  publicKey('https://abc123@o456.ingest.us.sentry.io/789'),
+  'https://abc123@o456.ingest.us.sentry.io/789'
+)
+
+// ---------------------------------------------------------------------------
 // SUMMARY
 // ---------------------------------------------------------------------------
 console.log('\n=== SUMMARY ===')

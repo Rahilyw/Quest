@@ -48,5 +48,20 @@ export function useBlockedUsers(userId: string | undefined) {
     return { ok: true }
   }
 
-  return { blockedIds, loading, refetch, blockUser }
+  async function unblockUser(blockedId: string): Promise<{ ok: true } | { ok: false; error: string }> {
+    if (!userId) return { ok: false, error: 'Sign in to manage blocks.' }
+
+    const { error } = await supabase
+      .from('blocked_users')
+      .delete()
+      .eq('blocker_id', userId)
+      .eq('blocked_id', blockedId)
+
+    if (error) return { ok: false, error: error.message }
+
+    await refetch()
+    return { ok: true }
+  }
+
+  return { blockedIds, loading, refetch, blockUser, unblockUser }
 }

@@ -25,6 +25,34 @@ Confirm the prompt lists `023_account_deletion.sql` and answer `Y`.
 
 ---
 
+## Step 0b — Social layer: migrations 027–029 + social push (10 min) 🟠
+
+Likes / comments / follows (027), comment reports (028) and rate limits + the
+Activity inbox (029) need the same `npx supabase db push` as Step 0 — confirm the
+prompt lists 027, 028 and 029.
+
+The inbox works as soon as 029 is applied. **Push** for comments, replies and new
+followers needs the edge function plus a webhook:
+
+```powershell
+cd C:\Users\rahil\Documents\Projects\Quest
+npx supabase secrets set SOCIAL_PUSH_WEBHOOK_SECRET=<long random string>
+npx supabase functions deploy send-social-push
+```
+
+Then in the Supabase dashboard → **Database → Webhooks → Create a new hook**:
+
+- Table: `public.notifications`, Events: **Insert** only
+- Type: **HTTP Request**, Method `POST`,
+  URL `https://<project-ref>.supabase.co/functions/v1/send-social-push`
+- HTTP header: `x-webhook-secret` = the same random string
+
+**Verify:** follow a test account from another device — the followed phone gets
+"New follower", and Edge Functions → `send-social-push` → Logs shows `pushed: true`.
+Likes never push (inbox only) by design.
+
+---
+
 ## Step 1 — Apple Developer + iOS submit credentials (30–60 min) 🔴
 
 This is the only thing blocking a TestFlight build.
@@ -74,6 +102,7 @@ Analytics code ships in the app but emits nothing until a key exists.
    npx eas-cli env:create --scope project --name EXPO_PUBLIC_POSTHOG_KEY --value phc_your_key_here --environment production
    npx eas-cli env:create --scope project --name EXPO_PUBLIC_POSTHOG_HOST --value https://us.i.posthog.com --environment production
    ```
+   > ⚠️ Don't add `EXPO_PUBLIC_POSTHOG_KEY` / `EXPO_PUBLIC_SENTRY_DSN` to the `env` block in `apps/mobile/eas.json` — values there override EAS environment variables. (The app also ignores `REPLACE_…` / `your_key` placeholder values, so a leftover placeholder disables the SDK instead of breaking it.)
 6. **Verify:** run the app (`npm start`), sign in, open a quest — events
    (`quest_viewed`, `feed_viewed`, …) appear in PostHog → Activity within ~1 min.
 7. **Build the 4 dashboards** (Spec 04, docs/specs/04-analytics-instrumentation.md):
@@ -131,6 +160,7 @@ The admin app denies **all** logins until `ADMIN_ALLOWED_EMAILS` is set.
 ## Done when
 
 - [ ] Migration 023 applied (`npx supabase db push`)
+- [ ] Migrations 027–029 applied + `send-social-push` deployed + notifications webhook created
 - [ ] TestFlight build installed on your phone
 - [ ] PostHog shows live events + 4 dashboards exist
 - [ ] Sentry DSN set as EAS secret

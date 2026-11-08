@@ -274,3 +274,140 @@ export async function getFlaggedCount(): Promise<number> {
 
   return count ?? 0
 }
+
+// ─── COMMENT MODERATION (migration 028) ──────────────────────────────────────
+
+export interface CommentModerationItem {
+  id: string
+  body: string
+  created_at: string
+  open_report_count: number
+  hidden: boolean
+  user_id: string
+  completion_id: string
+  author: { username: string; level: number; created_at: string } | null
+  questTitle: string
+  reports: ModerationReport[]
+  removedCount: number
+}
+
+function one<T>(value: T | T[] | null | undefined): T | null {
+  if (!value) return null
+  return Array.isArray(value) ? value[0] ?? null : value
+}
+
+export async function getCommentModerationQueue(): Promise<CommentModerationItem[]> {
+  const { data: comments } = await supabaseAdmin
+    .from('completion_comments')
+    .select(
+      'id, body, created_at, open_report_count, hidden, user_id, completion_id, profiles(username, level, created_at), completions(quests(title))'
+    )
+    .gt('open_report_count', 0)
+    .is('removed_at', null)
+    .order('open_report_count', { ascending: false })
+    .order('created_at', { ascending: true })
+
+  if (!comments?.length) return []
+
+  const commentIds = comments.map((c) => c.id)
+  const userIds = Array.from(new Set(comments.map((c) => c.user_id)))
+
+  const [{ data: reportRows }, { data: removedRows }] = await Promise.all([
+    supabaseAdmin
+      .from('comment_reports')
+      .select('id, comment_id, reason, details, status, created_at, reporter_id')
+      .in('comment_id', commentIds)
+      .eq('status', 'open'),
+    supabaseAdmin
+      .from('completion_comments')
+      .select('user_id')
+      .in('user_id', userIds)
+      .not('removed_at', 'is', null),
+  ])
+
+  const reporterIds = Array.from(new Set((reportRows ?? []).map((r) => r.reporter_id)))
+  const { data: reporters } = reporterIds.length
+    ? await supabaseAdmin.from('profiles').select('id, username').in('id', reporterIds)
+    : { data: [] as { id: string; username: string }[] }
+  const reporterNames = new Map((reporters ?? []).map((p) => [p.id, p.username]))
+
+  const removedByUser = new Map<string, number>()
+  for (const row of removedRows ?? []) {
+    removedByUser.set(row.user_id, (removedByUser.get(row.user_id) ?? 0) + 1)
+  }
+
+  const reportsByComment = new Map<string, ModerationReport[]>()
+  for (const report of reportRows ?? []) {
+    const list = reportsByComment.get(report.comment_id) ?? []
+    list.push({
+      id: report.id,
+      reason: report.reason,
+      details: report.details,
+      status: report.status,
+      created_at: report.created_at,
+      reporterUsername: reporterNames.get(report.reporter_id) ?? 'unknown',
+    })
+    reportsByComment.set(report.comment_id, list)
+  }
+
+  return comments.map((c) => {
+    type CompletionRef = { quests: { title: string } | { title: string }[] | null }
+    const completion = one(c.completions as unknown as CompletionRef | CompletionRef[] | null)
+    return {
+      id: c.id,
+      body: c.body,
+      created_at: c.created_at,
+      open_report_count: c.open_report_count,
+      hidden: c.hidden,
+      user_id: c.user_id,
+      completion_id: c.completion_id,
+      author: one(c.profiles as CommentModerationItem['author'] | CommentModerationItem['author'][]),
+      questTitle: resolveQuestTitle(completion?.quests),
+      reports: reportsByComment.get(c.id) ?? [],
+      removedCount: removedByUser.get(c.user_id) ?? 0,
+    }
+  })
+}
+
+export async function dismissCommentReports(commentId: string): Promise<void> {
+  const adminEmail = await getAdminEmail()
+
+  // Status change fires sync_comment_report_counts → unhides the comment.
+  await supabaseAdmin
+    .from('comment_reports')
+    .update({ status: 'dismissed' })
+    .eq('comment_id', commentId)
+    .eq('status', 'open')
+
+  await supabaseAdmin
+    .from('completion_comments')
+    .update({ reviewed_by: adminEmail })
+    .eq('id', commentId)
+}
+
+export async function removeCommentModeration(commentId: string): Promise<void> {
+  const adminEmail = await getAdminEmail()
+
+  // Soft-remove (keeps replies + audit trail). removed_at must land before the
+  // reports close so the count trigger keeps the comment hidden.
+  await supabaseAdmin
+    .from('completion_comments')
+    .update({ removed_at: new Date().toISOString(), hidden: true, reviewed_by: adminEmail })
+    .eq('id', commentId)
+
+  await supabaseAdmin
+    .from('comment_reports')
+    .update({ status: 'actioned' })
+    .eq('comment_id', commentId)
+    .eq('status', 'open')
+}
+
+export async function getFlaggedCommentCount(): Promise<number> {
+  const { count } = await supabaseAdmin
+    .from('completion_comments')
+    .select('*', { count: 'exact', head: true })
+    .gt('open_report_count', 0)
+    .is('removed_at', null)
+
+  return count ?? 0
+}

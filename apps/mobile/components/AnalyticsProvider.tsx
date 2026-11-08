@@ -1,8 +1,9 @@
 import { useEffect, type ReactNode } from 'react'
 import { PostHogProvider, usePostHog } from 'posthog-react-native'
 import { setAnalyticsClient } from '@/lib/analytics'
+import { publicKey } from '@/lib/publicKey'
 
-const API_KEY = process.env.EXPO_PUBLIC_POSTHOG_KEY
+const API_KEY = publicKey(process.env.EXPO_PUBLIC_POSTHOG_KEY)
 const HOST = process.env.EXPO_PUBLIC_POSTHOG_HOST ?? 'https://us.i.posthog.com'
 
 function AnalyticsBridge({ children }: { children: ReactNode }) {

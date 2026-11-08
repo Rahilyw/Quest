@@ -7,6 +7,9 @@ import {
   Image,
   TouchableOpacity,
   ActivityIndicator,
+  Alert,
+  Modal,
+  Pressable,
   useWindowDimensions,
 } from 'react-native'
 import { useLocalSearchParams, useRouter } from 'expo-router'
@@ -17,6 +20,7 @@ import { FollowButton } from '@/components/FollowButton'
 import { EmptyState } from '@/components/EmptyState'
 import { useAuth } from '@/hooks/useAuth'
 import { useFollow } from '@/hooks/useFollow'
+import { useBlockedUsers } from '@/hooks/useBlockedUsers'
 import { supabase } from '@/lib/supabase'
 import { sizedImageUrl } from '@/lib/sizedImageUrl'
 import { paramAsString } from '@/lib/routeParams'
@@ -50,6 +54,10 @@ export default function PublicProfile() {
 
   const { isFollowing, followerCount, followingCount, toggling, toggle, refetch: refetchFollow } =
     useFollow(viewerId, userId)
+
+  const { blockedIds, blockUser, unblockUser } = useBlockedUsers(viewerId)
+  const isBlocked = userId != null && blockedIds.has(userId)
+  const [menuOpen, setMenuOpen] = useState(false)
 
   const [user, setUser] = useState<ProfileHeader | null>(null)
   const [posts, setPosts] = useState<GridPost[]>([])
@@ -93,6 +101,42 @@ export default function PublicProfile() {
 
   const isPrivate = user != null && !user.feed_public && !isSelf
 
+  function confirmBlock() {
+    setMenuOpen(false)
+    if (!user) return
+    Alert.alert(
+      `Block @${user.username}?`,
+      "You won't see each other's posts or comments. They aren't notified. You can unblock anytime in Settings.",
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Block',
+          style: 'destructive',
+          onPress: async () => {
+            const result = await blockUser(user.id)
+            if (!result.ok) {
+              Alert.alert('Could not block user', result.error)
+              return
+            }
+            track('user_blocked', { source: 'profile' })
+          },
+        },
+      ]
+    )
+  }
+
+  async function handleUnblock() {
+    setMenuOpen(false)
+    if (!user) return
+    const result = await unblockUser(user.id)
+    if (!result.ok) {
+      Alert.alert('Could not unblock user', result.error)
+      return
+    }
+    track('user_unblocked', { source: 'profile' })
+    load()
+  }
+
   if (loading) {
     return (
       <View style={[styles.centerScreen, { paddingTop: insets.top }]}>
@@ -125,7 +169,19 @@ export default function PublicProfile() {
           <Ionicons name="chevron-back" size={22} color={COLORS.textPrimary} />
         </TouchableOpacity>
         <Text style={styles.topBarName}>@{user.username}</Text>
-        <View style={styles.backBtn} />
+        {viewerId && !isSelf ? (
+          <TouchableOpacity
+            style={styles.backBtn}
+            onPress={() => setMenuOpen(true)}
+            accessibilityRole="button"
+            accessibilityLabel="More options"
+            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+          >
+            <Ionicons name="ellipsis-horizontal" size={22} color={COLORS.textPrimary} />
+          </TouchableOpacity>
+        ) : (
+          <View style={styles.backBtn} />
+        )}
       </View>
 
       <View style={styles.heroRow}>
@@ -178,6 +234,16 @@ export default function PublicProfile() {
           >
             <Text style={styles.editBtnText}>Edit profile</Text>
           </TouchableOpacity>
+        ) : isBlocked ? (
+          <TouchableOpacity
+            style={styles.editBtn}
+            onPress={handleUnblock}
+            activeOpacity={0.88}
+            accessibilityRole="button"
+            accessibilityLabel={`Unblock ${user.username}`}
+          >
+            <Text style={styles.editBtnText}>Unblock</Text>
+          </TouchableOpacity>
         ) : viewerId ? (
           <FollowButton
             isFollowing={isFollowing}
@@ -190,7 +256,13 @@ export default function PublicProfile() {
         ) : null}
       </View>
 
-      {isPrivate ? (
+      {isBlocked ? (
+        <EmptyState
+          icon="🚫"
+          title={`You blocked @${user.username}`}
+          subtitle="Unblock to see their quests again."
+        />
+      ) : isPrivate ? (
         <EmptyState
           icon="🔒"
           title="This trail log is private"
@@ -213,7 +285,7 @@ export default function PublicProfile() {
   return (
     <View style={[styles.container, { paddingTop: insets.top + SPACING.sm }]}>
       <FlatList
-        data={isPrivate ? [] : posts}
+        data={isPrivate || isBlocked ? [] : posts}
         keyExtractor={(item) => item.id}
         numColumns={3}
         ListHeaderComponent={header}
@@ -234,6 +306,29 @@ export default function PublicProfile() {
         )}
         showsVerticalScrollIndicator={false}
       />
+
+      <Modal transparent visible={menuOpen} animationType="fade" onRequestClose={() => setMenuOpen(false)}>
+        <Pressable style={styles.menuBackdrop} onPress={() => setMenuOpen(false)}>
+          <View style={[styles.menuSheet, { paddingBottom: insets.bottom + SPACING.md }]}>
+            {isBlocked ? (
+              <TouchableOpacity style={styles.menuItem} onPress={handleUnblock} accessibilityRole="button">
+                <Text style={styles.menuItemText}>Unblock @{user.username}</Text>
+              </TouchableOpacity>
+            ) : (
+              <TouchableOpacity style={styles.menuItem} onPress={confirmBlock} accessibilityRole="button">
+                <Text style={styles.menuItemDanger}>Block @{user.username}</Text>
+              </TouchableOpacity>
+            )}
+            <TouchableOpacity
+              style={styles.menuItem}
+              onPress={() => setMenuOpen(false)}
+              accessibilityRole="button"
+            >
+              <Text style={styles.menuItemCancel}>Cancel</Text>
+            </TouchableOpacity>
+          </View>
+        </Pressable>
+      </Modal>
     </View>
   )
 }
@@ -261,6 +356,18 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
+  menuBackdrop: { flex: 1, backgroundColor: 'rgba(15,23,42,0.35)', justifyContent: 'flex-end' },
+  menuSheet: {
+    backgroundColor: COLORS.surface,
+    borderTopLeftRadius: RADIUS.xxl,
+    borderTopRightRadius: RADIUS.xxl,
+    paddingTop: SPACING.md,
+    paddingHorizontal: SPACING.xl,
+  },
+  menuItem: { minHeight: 52, justifyContent: 'center' },
+  menuItemText: { color: COLORS.textPrimary, fontSize: 16, fontWeight: '600' },
+  menuItemDanger: { color: COLORS.danger, fontSize: 16, fontWeight: '700' },
+  menuItemCancel: { color: COLORS.textMuted, fontSize: 16, fontWeight: '600' },
   topBarName: { color: COLORS.textPrimary, fontSize: 16, fontWeight: '900' },
   heroRow: {
     flexDirection: 'row',

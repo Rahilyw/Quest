@@ -21,7 +21,7 @@ function Paragraph({ children }: { children: React.ReactNode }) {
   return <Text style={styles.paragraph}>{children}</Text>
 }
 
-export default function PrivacyPolicy(): JSX.Element {
+export default function PrivacyPolicy() {
   const insets = useSafeAreaInsets()
   const router = useRouter()
 

@@ -16,9 +16,11 @@ import {
 import { useRouter } from 'expo-router'
 import { Ionicons } from '@expo/vector-icons'
 import { Avatar } from '@/components/Avatar'
+import { ReportPostSheet } from '@/components/ReportPostSheet'
 import { COLORS, SPACING, RADIUS } from '@/lib/constants'
 import { useComments, type CommentNode } from '@/hooks/useComments'
 import { formatTimeAgo } from '@/hooks/useActivityFeed'
+import { COMMENT_REPORT_REASONS, type CommentReportReason } from '@/lib/moderation'
 
 interface Props {
   visible: boolean
@@ -31,12 +33,13 @@ interface Props {
 
 export function CommentsSheet({ visible, completionId, currentUserId, onClose, onCountChange }: Props) {
   const router = useRouter()
-  const { comments, totalCount, loading, error, posting, addComment, deleteComment } = useComments(
+  const { comments, totalCount, loading, error, posting, addComment, deleteComment, reportComment } = useComments(
     visible ? completionId : undefined,
     currentUserId
   )
   const [draft, setDraft] = useState('')
   const [replyTo, setReplyTo] = useState<CommentNode | null>(null)
+  const [reporting, setReporting] = useState<CommentNode | null>(null)
 
   function close() {
     onCountChange?.(totalCount)
@@ -51,11 +54,14 @@ export function CommentsSheet({ visible, completionId, currentUserId, onClose, o
   }
 
   async function submit() {
-    const ok = await addComment(draft, replyTo?.id ?? null)
-    if (ok) {
-      setDraft('')
-      setReplyTo(null)
+    if (!draft.trim()) return
+    const failure = await addComment(draft, replyTo?.id ?? null)
+    if (failure) {
+      Alert.alert('Comment not posted', failure)
+      return
     }
+    setDraft('')
+    setReplyTo(null)
   }
 
   function confirmDelete(comment: CommentNode) {
@@ -63,6 +69,17 @@ export function CommentsSheet({ visible, completionId, currentUserId, onClose, o
       { text: 'Cancel', style: 'cancel' },
       { text: 'Delete', style: 'destructive', onPress: () => deleteComment(comment.id) },
     ])
+  }
+
+  async function submitReport(reason: CommentReportReason, details: string) {
+    if (!reporting) return
+    const message = await reportComment(reporting.id, reason, details)
+    if (message) {
+      Alert.alert('Report failed', message)
+      return
+    }
+    if (replyTo?.id === reporting.id) setReplyTo(null)
+    Alert.alert('Thanks for reporting', "We'll review this comment. You won't see it anymore.")
   }
 
   function renderComment(comment: CommentNode, isReply: boolean) {
@@ -84,6 +101,9 @@ export function CommentsSheet({ visible, completionId, currentUserId, onClose, o
             <Text style={styles.commentTime}>{formatTimeAgo(comment.created_at)}</Text>
           </View>
           <Text style={styles.commentText}>{comment.body}</Text>
+          {isOwn && comment.hidden ? (
+            <Text style={styles.hiddenNote}>Hidden from others while under review</Text>
+          ) : null}
           <View style={styles.commentActions}>
             {!isReply && currentUserId ? (
               <TouchableOpacity
@@ -91,6 +111,16 @@ export function CommentsSheet({ visible, completionId, currentUserId, onClose, o
                 hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
               >
                 <Text style={styles.commentActionText}>Reply</Text>
+              </TouchableOpacity>
+            ) : null}
+            {currentUserId && !isOwn ? (
+              <TouchableOpacity
+                onPress={() => setReporting(comment)}
+                hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                accessibilityRole="button"
+                accessibilityLabel={`Report comment by ${comment.user.username}`}
+              >
+                <Text style={styles.commentActionText}>Report</Text>
               </TouchableOpacity>
             ) : null}
             {isOwn ? (
@@ -189,6 +219,15 @@ export function CommentsSheet({ visible, completionId, currentUserId, onClose, o
           ) : null}
         </View>
       </KeyboardAvoidingView>
+
+      <ReportPostSheet<CommentReportReason>
+        visible={reporting != null}
+        title="Report comment"
+        questTitle={reporting ? `@${reporting.user.username}: ${reporting.body}` : ''}
+        reasons={COMMENT_REPORT_REASONS}
+        onClose={() => setReporting(null)}
+        onSubmit={submitReport}
+      />
     </Modal>
   )
 }
@@ -252,6 +291,7 @@ const styles = StyleSheet.create({
   commentText: { color: COLORS.textPrimary, fontSize: 14, lineHeight: 20, marginTop: 2 },
   commentActions: { flexDirection: 'row', gap: SPACING.lg, marginTop: 4 },
   commentActionText: { color: COLORS.textMuted, fontSize: 12, fontWeight: '700' },
+  hiddenNote: { color: COLORS.warning, fontSize: 11, fontWeight: '700', marginTop: 2 },
   commentDeleteText: { color: COLORS.danger, fontSize: 12, fontWeight: '700' },
   composerWrap: {
     borderTopWidth: 1,

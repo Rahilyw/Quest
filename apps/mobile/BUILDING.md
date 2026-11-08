@@ -95,10 +95,10 @@ Run from `apps/mobile` after placeholders are set:
 | `npm run build:preview` | `preview` | Internal TestFlight / APK for QA |
 | `npm run build:prod` | `production` | Store-ready release |
 
-Each script runs `eas build --profile <name> --platform all`. To target one platform:
+Each script runs `npx eas-cli build --profile <name> --platform all`. `eas-cli` is not a project dependency, so `npx` fetches it on demand (or install it globally with `npm install -g eas-cli`). To target one platform:
 
 ```bash
-eas build --profile preview --platform ios
+npx eas-cli build --profile preview --platform ios
 ```
 
 ## 6. Push notifications

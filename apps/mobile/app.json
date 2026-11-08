@@ -66,7 +66,8 @@
           "icon": "./assets/adaptive-icon.png",
           "color": "#4364F7"
         }
-      ]
+      ],
+      "expo-localization"
     ],
     "owner": "rahil1"
   }

@@ -20,6 +20,7 @@ import { sizedImageUrl } from '@/lib/sizedImageUrl'
 import { supabase } from '@/lib/supabase'
 import { reportErrorMessage, type ReportReason } from '@/lib/moderation'
 import { track } from '@/lib/analytics'
+import { socialRateLimitMessage } from '@/lib/socialNotifications'
 import type { FeedPost } from '@/hooks/useActivityFeed'
 import { formatTimeAgo } from '@/hooks/useActivityFeed'
 
@@ -70,6 +71,8 @@ export function FeedPostCard({ post, currentUserId, onReported, onBlocked }: Pro
       if (error && error.code !== '23505') {
         setLiked(false)
         setLikeCount((c) => Math.max(0, c - 1))
+        const limited = socialRateLimitMessage(error.hint)
+        if (limited) Alert.alert('Slow down', limited)
       } else {
         track('post_liked')
       }
@@ -133,6 +136,7 @@ export function FeedPostCard({ post, currentUserId, onReported, onBlocked }: Pro
               Alert.alert('Could not block user', error.message)
               return
             }
+            track('user_blocked', { source: 'feed' })
             onBlocked?.(post.user_id)
           },
         },
