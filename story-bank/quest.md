@@ -18,12 +18,12 @@
   - Secondary stakeholder: local businesses that sponsor quests (sponsored quests issue redemption codes). [CODE: 017]
 - **Motivation:** [CONFIRM — repo docs describe the product rationale, not why Rahil personally chose to build it. Ask the owner.]
 - **Current status (as of 2026-11-07 per ROADMAP):** "Store-ready code." The remaining launch blockers are operational (Apple submit credentials, PostHog/Sentry keys, applying migration 031, deploying one edge function), not engineering. The admin dashboard is deployed on Vercel. The mobile app is **not** confirmed to be live in any app store. [DOC] No real-user numbers exist in the repo.
-- **Timeline [GIT]:** 108 commits, first 2026-06-17, latest 2026-11-07 (about 5 months, with bursts in June, early July, early Aug, Oct 1, and Nov 7).
+- **Timeline [GIT]:** about 105 commits on main (counts vary by 1-3 depending on branch), first 2026-06-17, latest 2026-11-07 (about 5 months, with bursts in June, early July, early Aug, Oct 1, and Nov 7).
 - **Scale of codebase:** about 4,000 lines of SQL across 32 migration files [CODE: `wc -l`]; roughly 23k lines of TS/JS across mobile, admin, and the shared package, excluding `node_modules` [CODE, approximate].
 
 ## 2. My Contributions
 
-> **Authorship caveat (important).** Git shows 105 of 106 non-merge-style commits under Rahil's name (94 as "Rahil", 11 as "Rahil Y. Wijeyesekera", same email) and 1 from `google-labs-jules[bot]` (the Jules/"Bolt" performance PR #4, leaderboard virtualization). However, the history also contains commits titled "Merge agent work: …", and the repo contains `.claude/`, `.agents/`, `.cursor/`, and planner/coder/tester/reviewer agent definitions, which indicates AI coding agents were used heavily. Git authorship therefore does **not** show who designed vs. who prompted vs. who reviewed. **[CONFIRM]** exact split before claiming "designed" or "implemented" for any component. Safe phrasing until then: "built with AI coding agents (Claude Code)", with Rahil as the product owner, architect-in-the-loop, and reviewer, *if* the owner confirms that is accurate.
+> **Authorship caveat (important).** Git shows all but one commit under Rahil's name (94 as "Rahil", 11 as "Rahil Y. Wijeyesekera", same email) and 1 from `google-labs-jules[bot]` (the Jules/"Bolt" performance PR #4, leaderboard virtualization). However, the history also contains commits titled "Merge agent work: …", and the repo contains `.claude/`, `.agents/`, `.cursor/`, and planner/coder/tester/reviewer agent definitions, which indicates AI coding agents were used heavily. Git authorship therefore does **not** show who designed vs. who prompted vs. who reviewed. **[CONFIRM]** exact split before claiming "designed" or "implemented" for any component. Safe phrasing until then: "built with AI coding agents (Claude Code)", with Rahil as the product owner, architect-in-the-loop, and reviewer, *if* the owner confirms that is accurate.
 
 - **My role:** Sole committer and repository owner. Appears to be a solo project (only one human author). [GIT] Team size: **[CONFIRM]**.
 - **Components I personally implemented:** **[CONFIRM — see caveat above.]** The commit history shows Rahil committing every area below, but not how the code was produced.
@@ -130,7 +130,7 @@
 - **CI (GitHub Actions) [CODE]:** geofence tests, logic tests, `tsc --noEmit` for mobile and admin, and `npm audit --omit=dev --audit-level=critical`.
 - **Not tested [DOC]:** no automated tests for SQL triggers/RLS were found in the repo (**[CONFIRM]** whether they were tested manually or through Supabase). End-to-end sponsored-quest flow unverified on a device. No UI/E2E tests found.
 - **Evaluation / metrics:** none. No user, retention, or performance numbers exist in the repo. The success metrics in PRODUCT.md (week-2 return, sponsor renewal, time-to-first-XP) are **targets, not results**.
-- **Demonstrable outcomes:** working admin deployment on Vercel [DOC]; 32 migrations, 10 of which were authored after the instant-verification pivot; a reproducible monorepo with green CI [CODE].
+- **Demonstrable outcomes:** working admin deployment on Vercel [DOC]; 32 migration files; a reproducible monorepo with green CI [CODE].
 - **Limitations (state plainly if asked):** pre-launch; no store release confirmed; analytics and Sentry not emitting yet; social push not deployed; content is about 20-29 seeded quests; proof photos in a public bucket; anti-spoofing is best-effort client-side on Android.
 
 ## 7. Resume Bullet Bank
@@ -138,10 +138,10 @@
 > Every bullet below uses only Section 9 "verified" facts. Verbs like "Designed" or "Implemented" are marked **(if confirmed)** where authorship is unconfirmed. Until confirmed, swap to "Built … with AI coding agents (Claude Code)" or "Directed and shipped …".
 
 ### Software Engineering
-- Built a TypeScript monorepo (Expo/React Native player app, Next.js admin dashboard, shared `@quest/geofence` package) on Supabase, with 4 workspaces' worth of code and GitHub Actions CI running unit tests, `tsc` on both apps, and a production `npm audit` gate.
+- Built a TypeScript monorepo (Expo/React Native player app, Next.js admin dashboard, shared `@quest/geofence` package) on Supabase, with GitHub Actions CI running unit tests, `tsc` on both apps, and a production `npm audit` gate.
 - Shipped an admin dashboard with an interactive map editor for drawing quest geofences (circle, city boundary, freehand polygon, multi-area), validated server-side and deployed to Vercel with a per-action `requireAdmin()` authorization check. *(if confirmed)*
 - Wrote 7 feature specs before implementation (instant verification, moderation, analytics, community quests, growth, merchant redemption) and shipped three of them end-to-end across mobile, admin, and database. *(if confirmed)*
-- Maintained a 32-migration Postgres schema (about 4,000 lines of SQL) and a PR-based workflow with 14 merged pull requests.
+- Maintained a 32-migration Postgres schema (about 4,000 lines of SQL) and a PR-based workflow (pull requests numbered up to #14).
 
 ### AI / ML
 - *Not applicable to the product.* Quest! contains no ML/LLM features that were verified in the repo. Only claim AI relevance in the *process* sense (AI-assisted development with Claude Code agents / a multi-agent planner-coder-tester-reviewer pipeline) **if the owner confirms** and frames it truthfully.
@@ -189,7 +189,7 @@
 - Typed analytics with 29 event names and 6 submission-block reasons.
 - CI jobs: geofence tests, logic tests, tsc mobile, tsc admin, npm audit.
 - **Test results: 50/50 geofence, 159/159 mobile logic**, run 2026-11-08.
-- Git: 108 commits, 2026-06-17 to 2026-11-07; 94 + 11 commits by Rahil (same email), 1 by `google-labs-jules[bot]`.
+- Git: about 105 commits, 2026-06-17 to 2026-11-07; 94 + 11 commits by Rahil (same email), 1 by `google-labs-jules[bot]`.
 - Mobile submit flow uses the in-app camera only (`launchCameraAsync`) and tracks block reasons.
 
 **Confirmed only by README / ROADMAP / PRODUCT (not independently verified)**
@@ -205,7 +205,7 @@
 - README says Next.js 15 in one place and 14.2 in the tech table.
 - Seed size: README "~29", ROADMAP "20 + 5 sponsored", PRODUCT "~28". Verify before quoting.
 - Analytics: ROADMAP "~16 events"; code lists 29.
-- `CLAUDE`/agent worktree merges exist in history; "Kuest" was the original name.
+- History contains "Merge agent work" commits; "Kuest" was the original project name (renamed 2026-06-20).
 
 **Open questions for the owner (answer these and I'll update this file)**
 1. **How was the code produced?** Hand-written, AI-agent-written (Claude Code / Cursor / Jules), or mixed? What did you personally design, write, review, and decide? This determines every "Built / Designed" verb.
