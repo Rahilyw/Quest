@@ -48,7 +48,7 @@ tokens.
 
 The screens in Phase 3 need cutouts to exist, so this comes first.
 
-1. **Migration `031`:** `quests.cutout_url text null`; public `quest-cutouts` storage bucket
+1. **Migration `032`** (031 is the Nov audit migration)**:** `quests.cutout_url text null`; public `quest-cutouts` storage bucket
    with admin-only writes (same pattern as quest covers, migration 010).
 2. **Processing script** `scripts/make-cutout.js` (sharp): takes a PNG with transparency,
    trims, pads 8%, resizes to 600px, bakes the shadow from BRAND.md §6, writes WebP with
@@ -63,7 +63,7 @@ The screens in Phase 3 need cutouts to exist, so this comes first.
    unblocked, non-hidden completions for one quest, plus a weekly count. Reuses the feed's
    RLS, so privacy rules apply automatically; add an index on
    `completions (quest_id, completed_at desc)` if the plan shows a sequential scan.
-7. **Dual-camera proof data (D6), in migration `031`:**
+7. **Dual-camera proof data (D6), in migration `032`:**
    - `completions.selfie_url text null`.
    - **Selfies are faces, so don't put them in a public bucket.** Today `proof-photos` is
      read through `getPublicUrl`, so anyone with a link can open a file even if the post
@@ -119,7 +119,7 @@ ink pill for the active one, avatar circle beside it for You. Delete `TabIconArt
 ```
 - `lib/thisWeek.ts` picks up to four quests (nearest unplayed, newest drop, expiring soon,
   one a friend did) and builds the sentence from short per-quest phrases
-  (`quests.action_phrase`, e.g. "grab a flat white", added in migration `031`).
+  (`quests.action_phrase`, e.g. "grab a flat white", added in migration `032`).
 - Inline cutouts use nested `<Image>` inside `<Text>`, which React Native supports on both
   platforms; each bold phrase is its own pressable span.
 - The sheet reuses the activity feed hook, limited to three rows.
@@ -224,4 +224,4 @@ The quest form gets the cutout uploader and a live folder/bubble preview.
 `Podium.tsx`, `CompletionCelebration.tsx`, `ShareCompletionCard.tsx`, `EmptyState.tsx`, all of
 `app/(tabs)/`, `app/quest/[id].tsx`, `app/submit/[questId].tsx`, `scripts/gen-app-icons.js`,
 new `components/Cutout.tsx`, `lib/thisWeek.ts`, `scripts/make-cutout.js`,
-`supabase/migrations/031_quest_cutouts.sql`.
+`supabase/migrations/032_quest_cutouts.sql`.

@@ -9,7 +9,7 @@ flowchart TB
     subgraph Monorepo["Quest! (Yarn workspaces)"]
         direction TB
         Mobile["apps/mobile<br/>Expo · React Native · Expo Router"]
-        Admin["apps/admin<br/>Next.js 14 · port 3000"]
+        Admin["apps/admin<br/>Next.js 15 · port 3000"]
         Geofence["packages/geofence<br/>@quest/geofence — shared logic"]
     end
 

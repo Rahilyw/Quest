@@ -3,7 +3,7 @@
 **Last updated:** November 7, 2026
 **Stage:** **Store-Ready Code** → Ops Checklist ([LAUNCH-RUNBOOK.md](LAUNCH-RUNBOOK.md)) → TestFlight, with the **Cutouts** UI overhaul starting in parallel
 
-> **November 2026 status.** A full audit (Nov 7) found and fixed an RPC that let any signed-in user mint XP (migration 030, applied live), added server-side admin checks to every admin action, moved the weekly rank snapshot into the database and aligned the leaderboard week to Victoria time (migration 031, ready to apply), and got the admin dashboard building and live on Vercel for the first time since August. The app's visual direction was redesigned as **Cutouts** ([docs/design/BRAND.md](docs/design/BRAND.md)); Phase 1 of the rebuild (tokens, Figtree, copy pass) is in review. Open PRs: Rahilyw/Quest#9 to #12.
+> **November 2026 status.** A full audit (Nov 7) found and fixed an RPC that let any signed-in user mint XP (migration 030, applied live), added server-side admin checks to every admin action, moved the weekly rank snapshot into the database and aligned the leaderboard week to Victoria time (migration 031, ready to apply), and got the admin dashboard building and live on Vercel for the first time since August. The app's visual direction was redesigned as **Cutouts** ([docs/design/BRAND.md](docs/design/BRAND.md)); Phase 1 of the rebuild (tokens, Figtree, copy pass) is merged; the review stack (#9 to #12) is merged to main.
 
 All launch-blocking *code* is shipped: instant verification, moderation, analytics + crash reporting SDKs, account deletion (App Store 5.1.1(v)), real app icons, real Victoria boundary. What remains before real users is **operations, not engineering** — Apple credentials, PostHog/Sentry keys, one `db push`, and Vercel env vars; every step is written up in the runbook.
 
@@ -34,7 +34,7 @@ Completions are verified by the server-side geofence at the moment of submission
 | Content pipeline | ❌ ~29 seeded quests, no refresh cadence or community input ([Spec 05](docs/specs/05-community-quests.md)) |
 | Growth loop | ❌ Zero acquisition features ([Spec 06](docs/specs/06-growth-engagement.md)) |
 | Production readiness | ⚠️ CI + tests green (159 mobile + 50 geofence); EAS project ID set; admin live on Vercel; **remaining blockers are ops** (runbook) |
-| Visual design | 🔄 **Cutouts** direction approved Nov 7 ([BRAND.md](docs/design/BRAND.md), [UI-OVERHAUL-PLAN.md](docs/design/UI-OVERHAUL-PLAN.md)); Phase 1 foundations in review (#12) |
+| Visual design | 🔄 **Cutouts** direction approved Nov 7 ([BRAND.md](docs/design/BRAND.md), [UI-OVERHAUL-PLAN.md](docs/design/UI-OVERHAUL-PLAN.md)); Phase 1 foundations merged (#12); Phase 2 next |
 | Rank deltas | ⚠️ `last_week_rank` never populated: the snapshot edge function was never scheduled. Fixed in SQL + pg_cron by migration 031 (apply pending) |
 
 **Highest-impact blockers before real users** (step-by-step: [LAUNCH-RUNBOOK.md](LAUNCH-RUNBOOK.md)):
@@ -43,7 +43,7 @@ Completions are verified by the server-side geofence at the moment of submission
 2. **PostHog + Sentry keys** — SDKs are wired but emit nothing until `EXPO_PUBLIC_POSTHOG_KEY` / `EXPO_PUBLIC_SENTRY_DSN` are set; build the 4 Spec 04 dashboards in PostHog
 3. **Apply migration `031`** — `npx supabase db push --remote --include-all` (001 to 030 are live)
 4. **Deploy `send-social-push`** + notifications webhook (runbook Step 0b)
-5. **Merge the review stack** — #9 (Next 15 + demo-login gate), #10 (admin/RPC hardening), #11 (design docs), #12 (Cutouts Phase 1)
+5. ~~Merge the review stack~~ — done: #9 (Next 15 + demo-login gate), #10 (admin/RPC hardening), #11 (design docs), #12 (Cutouts Phase 1)
 
 Done since July: migration 023 and 027 to 030 applied live; `ADMIN_ALLOWED_EMAILS` and all admin env vars set on Vercel; admin production deploy live.
 
@@ -257,7 +257,7 @@ Status key: ✅ Done · ⚠️ Partial · ❌ Not started
 
 | # | Task | Status |
 |---|---|---|
-| H.1 | Foundations: tokens, Figtree, text primitives, category model, copy pass, token report | 🔄 In review (#12) |
+| H.1 | Foundations: tokens, Figtree, text primitives, category model, copy pass, token report | ✅ Merged (#12) |
 | H.2 | Cutout pipeline: `cutout_url`, processing script, admin upload, `<Cutout>`, `<Pillow>`, quest-photos query, dual-camera proof data (private selfie bucket), collage kit components | ❌ |
 | H.3 | Core loop: floating tab bar + new tabs, This week, Quests folders, quest page + photo viewer, camera (place then selfie), Verified | ❌ |
 | H.4 | City bubbles, Rankings, You (collection shelf + badges) | ❌ |

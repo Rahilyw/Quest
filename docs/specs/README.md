@@ -13,8 +13,8 @@ The spec set behind the post-MVP strategy: make rewards instant, let the communi
 | [07](07-merchant-redemption.md) | **Merchant Redemption** | No-login merchant page to validate & redeem sponsor codes; redemption-rate reporting | Draft |
 
 **Design.** The visual and UX direction ("Cutouts") lives in [`docs/design/BRAND.md`](../design/BRAND.md), with the
-build plan in [`docs/design/UI-OVERHAUL-PLAN.md`](../design/UI-OVERHAUL-PLAN.md). Phase 1 (tokens, Figtree, copy pass) is
-in review; specs 05 to 07 should be built in that visual language.
+build plan in [`docs/design/UI-OVERHAUL-PLAN.md`](../design/UI-OVERHAUL-PLAN.md). Phase 1 (tokens, Figtree, copy pass) is merged (#12);
+Phase 2 is next; specs 05 to 07 should be built in that visual language.
 
 ## Why (product rationale)
 

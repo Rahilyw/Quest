@@ -33,7 +33,7 @@ Quest! has three moving parts:
 | Part | What it is | Who uses it |
 |------|-----------|-------------|
 | **Mobile app** | Expo / React Native | Players |
-| **Admin dashboard** | Next.js 14 | City operators, admins |
+| **Admin dashboard** | Next.js 15 | City operators, admins |
 | **Supabase backend** | Auth + Postgres + Storage + Edge Functions | Both |
 
 The core loop is:
@@ -58,7 +58,7 @@ Strategic priorities before launch: analytics instrumentation ([Spec 04](docs/sp
 │                                                         │
 │   ┌──────────────────┐      ┌──────────────────────┐   │
 │   │   Mobile App     │      │   Admin Dashboard    │   │
-│   │  Expo / RN       │      │   Next.js 14         │   │
+│   │  Expo / RN       │      │   Next.js 15         │   │
 │   │  iOS + Android   │      │   Web only           │   │
 │   └────────┬─────────┘      └──────────┬───────────┘   │
 └────────────┼───────────────────────────┼───────────────┘
@@ -637,7 +637,7 @@ Post appears on the public feed (unless feed_public = false)
 
 ## Admin Dashboard
 
-The admin dashboard lives at `apps/admin/` and is a standard Next.js 14 app with the App Router.
+The admin dashboard lives at `apps/admin/` and is a standard Next.js 15 app with the App Router.
 
 ### Pages
 
@@ -829,7 +829,7 @@ See [ROADMAP.md](ROADMAP.md) for the full phase plan and [docs/specs/README.md](
 
 **P0 before launch:** iOS submit credentials, PostHog + Sentry keys, apply migration 031, deploy `send-social-push`. See LAUNCH-RUNBOOK.md.
 
-**In progress:** the Cutouts UI overhaul (docs/design/UI-OVERHAUL-PLAN.md); Phase 1 foundations in review.
+**In progress:** the Cutouts UI overhaul (docs/design/UI-OVERHAUL-PLAN.md); Phase 1 foundations merged (#12); Phase 2 (cutout pipeline) is next.
 
 **Post-launch:** community quests & weekly drops (Spec 05), duo quests & recap card (Spec 06), merchant redemption validation (Spec 07).
 

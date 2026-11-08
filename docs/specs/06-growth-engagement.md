@@ -44,7 +44,7 @@ Seed 3–5 duo quests ("Board games for two at Interactivity", "Sunset watch wit
 
 The organic marketing engine. End of week, generate a share image — rank, weekly XP, streak, best proof photo — and hand it to the native share sheet.
 
-- **Client-rendered:** an off-screen branded view (Harbour Electric, Quest Blue, big rank numeral) captured with `react-native-view-shot`; no server rendering.
+- **Client-rendered:** an off-screen branded view (Cutouts style: paper, ink and category colour, big rank numeral) captured with `react-native-view-shot`; no server rendering.
 - **Entry points:** Sunday-evening push (*"Your week in Victoria is in."*) → recap screen; also reachable from Rankings all week.
 - **Privacy:** the card uses only the user's own data + their own photo; sharing is explicit.
 - **Measure:** `share_completed {surface: 'recap'}` (Spec 04). This supersedes roadmap 3.5 (share-a-quest) — share-your-week is the stronger unit.
