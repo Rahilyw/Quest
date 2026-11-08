@@ -13,3 +13,6 @@ dist/
 # Local tool state
 .idea/
 supabase/.temp/
+
+# Agent pipeline scratch (planner/coder/tester write here)
+.pipeline/

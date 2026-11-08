@@ -191,7 +191,6 @@ Quest!/
 ├── packages/
 │   └── geofence/            @quest/geofence — shared client geofence logic (44 tests)
 ├── docs/specs/              01–07 feature specs (instant verification era)
-├── tokens/                  Shared CSS design tokens
 ├── docs/design/            Cutouts brand spec + UI overhaul plan
 ├── DESIGN.md                Earlier Harbour Electric spec (superseded)
 ├── PRODUCT.md               Product positioning, content engine, safety
@@ -219,7 +218,7 @@ and the build plan is [docs/design/UI-OVERHAUL-PLAN.md](docs/design/UI-OVERHAUL-
 | Text primitives | `apps/mobile/components/ui/Text.tsx` |
 | Copy helpers | `apps/mobile/lib/copy.js` |
 | Token report | `cd apps/mobile && npm run lint:tokens` |
-| Admin / shared CSS | `apps/admin/app/globals.css`, `tokens/*.css` (restyled in overhaul Phase 6) |
+| Admin CSS | `apps/admin/app/globals.css` (restyled in overhaul Phase 6) |
 
 `DESIGN.md` describes the earlier Harbour Electric spec and is kept for history.
 

@@ -188,7 +188,7 @@ without meeting an old-style screen.
 
 ## Phase 6: Admin dashboard (3 days)
 
-Same tokens via `tokens/*.css` (and `guidelines/*.card.html` regenerated). Admin stays dense
+Same tokens as CSS custom properties in `apps/admin/app/globals.css`. Admin stays dense
 and quiet: Figtree throughout, category colours only as small dots and chips, ink buttons.
 The quest form gets the cutout uploader and a live folder/bubble preview.
 
