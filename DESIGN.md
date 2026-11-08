@@ -92,6 +92,12 @@ components:
 
 # Design System: Quest!
 
+> **Superseded (Nov 7, 2026).** The approved direction is **Cutouts**:
+> [docs/design/BRAND.md](docs/design/BRAND.md) is the source of truth, and
+> [docs/design/UI-OVERHAUL-PLAN.md](docs/design/UI-OVERHAUL-PLAN.md) is the build plan.
+> This file describes the older "Harbour Electric" spec and is kept for history until the
+> overhaul ships. Note that the code had already drifted from it to a "Summer 2026" palette.
+
 ## 1. Overview
 
 **Creative North Star: "Harbour Electric"**

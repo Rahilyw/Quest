@@ -3,6 +3,7 @@
 import { revalidatePath } from 'next/cache'
 import { validatePolygonRing } from '@quest/geofence'
 import { supabaseAdmin } from '@/lib/supabase'
+import { requireAdmin } from '@/lib/require-admin'
 
 export interface Badge {
   id: string
@@ -51,6 +52,7 @@ const QUEST_SELECT =
   '*, quest_badges(badge_id, badge:badges(*)), quest_geofences(id, quest_id, label, shape, lat, lng, radius_meters, boundary_geojson, sort_order)'
 
 export async function getQuests(): Promise<Quest[]> {
+  await requireAdmin()
   const { data, error } = await supabaseAdmin
     .from('quests')
     .select(QUEST_SELECT)
@@ -67,6 +69,7 @@ export async function getQuests(): Promise<Quest[]> {
 }
 
 export async function getBadges(): Promise<Badge[]> {
+  await requireAdmin()
   const { data, error } = await supabaseAdmin.from('badges').select('*').order('name')
   if (error) throw new Error(error.message)
   return (data as Badge[]) ?? []
@@ -213,6 +216,7 @@ async function deleteQuestCoverIfOwned(url: string | null | undefined) {
 }
 
 export async function createQuest(formData: FormData): Promise<{ ok: true; quest: Quest } | { ok: false; error: string }> {
+  await requireAdmin()
   try {
     const title = String(formData.get('title') ?? '').trim()
     const description = String(formData.get('description') ?? '').trim()
@@ -353,6 +357,7 @@ export async function createQuest(formData: FormData): Promise<{ ok: true; quest
 }
 
 export async function toggleQuestStatus(id: string, current: string): Promise<string> {
+  await requireAdmin()
   const next = current === 'active' ? 'inactive' : 'active'
   const { error } = await supabaseAdmin.from('quests').update({ status: next }).eq('id', id)
   if (error) throw new Error(error.message)
@@ -387,6 +392,7 @@ export async function updateQuest(
   /** Optional new cover file (cropped JPEG/PNG/WebP). Passed separately so Next can serialize File. */
   cover: File | null = null
 ): Promise<{ ok: true; quest: Quest } | { ok: false; error: string }> {
+  await requireAdmin()
   try {
     const {
       id,

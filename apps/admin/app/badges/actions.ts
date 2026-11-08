@@ -2,6 +2,7 @@
 
 import { revalidatePath } from 'next/cache'
 import { supabaseAdmin } from '@/lib/supabase'
+import { requireAdmin } from '@/lib/require-admin'
 import {
   parseRuleConfig,
   summarizeUnlockRule,
@@ -105,6 +106,7 @@ function readBadgeFields(formData: FormData) {
 }
 
 export async function getBadgesWithStats(): Promise<BadgeWithStats[]> {
+  await requireAdmin()
   const { data: badges, error } = await supabaseAdmin
     .from('badges')
     .select('*')
@@ -141,11 +143,13 @@ export async function getBadgesWithStats(): Promise<BadgeWithStats[]> {
 }
 
 export async function getBadge(id: string): Promise<BadgeWithStats | null> {
+  await requireAdmin()
   const list = await getBadgesWithStats()
   return list.find((b) => b.id === id) ?? null
 }
 
 export async function getBadgeEarners(badgeId: string, limit = 25): Promise<BadgeEarner[]> {
+  await requireAdmin()
   const { data, error } = await supabaseAdmin
     .from('user_badges')
     .select('user_id, earned_at, profile:profiles(username)')
@@ -163,6 +167,7 @@ export async function getBadgeEarners(badgeId: string, limit = 25): Promise<Badg
 }
 
 export async function searchUsers(query: string): Promise<{ id: string; username: string }[]> {
+  await requireAdmin()
   const q = query.trim()
   if (q.length < 2) return []
 
@@ -180,6 +185,7 @@ export async function searchUsers(query: string): Promise<{ id: string; username
 export async function createBadge(
   formData: FormData
 ): Promise<{ ok: true; badge: BadgeRow } | { ok: false; error: string }> {
+  await requireAdmin()
   try {
     const fields = readBadgeFields(formData)
     if (!fields.name || !fields.description) {
@@ -215,6 +221,7 @@ export async function updateBadge(
   id: string,
   formData: FormData
 ): Promise<{ ok: true; badge: BadgeRow } | { ok: false; error: string }> {
+  await requireAdmin()
   try {
     const fields = readBadgeFields(formData)
     if (!fields.name || !fields.description) {
@@ -258,6 +265,7 @@ export async function updateBadge(
 }
 
 export async function deleteBadge(id: string): Promise<{ ok: true } | { ok: false; error: string }> {
+  await requireAdmin()
   const { error } = await supabaseAdmin.from('badges').delete().eq('id', id)
   if (error) return { ok: false, error: error.message }
   revalidatePath('/badges')
@@ -268,6 +276,7 @@ export async function grantBadge(
   badgeId: string,
   userId: string
 ): Promise<{ ok: true } | { ok: false; error: string }> {
+  await requireAdmin()
   const { error } = await supabaseAdmin
     .from('user_badges')
     .upsert({ user_id: userId, badge_id: badgeId }, { onConflict: 'user_id,badge_id' })
@@ -281,6 +290,7 @@ export async function revokeBadge(
   badgeId: string,
   userId: string
 ): Promise<{ ok: true } | { ok: false; error: string }> {
+  await requireAdmin()
   const { error } = await supabaseAdmin
     .from('user_badges')
     .delete()

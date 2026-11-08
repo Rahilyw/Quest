@@ -1,6 +1,7 @@
 'use server'
 
 import { supabaseAdmin } from '@/lib/supabase'
+import { requireAdmin } from '@/lib/require-admin'
 
 export interface Completion {
   id: string
@@ -17,6 +18,7 @@ export interface Completion {
 }
 
 export async function getRecentCompletions(limit = 100): Promise<Completion[]> {
+  await requireAdmin()
   const { data } = await supabaseAdmin
     .from('completions')
     .select('*, profiles(username), quests(title, xp_reward, is_sponsored, geofence_type)')
@@ -28,6 +30,7 @@ export async function getRecentCompletions(limit = 100): Promise<Completion[]> {
 }
 
 export async function removeCompletion(id: string): Promise<void> {
+  await requireAdmin()
   const { data, error } = await supabaseAdmin
     .from('completions')
     .select('status')
