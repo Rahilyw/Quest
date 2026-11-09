@@ -5,6 +5,7 @@ import { useEffect, useState } from 'react'
 import { getQuests, toggleQuestStatus, updateQuest, type Quest } from './actions'
 import { theme, VICTORIA_DEFAULT } from '@/lib/theme'
 import GeofenceEditor, { type GeofenceType } from '@/components/GeofenceEditor'
+import QuestCutoutUploader from '@/components/QuestCutoutUploader'
 import QuestCoverPicker, { type CoverPickerValue } from '@/components/QuestCoverPicker'
 import {
   areasToRpcPayload,
@@ -148,6 +149,14 @@ function EditForm({ quest, onSave, onCancel }: { quest: Quest; onSave: (updated:
             currentUrl={quest.cover_image_url}
             compact
             onChange={setCover}
+          />
+        </div>
+
+        <div className="admin-field">
+          <QuestCutoutUploader
+            questId={quest.id}
+            category={form.category}
+            initialUrl={quest.cutout_url}
           />
         </div>
 

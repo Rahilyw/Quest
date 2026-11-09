@@ -18,6 +18,60 @@ so the app is never half-migrated for long.
 | D7 | A real place photo for every quest (~29), alongside its cutout | Yes. `cover_image_url` already exists; this replaces the Unsplash placeholders |
 | D8 | A sprite set (~12 Victoria creatures and weather) and a scrap kit (tape, torn paper, pen marks) | Yes. Commission one illustrator or 3D artist for one consistent style; Lottie or Rive for the idle loops |
 
+## Implementation status (Nov 8, 2026)
+
+Cursor has completed several redesign increments on the `cursor/cutouts-this-week-quests`
+branch. Its work is already in the current checkout; treat the code as the starting point and
+continue from it rather than reimplementing these phases. The latest commits are `ed70048`
+(foundation, cutout components, This week and Quests), `55bc433` (quest detail and photo
+viewer), `86fb7de` (camera submission and celebration), and `c5e4ecb` (City/feed, Rankings,
+You, comments, reports and notifications). These commits are ahead of `main` in this checkout.
+
+| Plan area | Current state in the Cursor branch | Remaining work |
+|---|---|---|
+| Phase 1: Foundation | Implemented in code: `lib/theme.ts`, Figtree and text primitives, category tokens, and token lint script. | Reconcile this checklist against BRAND.md and run the token guard after further UI work. |
+| Phase 2: Cutout pipeline | Mostly implemented: migration 032, cutout processing script, Cutout/Pillow/Sprite/scrap components, `useQuestPhotos`, and the private selfie upload path. Migration 032 is now listed in `supabase/migrations/README.md`. | Admin cutout upload/preview and category defaults are not present; verify that public photo selection respects privacy/RLS and that private selfies are signed for authorized viewers. |
+| Phase 3: Core loop | Main surfaces are implemented: new tab bar, This week, category folders, quest detail/photo viewer, in-app place/selfie camera, and celebration. | Review against BRAND.md and complete integration/accessibility/responsive polish; confirm the entire flow against a real backend with migration 032 applied. |
+| Phase 4: Social and status | City/feed bubbles, Rankings, You, comments, reports and notification surfaces were redesigned in the latest Cursor commits. | Audit each screen against the spec, including feed privacy, blocked users, reactions, empty/loading/error states, reduce motion and large text. |
+| Phase 5: Brand surfaces | Not completed. | Icon, splash, share card and onboarding redesign remain. |
+| Phase 6: Admin dashboard | Not completed. | Apply the Cutouts admin tokens and build the quest cutout uploader/preview. |
+| Phase 7: Content | Founder-owned and ongoing. | Real place photos, processed cutouts, action phrases, sprite artwork and copy remain. |
+
+This snapshot is a codebase observation, not a claim that the Cursor commits have been merged
+to `main`, deployed, or that migration 032 has been applied to Supabase. Recheck branch state,
+the working tree and migration status before making changes. Use
+[the Claude next-implementation prompt](CLAUDE-NEXT-IMPLEMENTATION-PROMPT.md) as the task
+handoff; update this snapshot as work lands so later agents do not duplicate Cursor's work.
+
+
+### Claude session, Nov 8, 2026 (follow-up on the Cursor branch)
+
+Audit: the Cursor work above is present as described. Two Phase 2 gaps were confirmed and
+closed in this increment; nothing Cursor built was rewritten.
+
+- **Private selfie delivery.** New local migration `033_selfie_signed_url_access.sql`
+  adds a storage SELECT policy on `proof-selfies` backed by `can_view_selfie_object()`,
+  which reuses `can_view_completion()` (own post, or approved + not hidden + feed public +
+  no block) and requires the object to sit in the completion owner's folder. Mobile signs
+  with the viewer's own session (`lib/selfieUrl.ts`, 5 min URLs, cached); `PhotoViewer`
+  uses `useSignedSelfie`. No service-role key reaches mobile, the bucket stays private,
+  and a failed signature just hides the optional selfie, never the place photo.
+- **Admin cutout uploader.** `setQuestCutout` server action (admin-only, transparent WebP
+  from `scripts/make-cutout.js`, 1.5 MB cap, old object cleaned up) and
+  `QuestCutoutUploader` in the quest edit form, previewing on all five category colours.
+
+Checks: mobile `tsc --noEmit` clean; mobile `npm test` 159/159; admin `tsc --noEmit` clean;
+`lint:tokens` still reports the existing warning-level backlog (336 raw tokens in 36 files,
+none newly introduced here). Not run: anything against a real Supabase (migrations 032 and
+033 are not applied), device testing of the signed-URL flow.
+
+**Still open / next:** apply and verify 032+033 on a staging project, then test selfie
+signing across own / follower / blocked / hidden cases; feed bubbles and celebration for
+other users' selfies are not yet wired to `useSignedSelfie`; Phase 5 (icon, splash, share
+card, onboarding) is the next recommended phase, then Phase 6 admin restyle (the admin
+still uses the old navy palette; the uploader is unstyled by design). Category default
+cutouts and all Phase 7 content remain founder work.
+
 ---
 
 ## Phase 1: Foundation (2–3 days)

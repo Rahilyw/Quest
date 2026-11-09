@@ -21,6 +21,7 @@ import { BodyStrong, Micro, Name, Small } from '@/components/ui/Text'
 import { formatTimeAgo } from '@/hooks/useActivityFeed'
 import type { QuestPhoto } from '@/hooks/useQuestPhotos'
 import { plural } from '@/lib/copy'
+import { useSignedSelfie } from '@/lib/selfieUrl'
 import { sizedImageUrl } from '@/lib/sizedImageUrl'
 import { COLOR, RADIUS, SPACE } from '@/lib/theme'
 
@@ -31,20 +32,6 @@ interface PhotoViewerProps {
   questTitle: string
   onClose: () => void
   onStart: () => void
-}
-
-/** http(s) only. Bare storage paths are skipped so we never request a private bucket. */
-function publicImageUrl(value: string | null | undefined): string | null {
-  if (!value) return null
-  const trimmed = value.trim()
-  if (!/^https?:\/\//i.test(trimmed)) return null
-  try {
-    const url = new URL(trimmed)
-    if (url.protocol !== 'http:' && url.protocol !== 'https:') return null
-    return trimmed
-  } catch {
-    return null
-  }
 }
 
 export function PhotoViewer({
@@ -98,11 +85,12 @@ export function PhotoViewer({
   ).current
 
   const photo = photos[index]
+  // Hooks run before the early return. Signed only for viewers storage RLS allows.
+  const selfie = useSignedSelfie(visible ? photo?.selfie_url : null)
   if (!visible || !photo) return null
 
   const previous = photos[index - 1]
   const next = photos[index + 1]
-  const selfie = publicImageUrl(photo.selfie_url)
   const placeUri = sizedImageUrl(photo.photo_url, { width: 720, height: 820 })
 
   return (
@@ -160,7 +148,7 @@ export function PhotoViewer({
               {selfie ? (
                 <View style={styles.selfie} pointerEvents="none">
                   <Pillow
-                    uri={sizedImageUrl(selfie, { width: 186, height: 210 })}
+                    uri={selfie}
                     {...PILLOW_SIZES.row}
                     edge="white"
                   />

@@ -43,6 +43,8 @@ numbered files. Check with `--dry-run` first.
 | `029_social_rate_limits_notifications.sql` | Rate limits on comments (10/10 min, 100/day), likes (120/h), follows (60/h, 200/day); `notifications` activity inbox fed by like/comment/reply/follow triggers; `profiles.push_social`. Push via `send-social-push` + Database Webhook |
 | `030_lock_down_definer_functions.sql` | Revokes client EXECUTE on `apply_completion_rewards` (it was callable over RPC and could mint XP); restricts `get_completion_geofence_evidence` to `service_role`; pins `search_path` on 14 definer functions. Applied live Nov 7, 2026 |
 | `031_audit_fixes.sql` | Nov 2026 audit: weekly rank snapshot moved into SQL (`snapshot_last_week_ranks()` on pg_cron, replacing the never-scheduled `snapshot-ranks` edge function); leaderboard week in `America/Vancouver`; client EXECUTE revoked on trigger functions; `search_path` on 5 more functions; 9 foreign-key indexes; RLS policies evaluate `auth.uid()` once per query |
+| `032_quest_cutouts.sql` | Cutouts redesign: quest cutout/action/distance/duration fields, optional completion selfie path, public cutout and private selfie buckets, quest photo index, and account-deletion cleanup for selfies. Verify storage access and signed-URL behavior before applying to the hosted project. |
+| `033_selfie_signed_url_access.sql` | `can_view_selfie_object()` + storage SELECT policy on private `proof-selfies`, so the viewer's own JWT can `createSignedUrl` only for selfies of completions they may see (`can_view_completion`: own, or approved, not hidden, feed public, no block). Local only; not applied to the hosted project. |
 
 ## Env var naming drift
 

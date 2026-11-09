@@ -42,6 +42,7 @@ export interface Quest {
   sponsor_name: string | null
   sponsor_reward: string | null
   cover_image_url: string | null
+  cutout_url?: string | null
   status: string
   created_at: string
   quest_badges?: { badge_id: string; badge: Badge | null }[]
@@ -521,5 +522,70 @@ export async function updateQuest(
     return { ok: true, quest: quest as Quest }
   } catch (e) {
     return { ok: false, error: e instanceof Error ? e.message : 'Unknown error' }
+  }
+}
+
+// ─── Cutouts (Cutouts redesign, migration 032) ───────────────────────────────
+// The cutout must already be background-removed: run `scripts/make-cutout.js`
+// first. It outputs a transparent WebP, which is the only format accepted here.
+
+const CUTOUT_MAX_BYTES = 1_500_000
+
+/** Upload (or replace/clear) a quest's cutout. Pass no file to clear it. */
+export async function setQuestCutout(
+  questId: string,
+  cutout: File | null
+): Promise<{ ok: true; cutout_url: string | null } | { ok: false; error: string }> {
+  await requireAdmin()
+  try {
+    const { data: existing, error: readError } = await supabaseAdmin
+      .from('quests')
+      .select('cutout_url')
+      .eq('id', questId)
+      .single()
+    if (readError || !existing) return { ok: false, error: 'Quest not found.' }
+
+    let nextUrl: string | null = null
+    if (cutout && cutout.size > 0) {
+      if (cutout.type !== 'image/webp') {
+        return { ok: false, error: 'Use the transparent WebP from scripts/make-cutout.js.' }
+      }
+      if (cutout.size > CUTOUT_MAX_BYTES) {
+        return { ok: false, error: 'Cutout is over 1.5 MB. Re-run make-cutout.js.' }
+      }
+      const buffer = Buffer.from(await cutout.arrayBuffer())
+      // WebP container: "RIFF" .... "WEBP"
+      if (buffer.toString('ascii', 0, 4) !== 'RIFF' || buffer.toString('ascii', 8, 12) !== 'WEBP') {
+        return { ok: false, error: 'That file is not a valid WebP.' }
+      }
+      const path = `${questId}/${crypto.randomUUID()}.webp`
+      const { error: uploadError } = await supabaseAdmin.storage
+        .from('quest-cutouts')
+        .upload(path, buffer, { contentType: 'image/webp', upsert: false })
+      if (uploadError) return { ok: false, error: `Cutout upload failed: ${uploadError.message}` }
+      nextUrl = supabaseAdmin.storage.from('quest-cutouts').getPublicUrl(path).data.publicUrl
+    }
+
+    const { error: updateError } = await supabaseAdmin
+      .from('quests')
+      .update({ cutout_url: nextUrl })
+      .eq('id', questId)
+    if (updateError) return { ok: false, error: updateError.message }
+
+    // Best-effort cleanup of the previous object.
+    const old = existing.cutout_url as string | null
+    const marker = '/quest-cutouts/'
+    const idx = old ? old.indexOf(marker) : -1
+    if (old && idx !== -1) {
+      const oldPath = decodeURIComponent(old.slice(idx + marker.length).split('?')[0] ?? '')
+      if (oldPath && !oldPath.includes('..')) {
+        await supabaseAdmin.storage.from('quest-cutouts').remove([oldPath]).catch(() => {})
+      }
+    }
+
+    revalidatePath('/quests')
+    return { ok: true, cutout_url: nextUrl }
+  } catch (err) {
+    return { ok: false, error: err instanceof Error ? err.message : 'Cutout update failed.' }
   }
 }
