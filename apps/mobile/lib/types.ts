@@ -55,6 +55,13 @@ export interface Quest {
   distance_m?: number | null
   /** Approximate time-to-complete in minutes. */
   duration_min?: number | null
+  /** Inclusive start. Null means already available. */
+  active_from?: string | null
+  /** Exclusive end. Null means no end. */
+  active_until?: string | null
+  /** Set when the quest was published from a player suggestion. */
+  suggested_by?: string | null
+  suggester_username?: string | null
 }
 
 export interface QuestWithBadges extends Quest {
@@ -72,6 +79,7 @@ export interface Completion {
   completed_at: string
   status: CompletionStatus
   redemption_code: string | null
+  redeemed_at?: string | null
   /** Optional selfie uploaded as proof; served via signed URL only (migration 032). */
   selfie_url?: string | null
 }
@@ -121,6 +129,8 @@ export interface UserProfile {
   feed_public: boolean
   /** Push for comments / replies / follows (029). Inbox is unaffected. */
   push_social: boolean
+  /** Monday drop pushes (034). */
+  push_drops?: boolean
   created_at: string
 }
 

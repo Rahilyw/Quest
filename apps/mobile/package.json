@@ -11,7 +11,7 @@
     "build:prod": "npx eas-cli build --profile production --platform all",
     "submit:prod": "npx eas-cli submit --profile production --platform all",
     "update": "npx eas-cli update --branch production --message",
-    "test": "node __tests__/logic.test.js",
+    "test": "node __tests__/logic.test.js && node __tests__/questWindow.test.js",
     "lint:tokens": "node scripts/check-tokens.js"
   },
   "dependencies": {

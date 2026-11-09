@@ -3,6 +3,13 @@ import { NextResponse, type NextRequest } from 'next/server'
 import { isAdminEmail } from '@/lib/admin-auth'
 
 export async function middleware(request: NextRequest) {
+  const { pathname } = request.nextUrl
+  // The merchant key in the URL is the credential. A signed-in non-admin
+  // (a café phone, a player) must still reach this page.
+  if (pathname === '/redeem' || pathname.startsWith('/redeem/')) {
+    return NextResponse.next()
+  }
+
   let supabaseResponse = NextResponse.next({ request })
 
   const supabase = createServerClient(
@@ -28,7 +35,6 @@ export async function middleware(request: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser()
 
-  const { pathname } = request.nextUrl
   const publicPaths = [
     '/login',
     '/login/forgot-password',

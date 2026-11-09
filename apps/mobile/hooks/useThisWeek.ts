@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
+import { endsThisSunday, includeInScope, isNewThisWeek } from '@quest/geofence'
 import * as Location from 'expo-location'
 import { NBSP } from '@/lib/copy'
 import { supabase } from '@/lib/supabase'
@@ -71,23 +72,33 @@ async function loadPosition(): Promise<{ lat: number; lng: number } | null> {
   }
 }
 
-async function loadQuests(): Promise<ThisWeekCandidate[]> {
+async function loadQuests(): Promise<{ quests: ThisWeekCandidate[]; newCount: number; endingCount: number }> {
   const { data, error } = await supabase
     .from('quests')
-    .select('id, title, category, action_phrase, cutout_url, lat, lng, created_at, xp_reward')
+    .select('id, title, category, action_phrase, cutout_url, lat, lng, created_at, xp_reward, active_from, active_until')
     .eq('status', 'active')
   if (error) throw new Error(error.message)
-  return ((data ?? []) as Record<string, unknown>[]).map((row) => ({
-    id: String(row.id),
-    title: String(row.title ?? ''),
-    category: String(row.category ?? 'fitness'),
-    action_phrase: (row.action_phrase as string | null) ?? null,
-    cutout_url: (row.cutout_url as string | null) ?? null,
-    lat: asNumber(row.lat),
-    lng: asNumber(row.lng),
-    created_at: String(row.created_at ?? ''),
-    xp_reward: asNumber(row.xp_reward) ?? 0,
-  }))
+  const now = new Date()
+  const quests = ((data ?? []) as Record<string, unknown>[])
+    .map((row) => ({
+      id: String(row.id),
+      title: String(row.title ?? ''),
+      category: String(row.category ?? 'fitness'),
+      action_phrase: (row.action_phrase as string | null) ?? null,
+      cutout_url: (row.cutout_url as string | null) ?? null,
+      lat: asNumber(row.lat),
+      lng: asNumber(row.lng),
+      created_at: String(row.created_at ?? ''),
+      xp_reward: asNumber(row.xp_reward) ?? 0,
+      active_from: (row.active_from as string | null) ?? null,
+      active_until: (row.active_until as string | null) ?? null,
+    }))
+    .filter((quest) => includeInScope(quest, 'live', now))
+  return {
+    quests,
+    newCount: quests.filter((quest) => isNewThisWeek(quest, now)).length,
+    endingCount: quests.filter((quest) => endsThisSunday(quest, now)).length,
+  }
 }
 
 async function loadFriendHits(userId: string): Promise<
@@ -248,6 +259,8 @@ export function useThisWeek(
   const [friends, setFriends] = useState<WeekFriend[]>([])
   const [notes, setNotes] = useState<CityNote[]>([])
   const [todayCount, setTodayCount] = useState(0)
+  const [newCount, setNewCount] = useState(0)
+  const [endingCount, setEndingCount] = useState(0)
   const [standing, setStanding] = useState<Standing | null>(null)
   const [loading, setLoading] = useState(true)
   const [refreshing, setRefreshing] = useState(false)
@@ -267,13 +280,14 @@ export function useThisWeek(
       setError(null)
 
       try {
-        const [position, quests, friendHits, city, raw] = await Promise.all([
+        const [position, loaded, friendHits, city, raw] = await Promise.all([
           loadPosition(),
           loadQuests(),
           loadFriendHits(userId),
           loadCity(userId, blockedIds),
           loadStandingRaw(userId),
         ])
+        const quests = loaded.quests
 
         const friendQuestId = friendHits.find((hit) => !playedIds.has(hit.questId))?.questId ?? null
         const result = pickThisWeek({
@@ -308,6 +322,8 @@ export function useThisWeek(
         setFriends(shownFriends)
         setNotes(city.notes)
         setTodayCount(city.todayCount)
+        setNewCount(loaded.newCount)
+        setEndingCount(loaded.endingCount)
         setStanding({
           rank: raw.rank,
           weeklyXp: raw.weeklyXp,
@@ -341,6 +357,8 @@ export function useThisWeek(
     friends,
     notes,
     todayCount,
+    newCount,
+    endingCount,
     standing,
     loading,
     refreshing,

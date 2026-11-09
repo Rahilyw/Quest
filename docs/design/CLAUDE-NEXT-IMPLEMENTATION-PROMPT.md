@@ -1,4 +1,9 @@
-# Claude implementation handoff: continue the Cutouts redesign
+# Claude handoff: implement the next Quest! features
+
+**Status, Nov 9, 2026 (later):** Spec 05 and Spec 07 are implemented in this working tree.
+Do not rebuild them. Migrations `034`, `035`, and `036` are local only. `send-push-outbox`
+is not deployed. Quest chains stay deferred. Merchant redemption has not been applied or
+tried live. The next feature is Spec 06, one slice at a time, starting with the starter quest.
 
 Copy the prompt below into Claude Code from the Quest repository root.
 
@@ -6,140 +11,169 @@ Copy the prompt below into Claude Code from the Quest repository root.
 
 ## Prompt
 
-You are continuing implementation in the Quest! monorepo. Your task is to **continue and
-finish the Cutouts redesign**, with the redesign as the top product priority. Implement the
-next coherent increment in the codebase; do not stop after writing another plan.
+You are continuing implementation in the Quest! monorepo. Audit the current checkout, then
+implement the next user-facing features in the sequence already defined by the product specs.
+The immediate feature is the **weekly quest drop and community suggestion loop (Spec 05)**.
+Implement it end to end in focused increments; do not stop at a plan or redesign already
+completed surfaces from scratch.
 
-### Repository and source of truth
+### Read first
 
-- Read `AGENTS.md` files and applicable agent instructions first. Also read
-  `docs/design/BRAND.md`, `docs/design/UI-OVERHAUL-PLAN.md`, `PRODUCT.md`, and the relevant
-  app/build docs before editing.
-- `docs/design/BRAND.md` is the visual and copy source of truth. The seven-phase execution
-  plan and the dated progress snapshot are in `docs/design/UI-OVERHAUL-PLAN.md`.
-- The current mobile app is Expo / React Native in `apps/mobile`; the admin app is Next.js in
-  `apps/admin`; database changes are in `supabase/migrations`.
-- Preserve the product's existing geofence verification, XP/reward logic, social privacy,
-  moderation and account-deletion behavior while redesigning their presentation.
+- Check `git status`, branch, recent commits and applicable `AGENTS.md` instructions. Preserve
+  existing user changes and do not reset, clean, rebase, merge or switch branches without a
+  clear need.
+- Read `ROADMAP.md`, `PRODUCT.md`, `docs/specs/README.md`, Specs 04–07, and
+  `docs/design/BRAND.md` plus `docs/design/UI-OVERHAUL-PLAN.md` for current visual patterns.
+- Inspect relevant code in `apps/mobile`, `apps/admin`, `supabase/migrations`, and existing
+  edge functions before designing new schema or duplicating existing behavior.
 
-### Work already done by Cursor on the side
+### Current audit context (Nov 9, 2026)
 
-Cursor has landed redesign work on the current branch, `cursor/cutouts-this-week-quests`.
-These commits are in the checkout you are continuing from; inspect the code and git state
-before touching anything:
+The current checkout is `cursor/cutouts-this-week-quests`, ahead of `main`. Cursor and Claude
+have implemented most of the Cutouts redesign: mobile tokens and core screens; redesigned
+quest detail, place/selfie camera, celebration, feed, rankings and profile; private selfie
+signing; admin cutout upload; share card, onboarding, icon/splash, admin restyle; and a small
+geofence map on the camera screen. Review the actual git history and docs before edits; these
+changes are already in the working baseline. The history includes `cca0bcc`, `8121639`,
+`68a6cb1`, `74003c5`, `ba32942`, `96349e0`, and `9dd6aa9` in addition to the earlier Cursor
+redesign commits.
 
-- `ed70048`: new design tokens and primitives, category folders, This week and Quests
-  surfaces, `Cutout`/`Pillow`/`Sprite`/scrap components, quest-photo and This week hooks, and
-  migration 032 groundwork.
-- `55bc433`: redesigned quest detail, location status and the proof photo viewer.
-- `86fb7de`: in-app place/selfie camera flow and the Verified celebration.
-- `c5e4ecb`: redesigned City/feed bubbles, Rankings, You, notifications, comments and reports.
+The most recent implementation record is in `docs/design/UI-OVERHAUL-PLAN.md`. Remaining
+design/content work includes real quest photos and cutouts, store screenshots, admin live
+folder/bubble preview, and some residual palette/accessibility/device audits. Keep the Cutouts
+system for any new UI, but the next priority is product functionality.
 
-The exact status and remaining phase work are documented in
-`docs/design/UI-OVERHAUL-PLAN.md`. Do not rebuild these completed surfaces from scratch. First
-review the actual files and current branch/worktree; commit titles are only an index, not proof
-that every checklist item is complete. The Cursor branch may not yet be merged to `main`.
+Code inspection found these feature gaps:
 
-### First: audit the current implementation
+- `quests.active_from` / `active_until` exist in migration 012, but the app/admin currently
+  have no date-based drop flow or reliable active-window surfacing.
+- There is no `quest_suggestions` schema, mobile suggestion form, or admin review queue.
+- Redemption codes and `completions.redeemed_at` exist, but there is no public merchant
+  validation route or redeemed reporting loop (Spec 07).
+- There are no duo parties, XP events, offline submission queue, or Sunday recap screen
+  (Spec 06). Per-completion share cards exist; they are not the weekly recap feature.
+- `ROADMAP.md` still contains Nov 7 statuses that predate the current redesign and later
+  Claude work. Verify operational claims from files and available project state; do not treat
+  stale “pending” or “done” statements as current fact.
 
-Inspect the live code, not only the roadmap. At minimum review:
+Migrations 032 and 033 are local code changes in this branch. Do not claim they are deployed
+or apply migrations to a hosted database in this task. Migration 031 and the production
+push/webhook configuration are operational state that must be verified separately.
 
-- `apps/mobile/lib/theme.ts`, `components/ui/Text.tsx`, `components/FontProvider.tsx`, and
-  `scripts/check-tokens.js`.
-- `app/(tabs)/_layout.tsx`, `index.tsx`, `quests.tsx`, `feed.tsx`, `leaderboard.tsx`, and
-  `profile.tsx`.
-- `app/quest/[id].tsx`, `app/submit/[questId].tsx`, and the related cutout, pillow, viewer,
-  celebration, feed and social components/hooks.
-- `apps/admin` quest create/edit forms and `supabase/migrations/032_quest_cutouts.sql`.
-- Existing docs and git status, including any user changes. Do not overwrite unrelated work.
+### Implement next: Spec 05, in its declared sequence
 
-Write a short status update in the docs before or as you begin implementation if the current
-snapshot has drifted. Identify what is present, what is incomplete, and the single next
-increment you will ship.
+#### Increment 1 — Weekly drops, using existing scheduling columns
 
-### Redesign priorities
+Ship the smallest complete weekly-drop feature using `active_from` and `active_until`; do not
+add duplicate schedule fields.
 
-1. **Close the mobile core-loop gaps and verify the Cutouts behavior.** Compare the current
-   This week → Quests → quest detail → zone check → camera → Verified journey against BRAND.md
-   and repair concrete gaps in hierarchy, copy, states, accessibility, or navigation. Keep
-   real-world proof, geofence enforcement and instant rewards intact.
-2. **Finish the data and asset pipeline needed to make the redesign real.** The current
-   checkout has migration 032, `scripts/make-cutout.js`, and mobile Cutout components; the
-   migration is now listed in `supabase/migrations/README.md`. The admin app has no cutout
-   upload/preview flow or populated category defaults. Implement the smallest coherent
-   admin-to-mobile path for uploading and previewing a cutout, or document any external asset
-   dependency precisely. Never invent production photography or claim the hosted migration
-   has been applied.
-3. **Resolve privacy-sensitive selfie delivery.** Migration 032 stores selfies in private
-   `proof-selfies`. The mobile submission flow writes a storage path to `selfie_url`, while
-   the viewer currently accepts only HTTP(S) URLs and deliberately skips bare paths. Add
-   short-lived signed URL delivery only for viewers authorized to see the associated
-   completion, matching `can_view_completion`/feed privacy and block rules. Do not make
-   selfies public or expose a service-role key to mobile. Ensure failures to load an optional
-   selfie never block a valid place-proof completion.
-4. **Finish the remaining redesign phases.** Audit City, Rankings and You against BRAND.md;
-   then continue with the Phase 5 brand surfaces (icon, splash, share card, onboarding) and
-   Phase 6 admin styling. Prioritize implementation based on what is actually incomplete and
-   ship a focused, coherent increment rather than making superficial edits across every
-   screen.
-5. **Keep content status honest.** Real Victoria place photography and per-quest cutouts,
-   reviewed action phrases, and commissioned sprites remain content work. Make graceful
-   fallbacks visually consistent; don't substitute emoji or stock imagery as if it were final.
+1. **Admin scheduling:** expose both timestamps in create/edit quest forms, with sensible
+   defaults and a “Next Monday” preset. Show the next scheduled drop count on the dashboard
+   so the operator can see an empty drop before Monday.
+2. **Mobile availability:** make the quest data hooks respect the active window consistently
+   using Victoria time (`America/Vancouver`) and clear inclusive/exclusive boundary rules.
+   Surface quests activated in the last 7 days as “New this week” and quests ending Sunday as
+   “Ends Sunday”. Ensure future quests do not leak into regular discovery early, while admins
+   can still preview and edit them.
+3. **Notifications:** inspect the existing push/inbox implementation first. Add the Monday
+   drop notification using the project’s established Expo push and preference patterns if the
+   code path is coherent. If deployment/webhook/cron setup is unavailable, implement the
+   source and document the exact deployment step; never claim a push was delivered or deployed.
+4. **Content and measurement:** use existing analytics conventions and add only events needed
+   to measure drop visibility and quest starts. Keep empty, loading, error, pull-to-refresh and
+   timezone-edge states intentional.
 
-### Design requirements
+#### Increment 2 — Community quest suggestions and curation
 
-- Follow Cutouts: warm paper and ink, Figtree interface type, Pilowlava only for the
-  wordmark/icon/splash, and category color used consistently as category information.
-- Use the existing theme tokens and text primitives. Avoid new raw color, typography or radius
-  values outside the token system; do not bring back the superseded Harbour Electric system.
-- Maintain the intended hierarchy and distinct jobs of This week, Quests, City, Rankings and
-  You. Badges remain reachable from You, outside the primary tab bar.
-- Keep copy in sentence case and in the local, confident voice defined in BRAND.md. No emoji
-  category icons, generic app copy, `·` metadata strings, or arrow buttons.
-- Support reduced motion, screen readers, large text and practical outdoor touch targets.
-  Follow BRAND.md's contrast and accessibility guidance.
-- Reuse existing components and data hooks where they fit. Avoid broad rewrites that obscure
-  the already-completed Cursor work.
+Implement Spec 05 §1 as a full mobile-to-admin vertical slice after the scheduling behavior is
+in place.
 
-### Engineering and privacy constraints
+1. Add a forward-only migration after the highest existing migration number (inspect first;
+   034 is expected if 033 remains latest). Add `quest_suggestions`, status, optional location,
+   admin notes, and `quests.suggested_by`, following the spec while improving validation and
+   indexes as needed.
+2. Enforce ownership and the “at most 3 open suggestions per user” rule in the database, not
+   only in the UI. A user can create and read their own submissions; status and admin fields
+   cannot be self-edited. Admin reads/actions must use existing admin authorization patterns.
+3. Add an on-brand mobile form reachable from Quests/You, with title, description, category,
+   optional map pin, validation, submitting/success/error states, and a clear expectation that
+   publishing is curated.
+4. Add an admin review queue with nearby-quest duplicate context (500 m where coordinates
+   exist), reject with an optional note, and accept into the existing quest creation/edit
+   flow prefilled with the suggestion. Publishing must link the quest and suggester.
+5. Award the specified +100 XP and City Author badge progress exactly once when a suggestion
+   is published. Use an idempotent database-backed path; do not trust a client-supplied XP
+   value or allow retries to double-award. Add/seed the badge consistently with the current
+   admin-configurable badge system.
+6. Add analytics events only where useful, with no user-submitted free text or precise GPS in
+   event properties. Preserve the existing location/privacy policy.
 
-- Check the working tree before edits. Preserve user changes and do not reset, clean, rebase,
-  merge, or switch branches without a clear need.
-- Treat migration 032 as a local migration until verified otherwise. Do not apply migrations
-  to the hosted Supabase project as part of this task.
-- Keep private selfie objects in the private bucket. Any signed URL must be short lived and
-  generated through an authorized server-side path; apply the same privacy, hidden-post and
-  block checks as the public feed. Avoid leaking private paths into public responses if not
-  needed.
-- Do not weaken geofence checks, rate limits, RLS, report/block flows or admin authorization.
-- Follow existing patterns for loading, empty, error, offline and permission-denied states.
-- Keep changes scoped to the redesign increment and its necessary docs/data flow.
+Keep quest chains out of this increment. Spec 05 explicitly defers them until there are about
+35 quests; the current seeded content base is still small.
 
-### Completion bar
+### Next features after Spec 05
 
-- Implement the chosen increment in the app; a proposal alone is not complete.
-- Review the changed screens/components against BRAND.md and make sure no old visual system
-  remains in the surfaces you touched.
-- Run relevant existing checks for the touched packages (including the mobile token guard
-  when mobile UI changes); fix regressions caused by your changes. Do not claim a check passed
-  if it was not run.
-- Update `docs/design/UI-OVERHAUL-PLAN.md` with what Cursor had already completed, what you
-  completed, any remaining blockers/dependencies, and the next recommended phase. Keep the
-  Cursor provenance/context so future Claude/Cursor sessions know these changes happened on
-  the side and do not duplicate them.
-- Update `supabase/migrations/README.md` whenever migration inventory changes. Keep
-  `README.md`, `DESIGN.md`, and build docs consistent if implementation changes their claims.
-- End with a concise report: files/surfaces changed, behavior delivered, checks run and
-  results, migration/deployment state, and remaining redesign work.
+Once the weekly-drop and suggestion flow is complete and documented, proceed in this order
+unless code inspection reveals a blocker:
 
-Begin by checking git status and reading the design plan and brand spec, then implement the
-highest-priority incomplete redesign increment you find.
+1. **Spec 07 merchant redemption:** public `/redeem/[merchantKey]` phone-friendly validation,
+   sponsor-scoped lookups, idempotent mark-redeemed action, guessing/rate-limit protection,
+   redeemed state in the player UI, sponsor redemption metrics and CSV columns. Keep the
+   merchant key unguessable and keep service-role access server-only. Follow the spec’s
+   no-login v1 scope.
+2. **Spec 06 early activation/share:** starter quest flag/surfacing, then Sunday recap card
+   (rank, weekly XP, streak, best own proof photo) using the existing Cutouts share-card
+   patterns and explicit sharing consent.
+3. **Spec 06 retention/growth:** XP events, offline submission queue, then duo quests. These
+   alter reward and completion state, so design DB idempotency, race handling, geofence/rate
+   limits and failure recovery before implementing. Do not weaken the instant-verification
+   authority.
+
+Do not implement all of Spec 06 in one broad change. Finish each as a reviewable vertical
+slice, with an updated spec/roadmap status after each.
+
+### Product, security and design constraints
+
+- Keep the mobile redesign consistent with `docs/design/BRAND.md`: warm paper and ink,
+  Figtree interface type, existing tokens and text primitives, category colors as information,
+  sentence-case local copy. No return to the superseded Harbour Electric visual system.
+- Preserve server-side geofence verification, rate limits, XP/reward triggers, moderation,
+  feed privacy, block rules, admin authorization, account deletion and signed private selfie
+  access. Do not weaken RLS or expose service-role credentials to mobile/public code.
+- Use migrations for schema and security changes. Keep local migration state separate from
+  remote deployment state and update `supabase/migrations/README.md`.
+- Make reward grants, suggestion acceptance, push enqueueing and redemption idempotent where
+  retries or concurrent requests are possible.
+- Keep scheduling and weekly metrics aligned with the established `America/Vancouver`
+  product timezone and the existing Monday leaderboard boundary.
+- Build accessible loading, empty, error, retry and permission-denied states. Respect reduced
+  motion, large text, screen readers and outdoor touch targets.
+- Keep cutout/photo content status honest. Do not fabricate final Victoria photography or
+  report placeholder art as commissioned content.
+
+### Implementation workflow and completion bar
+
+1. Reconcile this audit against the checkout. Update this prompt or the roadmap if facts have
+   changed; do not reimplement features already present.
+2. Implement Increment 1 completely, then Increment 2, keeping each change focused and
+   reviewable. If scope or a genuine dependency requires splitting, finish a complete vertical
+   slice and record the next step rather than leaving half-wired UI/schema.
+3. Run the existing relevant checks for touched packages and add focused tests for new
+   business rules and security-sensitive behavior. Record exact commands and results; do not
+   claim device/backend verification unless performed.
+4. Update `docs/specs/05-community-quests.md`, `docs/specs/README.md`, `ROADMAP.md`, and
+   `docs/design/UI-OVERHAUL-PLAN.md` with implemented state, migration/deployment status,
+   operational dependencies and the next feature. Keep older historical notes clearly dated
+   so they cannot be mistaken for current status.
+5. End with a concise report of user-visible behavior, migrations, checks and limitations.
+
+Start by checking the current git state and reading Spec 05, then implement weekly drops.
 
 ---
 
-## Handoff notes
+## Audit source
 
-The implementation snapshot above reflects repository inspection on Nov 8, 2026. Recheck it
-against the current checkout before acting. In particular, migration 032 is present in the
-repository but is not evidence that the remote database has been migrated. Cursor's work is
-already in this branch's history and should be treated as the baseline for the next phase.
+This handoff reflects a code audit of the current branch on Nov 9, 2026. Files and branch state
+can change; Claude must verify them before implementation. For design progress and Cursor/Claude
+work provenance, see [UI-OVERHAUL-PLAN.md](UI-OVERHAUL-PLAN.md). For the broader product
+sequence, see [ROADMAP.md](../../ROADMAP.md) and [docs/specs/](../specs/README.md).

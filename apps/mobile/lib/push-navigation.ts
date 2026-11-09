@@ -7,6 +7,17 @@ type NotificationData = Record<string, unknown>
 
 function handleNotificationTap(data: NotificationData, router: Router) {
   // Social pushes (029) carry completion_id too, so match them first.
+  if (data?.type === 'weekly_drop') {
+    track('notification_opened', { type: 'weekly_drop', source: 'push' })
+    router.push('/(tabs)/quests')
+    return
+  }
+  if (data?.type === 'suggestion_live') {
+    track('notification_opened', { type: 'suggestion_live', source: 'push' })
+    const questId = typeof data.quest_id === 'string' ? data.quest_id : null
+    router.push((questId ? `/quest/${questId}` : '/(tabs)/quests') as never)
+    return
+  }
   if (data?.type === 'social') {
     const type = data.notification_type as SocialNotificationType
     const route = notificationRoute(

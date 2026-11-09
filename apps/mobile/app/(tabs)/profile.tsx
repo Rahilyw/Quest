@@ -11,13 +11,14 @@ import { Body, Heading, Name, Small, Title } from '@/components/ui/Text'
 import { useAuth } from '@/hooks/useAuth'
 import { useFollow } from '@/hooks/useFollow'
 import { useQuests } from '@/hooks/useQuests'
+import { isQuestActive } from '@quest/geofence'
 import { useUserCompletions } from '@/hooks/useUserCompletions'
 import { resolveBadgeSpec } from '@/lib/badgeFromDb'
 import type { BadgeSpec } from '@/lib/badgeCatalog'
 import { levelLabel, plural } from '@/lib/copy'
 import { TAB_BAR_CLEARANCE } from '@/lib/constants'
 import { supabase } from '@/lib/supabase'
-import { COLOR, RADIUS, SPACE } from '@/lib/theme'
+import { COLOR, RADIUS, SPACE, SPONSORED } from '@/lib/theme'
 import type { Badge } from '@/lib/types'
 
 interface ShelfBadge {
@@ -26,15 +27,34 @@ interface ShelfBadge {
   earned: boolean
 }
 
+interface RewardCard {
+  id: string
+  title: string
+  reward: string | null
+  code: string
+  redeemedAt: string | null
+}
+
+function redeemedWhen(iso: string) {
+  return new Date(iso).toLocaleString('en-CA', {
+    timeZone: 'America/Vancouver',
+    month: 'short',
+    day: 'numeric',
+    hour: 'numeric',
+    minute: '2-digit',
+  })
+}
+
 export default function Profile() {
   const insets = useSafeAreaInsets()
   const router = useRouter()
   const { profile, loading, profileError, refreshProfile } = useAuth()
-  const { quests, loading: questsLoading } = useQuests()
+  const { quests, loading: questsLoading } = useQuests(undefined, 'archive')
   const { refetch: refetchCompletions } = useUserCompletions(profile?.id)
   const { followerCount, followingCount, refetch: refetchFollow } = useFollow(profile?.id, profile?.id)
   const [earnedIds, setEarnedIds] = useState<Set<string>>(new Set())
   const [badges, setBadges] = useState<ShelfBadge[]>([])
+  const [rewards, setRewards] = useState<RewardCard[]>([])
   const [refreshing, setRefreshing] = useState(false)
 
   const loadShelf = useCallback(async () => {
@@ -58,20 +78,50 @@ export default function Profile() {
     )
   }, [profile])
 
+  const loadRewards = useCallback(async () => {
+    if (!profile) return
+    const { data } = await supabase
+      .from('completions')
+      .select('id, redemption_code, redeemed_at, quest:quests(title, sponsor_reward, is_sponsored)')
+      .eq('user_id', profile.id)
+      .eq('status', 'approved')
+      .not('redemption_code', 'is', null)
+    const cards: RewardCard[] = []
+    for (const row of data ?? []) {
+      const quest = Array.isArray(row.quest) ? row.quest[0] : row.quest
+      if (!quest?.is_sponsored || !row.redemption_code) continue
+      cards.push({
+        id: row.id as string,
+        title: quest.title as string,
+        reward: (quest.sponsor_reward as string | null) ?? null,
+        code: row.redemption_code as string,
+        redeemedAt: (row.redeemed_at as string | null) ?? null,
+      })
+    }
+    cards.sort((a, b) => Number(Boolean(a.redeemedAt)) - Number(Boolean(b.redeemedAt)))
+    setRewards(cards)
+  }, [profile])
+
   useEffect(() => {
     loadShelf()
-  }, [loadShelf])
+    loadRewards()
+  }, [loadShelf, loadRewards])
 
-  useFocusEffect(useCallback(() => { refetchCompletions() }, [refetchCompletions]))
+  useFocusEffect(useCallback(() => {
+    refetchCompletions()
+    loadRewards()
+  }, [refetchCompletions, loadRewards]))
 
   async function handleRefresh() {
     setRefreshing(true)
-    await Promise.all([refreshProfile(), loadShelf(), refetchCompletions(), refetchFollow()])
+    await Promise.all([refreshProfile(), loadShelf(), loadRewards(), refetchCompletions(), refetchFollow()])
     setRefreshing(false)
   }
 
   const shelf = useMemo(() => {
-    return [...quests].sort((a, b) => {
+    return [...quests]
+      .filter((quest) => earnedIds.has(quest.id) || isQuestActive(quest, new Date()))
+      .sort((a, b) => {
       const aEarned = earnedIds.has(a.id) ? 0 : 1
       const bEarned = earnedIds.has(b.id) ? 0 : 1
       if (aEarned !== bEarned) return aEarned - bEarned
@@ -172,6 +222,34 @@ export default function Profile() {
             <Small>Edit profile</Small>
           </Pressable>
         </View>
+
+        {rewards.length > 0 ? (
+          <View style={styles.rewards}>
+            <Heading>Rewards</Heading>
+            {rewards.map((reward) => (
+              <View key={reward.id} style={styles.reward} accessibilityLabel={`${reward.title} code ${reward.code}`}>
+                <Name>{reward.title}</Name>
+                {reward.reward ? <Small color={SPONSORED.deep}>{reward.reward}</Small> : null}
+                <Title tabular style={styles.code}>{reward.code}</Title>
+                <Small tone="soft">
+                  {reward.redeemedAt
+                    ? `Redeemed ${redeemedWhen(reward.redeemedAt)}`
+                    : 'Show this screen at the counter'}
+                </Small>
+              </View>
+            ))}
+          </View>
+        ) : null}
+
+        <Pressable
+          onPress={() => router.push('/suggest-quest')}
+          accessibilityRole="button"
+          accessibilityLabel="Suggest a quest"
+          style={styles.suggest}
+        >
+          <Body>Suggest a quest</Body>
+          <Small tone="soft">If we publish it, the quest carries your name.</Small>
+        </Pressable>
 
         <View style={styles.sectionHead}>
           <Heading>Cutouts</Heading>
@@ -301,6 +379,24 @@ const styles = StyleSheet.create({
     minWidth: 72,
     justifyContent: 'center',
     paddingHorizontal: SPACE.s2,
+  },
+  rewards: { paddingHorizontal: SPACE.s4, gap: SPACE.s3, marginBottom: SPACE.s6 },
+  reward: {
+    borderRadius: RADIUS.card,
+    backgroundColor: COLOR.paperDeep,
+    padding: SPACE.s4,
+    gap: SPACE.s1,
+  },
+  code: { letterSpacing: 2 },
+  suggest: {
+    marginHorizontal: SPACE.s4,
+    marginBottom: SPACE.s6,
+    minHeight: 72,
+    borderRadius: RADIUS.card,
+    backgroundColor: COLOR.paperDeep,
+    padding: SPACE.s4,
+    justifyContent: 'center',
+    gap: SPACE.s1,
   },
   sectionHead: {
     flexDirection: 'row',

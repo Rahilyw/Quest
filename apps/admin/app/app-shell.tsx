@@ -13,6 +13,7 @@ function Sidebar() {
     { href: '/completions', label: 'Completions' },
     { href: '/quests', label: 'Quests' },
     { href: '/quests/new', label: 'New quest' },
+    { href: '/suggestions', label: 'Suggestions' },
     { href: '/badges', label: 'Badges' },
     { href: '/users', label: 'Users' },
     { href: '/sponsors', label: 'Sponsors' },
@@ -83,8 +84,9 @@ function Sidebar() {
 export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname()
   const isLogin = pathname === '/login' || pathname.startsWith('/login/') || pathname.startsWith('/auth/')
+  const isRedeem = pathname === '/redeem' || pathname.startsWith('/redeem/')
 
-  if (isLogin) {
+  if (isLogin || isRedeem) {
     return <>{children}</>
   }
 

@@ -18,7 +18,7 @@ so the app is never half-migrated for long.
 | D7 | A real place photo for every quest (~29), alongside its cutout | Yes. `cover_image_url` already exists; this replaces the Unsplash placeholders |
 | D8 | A sprite set (~12 Victoria creatures and weather) and a scrap kit (tape, torn paper, pen marks) | Yes. Commission one illustrator or 3D artist for one consistent style; Lottie or Rive for the idle loops |
 
-## Implementation status (Nov 8, 2026)
+## Implementation status (Nov 9, 2026)
 
 Cursor has completed several redesign increments on the `cursor/cutouts-this-week-quests`
 branch. Its work is already in the current checkout; treat the code as the starting point and
@@ -29,19 +29,29 @@ You, comments, reports and notifications). These commits are ahead of `main` in 
 
 | Plan area | Current state in the Cursor branch | Remaining work |
 |---|---|---|
-| Phase 1: Foundation | Implemented in code: `lib/theme.ts`, Figtree and text primitives, category tokens, and token lint script. | Reconcile this checklist against BRAND.md and run the token guard after further UI work. |
-| Phase 2: Cutout pipeline | Mostly implemented: migration 032, cutout processing script, Cutout/Pillow/Sprite/scrap components, `useQuestPhotos`, and the private selfie upload path. Migration 032 is now listed in `supabase/migrations/README.md`. | Admin cutout upload/preview and category defaults are not present; verify that public photo selection respects privacy/RLS and that private selfies are signed for authorized viewers. |
-| Phase 3: Core loop | Main surfaces are implemented: new tab bar, This week, category folders, quest detail/photo viewer, in-app place/selfie camera, and celebration. | Review against BRAND.md and complete integration/accessibility/responsive polish; confirm the entire flow against a real backend with migration 032 applied. |
-| Phase 4: Social and status | City/feed bubbles, Rankings, You, comments, reports and notification surfaces were redesigned in the latest Cursor commits. | Audit each screen against the spec, including feed privacy, blocked users, reactions, empty/loading/error states, reduce motion and large text. |
-| Phase 5: Brand surfaces | Share card, onboarding, icon and splash done (Claude, Nov 8): see below. | Store screenshots on the `desk` grid (needs real screens and content). |
-| Phase 6: Admin dashboard | Restyle and cutout uploader done (Claude, Nov 8): see below. | Live folder/bubble preview in the quest form; restyle of the dashboard, users, badges and sponsors pages is token-level only. |
+| Phase 1: Foundation | Implemented: `lib/theme.ts`, Figtree and text primitives, category tokens, token lint script. | Continue reducing the existing token-lint backlog and audit remaining screens when touched. |
+| Phase 2: Cutout pipeline | Implemented in code: migrations 032–033, processing script, mobile cutout/photo components, signed private selfie access, and admin cutout uploader. | Migrations 032–033 remain local until verified/applied remotely; real category/quest cutout assets are still needed. |
+| Phase 3: Core loop | This week, Quests, quest detail/photo viewer, in-app place/selfie camera, Verified celebration, and camera ZoneMap are implemented. | Visual/device/backend verification remains; the map tab and a few motion/content details still need a Cutouts audit. |
+| Phase 4: Social and status | City/feed bubbles, Rankings, You, comments, reports and notifications are redesigned. | Continue accessibility and device checks; signed selfies are not wired into every feed/celebration surface. |
+| Phase 5: Brand surfaces | Share card, onboarding, app/adaptive icons and splash implemented (Claude, Nov 8). | Store screenshots on the `desk` grid need real screens and content; verify native assets in device builds. |
+| Phase 6: Admin dashboard | Cutouts restyle and quest cutout uploader implemented (Claude, Nov 8). | Live folder/bubble preview remains; verify all admin pages for visual consistency and device-independent layouts. |
 | Phase 7: Content | Founder-owned and ongoing. | Real place photos, processed cutouts, action phrases, sprite artwork and copy remain. |
 
 This snapshot is a codebase observation, not a claim that the Cursor commits have been merged
-to `main`, deployed, or that migration 032 has been applied to Supabase. Recheck branch state,
+to `main`, deployed, or that migrations 032–033 have been applied to Supabase. Recheck branch state,
 the working tree and migration status before making changes. Use
 [the Claude next-implementation prompt](CLAUDE-NEXT-IMPLEMENTATION-PROMPT.md) as the task
 handoff; update this snapshot as work lands so later agents do not duplicate Cursor's work.
+
+**Feature handoff update (Nov 9, later the same day):** Spec 05 and Spec 07 are implemented
+on this branch. Migrations `034`, `035`, and `036` are local and were not applied. Monday
+push was not deployed. Merchant redemption was not tried at a counter. Quest chains stay
+deferred. The next product feature is Spec 06, starter quest first, then the other Spec 06
+slices one at a time. The earlier Nov 9 audit note described the checkout before this work.
+
+**Feature handoff update (Nov 9, earlier):** the redesign work has advanced since the Nov 8 notes
+below. At that point the next priority was Spec 05. That audit is historical. See
+[ROADMAP.md](../../ROADMAP.md).
 
 
 ### Claude session, Nov 8, 2026 (follow-up on the Cursor branch)

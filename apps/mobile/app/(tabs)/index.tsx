@@ -1,5 +1,6 @@
 import { Pressable, RefreshControl, ScrollView, StyleSheet, View } from 'react-native'
 import { Ionicons } from '@expo/vector-icons'
+import { useEffect, useRef } from 'react'
 import { useRouter } from 'expo-router'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { Avatar } from '@/components/Avatar'
@@ -14,6 +15,7 @@ import { useUnreadNotificationCount } from '@/hooks/useNotifications'
 import { useUserCompletions } from '@/hooks/useUserCompletions'
 import { daysLeftLabel } from '@/lib/copy'
 import { getDaysLeftInWeek, getISOWeek, TAB_BAR_CLEARANCE } from '@/lib/constants'
+import { track } from '@/lib/analytics'
 import { greetingName, ordinal } from '@/lib/thisWeek'
 import { CATEGORY, COLOR, FONT, RADIUS, SPACE } from '@/lib/theme'
 
@@ -44,6 +46,16 @@ export default function ThisWeekScreen() {
   )
   const date = victoriaDate()
   const name = greetingName(profile?.username)
+  const seenDrop = useRef(false)
+  useEffect(() => {
+    if (week.loading || week.error || seenDrop.current) return
+    seenDrop.current = true
+    track('weekly_drop_seen', {
+      new_count: week.newCount,
+      ending_count: week.endingCount,
+      source: 'this-week',
+    })
+  }, [week.loading, week.error, week.newCount, week.endingCount])
 
   return (
     <View style={styles.screen}>
@@ -85,6 +97,22 @@ export default function ThisWeekScreen() {
         <Small color={COLOR.inkFaint} style={styles.clock}>
           {`Week ${getISOWeek()}, ${daysLeftLabel(getDaysLeftInWeek())}`}
         </Small>
+        {!week.loading && !week.error ? (
+          <Pressable
+            onPress={() => router.push('/(tabs)/quests')}
+            accessibilityRole="button"
+            accessibilityLabel={
+              week.newCount > 0 ? `${week.newCount} new this week` : 'Nothing new this week'
+            }
+            style={styles.dropLink}
+          >
+            <Small color={COLOR.white}>
+              {week.newCount > 0
+                ? `${week.newCount} new this week`
+                : 'Nothing new this week. The next drop is Monday.'}
+            </Small>
+          </Pressable>
+        ) : null}
 
         {week.loading ? (
           <Sentence color={COLOR.inkFaint} style={styles.sentence}>
@@ -241,6 +269,11 @@ const styles = StyleSheet.create({
   },
   clock: {
     marginTop: SPACE.s2,
+  },
+  dropLink: {
+    alignSelf: 'flex-start',
+    minHeight: 48,
+    justifyContent: 'center',
     marginBottom: SPACE.s4,
   },
   sentence: {

@@ -13,6 +13,7 @@ import { Ionicons } from '@expo/vector-icons'
 import * as Location from 'expo-location'
 import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
+import { endsThisSunday, formatDropLabel, isNewThisWeek, isQuestActive } from '@quest/geofence'
 import { Cutout } from '@/components/Cutout'
 import { PhotoViewer } from '@/components/PhotoViewer'
 import { Pillow, PILLOW_SIZES } from '@/components/Pillow'
@@ -163,16 +164,19 @@ export default function QuestDetail() {
       source === 'deep_link'
         ? source
         : 'unknown'
+    const now = new Date()
     track('quest_viewed', {
       quest_id: quest.id,
       category: quest.category,
       is_sponsored: quest.is_sponsored,
       source: questSource,
+      new_this_week: isNewThisWeek(quest, now),
+      ends_sunday: endsThisSunday(quest, now),
     })
   }, [quest?.id, source])
 
   const startQuest = useCallback(() => {
-    if (!quest) return
+    if (!quest || !isQuestActive(quest, new Date())) return
     setViewerIndex(null)
     router.push(`/submit/${quest.id}`)
   }, [quest, router])
@@ -201,7 +205,7 @@ export default function QuestDetail() {
     return (
       <View style={[styles.screen, styles.missing, { paddingTop: insets.top + SPACE.s6 }]}>
         <Heading>Quest not found</Heading>
-        <Body tone="soft">This quest may have been removed or is no longer available.</Body>
+        <Body tone="soft">This quest isn’t available right now. It may have ended, or it hasn’t dropped yet.</Body>
         <Pressable
           onPress={() => router.back()}
           accessibilityRole="button"
@@ -244,6 +248,12 @@ export default function QuestDetail() {
 
   // BRAND.md 8b: outside the zone the primary button is disabled and the zone line says why.
   const outsideZone = zone === 'outside'
+  const live = isQuestActive(quest, new Date())
+  const windowNote = live
+    ? null
+    : quest.active_from && new Date(quest.active_from) > new Date()
+      ? `Drops ${formatDropLabel(quest.active_from)}. It isn’t out yet.`
+      : 'This quest has ended.'
 
   return (
     <View style={styles.screen}>
@@ -332,7 +342,11 @@ export default function QuestDetail() {
           <View style={styles.copy}>
           <View style={styles.headingBlock}>
             <Heading>{quest.title}</Heading>
+            {quest.suggester_username ? (
+              <Small tone="soft">{`Quest by @${quest.suggester_username}`}</Small>
+            ) : null}
             <Small tone="soft">{facts}</Small>
+            {windowNote ? <Small>{windowNote}</Small> : null}
           </View>
 
           {description ? <Body tone="soft">{description}</Body> : null}
@@ -428,22 +442,24 @@ export default function QuestDetail() {
       <View style={[styles.footer, { paddingBottom: footerPad }]}>
         <Pressable
           onPress={startQuest}
-          disabled={outsideZone}
+          disabled={outsideZone || !live}
           accessibilityRole="button"
           accessibilityLabel={`Start quest: ${quest.title}`}
-          accessibilityHint={outsideZone ? zoneText : 'Takes you to the photo submission screen'}
-          accessibilityState={{ disabled: outsideZone }}
+          accessibilityHint={!live ? windowNote ?? 'Not available' : outsideZone ? zoneText : 'Takes you to the photo submission screen'}
+          accessibilityState={{ disabled: outsideZone || !live }}
           style={({ pressed }) => [
             styles.start,
-            outsideZone && styles.startOff,
-            pressed && !outsideZone && styles.startPressed,
+            (outsideZone || !live) && styles.startOff,
+            pressed && !outsideZone && live && styles.startPressed,
           ]}
         >
-          <BodyStrong color={outsideZone ? COLOR.inkSoft : COLOR.white}>Start quest</BodyStrong>
+          <BodyStrong color={outsideZone || !live ? COLOR.inkSoft : COLOR.white}>
+            {live ? 'Start quest' : 'Not available'}
+          </BodyStrong>
           <Ionicons
             name="camera-outline"
             size={20}
-            color={outsideZone ? COLOR.inkSoft : COLOR.white}
+            color={outsideZone || !live ? COLOR.inkSoft : COLOR.white}
             accessibilityElementsHidden
             importantForAccessibility="no"
           />

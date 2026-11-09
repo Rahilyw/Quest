@@ -45,6 +45,9 @@ numbered files. Check with `--dry-run` first.
 | `031_audit_fixes.sql` | Nov 2026 audit: weekly rank snapshot moved into SQL (`snapshot_last_week_ranks()` on pg_cron, replacing the never-scheduled `snapshot-ranks` edge function); leaderboard week in `America/Vancouver`; client EXECUTE revoked on trigger functions; `search_path` on 5 more functions; 9 foreign-key indexes; RLS policies evaluate `auth.uid()` once per query |
 | `032_quest_cutouts.sql` | Cutouts redesign: quest cutout/action/distance/duration fields, optional completion selfie path, public cutout and private selfie buckets, quest photo index, and account-deletion cleanup for selfies. Verify storage access and signed-URL behavior before applying to the hosted project. |
 | `033_selfie_signed_url_access.sql` | `can_view_selfie_object()` + storage SELECT policy on private `proof-selfies`, so the viewer's own JWT can `createSignedUrl` only for selfies of completions they may see (`can_view_completion`: own, or approved, not hidden, feed public, no block). Local only; not applied to the hosted project. |
+| `034_weekly_drops.sql` | Client reads hide quests before `active_from` and after `active_until` (completed quests stay readable to that player). Completion insert rejects a closed window. `profiles.push_drops`. `push_outbox` + `weekly_drop_sends` and `enqueue_weekly_drop()` on two Monday UTC crons (PST/PDT). Local only. Push is not sent until `send-push-outbox` is deployed. |
+| `035_quest_suggestions.sql` | `quest_suggestions`, 3-open cap, `quests.suggested_by`, one-time +100 XP and City Author via `publish_suggested_quest` (service role only). Local only. |
+| `036_merchant_redemption.sql` | `sponsors` plus an unguessable `merchant_key`. Service-role lookup and idempotent mark-redeemed, 10 attempts per minute per sponsor. Players cannot set `redeemed_at` (`redeemed_at` itself is from 017). Local only. |
 
 ## Env var naming drift
 

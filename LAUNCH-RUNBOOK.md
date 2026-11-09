@@ -66,6 +66,37 @@ Likes never push (inbox only) by design.
 
 ---
 
+## Step 0c — Weekly drop push (migration 034) 🟠
+
+Not done by the Nov 9 implementation. The SQL job `enqueue_weekly_drop()` only
+writes `push_outbox`. Phones get nothing until you deploy the function and the webhook.
+
+Apply migrations through `035` with the same `npx supabase db push` as Step 0, then:
+
+```powershell
+cd C:\Users\rahil\Documents\Projects\Quest
+npx supabase secrets set DROP_PUSH_WEBHOOK_SECRET=<long random string>
+npx supabase functions deploy send-push-outbox
+```
+
+In the Supabase dashboard → **Database → Webhooks → Create a new hook**:
+
+- Table: `public.weekly_drop_sends`, Events: **Insert** only
+- Type: **HTTP Request**, Method `POST`,
+  URL `https://<project-ref>.supabase.co/functions/v1/send-push-outbox`
+- HTTP header: `x-webhook-secret` = the same random string
+
+Cron (created by 034 if `pg_cron` is installed) calls the enqueue at 16:15 and 17:15 UTC
+on Mondays so both PST and PDT land near 09:00 Victoria. An empty Monday does not lock
+the week. A second run the same week inserts nothing.
+
+**Verify:** insert a quest with `active_from` earlier today (Victoria Monday), call
+`select enqueue_weekly_drop();` from the SQL editor, confirm one `weekly_drop_sends` row
+and `push_outbox` rows, then confirm the function log says `pushed`. Do not treat a
+successful enqueue as a delivered notification.
+
+---
+
 ## Step 1 — Apple Developer + iOS submit credentials (30–60 min) 🔴
 
 This is the only thing blocking a TestFlight build.

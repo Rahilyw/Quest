@@ -4,6 +4,8 @@ import { revalidatePath } from 'next/cache'
 import { validatePolygonRing } from '@quest/geofence'
 import { supabaseAdmin } from '@/lib/supabase'
 import { requireAdmin } from '@/lib/require-admin'
+import { normalizeSchedule, scheduleFromForm } from '@/lib/schedule'
+import { sendExpoPush } from '@/lib/expo-push'
 
 export interface Badge {
   id: string
@@ -45,6 +47,9 @@ export interface Quest {
   cutout_url?: string | null
   status: string
   created_at: string
+  active_from?: string | null
+  active_until?: string | null
+  suggested_by?: string | null
   quest_badges?: { badge_id: string; badge: Badge | null }[]
   quest_geofences?: QuestGeofenceRow[]
 }
@@ -216,6 +221,48 @@ async function deleteQuestCoverIfOwned(url: string | null | undefined) {
   }
 }
 
+async function linkPublishedSuggestion(
+  suggestionId: string,
+  questId: string,
+): Promise<{ ok: true } | { ok: false; error: string }> {
+  const { data, error } = await supabaseAdmin.rpc('publish_suggested_quest', {
+    p_suggestion_id: suggestionId,
+    p_quest_id: questId,
+  })
+  if (error) return { ok: false, error: error.message }
+
+  const result = (data ?? {}) as { awarded?: boolean; user_id?: string }
+  revalidatePath('/suggestions')
+
+  if (result.awarded && result.user_id) {
+    const { data: profile } = await supabaseAdmin
+      .from('profiles')
+      .select('push_token, push_drops')
+      .eq('id', result.user_id)
+      .maybeSingle()
+    const sentAt = new Date().toISOString()
+    if (profile?.push_token && profile.push_drops !== false) {
+      await sendExpoPush(profile.push_token, 'Quest!', 'Your quest idea is live in Victoria.', {
+        type: 'suggestion_live',
+        quest_id: questId,
+      })
+      // sent_at is set now so a later outbox drain cannot deliver this twice.
+      // A missing push_outbox table must not undo the published quest.
+      await supabaseAdmin.from('push_outbox').insert({
+        user_id: result.user_id,
+        kind: 'suggestion_live',
+        title: 'Quest!',
+        body: 'Your quest idea is live in Victoria.',
+        data: { type: 'suggestion_live', quest_id: questId },
+        dedupe_key: `suggestion_live:${suggestionId}`,
+        sent_at: sentAt,
+      })
+    }
+  }
+
+  return { ok: true }
+}
+
 export async function createQuest(formData: FormData): Promise<{ ok: true; quest: Quest } | { ok: false; error: string }> {
   await requireAdmin()
   try {
@@ -246,6 +293,9 @@ export async function createQuest(formData: FormData): Promise<{ ok: true; quest
     const sponsor_reward = String(formData.get('sponsor_reward') ?? '').trim()
     const badgeIds = formData.getAll('badge_ids').map(String)
     const coverFile = formData.get('cover') as File | null
+    const suggestionId = String(formData.get('suggestion_id') ?? '').trim() || null
+    const schedule = scheduleFromForm(formData)
+    if ('error' in schedule) return { ok: false, error: schedule.error }
 
     if (!title || !description) {
       return { ok: false, error: 'Title and description are required.' }
@@ -300,6 +350,8 @@ export async function createQuest(formData: FormData): Promise<{ ok: true; quest
         sponsor_reward: is_sponsored ? sponsor_reward : null,
         cover_image_url,
         status: 'active',
+        active_from: schedule.active_from,
+        active_until: schedule.active_until,
       })
       .select('*')
       .single()
@@ -339,6 +391,14 @@ export async function createQuest(formData: FormData): Promise<{ ok: true; quest
       const { error: badgeError } = await supabaseAdmin.from('quest_badges').insert(rows)
       if (badgeError) {
         return { ok: false, error: `Quest created but badge linking failed: ${badgeError.message}` }
+      }
+    }
+
+    if (suggestionId) {
+      const linked = await linkPublishedSuggestion(suggestionId, quest.id)
+      if (!linked.ok) {
+        await supabaseAdmin.from('quests').delete().eq('id', quest.id)
+        return linked
       }
     }
 
@@ -386,6 +446,9 @@ export interface UpdateQuestInput {
   remove_cover?: boolean
   /** Child areas when geofence_type is multi */
   multi_areas?: MultiAreaPayload[] | null
+  /** UTC instants. Null clears that side of the window. */
+  active_from: string | null
+  active_until: string | null
 }
 
 export async function updateQuest(
@@ -412,6 +475,8 @@ export async function updateQuest(
       sponsor_reward,
       remove_cover,
       multi_areas,
+      active_from,
+      active_until,
     } = input
 
     if (!title.trim() || !description.trim()) {
@@ -433,6 +498,8 @@ export async function updateQuest(
     if (is_sponsored && (!sponsor_name?.trim() || !sponsor_reward?.trim())) {
       return { ok: false, error: 'Sponsor name and reward are required for sponsored quests.' }
     }
+    const schedule = normalizeSchedule(active_from ?? '', active_until ?? '')
+    if ('error' in schedule) return { ok: false, error: schedule.error }
 
     const { data: existing } = await supabaseAdmin
       .from('quests')
@@ -479,6 +546,8 @@ export async function updateQuest(
         is_sponsored,
         sponsor_name: is_sponsored ? (sponsor_name?.trim() ?? null) : null,
         sponsor_reward: is_sponsored ? (sponsor_reward?.trim() ?? null) : null,
+        active_from: schedule.active_from,
+        active_until: schedule.active_until,
         ...coverPatch,
       })
       .eq('id', id)

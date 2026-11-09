@@ -41,13 +41,14 @@ export default function Settings() {
     // Derive questNearby from actual push token presence
     supabase
       .from('profiles')
-      .select('push_token, feed_public, push_social')
+      .select('push_token, feed_public, push_social, push_drops')
       .eq('id', session.user.id)
       .single()
       .then(({ data }) => {
         setQuestNearby(!!data?.push_token)
         if (data?.feed_public != null) setFeedPublic(data.feed_public)
         if (data?.push_social != null) setPushSocial(data.push_social)
+        if (data?.push_drops != null) setWeeklyDigest(data.push_drops)
       })
 
     // Restore weekly digest preference
@@ -69,8 +70,14 @@ export default function Settings() {
   }
 
   async function handleWeeklyDigestToggle(enabled: boolean) {
+    if (!session?.user?.id) return
     setWeeklyDigest(enabled)
     await AsyncStorage.setItem(WEEKLY_DIGEST_KEY, String(enabled))
+    const { error } = await supabase
+      .from('profiles')
+      .update({ push_drops: enabled })
+      .eq('id', session.user.id)
+    if (error) setWeeklyDigest(!enabled)
   }
 
   async function handlePushSocialToggle(enabled: boolean) {
@@ -213,7 +220,10 @@ export default function Settings() {
             />
           </View>
           <View style={[styles.row, styles.rowBorder]}>
-            <Text style={styles.rowLabel}>Weekly Digest</Text>
+            <View style={{ flex: 1, paddingRight: SPACING.md }}>
+              <Text style={styles.rowLabel}>Weekly digest</Text>
+              <Text style={styles.rowHint}>Monday morning, when new quests drop in Victoria.</Text>
+            </View>
             <Switch
               value={weeklyDigest}
               onValueChange={handleWeeklyDigestToggle}

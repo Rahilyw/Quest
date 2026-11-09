@@ -92,6 +92,7 @@ function RootLayoutNav() {
         <Stack.Screen name="edit-profile" options={{ presentation: 'card', headerShown: false }} />
         <Stack.Screen name="blocked-users" options={{ presentation: 'card', headerShown: false }} />
         <Stack.Screen name="notifications" options={{ presentation: 'card', headerShown: false }} />
+        <Stack.Screen name="suggest-quest" options={{ presentation: 'card', headerShown: false }} />
       </Stack>
     </ErrorBoundary>
   )

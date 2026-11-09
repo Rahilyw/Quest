@@ -8,6 +8,7 @@ import CompletionCelebration, { type CelebrationVariant } from '@/components/Com
 import { Pillow, PILLOW_SIZES } from '@/components/Pillow'
 import { ShareStoryModal } from '@/components/ShareStoryModal'
 import { Body, Small, Title } from '@/components/ui/Text'
+import { endsThisSunday, isNewThisWeek, isQuestActive } from '@quest/geofence'
 import { useAuth } from '@/hooks/useAuth'
 import { useGeofenceCheck } from '@/hooks/useGeofenceCheck'
 import { useLocation } from '@/hooks/useLocation'
@@ -86,7 +87,12 @@ export default function Submit() {
 
   useEffect(() => {
     if (!questId || !quest) return
-    track('quest_started', { quest_id: questId })
+    const now = new Date()
+    track('quest_started', {
+      quest_id: questId,
+      new_this_week: isNewThisWeek(quest, now),
+      ends_sunday: endsThisSunday(quest, now),
+    })
   }, [questId, quest?.id])
 
   useEffect(() => {
@@ -170,6 +176,11 @@ export default function Submit() {
   const handleSubmit = useCallback(async () => {
     if (!placePhoto || !effectiveCoords || !quest || !userId || !questId || !profile) {
       setStep('failed')
+      return
+    }
+    if (!isQuestActive(quest, new Date())) {
+      Alert.alert('Not available', 'This quest isn’t open right now.')
+      router.back()
       return
     }
     if (isMocked) {
@@ -370,6 +381,23 @@ export default function Submit() {
   const showCamera = step === 'place' || step === 'selfie'
   const cameraReady = !!camPermission?.granted
 
+  if (!questLoading && quest && !isQuestActive(quest, new Date())) {
+    return (
+      <View style={[styles.screen, styles.closed, { paddingTop: insets.top + SPACE.s6 }]}>
+        <Title>Not out yet</Title>
+        <Small tone="soft">This quest isn’t available right now.</Small>
+        <Pressable
+          onPress={() => router.back()}
+          accessibilityRole="button"
+          accessibilityLabel="Go back"
+          style={styles.closedBtn}
+        >
+          <Small color={COLOR.white}>Go back</Small>
+        </Pressable>
+      </View>
+    )
+  }
+
   return (
     <View style={styles.screen}>
       {showCamera && cameraReady ? (
@@ -541,6 +569,20 @@ const styles = StyleSheet.create({
   screen: {
     flex: 1,
     backgroundColor: COLOR.ink,
+  },
+  closed: {
+    backgroundColor: COLOR.paper,
+    paddingHorizontal: SPACE.s5,
+    gap: SPACE.s3,
+  },
+  closedBtn: {
+    alignSelf: 'flex-start',
+    minHeight: 48,
+    paddingHorizontal: SPACE.s5,
+    borderRadius: RADIUS.pill,
+    backgroundColor: COLOR.ink,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   fallback: {
     backgroundColor: COLOR.ink,

@@ -7,7 +7,11 @@ interface ExportButtonProps {
     title: string
     sponsor_name: string | null
     sponsor_reward: string | null
-    completions: Array<{ status: string }> | null
+    completions: Array<{
+      status: string
+      redemption_code?: string | null
+      redeemed_at?: string | null
+    }> | null
   }
 }
 
@@ -17,8 +21,15 @@ export default function ExportButton({ quest }: ExportButtonProps) {
     const approved = quest.completions?.filter((c) => c.status === 'approved').length ?? 0
     const pending = quest.completions?.filter((c) => c.status === 'pending').length ?? 0
     const rejected = quest.completions?.filter((c) => c.status === 'rejected').length ?? 0
+    const issued = quest.completions?.filter((c) => c.redemption_code).length ?? 0
+    const redeemed = quest.completions?.filter((c) => c.redeemed_at).length ?? 0
+    const rate = issued === 0 ? '0' : String(Math.round((redeemed / issued) * 100))
+    const last = quest.completions
+      ?.map((c) => c.redeemed_at)
+      .filter((value): value is string => Boolean(value))
+      .sort()
+      .at(-1) ?? ''
 
-    // CSV fields: quest title, sponsor name, reward, total submissions, approved count, pending count, rejection count
     const headers = [
       'Quest Title',
       'Sponsor Name',
@@ -27,6 +38,10 @@ export default function ExportButton({ quest }: ExportButtonProps) {
       'Approved Count',
       'Pending Count',
       'Rejection Count',
+      'Codes Issued',
+      'Codes Redeemed',
+      'Redemption Rate',
+      'Last Redemption',
     ]
 
     const row = [
@@ -37,6 +52,10 @@ export default function ExportButton({ quest }: ExportButtonProps) {
       approved.toString(),
       pending.toString(),
       rejected.toString(),
+      issued.toString(),
+      redeemed.toString(),
+      rate,
+      last,
     ]
 
     // Escape CSV values to handle commas, quotes, and newlines

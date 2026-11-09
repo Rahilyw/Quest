@@ -1,10 +1,12 @@
 'use client'
 
 import Link from 'next/link'
-import { useRouter } from 'next/navigation'
-import { useEffect, useState } from 'react'
+import { useRouter, useSearchParams } from 'next/navigation'
+import { Suspense, useEffect, useState } from 'react'
 import { createQuest, getBadges, type Badge } from '../actions'
+import { getSuggestionPrefill } from '../../suggestions/actions'
 import { theme, VICTORIA_DEFAULT } from '@/lib/theme'
+import { QuestScheduleFields } from '@/components/QuestScheduleFields'
 import GeofenceEditor, { type GeofenceType } from '@/components/GeofenceEditor'
 import QuestCoverPicker, { type CoverPickerValue } from '@/components/QuestCoverPicker'
 import { areasToRpcPayload, validateMultiAreas, type MultiArea } from '@/lib/multiAreas'
@@ -12,7 +14,17 @@ import { areasToRpcPayload, validateMultiAreas, type MultiArea } from '@/lib/mul
 const CATEGORIES = Object.entries(theme.categories)
 
 export default function NewQuestPage() {
+  return (
+    <Suspense fallback={<p style={{ color: theme.textMuted }}>Loading quest form…</p>}>
+      <NewQuestForm />
+    </Suspense>
+  )
+}
+
+function NewQuestForm() {
   const router = useRouter()
+  const searchParams = useSearchParams()
+  const suggestionId = searchParams.get('suggestion')
   const [badges, setBadges] = useState<Badge[]>([])
   const [cover, setCover] = useState<CoverPickerValue>({
     file: null,
@@ -31,10 +43,31 @@ export default function NewQuestPage() {
   const [cityId, setCityId] = useState<string | null>(null)
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [activeFrom, setActiveFrom] = useState('')
+  const [activeUntil, setActiveUntil] = useState('')
+  const [prefill, setPrefill] = useState<{ title: string; description: string; category: string; lat: number | null; lng: number | null } | null>(null)
+  const [prefillReady, setPrefillReady] = useState(!suggestionId)
 
   useEffect(() => {
     getBadges().then(setBadges)
   }, [])
+
+  useEffect(() => {
+    if (!suggestionId) return
+    getSuggestionPrefill(suggestionId).then((row) => {
+      if (row) {
+        setPrefill(row)
+        setCategory(row.category)
+        if (row.lat != null && row.lng != null) {
+          setLat(row.lat)
+          setLng(row.lng)
+        }
+      } else {
+        setError('That suggestion is not waiting for review.')
+      }
+      setPrefillReady(true)
+    })
+  }, [suggestionId])
 
   function toggleBadge(id: string) {
     setSelectedBadges((prev) => {
@@ -69,6 +102,7 @@ export default function NewQuestPage() {
       fd.set('multi_areas', JSON.stringify(areasToRpcPayload(multiAreas)))
     }
     selectedBadges.forEach((id) => fd.append('badge_ids', id))
+    if (suggestionId) fd.set('suggestion_id', suggestionId)
 
     const result = await createQuest(fd)
     setSubmitting(false)
@@ -90,11 +124,16 @@ export default function NewQuestPage() {
         </Link>
         <h1 className="admin-page-title" style={{ marginTop: 12 }}>Create Quest</h1>
         <p className="admin-page-sub" style={{ marginBottom: 0 }}>
-          Add details, cover photo, category, location, and linked badges — publishes active immediately.
+          {prefill
+            ? `From ${prefill.title}. Publishing credits the player and pays the suggestion reward once.`
+            : 'Add details, cover, location, and a drop window. Blank times publish immediately.'}
         </p>
       </div>
 
-      <form onSubmit={handleSubmit}>
+      {!prefillReady ? (
+        <p style={{ color: theme.textMuted }}>Loading the suggestion…</p>
+      ) : (
+      <form onSubmit={handleSubmit} key={prefill?.title ?? 'new'}>
         {/* Cover image */}
         <section className="admin-card" style={{ marginBottom: 20 }}>
           <QuestCoverPicker currentUrl={null} onChange={setCover} />
@@ -105,11 +144,11 @@ export default function NewQuestPage() {
           <h2 style={{ margin: '0 0 16px', fontSize: 16, fontWeight: 800 }}>Quest details</h2>
           <div className="admin-field">
             <label className="admin-label" htmlFor="title">Title</label>
-            <input id="title" name="title" className="admin-input" placeholder="Run the Galloping Goose Trail" required />
+            <input id="title" name="title" className="admin-input" placeholder="Run the Galloping Goose Trail" defaultValue={prefill?.title ?? ''} required />
           </div>
           <div className="admin-field">
             <label className="admin-label" htmlFor="description">Description</label>
-            <textarea id="description" name="description" className="admin-textarea" rows={4} placeholder="What should players do? Where? Any tips?" required />
+            <textarea id="description" name="description" className="admin-textarea" rows={4} placeholder="What should players do? Where? Any tips?" defaultValue={prefill?.description ?? ''} required />
           </div>
 
           <div className="admin-field">
@@ -165,6 +204,15 @@ export default function NewQuestPage() {
             <input id="xp_reward" name="xp_reward" className="admin-input" type="number" defaultValue={150} min={25} max={1000} required />
           </div>
         </section>
+
+        <QuestScheduleFields
+          activeFrom={activeFrom}
+          activeUntil={activeUntil}
+          onChange={(next) => {
+            setActiveFrom(next.activeFrom)
+            setActiveUntil(next.activeUntil)
+          }}
+        />
 
         {/* Sponsor */}
         <section className="admin-card" style={{ marginBottom: 20 }}>
@@ -244,6 +292,7 @@ export default function NewQuestPage() {
           </Link>
         </div>
       </form>
+      )}
     </div>
   )
 }

@@ -1,11 +1,14 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { Pressable, RefreshControl, ScrollView, StyleSheet, View } from 'react-native'
 import { useRouter } from 'expo-router'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
+import { endsThisSunday, isNewThisWeek } from '@quest/geofence'
 import { Cutout } from '@/components/Cutout'
 import { Folder } from '@/components/Folder'
+import { QuestRow } from '@/components/QuestRow'
 import { Sprite } from '@/components/Sprite'
-import { BodyStrong, Small, Title } from '@/components/ui/Text'
+import { BodyStrong, Heading, Small, Title } from '@/components/ui/Text'
+import { track } from '@/lib/analytics'
 import { useAuth } from '@/hooks/useAuth'
 import { useQuests } from '@/hooks/useQuests'
 import { useUserCompletions } from '@/hooks/useUserCompletions'
@@ -29,6 +32,16 @@ export default function QuestsScreen() {
     }
   }
   const { excludedQuestIds } = useUserCompletions(profile?.id)
+
+  const now = useMemo(() => new Date(), [quests])
+  const fresh = useMemo(() => quests.filter((quest) => isNewThisWeek(quest, now)), [quests, now])
+  const endingCount = useMemo(() => quests.filter((quest) => endsThisSunday(quest, now)).length, [quests, now])
+  const seenDrop = useRef(false)
+  useEffect(() => {
+    if (loading || error || seenDrop.current) return
+    seenDrop.current = true
+    track('weekly_drop_seen', { new_count: fresh.length, ending_count: endingCount, source: 'quests' })
+  }, [loading, error, fresh.length, endingCount])
 
   const newest = useMemo(() => {
     return [...quests].sort((a, b) => b.created_at.localeCompare(a.created_at))[0] ?? null
@@ -95,10 +108,37 @@ export default function QuestsScreen() {
         ) : quests.length === 0 ? (
           <View style={styles.empty}>
             <Sprite name="gull" size={88} />
-            <Small tone="soft">Nothing in Victoria yet.</Small>
+            <Small tone="soft">Nothing in Victoria yet. The next drop is Monday.</Small>
+            <Pressable
+              onPress={() => router.push('/suggest-quest')}
+              accessibilityRole="button"
+              accessibilityLabel="Suggest a quest"
+              style={({ pressed }) => [styles.suggest, pressed && styles.retryPressed]}
+            >
+              <BodyStrong>Suggest a quest</BodyStrong>
+              <Small tone="soft">If we publish it, the quest carries your name.</Small>
+            </Pressable>
           </View>
         ) : (
-          <View style={styles.grid}>
+          <View>
+            <View style={styles.sectionHead}>
+              <Heading>New this week</Heading>
+              <Small tone="soft">{fresh.length === 0 ? 'Monday' : String(fresh.length)}</Small>
+            </View>
+            {fresh.length === 0 ? (
+              <Small tone="soft" style={styles.dropEmpty}>
+                Nothing new this week. The next drop is Monday.
+              </Small>
+            ) : (
+              fresh.map((quest) => (
+                <QuestRow
+                  key={quest.id}
+                  quest={quest}
+                  onPress={() => router.push(`/quest/${quest.id}?source=quests`)}
+                />
+              ))
+            )}
+            <View style={styles.grid}>
             {byCategory.map((folder, index) => (
               <Folder
                 key={folder.key}
@@ -112,6 +152,16 @@ export default function QuestsScreen() {
                 onPress={() => router.push(`/category/${folder.key}`)}
               />
             ))}
+            </View>
+            <Pressable
+              onPress={() => router.push('/suggest-quest')}
+              accessibilityRole="button"
+              accessibilityLabel="Suggest a quest"
+              style={({ pressed }) => [styles.suggest, pressed && styles.retryPressed]}
+            >
+              <BodyStrong>Suggest a quest</BodyStrong>
+              <Small tone="soft">If we publish it, the quest carries your name.</Small>
+            </Pressable>
           </View>
         )}
       </ScrollView>
@@ -158,5 +208,24 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: SPACE.s3,
     paddingVertical: SPACE.s8,
+  },
+  sectionHead: {
+    flexDirection: 'row',
+    alignItems: 'flex-end',
+    justifyContent: 'space-between',
+    marginTop: SPACE.s4,
+    marginBottom: SPACE.s2,
+  },
+  dropEmpty: {
+    marginBottom: SPACE.s4,
+  },
+  suggest: {
+    marginTop: SPACE.s5,
+    minHeight: 72,
+    borderRadius: RADIUS.card,
+    backgroundColor: COLOR.paperDeep,
+    padding: SPACE.s4,
+    gap: SPACE.s1,
+    justifyContent: 'center',
   },
 })

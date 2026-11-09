@@ -2,8 +2,11 @@
 
 import Link from 'next/link'
 import { useEffect, useState } from 'react'
+import { windowSummary } from '@quest/geofence'
 import { getQuests, toggleQuestStatus, updateQuest, type Quest } from './actions'
 import { theme, VICTORIA_DEFAULT } from '@/lib/theme'
+import { QuestScheduleFields } from '@/components/QuestScheduleFields'
+import { normalizeSchedule, vancouverInputToIso, vancouverInputValue } from '@/lib/schedule'
 import GeofenceEditor, { type GeofenceType } from '@/components/GeofenceEditor'
 import QuestCutoutUploader from '@/components/QuestCutoutUploader'
 import QuestCoverPicker, { type CoverPickerValue } from '@/components/QuestCoverPicker'
@@ -31,6 +34,8 @@ interface EditFormState {
   is_sponsored: boolean
   sponsor_name: string
   sponsor_reward: string
+  active_from: string
+  active_until: string
 }
 
 function questGeofencesToMultiAreas(q: Quest): MultiArea[] {
@@ -61,6 +66,8 @@ function questToFormState(q: Quest): EditFormState {
     is_sponsored: q.is_sponsored,
     sponsor_name: q.sponsor_name ?? '',
     sponsor_reward: q.sponsor_reward ?? '',
+    active_from: vancouverInputValue(q.active_from),
+    active_until: vancouverInputValue(q.active_until),
   }
 }
 
@@ -88,6 +95,14 @@ function EditForm({ quest, onSave, onCancel }: { quest: Quest; onSave: (updated:
         setError(multiErr)
         return
       }
+    }
+    const schedule = normalizeSchedule(
+      vancouverInputToIso(form.active_from),
+      vancouverInputToIso(form.active_until),
+    )
+    if ('error' in schedule) {
+      setError(schedule.error)
+      return
     }
 
     setSubmitting(true)
@@ -120,6 +135,8 @@ function EditForm({ quest, onSave, onCancel }: { quest: Quest; onSave: (updated:
           remove_cover: cover.remove && !cover.file,
           multi_areas:
             form.geofence_type === 'multi' ? areasToRpcPayload(form.multi_areas) : null,
+          active_from: schedule.active_from,
+          active_until: schedule.active_until,
         },
         cover.file
       )
@@ -247,6 +264,15 @@ function EditForm({ quest, onSave, onCancel }: { quest: Quest; onSave: (updated:
             required
           />
         </div>
+
+        <QuestScheduleFields
+          activeFrom={form.active_from}
+          activeUntil={form.active_until}
+          onChange={(next) => {
+            set('active_from', next.activeFrom)
+            set('active_until', next.activeUntil)
+          }}
+        />
 
         {/* Sponsor toggle */}
         <div className="admin-field">
@@ -426,6 +452,9 @@ export default function QuestsPage() {
                     )}
                   </div>
                   <h3 style={{ margin: '0 0 6px', fontSize: 16, fontWeight: 800, lineHeight: 1.3 }}>{q.title}</h3>
+                  <p style={{ margin: '0 0 6px', fontSize: 12, fontWeight: 700, color: theme.textMuted }}>
+                    {windowSummary(q, new Date()).label}
+                  </p>
                   {q.is_sponsored && q.sponsor_name && (
                     <p style={{ margin: '0 0 6px', fontSize: 11, color: theme.highlight, fontWeight: 600 }}>
                       Sponsored by {q.sponsor_name}

@@ -1,4 +1,5 @@
 import { Image, Pressable, StyleSheet, View } from 'react-native'
+import { endsThisSunday, isNewThisWeek } from '@quest/geofence'
 import { Cutout } from '@/components/Cutout'
 import { Micro, Name, Small } from '@/components/ui/Text'
 import { xpLabel } from '@/lib/copy'
@@ -11,7 +12,12 @@ import type { Quest } from '@/lib/types'
 export function QuestRow({ quest, onPress }: { quest: Quest; onPress: () => void }) {
   const meta = questMeta(quest)
   const cover = sizedImageUrl(getQuestCoverImage(quest), { width: 200, height: 140 })
-  const facts = [meta, `${quest.xp_reward} XP`].filter(Boolean).join(', ')
+  const now = new Date()
+  const ending = endsThisSunday(quest, now)
+  const fresh = isNewThisWeek(quest, now)
+  const facts = [meta, `${quest.xp_reward} XP`, fresh ? 'New this week' : null, ending ? 'Ends Sunday' : null]
+    .filter(Boolean)
+    .join(', ')
 
   return (
     <Pressable
@@ -31,6 +37,16 @@ export function QuestRow({ quest, onPress }: { quest: Quest; onPress: () => void
           ) : (
             <View style={styles.meta} />
           )}
+          {ending ? (
+            <View style={styles.pill}>
+              <Micro color={COLOR.white}>Ends Sunday</Micro>
+            </View>
+          ) : null}
+          {fresh ? (
+            <View style={styles.fresh}>
+              <Micro>New</Micro>
+            </View>
+          ) : null}
           <View style={styles.pill}>
             <Micro color={COLOR.white}>{xpLabel(quest.xp_reward)}</Micro>
           </View>
@@ -75,6 +91,12 @@ const styles = StyleSheet.create({
   },
   pill: {
     backgroundColor: COLOR.ink,
+    borderRadius: RADIUS.pill,
+    paddingHorizontal: SPACE.s2,
+    paddingVertical: SPACE.s1,
+  },
+  fresh: {
+    backgroundColor: COLOR.paperDeep,
     borderRadius: RADIUS.pill,
     paddingHorizontal: SPACE.s2,
     paddingVertical: SPACE.s1,
