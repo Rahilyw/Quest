@@ -1,20 +1,22 @@
-import { View, Text, ScrollView, TouchableOpacity, StyleSheet, ActivityIndicator } from 'react-native'
-import { useRouter, useFocusEffect } from 'expo-router'
 import { useCallback, useState } from 'react'
+import { ActivityIndicator, Pressable, ScrollView, StyleSheet, View } from 'react-native'
+import { useFocusEffect, useRouter } from 'expo-router'
+import { Ionicons } from '@expo/vector-icons'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import MapView, { Marker } from 'react-native-maps'
-import { useQuests } from '@/hooks/useQuests'
+import { FeedBubble } from '@/components/FeedBubble'
+import { Sprite } from '@/components/Sprite'
+import { Body, Micro, Small, Title } from '@/components/ui/Text'
 import { useActivityFeed, type FeedMode } from '@/hooks/useActivityFeed'
-import { useBlockedUsers } from '@/hooks/useBlockedUsers'
 import { useAuth } from '@/hooks/useAuth'
+import { useBlockedUsers } from '@/hooks/useBlockedUsers'
 import { useUnreadNotificationCount } from '@/hooks/useNotifications'
-import { FeedPostCard } from '@/components/FeedPostCard'
-import { AppHeader } from '@/components/AppHeader'
-import { EmptyState } from '@/components/EmptyState'
-import { COLORS, SPACING, RADIUS, CITY, CATEGORY_COLORS, TAB_BAR_CLEARANCE } from '@/lib/constants'
+import { useQuests } from '@/hooks/useQuests'
 import { track } from '@/lib/analytics'
-
-const CITY_SHORT = CITY.name.split(',')[0]
+import { plural } from '@/lib/copy'
+import { CITY, TAB_BAR_CLEARANCE } from '@/lib/constants'
+import { formatBadgeCount } from '@/lib/socialNotifications'
+import { COLOR, RADIUS, SHADOW, SPACE, getCategory } from '@/lib/theme'
 
 export default function FeedScreen() {
   const router = useRouter()
@@ -27,248 +29,249 @@ export default function FeedScreen() {
   const { posts, loading, loadingMore, hasMore, refetch, loadMore } = useActivityFeed(
     profile?.id,
     blockedIds,
-    mode
+    mode,
   )
-
-  function handleFeedChange() {
-    refetch()
-  }
 
   useFocusEffect(
     useCallback(() => {
       track('feed_viewed', { post_count: posts.length, mode })
-    }, [posts.length, mode])
+    }, [posts.length, mode]),
   )
 
   useFocusEffect(
     useCallback(() => {
       refetchUnread()
-    }, [refetchUnread])
+    }, [refetchUnread]),
   )
 
+  const modes: { key: FeedMode; label: string }[] = [
+    { key: 'city', label: 'City' },
+    { key: 'following', label: 'Following' },
+  ]
+
   return (
-    <ScrollView
-      style={styles.container}
-      contentContainerStyle={{ paddingBottom: insets.bottom + TAB_BAR_CLEARANCE }}
-      showsVerticalScrollIndicator={false}
-    >
-      <View style={[styles.header, { paddingTop: insets.top + 12 }]}>
-        <AppHeader
-          showBell
-          notificationCount={unreadCount}
-          onBellPress={() => router.push('/notifications')}
-        />
-        <Text style={styles.sectionLabel}>Activity Feed</Text>
-      </View>
-
-      <TouchableOpacity
-        style={styles.mapCard}
-        activeOpacity={0.9}
-        onPress={() => router.push('/(tabs)/map')}
-        accessibilityRole="button"
-        accessibilityLabel="Open quest map"
+    <View style={styles.screen}>
+      <ScrollView
+        contentContainerStyle={{
+          paddingTop: insets.top + SPACE.s5,
+          paddingBottom: insets.bottom + TAB_BAR_CLEARANCE,
+        }}
+        showsVerticalScrollIndicator={false}
       >
-        <MapView
-          style={styles.map}
-          scrollEnabled={false}
-          zoomEnabled={false}
-          rotateEnabled={false}
-          pitchEnabled={false}
-          pointerEvents="none"
-          initialRegion={{
-            latitude: CITY.lat,
-            longitude: CITY.lng,
-            latitudeDelta: 0.06,
-            longitudeDelta: 0.06,
-          }}
-        >
-          {quests.slice(0, 8).map((quest) => (
-            <Marker
-              key={quest.id}
-              coordinate={{ latitude: quest.lat, longitude: quest.lng }}
-              pinColor={CATEGORY_COLORS[quest.category]}
-            />
-          ))}
-        </MapView>
-        <View style={styles.mapOverlay}>
-          <View style={styles.mapPill}>
-            <View style={styles.liveDot} />
-            <Text style={styles.mapPillText}>{quests.length} quests near you</Text>
-          </View>
-          <View style={styles.mapCta}>
-            <Text style={styles.mapCtaText}>See the map</Text>
-          </View>
-        </View>
-      </TouchableOpacity>
-
-      <View style={styles.modeTabs}>
-        {(
-          [
-            { key: 'city', label: CITY_SHORT },
-            { key: 'following', label: 'Following' },
-          ] as { key: FeedMode; label: string }[]
-        ).map((tab) => (
-          <TouchableOpacity
-            key={tab.key}
-            style={[styles.modeTab, mode === tab.key && styles.modeTabActive]}
-            onPress={() => setMode(tab.key)}
+        <View style={styles.titleRow}>
+          <Title>City</Title>
+          <Pressable
+            onPress={() => router.push('/notifications')}
             accessibilityRole="button"
-            accessibilityLabel={`Show ${tab.label} feed`}
+            accessibilityLabel={unreadCount > 0 ? `Notifications, ${unreadCount} unread` : 'Notifications'}
+            style={styles.bell}
           >
-            <Text style={[styles.modeTabText, mode === tab.key && styles.modeTabTextActive]}>
-              {tab.label}
-            </Text>
-          </TouchableOpacity>
-        ))}
-      </View>
-
-      <View style={styles.sectionRow}>
-        <Text style={styles.sectionTitle}>Recent Completions</Text>
-      </View>
-
-      {loading ? (
-        <Text style={styles.loading}>Loading feed…</Text>
-      ) : posts.length === 0 ? (
-        mode === 'following' ? (
-          <EmptyState
-            icon="🫶"
-            title="Your following feed is quiet"
-            subtitle="Follow adventurers from the city feed and their quests land here."
-            ctaLabel={`Browse the ${CITY_SHORT} feed`}
-            onCtaPress={() => setMode('city')}
-          />
-        ) : (
-          <EmptyState
-            icon="📸"
-            title="No completions yet"
-            subtitle="When players finish quests, their proof photos show up here."
-          />
-        )
-      ) : (
-        <View style={styles.feedList}>
-          {posts.map((post) => (
-            <FeedPostCard
-              key={post.id}
-              post={post}
-              currentUserId={profile?.id}
-              onReported={handleFeedChange}
-              onBlocked={() => {
-                refetchBlocks()
-                refetch()
-              }}
-            />
-          ))}
-          {hasMore ? (
-            <TouchableOpacity
-              style={styles.loadMoreBtn}
-              onPress={loadMore}
-              disabled={loadingMore}
-              activeOpacity={0.85}
-              accessibilityRole="button"
-              accessibilityLabel="Load more posts"
-            >
-              {loadingMore ? (
-                <ActivityIndicator size="small" color={COLORS.primary} />
-              ) : (
-                <Text style={styles.loadMoreText}>Load more</Text>
-              )}
-            </TouchableOpacity>
-          ) : null}
+            <Ionicons name="notifications-outline" size={22} color={COLOR.ink} />
+            {unreadCount > 0 ? (
+              <View style={styles.bellDot}>
+                <Micro color={COLOR.white}>{formatBadgeCount(unreadCount)}</Micro>
+              </View>
+            ) : null}
+          </Pressable>
         </View>
-      )}
-    </ScrollView>
+
+        <Pressable
+          onPress={() => router.push('/(tabs)/map')}
+          accessibilityRole="button"
+          accessibilityLabel="See the map"
+          style={({ pressed }) => [styles.mapCard, SHADOW.lift, pressed && styles.pressed]}
+        >
+          <View style={styles.mapClip}>
+            <MapView
+              style={StyleSheet.absoluteFill}
+              scrollEnabled={false}
+              zoomEnabled={false}
+              rotateEnabled={false}
+              pitchEnabled={false}
+              pointerEvents="none"
+              initialRegion={{
+                latitude: CITY.lat,
+                longitude: CITY.lng,
+                latitudeDelta: 0.06,
+                longitudeDelta: 0.06,
+              }}
+            >
+              {quests.slice(0, 8).map((quest) => (
+                <Marker
+                  key={quest.id}
+                  coordinate={{ latitude: quest.lat, longitude: quest.lng }}
+                  pinColor={getCategory(quest.category).color}
+                />
+              ))}
+            </MapView>
+            <View style={styles.mapOverlay} pointerEvents="none">
+              <View style={styles.mapPill}>
+                <Small>{plural(quests.length, 'quest')} nearby</Small>
+              </View>
+              <View style={styles.mapPill}>
+                <Small>See the map</Small>
+              </View>
+            </View>
+          </View>
+        </Pressable>
+
+        <View style={styles.modes}>
+          {modes.map((tab) => {
+            const active = mode === tab.key
+            return (
+              <Pressable
+                key={tab.key}
+                onPress={() => setMode(tab.key)}
+                accessibilityRole="button"
+                accessibilityState={{ selected: active }}
+                accessibilityLabel={`Show the ${tab.label} feed`}
+                style={[styles.mode, active && styles.modeOn]}
+              >
+                <Small color={active ? COLOR.white : COLOR.ink}>{tab.label}</Small>
+              </Pressable>
+            )
+          })}
+        </View>
+
+        {loading && posts.length === 0 ? (
+          <View style={styles.skeletons}>
+            {[0, 1, 2].map((slot) => (
+              <View key={slot} style={[styles.skeleton, slot < 2 && styles.skeletonOverlap]} />
+            ))}
+          </View>
+        ) : posts.length === 0 ? (
+          <View style={styles.empty}>
+            <Sprite name={mode === 'following' ? 'gull' : 'seal'} size={88} />
+            <Body tone="soft" style={styles.emptyCopy}>
+              {mode === 'following'
+                ? 'Follow people from the city feed and their quests land here.'
+                : 'Nobody’s posted today. The first proof photo of the day sits at the top of City until tomorrow.'}
+            </Body>
+            <Pressable
+              onPress={() => (mode === 'following' ? setMode('city') : router.push('/quests'))}
+              accessibilityRole="button"
+              accessibilityLabel={mode === 'following' ? 'Browse the city feed' : 'Find a quest'}
+              style={styles.cta}
+            >
+              <Small color={COLOR.white}>{mode === 'following' ? 'Browse the city' : 'Find a quest'}</Small>
+            </Pressable>
+          </View>
+        ) : (
+          <View>
+            {posts.map((post, index) => (
+              <FeedBubble
+                key={post.id}
+                post={post}
+                currentUserId={profile?.id}
+                zIndex={posts.length - index}
+                overlap={index < posts.length - 1}
+                onReported={() => refetch()}
+                onBlocked={() => {
+                  refetchBlocks()
+                  refetch()
+                }}
+              />
+            ))}
+            {hasMore ? (
+              <Pressable
+                onPress={loadMore}
+                disabled={loadingMore}
+                accessibilityRole="button"
+                accessibilityLabel="More from the city"
+                style={({ pressed }) => [styles.more, pressed && styles.pressed]}
+              >
+                {loadingMore ? (
+                  <ActivityIndicator color={COLOR.white} />
+                ) : (
+                  <Small color={COLOR.white}>More from the city</Small>
+                )}
+              </Pressable>
+            ) : null}
+          </View>
+        )}
+      </ScrollView>
+    </View>
   )
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: COLORS.bg },
-  header: { paddingHorizontal: SPACING.xl, marginBottom: SPACING.md },
-  sectionLabel: {
-    color: COLORS.textPrimary,
-    fontSize: 14,
-    fontWeight: '700',
-    marginTop: SPACING.sm,
+  screen: { flex: 1, backgroundColor: COLOR.paper },
+  titleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: SPACE.s4,
+    marginBottom: SPACE.s4,
   },
-  mapCard: {
-    marginHorizontal: SPACING.xl,
-    height: 176,
-    borderRadius: RADIUS.xxl,
-    overflow: 'hidden',
-    marginBottom: SPACING.lg,
-    shadowColor: COLORS.navy,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.1,
-    shadowRadius: 12,
-    elevation: 4,
+  bell: { width: 48, height: 48, alignItems: 'center', justifyContent: 'center' },
+  bellDot: {
+    position: 'absolute',
+    top: 6,
+    right: 4,
+    minWidth: 16,
+    height: 16,
+    borderRadius: RADIUS.pill,
+    backgroundColor: COLOR.ink,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 4,
   },
-  map: { ...StyleSheet.absoluteFillObject },
+  mapCard: { marginHorizontal: SPACE.s4, marginBottom: SPACE.s4, borderRadius: RADIUS.card },
+  pressed: { transform: [{ scale: 0.97 }] },
+  mapClip: { height: 168, borderRadius: RADIUS.card, overflow: 'hidden', backgroundColor: COLOR.desk },
   mapOverlay: {
     ...StyleSheet.absoluteFillObject,
     justifyContent: 'space-between',
-    padding: SPACING.md,
+    alignItems: 'flex-start',
+    padding: SPACE.s3,
   },
   mapPill: {
+    backgroundColor: COLOR.white,
+    borderRadius: RADIUS.pill,
+    paddingHorizontal: SPACE.s3,
+    paddingVertical: SPACE.s2,
+  },
+  modes: {
     flexDirection: 'row',
+    gap: SPACE.s2,
+    marginHorizontal: SPACE.s4,
+    marginBottom: SPACE.s5,
+  },
+  mode: {
+    minHeight: 48,
+    paddingHorizontal: SPACE.s4,
+    borderRadius: RADIUS.pill,
+    backgroundColor: COLOR.paperDeep,
     alignItems: 'center',
-    alignSelf: 'flex-start',
-    gap: 6,
-    backgroundColor: 'rgba(255,255,255,0.92)',
-    borderRadius: RADIUS.pill,
-    paddingHorizontal: SPACING.md,
-    paddingVertical: 6,
-  },
-  liveDot: { width: 8, height: 8, borderRadius: 4, backgroundColor: COLORS.success },
-  mapPillText: { color: COLORS.textPrimary, fontSize: 11, fontWeight: '700' },
-  mapCta: {
-    alignSelf: 'flex-end',
-    backgroundColor: 'rgba(255,255,255,0.92)',
-    borderRadius: RADIUS.pill,
-    paddingHorizontal: SPACING.md,
-    paddingVertical: 6,
-  },
-  mapCtaText: { color: COLORS.primary, fontSize: 11, fontWeight: '700' },
-  modeTabs: {
-    flexDirection: 'row',
-    marginHorizontal: SPACING.xl,
-    marginBottom: SPACING.md,
-    backgroundColor: COLORS.surface,
-    borderRadius: RADIUS.pill,
-    padding: 4,
-    borderWidth: 1,
-    borderColor: COLORS.border,
-  },
-  modeTab: {
-    flex: 1,
-    alignItems: 'center',
-    paddingVertical: SPACING.sm + 2,
-    borderRadius: RADIUS.pill,
-    minHeight: 40,
     justifyContent: 'center',
   },
-  modeTabActive: { backgroundColor: COLORS.primary },
-  modeTabText: { color: COLORS.textMuted, fontSize: 13, fontWeight: '800' },
-  modeTabTextActive: { color: '#FFFFFF' },
-  sectionRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: SPACING.xl,
-    marginBottom: SPACING.md,
+  modeOn: { backgroundColor: COLOR.ink },
+  skeletons: { paddingTop: SPACE.s2 },
+  skeleton: {
+    height: 108,
+    marginHorizontal: SPACE.s4,
+    borderRadius: RADIUS.bubble,
+    backgroundColor: COLOR.paperDeep,
   },
-  sectionTitle: { color: COLORS.textPrimary, fontSize: 14, fontWeight: '900' },
-  feedList: { paddingHorizontal: SPACING.xl },
-  loading: { color: COLORS.textMuted, textAlign: 'center', marginTop: SPACING.xxl },
-  loadMoreBtn: {
+  skeletonOverlap: { marginBottom: -12 },
+  empty: { alignItems: 'flex-start', paddingHorizontal: SPACE.s4, gap: SPACE.s3, marginTop: SPACE.s4 },
+  emptyCopy: { maxWidth: 320 },
+  cta: {
+    minHeight: 48,
+    paddingHorizontal: SPACE.s5,
+    borderRadius: RADIUS.pill,
+    backgroundColor: COLOR.ink,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  more: {
     alignSelf: 'center',
-    backgroundColor: COLORS.surface,
+    minHeight: 48,
+    marginTop: SPACE.s5,
+    paddingHorizontal: SPACE.s5,
     borderRadius: RADIUS.pill,
-    borderWidth: 1.5,
-    borderColor: COLORS.border,
-    paddingHorizontal: SPACING.xxl,
-    paddingVertical: SPACING.md,
-    minHeight: 44,
+    backgroundColor: COLOR.ink,
+    alignItems: 'center',
     justifyContent: 'center',
-    marginTop: SPACING.xs,
   },
-  loadMoreText: { color: COLORS.primary, fontSize: 13, fontWeight: '800' },
 })

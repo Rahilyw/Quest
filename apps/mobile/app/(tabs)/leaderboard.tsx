@@ -1,49 +1,30 @@
-import { useEffect, useMemo, useState, useCallback } from 'react'
-import {
-  View,
-  Text,
-  FlatList,
-  ScrollView,
-  TouchableOpacity,
-  StyleSheet,
-} from 'react-native'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { FlatList, Pressable, StyleSheet, View, type ViewToken } from 'react-native'
+import { useFocusEffect, useRouter } from 'expo-router'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
-import { useRouter, useFocusEffect } from 'expo-router'
-import { Ionicons } from '@expo/vector-icons'
-import { supabase } from '@/lib/supabase'
-import { useAuth } from '@/hooks/useAuth'
 import { Avatar } from '@/components/Avatar'
-import { Podium } from '@/components/Podium'
-import { EmptyState } from '@/components/EmptyState'
-import { BrandText } from '@/components/BrandText'
-import {
-  COLORS,
-  SPACING,
-  RADIUS,
-  CITY,
-  getISOWeek,
-  getDaysLeftInWeek,
-  TAB_BAR_CLEARANCE,
-} from '@/lib/constants'
-import { levelLabel } from '@/lib/copy'
-import type { LeaderboardEntry, UserBadgeWithBadge } from '@/lib/types'
+import { Cutout } from '@/components/Cutout'
+import { Sprite } from '@/components/Sprite'
+import { Body, Name, Small, Title } from '@/components/ui/Text'
+import { useAuth } from '@/hooks/useAuth'
 import { track } from '@/lib/analytics'
+import { daysLeftLabel, plural, xpLabel } from '@/lib/copy'
+import { getDaysLeftInWeek, getISOWeek, TAB_BAR_HEIGHT, TAB_BAR_CLEARANCE } from '@/lib/constants'
+import { supabase } from '@/lib/supabase'
+import { COLOR, RADIUS, SPACE } from '@/lib/theme'
+import type { LeaderboardEntry } from '@/lib/types'
 
-function getRankDelta(
-  currentRank: number,
-  lastWeekRank: number | null,
-): { label: string; color: string } {
-  if (lastWeekRank === null) {
-    return { label: 'new', color: COLORS.primary }
-  }
-  const delta = lastWeekRank - currentRank
-  if (delta > 0) {
-    return { label: `↑${delta}`, color: COLORS.success }
-  }
-  if (delta < 0) {
-    return { label: `↓${Math.abs(delta)}`, color: COLORS.danger }
-  }
-  return { label: '—', color: COLORS.textMuted }
+interface LatestCutout {
+  title: string
+  category: string
+  cutout_url: string | null
+}
+
+function questOf(
+  value: LatestCutout | LatestCutout[] | null,
+): LatestCutout | null {
+  if (!value) return null
+  return Array.isArray(value) ? value[0] ?? null : value
 }
 
 export default function RankingsScreen() {
@@ -53,522 +34,252 @@ export default function RankingsScreen() {
   const weekNum = getISOWeek()
   const daysLeft = getDaysLeftInWeek()
   const [entries, setEntries] = useState<LeaderboardEntry[]>([])
-  const [badges, setBadges] = useState<UserBadgeWithBadge[]>([])
+  const [cutouts, setCutouts] = useState<Record<string, LatestCutout>>({})
   const [loading, setLoading] = useState(true)
+  const [ownVisible, setOwnVisible] = useState<boolean | null>(null)
+  const selfId = useRef(profile?.id)
+  selfId.current = profile?.id
 
   useEffect(() => {
-    Promise.all([
-      supabase
+    let alive = true
+    async function load() {
+      setLoading(true)
+      const { data } = await supabase
         .from('leaderboard')
         .select('*')
         .order('weekly_xp', { ascending: false })
-        .limit(50),
-      profile
-        ? supabase
-            .from('user_badges')
-            .select('*, badge:badges(*)')
-            .eq('user_id', profile.id)
-            .limit(6)
-        : Promise.resolve({ data: [] }),
-    ]).then(([lbResult, badgeResult]) => {
-      const lbRows = lbResult.data ?? []
-
-      setEntries(
-        lbRows.map((e: LeaderboardEntry, i: number) => ({
-          ...e,
-          rank: i + 1,
-          last_week_rank: e.last_week_rank ?? null,
-        })),
-      )
-      setBadges(badgeResult.data ?? [])
+        .limit(50)
+      if (!alive) return
+      const ranked = ((data ?? []) as Omit<LeaderboardEntry, 'rank'>[]).map((entry, index) => ({
+        ...entry,
+        rank: index + 1,
+        last_week_rank: entry.last_week_rank ?? null,
+      }))
+      setEntries(ranked)
       setLoading(false)
-    })
-  }, [profile?.id])
+
+      const topIds = ranked.slice(0, 3).map((entry) => entry.user_id)
+      if (topIds.length === 0) return
+      const { data: proofs } = await supabase
+        .from('completions')
+        .select('user_id, completed_at, quest:quests(title, category, cutout_url)')
+        .in('user_id', topIds)
+        .eq('status', 'approved')
+        .order('completed_at', { ascending: false })
+        .limit(30)
+      if (!alive) return
+      const next: Record<string, LatestCutout> = {}
+      for (const row of proofs ?? []) {
+        const userId = row.user_id as string
+        if (next[userId]) continue
+        const quest = questOf(row.quest as LatestCutout | LatestCutout[] | null)
+        if (quest) next[userId] = quest
+      }
+      setCutouts(next)
+    }
+    load()
+    return () => {
+      alive = false
+    }
+  }, [])
 
   const myEntry = useMemo(
-    () => (profile ? entries.find((e) => e.user_id === profile.id) : undefined),
+    () => (profile ? entries.find((entry) => entry.user_id === profile.id) : undefined),
     [entries, profile],
   )
 
   useFocusEffect(
     useCallback(() => {
       track('leaderboard_viewed', { own_rank: myEntry?.rank ?? null })
-    }, [myEntry?.rank])
+    }, [myEntry?.rank]),
   )
 
-  const listEntries = entries.length > 3 ? entries.slice(3) : []
+  const top = entries.slice(0, 3)
+  const rest = entries.slice(3)
+  const podium = [top[1], top[0], top[2]].filter((entry): entry is LeaderboardEntry => entry != null)
+  const showPin = Boolean(profile) && !loading && (myEntry ? myEntry.rank > 3 && ownVisible === false : true)
 
-  const ListHeaderComponent = useMemo(
-    () => (
-      <>
-        <View style={[styles.hero, { paddingTop: insets.top + 14 }]}>
-          <View style={styles.heroBlobA} />
-          <View style={styles.heroBlobB} />
+  const onViewableItemsChanged = useRef(
+    ({ viewableItems }: { viewableItems: ViewToken[] }) => {
+      setOwnVisible(viewableItems.some((token) => token.item?.user_id === selfId.current))
+    },
+  ).current
 
-          <View style={styles.heroTop}>
-            <View style={styles.weekPill}>
-              <Text style={styles.weekPillText}>☀️ WEEK {weekNum}</Text>
-            </View>
-            <View style={styles.cityPill}>
-              <Text style={styles.cityPillText}>{CITY.name}</Text>
-            </View>
-          </View>
+  const viewabilityConfig = useRef({ itemVisiblePercentThreshold: 60 }).current
 
-          <Text style={styles.heroTitle}>
-            <BrandText uppercase color={COLORS.navy} size="compact" />
-            <Text style={styles.heroTitleSuffix}> Rankings</Text>
-          </Text>
-          <Text style={styles.headline}>Who&apos;s owning the city?</Text>
-          <Text style={styles.tagline}>
-            Complete quests, earn XP, and climb before Monday.
-          </Text>
-
-          <View style={styles.heroStats}>
-            <View style={styles.heroStat}>
-              <Text style={styles.heroStatValue}>{loading ? '—' : entries.length}</Text>
-              <Text style={styles.heroStatLabel}>playing</Text>
-            </View>
-            <View style={styles.heroStatDivider} />
-            <View style={styles.heroStat}>
-              <Text style={styles.heroStatValue}>{daysLeft}</Text>
-              <Text style={styles.heroStatLabel}>{daysLeft === 1 ? 'day left' : 'days left'}</Text>
-            </View>
-          </View>
-        </View>
-
-        <View style={styles.howItWorks}>
-          <Ionicons name="information-circle" size={18} color={COLORS.primary} />
-          <Text style={styles.howItWorksText}>
-            Weekly XP from quest completions resets every Monday. Top players get bragging rights all week.
-          </Text>
-        </View>
-
-        {profile && !loading && (
-          <View style={styles.yourCard}>
-            <View style={styles.yourCardHeader}>
-              <Text style={styles.yourCardTitle}>Your week</Text>
-              {myEntry ? (
-                <View style={styles.yourRankPill}>
-                  <Text style={styles.yourRankPillText}>#{myEntry.rank}</Text>
-                </View>
-              ) : (
-                <Text style={styles.yourUnranked}>Not ranked yet</Text>
-              )}
-            </View>
-            <View style={styles.yourCardBody}>
-              <Avatar username={profile.username} uri={profile.avatar_url} size={44} />
-              <View style={styles.yourCardInfo}>
-                <Text style={styles.yourCardName}>@{profile.username}</Text>
-                <Text style={styles.yourCardXp}>
-                  {myEntry
-                    ? `${myEntry.weekly_xp.toLocaleString()} XP this week`
-                    : '0 XP so far. Time to get out there.'}
-                </Text>
-              </View>
-              {!myEntry && (
-                <TouchableOpacity
-                  style={styles.yourCardCta}
-                  onPress={() => router.push('/')}
-                  activeOpacity={0.85}
-                >
-                  <Text style={styles.yourCardCtaText}>Find a quest</Text>
-                </TouchableOpacity>
-              )}
-            </View>
-          </View>
-        )}
-
-        {!loading && entries.length > 0 && (
-          <View style={styles.podiumSection}>
-            <Text style={styles.sectionTitle}>🏆 Top players</Text>
-            <Podium entries={entries} />
-          </View>
-        )}
-
-        {badges.length > 0 && (
-          <View style={styles.badgesSection}>
-            <Text style={styles.sectionTitle}>Your badges</Text>
-            <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-              {badges.map((ub) => (
-                <View key={ub.badge_id} style={styles.featuredBadge}>
-                  <View style={styles.featuredBadgeIcon}>
-                    <Text style={styles.featuredEmoji}>{ub.badge?.icon ?? '🏅'}</Text>
-                  </View>
-                  <Text style={styles.featuredName} numberOfLines={2}>
-                    {ub.badge?.name}
-                  </Text>
-                </View>
-              ))}
-            </ScrollView>
-          </View>
-        )}
-
-        {!loading && entries.length > 3 && (
-          <View style={styles.listHeader}>
-            <Text style={styles.sectionTitle}>The chase pack</Text>
-            <Text style={styles.sectionSubtitle}>Everyone fighting for a podium spot</Text>
-          </View>
-        )}
-
-        {loading ? (
-          <Text style={styles.loading}>Loading rankings…</Text>
-        ) : entries.length === 0 ? (
-          <EmptyState
-            icon="☀️"
-            title="The board is wide open"
-            subtitle="Be the first to complete a quest this week and claim #1."
-            ctaLabel="Browse quests"
-            onCtaPress={() => router.push('/')}
-          />
-        ) : entries.length <= 3 ? (
-          <View style={styles.fewPlayersCard}>
-            <Text style={styles.fewPlayersEmoji}>🌊</Text>
-            <Text style={styles.fewPlayersTitle}>
-              {entries.length === 1 ? 'Solo at the top, for now' : 'Small crew, big energy'}
-            </Text>
-            <Text style={styles.fewPlayersBody}>
-              More explorers join every week. Complete quests to hold your spot or steal the crown.
-            </Text>
-            <TouchableOpacity
-              style={styles.questCta}
-              onPress={() => router.push('/')}
-              activeOpacity={0.88}
-            >
-              <Ionicons name="compass" size={20} color="#FFFFFF" />
-              <View style={styles.questCtaText}>
-                <Text style={styles.questCtaTitle}>Find a quest</Text>
-                <Text style={styles.questCtaSub}>Earn XP and move up the board</Text>
-              </View>
-              <Ionicons name="chevron-forward" size={20} color="rgba(255,255,255,0.8)" />
-            </TouchableOpacity>
-          </View>
-        ) : null}
-      </>
-    ),
-    [loading, entries, badges, insets.top, weekNum, daysLeft, profile, myEntry, router],
-  )
+  function openPlayer(userId: string) {
+    router.push(`/user/${userId}`)
+  }
 
   return (
-    <View style={styles.container}>
-      <FlatList<LeaderboardEntry>
-        data={loading || entries.length <= 3 ? [] : listEntries}
+    <View style={styles.screen}>
+      <FlatList
+        data={rest}
         keyExtractor={(item) => item.user_id}
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={{ paddingBottom: insets.bottom + TAB_BAR_CLEARANCE }}
-        ListHeaderComponent={ListHeaderComponent}
-        ListFooterComponent={
-          !loading && entries.length > 3 ? (
-            <TouchableOpacity
-              style={styles.questCtaFooter}
-              onPress={() => router.push('/')}
-              activeOpacity={0.88}
-            >
-              <Ionicons name="compass" size={20} color="#FFFFFF" />
-              <View style={styles.questCtaText}>
-                <Text style={styles.questCtaTitle}>Earn more XP</Text>
-                <Text style={styles.questCtaSub}>Complete quests on Explore to climb the board</Text>
-              </View>
-              <Ionicons name="chevron-forward" size={20} color="rgba(255,255,255,0.8)" />
-            </TouchableOpacity>
-          ) : null
-        }
-        renderItem={({ item }) => {
-          const { label: deltaLabel, color: deltaColor } = getRankDelta(
-            item.rank,
-            item.last_week_rank,
-          )
-          const isMe = item.user_id === profile?.id
-          return (
-            <View
-              style={[
-                styles.row,
-                isMe && styles.rowMe,
-                { marginHorizontal: SPACING.lg },
-              ]}
-            >
-              <View style={styles.rankBlock}>
-                <Text style={styles.rankNum}>{item.rank}</Text>
-                <Text style={[styles.rankDelta, { color: deltaColor }]}>{deltaLabel}</Text>
-              </View>
-              <Avatar username={item.username} uri={item.avatar_url} size={44} />
-              <View style={styles.rowInfo}>
-                <Text style={styles.rowName}>
-                  @{item.username}
-                  {isMe ? ' (you)' : ''}
-                </Text>
-                <Text style={styles.rowLevel}>
-                  {levelLabel(item.level)}
-                </Text>
-              </View>
-              <View style={styles.xpBlock}>
-                <Text style={styles.xpValue}>{item.weekly_xp.toLocaleString()}</Text>
-                <Text style={styles.xpLabel}>XP</Text>
-              </View>
-            </View>
-          )
+        viewabilityConfig={viewabilityConfig}
+        onViewableItemsChanged={onViewableItemsChanged}
+        contentContainerStyle={{
+          paddingTop: insets.top + SPACE.s5,
+          paddingBottom: insets.bottom + TAB_BAR_CLEARANCE + (showPin ? 72 : 0),
         }}
+        ListHeaderComponent={
+          <View>
+            <View style={styles.titleRow}>
+              <Title>Rankings</Title>
+              <Small tone="soft">{loading ? '…' : plural(entries.length, 'player')}</Small>
+            </View>
+            <Small tone="soft" style={styles.week}>
+              {`Week ${weekNum}. ${daysLeftLabel(daysLeft)}.`}
+            </Small>
+
+            {loading ? (
+              <View style={styles.podium}>
+                {[0, 1, 2].map((slot) => (
+                  <View key={slot} style={styles.podiumSkeleton} />
+                ))}
+              </View>
+            ) : entries.length === 0 ? (
+              <View style={styles.empty}>
+                <Sprite name="gull" size={88} />
+                <Body tone="soft">Nobody’s on the board yet. Finish a quest and take the first spot.</Body>
+                <Pressable
+                  onPress={() => router.push('/quests')}
+                  accessibilityRole="button"
+                  accessibilityLabel="Find a quest"
+                  style={styles.cta}
+                >
+                  <Small color={COLOR.white}>Find a quest</Small>
+                </Pressable>
+              </View>
+            ) : (
+              <View style={styles.podium}>
+                {podium.map((entry) => {
+                  const first = entry.rank === 1
+                  const cutout = cutouts[entry.user_id]
+                  return (
+                    <Pressable
+                      key={entry.user_id}
+                      onPress={() => openPlayer(entry.user_id)}
+                      accessibilityRole="button"
+                      accessibilityLabel={`${entry.username}, rank ${entry.rank}`}
+                      style={[styles.spot, first && styles.spotFirst]}
+                    >
+                      <View>
+                        <Avatar username={entry.username} uri={entry.avatar_url} size={first ? 88 : 64} />
+                        {cutout ? (
+                          <View style={styles.spotCutout}>
+                            <Cutout
+                              uri={cutout.cutout_url}
+                              category={cutout.category}
+                              questTitle={cutout.title}
+                              role="row"
+                              style={{ width: 40, height: 40 }}
+                            />
+                          </View>
+                        ) : null}
+                      </View>
+                      <Name numberOfLines={1}>{entry.username}</Name>
+                      <Small tone="soft" tabular>{xpLabel(entry.weekly_xp)}</Small>
+                    </Pressable>
+                  )
+                })}
+              </View>
+            )}
+          </View>
+        }
+        renderItem={({ item }) => (
+          <Pressable
+            onPress={() => openPlayer(item.user_id)}
+            accessibilityRole="button"
+            accessibilityLabel={`${item.username}, rank ${item.rank}`}
+            style={({ pressed }) => [styles.row, pressed && styles.pressed]}
+          >
+            <Small tabular style={styles.rank}>{item.rank}</Small>
+            <Avatar username={item.username} uri={item.avatar_url} size={40} />
+            <Name numberOfLines={1} style={styles.rowName}>{item.username}</Name>
+            <Small tabular>{xpLabel(item.weekly_xp)}</Small>
+          </Pressable>
+        )}
       />
+
+      {showPin && profile ? (
+        <Pressable
+          onPress={() => (myEntry ? openPlayer(profile.id) : router.push('/quests'))}
+          accessibilityRole="button"
+          accessibilityLabel={myEntry ? `Your rank, ${myEntry.rank}` : 'You are not ranked this week'}
+          style={[styles.pin, { bottom: insets.bottom + TAB_BAR_HEIGHT + 18 + SPACE.s2 }]}
+        >
+          <Small tabular style={styles.rank}>{myEntry ? myEntry.rank : '—'}</Small>
+          <Avatar username={profile.username} uri={profile.avatar_url} size={40} />
+          <View style={styles.pinCopy}>
+            <Name numberOfLines={1}>{profile.username}</Name>
+            <Small tone="soft">{myEntry ? 'Your rank' : 'Not ranked this week'}</Small>
+          </View>
+          <Small tabular>{xpLabel(myEntry?.weekly_xp ?? 0)}</Small>
+        </Pressable>
+      ) : null}
     </View>
   )
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: COLORS.bg },
-  hero: {
-    backgroundColor: COLORS.bgOuter,
-    paddingHorizontal: SPACING.lg,
-    paddingBottom: SPACING.xl,
-    borderBottomLeftRadius: RADIUS.xxl,
-    borderBottomRightRadius: RADIUS.xxl,
-    overflow: 'hidden',
-    borderBottomWidth: 3,
-    borderBottomColor: COLORS.sunshine,
-  },
-  heroBlobA: {
-    position: 'absolute',
-    top: -40,
-    right: -30,
-    width: 140,
-    height: 140,
-    borderRadius: 70,
-    backgroundColor: 'rgba(255,255,255,0.35)',
-  },
-  heroBlobB: {
-    position: 'absolute',
-    bottom: 20,
-    left: -50,
-    width: 100,
-    height: 100,
-    borderRadius: 50,
-    backgroundColor: 'rgba(251,191,36,0.25)',
-  },
-  heroTop: {
+  screen: { flex: 1, backgroundColor: COLOR.paper },
+  titleRow: {
     flexDirection: 'row',
+    alignItems: 'flex-end',
     justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: SPACING.md,
+    paddingHorizontal: SPACE.s4,
   },
-  weekPill: {
-    backgroundColor: COLORS.sunshine,
-    borderRadius: RADIUS.pill,
-    paddingHorizontal: SPACING.md,
-    paddingVertical: 6,
-  },
-  weekPillText: { color: COLORS.navy, fontSize: 11, fontWeight: '900', letterSpacing: 0.5 },
-  cityPill: {
-    backgroundColor: 'rgba(255,255,255,0.7)',
-    borderRadius: RADIUS.pill,
-    paddingHorizontal: SPACING.md,
-    paddingVertical: 6,
-  },
-  cityPillText: { color: COLORS.textMuted, fontSize: 11, fontWeight: '700' },
-  heroTitle: { marginBottom: 4, textAlign: 'center' },
-  heroTitleSuffix: {
-    color: COLORS.navy,
-    fontSize: 22,
-    fontWeight: '800',
-  },
-  headline: {
-    color: COLORS.navy,
-    fontSize: 26,
-    fontWeight: '900',
-    letterSpacing: -0.5,
-    marginBottom: 6,
-    textAlign: 'center',
-  },
-  tagline: {
-    color: COLORS.textMuted,
-    fontSize: 13,
-    fontWeight: '600',
-    lineHeight: 18,
-    textAlign: 'center',
-  },
-  heroStats: {
+  week: { paddingHorizontal: SPACE.s4, marginTop: SPACE.s2, marginBottom: SPACE.s5 },
+  podium: {
     flexDirection: 'row',
-    alignItems: 'center',
-    marginTop: SPACING.lg,
-    backgroundColor: 'rgba(255,255,255,0.65)',
-    borderRadius: RADIUS.xl,
-    paddingVertical: SPACING.md,
-    paddingHorizontal: SPACING.xl,
-    alignSelf: 'center',
-    gap: SPACING.lg,
+    alignItems: 'flex-end',
+    justifyContent: 'space-around',
+    paddingHorizontal: SPACE.s3,
+    marginBottom: SPACE.s6,
   },
-  heroStat: { alignItems: 'center' },
-  heroStatValue: { color: COLORS.navy, fontSize: 22, fontWeight: '900' },
-  heroStatLabel: {
-    color: COLORS.textMuted,
-    fontSize: 10,
-    fontWeight: '700',
-    letterSpacing: 0.5,
+  podiumSkeleton: {
+    width: 88,
+    height: 120,
+    borderRadius: RADIUS.card,
+    backgroundColor: COLOR.paperDeep,
   },
-  heroStatDivider: { width: 1, height: 28, backgroundColor: 'rgba(30,58,95,0.15)' },
-  howItWorks: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    gap: SPACING.sm,
-    marginHorizontal: SPACING.lg,
-    marginTop: SPACING.lg,
-    backgroundColor: COLORS.primarySoft,
-    borderRadius: RADIUS.lg,
-    padding: SPACING.md,
-    borderWidth: 1,
-    borderColor: 'rgba(14,165,233,0.2)',
-  },
-  howItWorksText: {
-    flex: 1,
-    color: COLORS.accentText,
-    fontSize: 12,
-    fontWeight: '600',
-    lineHeight: 17,
-  },
-  yourCard: {
-    marginHorizontal: SPACING.lg,
-    marginTop: SPACING.lg,
-    backgroundColor: COLORS.surface,
-    borderRadius: RADIUS.xl,
-    padding: SPACING.lg,
-    borderWidth: 2,
-    borderColor: COLORS.sunshine,
-    shadowColor: COLORS.sunshine,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.2,
-    shadowRadius: 8,
-    elevation: 3,
-  },
-  yourCardHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: SPACING.md,
-  },
-  yourCardTitle: {
-    color: COLORS.textMuted,
-    fontSize: 11,
-    fontWeight: '800',
-    letterSpacing: 1,
-  },
-  yourRankPill: {
-    backgroundColor: COLORS.highlight,
+  spot: { width: 104, alignItems: 'center', gap: SPACE.s1, minHeight: 48 },
+  spotFirst: { width: 120, marginBottom: SPACE.s3 },
+  spotCutout: { position: 'absolute', right: -8, bottom: -4 },
+  empty: { paddingHorizontal: SPACE.s4, gap: SPACE.s3, alignItems: 'flex-start' },
+  cta: {
+    minHeight: 48,
+    paddingHorizontal: SPACE.s5,
     borderRadius: RADIUS.pill,
-    paddingHorizontal: SPACING.md,
-    paddingVertical: 4,
-  },
-  yourRankPillText: { color: '#FFFFFF', fontSize: 13, fontWeight: '900' },
-  yourUnranked: { color: COLORS.textMuted, fontSize: 12, fontWeight: '700' },
-  yourCardBody: { flexDirection: 'row', alignItems: 'center', gap: SPACING.md },
-  yourCardInfo: { flex: 1 },
-  yourCardName: { color: COLORS.textPrimary, fontSize: 15, fontWeight: '800' },
-  yourCardXp: { color: COLORS.textMuted, fontSize: 12, fontWeight: '600', marginTop: 2 },
-  yourCardCta: {
-    backgroundColor: COLORS.primary,
-    borderRadius: RADIUS.md,
-    paddingHorizontal: SPACING.md,
-    paddingVertical: SPACING.sm,
-  },
-  yourCardCtaText: { color: '#FFFFFF', fontWeight: '800', fontSize: 13 },
-  podiumSection: { marginTop: SPACING.xl, paddingHorizontal: SPACING.lg },
-  sectionTitle: { color: COLORS.textPrimary, fontSize: 15, fontWeight: '900', marginBottom: SPACING.md },
-  sectionSubtitle: {
-    color: COLORS.textMuted,
-    fontSize: 12,
-    fontWeight: '600',
-    marginTop: -8,
-    marginBottom: SPACING.md,
-  },
-  badgesSection: { marginTop: SPACING.xl, paddingLeft: SPACING.lg },
-  featuredBadge: { alignItems: 'center', width: 76, marginRight: SPACING.md },
-  featuredBadgeIcon: {
-    width: 56,
-    height: 56,
-    borderRadius: RADIUS.lg,
-    backgroundColor: COLORS.goldSoft,
+    backgroundColor: COLOR.ink,
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: SPACING.xs,
-    borderWidth: 2,
-    borderColor: COLORS.gold,
   },
-  featuredEmoji: { fontSize: 24 },
-  featuredName: { color: COLORS.textPrimary, fontSize: 10, fontWeight: '700', textAlign: 'center' },
-  listHeader: { paddingHorizontal: SPACING.lg, paddingTop: SPACING.xl },
-  fewPlayersCard: {
-    marginHorizontal: SPACING.lg,
-    marginTop: SPACING.lg,
-    backgroundColor: COLORS.surface,
-    borderRadius: RADIUS.xl,
-    padding: SPACING.xl,
-    alignItems: 'center',
-    borderWidth: 2,
-    borderColor: COLORS.primarySoft,
-  },
-  fewPlayersEmoji: { fontSize: 36, marginBottom: SPACING.sm },
-  fewPlayersTitle: {
-    color: COLORS.textPrimary,
-    fontSize: 17,
-    fontWeight: '900',
-    textAlign: 'center',
-    marginBottom: SPACING.sm,
-  },
-  fewPlayersBody: {
-    color: COLORS.textMuted,
-    fontSize: 13,
-    textAlign: 'center',
-    lineHeight: 19,
-    marginBottom: SPACING.lg,
-  },
-  questCta: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: SPACING.md,
-    backgroundColor: COLORS.highlight,
-    borderRadius: RADIUS.xl,
-    padding: SPACING.lg,
-    width: '100%',
-    shadowColor: COLORS.highlight,
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.35,
-    shadowRadius: 10,
-    elevation: 5,
-  },
-  questCtaFooter: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: SPACING.md,
-    backgroundColor: COLORS.highlight,
-    borderRadius: RADIUS.xl,
-    padding: SPACING.lg,
-    marginHorizontal: SPACING.lg,
-    marginTop: SPACING.lg,
-    shadowColor: COLORS.highlight,
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.35,
-    shadowRadius: 10,
-    elevation: 5,
-  },
-  questCtaText: { flex: 1 },
-  questCtaTitle: { color: '#FFFFFF', fontSize: 15, fontWeight: '900' },
-  questCtaSub: { color: 'rgba(255,255,255,0.85)', fontSize: 11, fontWeight: '600', marginTop: 2 },
   row: {
+    minHeight: 56,
     flexDirection: 'row',
     alignItems: 'center',
-    gap: SPACING.md,
-    backgroundColor: COLORS.surface,
-    borderRadius: RADIUS.xl,
-    padding: SPACING.md,
-    marginBottom: SPACING.sm,
-    borderWidth: 1,
-    borderColor: COLORS.border,
+    gap: SPACE.s3,
+    paddingHorizontal: SPACE.s4,
+    paddingVertical: SPACE.s2,
   },
-  rowMe: { borderColor: COLORS.primary, borderWidth: 2, backgroundColor: COLORS.primarySoft },
-  rankBlock: { alignItems: 'center', width: 36 },
-  rankNum: { color: COLORS.textPrimary, fontSize: 16, fontWeight: '900' },
-  rankDelta: { fontSize: 10, fontWeight: '800', marginTop: 1 },
-  rowInfo: { flex: 1, minWidth: 0 },
-  rowName: { color: COLORS.textPrimary, fontSize: 14, fontWeight: '800' },
-  rowLevel: { color: COLORS.textMuted, fontSize: 11, fontWeight: '600', marginTop: 2 },
-  xpBlock: { alignItems: 'flex-end' },
-  xpValue: { color: COLORS.highlight, fontSize: 15, fontWeight: '900' },
-  xpLabel: { color: COLORS.textMuted, fontSize: 9, fontWeight: '700' },
-  loading: { color: COLORS.textMuted, textAlign: 'center', marginTop: SPACING.xxl, fontWeight: '600' },
+  pressed: { backgroundColor: COLOR.paperDeep },
+  rank: { width: 28 },
+  rowName: { flex: 1 },
+  pin: {
+    position: 'absolute',
+    left: SPACE.s3,
+    right: SPACE.s3,
+    minHeight: 64,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: SPACE.s3,
+    paddingHorizontal: SPACE.s3,
+    borderRadius: RADIUS.card,
+    backgroundColor: COLOR.white,
+    borderWidth: 1,
+    borderColor: COLOR.rule,
+  },
+  pinCopy: { flex: 1 },
 })
