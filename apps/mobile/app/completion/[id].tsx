@@ -31,7 +31,7 @@ interface CompletionDetail {
   photo_url: string
   completed_at: string
   user: { username: string; level: number; avatar_url: string | null }
-  quest: { title: string; xp_reward: number }
+  quest: { title: string; xp_reward: number; category?: string | null; cutout_url?: string | null }
   like_count: number
   comment_count: number
   viewer_liked: boolean
@@ -62,7 +62,7 @@ export default function CompletionScreen() {
       supabase
         .from('completions')
         .select(
-          'id, user_id, photo_url, completed_at, profile:profiles(username, level, avatar_url), quest:quests(title, xp_reward), likes:completion_likes(count), comments:completion_comments(count)'
+          'id, user_id, photo_url, completed_at, profile:profiles(username, level, avatar_url), quest:quests(title, xp_reward, category, cutout_url), likes:completion_likes(count), comments:completion_comments(count)'
         )
         .eq('id', completionId)
         .maybeSingle(),
@@ -82,7 +82,7 @@ export default function CompletionScreen() {
       photo_url: string
       completed_at: string
       profile: { username: string; level: number; avatar_url: string | null } | null
-      quest: { title: string; xp_reward: number } | null
+      quest: { title: string; xp_reward: number; category?: string | null; cutout_url?: string | null } | null
       likes: { count: number }[]
       comments: { count: number }[]
     }
@@ -279,6 +279,8 @@ export default function CompletionScreen() {
             level: detail.user.level,
             xpReward: detail.quest.xp_reward,
             completedAt: detail.completed_at,
+            category: detail.quest.category,
+            cutoutUrl: detail.quest.cutout_url,
           }}
         />
       ) : null}

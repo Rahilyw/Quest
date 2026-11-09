@@ -523,6 +523,8 @@ export default function Submit() {
             level: celebration?.level ?? profile.level,
             xpReward: quest.xp_reward,
             completedAt: new Date().toISOString(),
+            category: quest.category,
+            cutoutUrl: quest.cutout_url,
           }}
         />
       ) : null}

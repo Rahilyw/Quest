@@ -274,6 +274,8 @@ export function FeedBubble({ post, currentUserId, zIndex, overlap = true, onRepo
             level: post.user.level,
             xpReward: post.quest.xp_reward,
             completedAt: post.completed_at,
+            category: post.quest.category,
+            cutoutUrl: post.quest.cutout_url,
           }}
         />
       ) : null}
