@@ -34,7 +34,7 @@ You, comments, reports and notifications). These commits are ahead of `main` in 
 | Phase 3: Core loop | Main surfaces are implemented: new tab bar, This week, category folders, quest detail/photo viewer, in-app place/selfie camera, and celebration. | Review against BRAND.md and complete integration/accessibility/responsive polish; confirm the entire flow against a real backend with migration 032 applied. |
 | Phase 4: Social and status | City/feed bubbles, Rankings, You, comments, reports and notification surfaces were redesigned in the latest Cursor commits. | Audit each screen against the spec, including feed privacy, blocked users, reactions, empty/loading/error states, reduce motion and large text. |
 | Phase 5: Brand surfaces | Share card, onboarding, icon and splash done (Claude, Nov 8): see below. | Store screenshots on the `desk` grid (needs real screens and content). |
-| Phase 6: Admin dashboard | Not completed. | Apply the Cutouts admin tokens and build the quest cutout uploader/preview. |
+| Phase 6: Admin dashboard | Restyle and cutout uploader done (Claude, Nov 8): see below. | Live folder/bubble preview in the quest form; restyle of the dashboard, users, badges and sponsors pages is token-level only. |
 | Phase 7: Content | Founder-owned and ongoing. | Real place photos, processed cutouts, action phrases, sprite artwork and copy remain. |
 
 This snapshot is a codebase observation, not a claim that the Cursor commits have been merged
@@ -94,6 +94,20 @@ The glyphs are all-caps because Pilowlava is a caps display face. Assets are reg
 and checked visually as flat renders only; not tested in a dev build, on iOS icon masking 
 or a real Android launcher. Needs a native build to take effect (icon and splash are not 
 OTA-updatable).
+
+**Admin restyle (Phase 6, fifth Claude increment).** `apps/admin/lib/theme.ts` and 
+`app/globals.css` moved from the navy Harbour Electric palette to Cutouts on paper: paper 
+background, white surfaces, ink text, ink pill buttons (no glow), Figtree instead of Inter, 
+sentence-case labels, and the mobile category colours (with `deep` and `onColor`) so 
+category chips read as bright fills with ink text. Sidebar is an ink-pill active state with 
+a Pilowlava `Quest!` wordmark and no emoji. Login, reset and auth screens now use theme 
+tokens instead of raw hex. Emoji and symbol prefixes removed from the quest list, geofence 
+editor, sponsors and badges button (badge icons are user data and stay). Only 
+`lib/badge-rules.ts` rarity colours remain as raw hex, and they are tuned for a dark 
+background. Checks: admin `tsc --noEmit` clean; `/login` returns 200 with the new colours 
+in a dev server. Not run: `next build`, authenticated pages in a browser (the in-app 
+browser could not open localhost this session), a contrast audit. A dev server may still 
+be running on port 3011 from this check.
 
 **Still open / next:** apply and verify 032+033 on a staging project, then test selfie
 signing across own / follower / blocked / hidden cases; feed bubbles and celebration for

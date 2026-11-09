@@ -115,7 +115,7 @@ export default function CompletionsLog() {
                     type="button"
                     onClick={() => handleRemove(c.id)}
                     className="admin-btn"
-                    style={{ background: theme.danger, color: '#fff', opacity: isProcessing ? 0.5 : 1 }}
+                    style={{ background: theme.danger, color: theme.onPrimary, opacity: isProcessing ? 0.5 : 1 }}
                     disabled={isProcessing}
                   >
                     {isProcessing ? '…' : 'Remove'}

@@ -1,5 +1,7 @@
 'use client'
 
+import { theme } from '@/lib/theme'
+
 interface ExportButtonProps {
   quest: {
     title: string
@@ -73,9 +75,9 @@ export default function ExportButton({ quest }: ExportButtonProps) {
     <button
       onClick={handleExport}
       style={{
-        background: '#334155',
-        color: '#F1F5F9',
-        border: '1px solid #475569',
+        background: theme.surface,
+        color: theme.text,
+        border: `1px solid ${theme.borderStrong}`,
         borderRadius: 8,
         padding: '8px 16px',
         cursor: 'pointer',
@@ -84,8 +86,8 @@ export default function ExportButton({ quest }: ExportButtonProps) {
         marginTop: 12,
         transition: 'background 0.2s',
       }}
-      onMouseEnter={(e) => (e.currentTarget.style.background = '#475569')}
-      onMouseLeave={(e) => (e.currentTarget.style.background = '#334155')}
+      onMouseEnter={(e) => (e.currentTarget.style.background = theme.surfaceHover)}
+      onMouseLeave={(e) => (e.currentTarget.style.background = theme.surface)}
     >
       Export CSV
     </button>

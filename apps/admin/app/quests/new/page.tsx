@@ -123,9 +123,9 @@ export default function NewQuestPage() {
                     type="button"
                     onClick={() => setCategory(key)}
                     style={{
-                      border: active ? `2px solid ${cat.color}` : `1px solid ${theme.border}`,
-                      background: active ? cat.soft : 'transparent',
-                      color: active ? cat.color : theme.textMuted,
+                      border: active ? `2px solid ${cat.deep}` : `1px solid ${theme.border}`,
+                      background: active ? cat.color : 'transparent',
+                      color: active ? cat.onColor : theme.textMuted,
                       borderRadius: 999,
                       padding: '8px 14px',
                       fontWeight: 700,
@@ -134,7 +134,7 @@ export default function NewQuestPage() {
                       fontFamily: 'inherit',
                     }}
                   >
-                    {cat.icon} {cat.label}
+                    {cat.label}
                   </button>
                 )
               })}
@@ -180,7 +180,7 @@ export default function NewQuestPage() {
           {isSponsored && (
             <div className="admin-grid-2">
               <div className="admin-field">
-                <label className="admin-label" htmlFor="sponsor_name">Sponsor name <span style={{ color: '#ef4444' }}>*</span></label>
+                <label className="admin-label" htmlFor="sponsor_name">Sponsor name <span style={{ color: theme.danger }}>*</span></label>
                 <input id="sponsor_name" name="sponsor_name" className="admin-input" placeholder="Habit Coffee" required={isSponsored} />
               </div>
               <div className="admin-field">
@@ -213,7 +213,7 @@ export default function NewQuestPage() {
                       padding: 12,
                       borderRadius: 12,
                       border: selected ? `2px solid ${theme.primary}` : `1px solid ${theme.border}`,
-                      background: selected ? theme.primarySoft : '#0f172a',
+                      background: selected ? theme.primarySoft : theme.surface,
                       cursor: 'pointer',
                       fontFamily: 'inherit',
                       color: theme.text,
@@ -230,7 +230,7 @@ export default function NewQuestPage() {
         </section>
 
         {error && (
-          <div style={{ background: 'rgba(239,68,68,0.15)', border: '1px solid rgba(239,68,68,0.4)', borderRadius: 10, padding: 14, marginBottom: 16, color: '#fca5a5', fontSize: 14 }}>
+          <div style={{ background: theme.dangerSoft, border: `1px solid ${theme.dangerBorder}`, borderRadius: 10, padding: 14, marginBottom: 16, color: theme.danger, fontSize: 14 }}>
             {error}
           </div>
         )}

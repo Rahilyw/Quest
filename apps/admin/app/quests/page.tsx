@@ -140,8 +140,8 @@ function EditForm({ quest, onSave, onCancel }: { quest: Quest; onSave: (updated:
   return (
     <form onSubmit={handleSave} style={{ padding: '0 16px 20px' }}>
       <div style={{ borderTop: `1px solid ${theme.border}`, paddingTop: 16 }}>
-        <p style={{ margin: '0 0 14px', fontWeight: 800, fontSize: 12, color: theme.textMuted, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-          Edit Quest
+        <p style={{ margin: '0 0 14px', fontWeight: 800, fontSize: 14, color: theme.textMuted }}>
+          Edit quest
         </p>
 
         <div className="admin-field">
@@ -197,9 +197,9 @@ function EditForm({ quest, onSave, onCancel }: { quest: Quest; onSave: (updated:
                   type="button"
                   onClick={() => set('category', key)}
                   style={{
-                    border: active ? `2px solid ${cat.color}` : `1px solid ${theme.border}`,
-                    background: active ? cat.soft : 'transparent',
-                    color: active ? cat.color : theme.textMuted,
+                    border: active ? `2px solid ${cat.deep}` : `1px solid ${theme.border}`,
+                    background: active ? cat.color : 'transparent',
+                    color: active ? cat.onColor : theme.textMuted,
                     borderRadius: 999,
                     padding: '6px 12px',
                     fontWeight: 700,
@@ -208,7 +208,7 @@ function EditForm({ quest, onSave, onCancel }: { quest: Quest; onSave: (updated:
                     fontFamily: 'inherit',
                   }}
                 >
-                  {cat.icon} {cat.label}
+                  {cat.label}
                 </button>
               )
             })}
@@ -289,7 +289,7 @@ function EditForm({ quest, onSave, onCancel }: { quest: Quest; onSave: (updated:
         )}
 
         {error && (
-          <div style={{ background: 'rgba(239,68,68,0.15)', border: '1px solid rgba(239,68,68,0.4)', borderRadius: 10, padding: 12, marginBottom: 12, color: '#fca5a5', fontSize: 13 }}>
+          <div style={{ background: theme.dangerSoft, border: `1px solid ${theme.dangerBorder}`, borderRadius: 10, padding: 12, marginBottom: 12, color: theme.danger, fontSize: 13 }}>
             {error}
           </div>
         )}
@@ -368,7 +368,7 @@ export default function QuestsPage() {
                 >
                   {!q.cover_image_url && (
                     <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 40 }}>
-                      {cat?.icon ?? '📍'}
+                      
                     </div>
                   )}
                   <div
@@ -376,13 +376,13 @@ export default function QuestsPage() {
                       position: 'absolute',
                       top: 10,
                       right: 10,
-                      background: q.status === 'active' ? 'rgba(34,197,94,0.9)' : 'rgba(100,116,139,0.9)',
-                      color: '#fff',
-                      fontSize: 10,
-                      fontWeight: 800,
+                      background: q.status === 'active' ? theme.success : theme.textMuted,
+                      color: theme.onPrimary,
+                      fontSize: 12,
+                      fontWeight: 700,
                       padding: '4px 10px',
                       borderRadius: 999,
-                      textTransform: 'uppercase',
+                      textTransform: 'capitalize',
                     }}
                   >
                     {q.status}
@@ -392,36 +392,36 @@ export default function QuestsPage() {
                   <div style={{ display: 'flex', gap: 8, marginBottom: 8, flexWrap: 'wrap' }}>
                     <span
                       style={{
-                        fontSize: 10,
+                        fontSize: 12,
                         fontWeight: 700,
-                        color: cat?.color ?? theme.primary,
-                        background: cat?.soft ?? theme.primarySoft,
+                        color: cat?.onColor ?? theme.text,
+                        background: cat?.color ?? theme.primarySoft,
                         padding: '3px 8px',
                         borderRadius: 999,
                         textTransform: 'capitalize',
                       }}
                     >
-                      {cat?.icon} {q.category}
+                      {q.category}
                     </span>
                     <span style={{ fontSize: 10, fontWeight: 800, color: theme.primary }}>+{q.xp_reward} XP</span>
                     {q.is_sponsored && (
-                      <span style={{ fontSize: 10, fontWeight: 700, color: theme.highlight }}>⭐ Sponsored</span>
+                      <span style={{ fontSize: 10, fontWeight: 700, color: theme.highlight }}>Sponsored</span>
                     )}
                     {(q.geofence_type ?? 'circle') === 'none' && (
-                      <span style={{ fontSize: 10, fontWeight: 700, color: theme.textMuted }}>📍 Anywhere</span>
+                      <span style={{ fontSize: 10, fontWeight: 700, color: theme.textMuted }}>Anywhere</span>
                     )}
                     {(q.geofence_type ?? 'circle') === 'city' && (
-                      <span style={{ fontSize: 10, fontWeight: 700, color: theme.primaryLight }}>🌆 City-wide</span>
+                      <span style={{ fontSize: 10, fontWeight: 700, color: theme.primaryLight }}>City-wide</span>
                     )}
                     {(q.geofence_type ?? 'circle') === 'circle' && (
-                      <span style={{ fontSize: 10, fontWeight: 700, color: theme.primaryLight }}>📍 {q.radius_meters}m</span>
+                      <span style={{ fontSize: 10, fontWeight: 700, color: theme.primaryLight }}>{q.radius_meters}m</span>
                     )}
                     {(q.geofence_type ?? 'circle') === 'polygon' && (
-                      <span style={{ fontSize: 10, fontWeight: 700, color: theme.primaryLight }}>✏️ Custom zone</span>
+                      <span style={{ fontSize: 10, fontWeight: 700, color: theme.primaryLight }}>Custom zone</span>
                     )}
                     {(q.geofence_type ?? 'circle') === 'multi' && (
                       <span style={{ fontSize: 10, fontWeight: 700, color: theme.primaryLight }}>
-                        📌 {q.quest_geofences?.length ?? 0} areas
+                        {q.quest_geofences?.length ?? 0} areas
                       </span>
                     )}
                   </div>

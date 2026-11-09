@@ -34,7 +34,7 @@ export default async function SponsorsPage() {
                 <div>
                   <div style={{ fontWeight: 700, fontSize: 18, marginBottom: 4 }}>{q.title}</div>
                   <div style={{ color: theme.warning, fontWeight: 700, marginBottom: 8 }}>
-                    ⭐ {q.sponsor_name}
+                    {q.sponsor_name}
                   </div>
                   <div style={{ color: theme.textMuted, marginBottom: 12 }}>Reward: {q.sponsor_reward}</div>
                   <ExportButton quest={q} />

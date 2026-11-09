@@ -28,7 +28,7 @@ export default function BadgesPage() {
           </p>
         </div>
         <Link href="/badges/new" className="admin-btn admin-btn-primary" style={{ textDecoration: 'none' }}>
-          ＋ New Badge
+          New badge
         </Link>
       </div>
 

@@ -2,16 +2,9 @@
 
 import { useRef, useState } from 'react'
 import { setQuestCutout } from '@/app/quests/actions'
+import { theme } from '@/lib/theme'
 
-// Mirrors apps/mobile/lib/theme.ts CATEGORY colours so admins see the cutout
-// on the colour it will appear on. Keep in sync with BRAND.md §3.
-const CATEGORY_SWATCHES: { key: string; label: string; color: string }[] = [
-  { key: 'fitness', label: 'Fitness', color: '#FFCE1F' },
-  { key: 'food', label: 'Food', color: '#F2584A' },
-  { key: 'social', label: 'Social', color: '#C6B2F0' },
-  { key: 'community', label: 'Community', color: '#2F6BF0' },
-  { key: 'nature', label: 'Nature', color: '#34B864' },
-]
+const CATEGORY_SWATCHES = Object.entries(theme.categories).map(([key, c]) => ({ key, label: c.label, color: c.color }))
 
 export default function QuestCutoutUploader({
   questId,
@@ -70,7 +63,7 @@ export default function QuestCutoutUploader({
               // eslint-disable-next-line @next/next/no-img-element
               <img src={url} alt={`${c.label} preview`} style={{ maxWidth: '80%', maxHeight: '80%' }} />
             ) : (
-              <span style={{ fontSize: 11, color: '#1a1a1a' }}>No cutout</span>
+              <span style={{ fontSize: 11, color: theme.text }}>No cutout</span>
             )}
           </div>
         ))}

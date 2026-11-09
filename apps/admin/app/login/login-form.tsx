@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { signIn } from './actions'
+import { theme } from '@/lib/theme'
 
 export default function LoginForm({ initialError }: { initialError?: string }) {
   const [error, setError] = useState<string | null>(initialError ?? null)
@@ -50,20 +51,20 @@ export default function LoginForm({ initialError }: { initialError?: string }) {
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        background: '#0D1B3E',
-        color: '#F1F5F9',
+        background: theme.bg,
+        color: theme.text,
         padding: 24,
       }}
     >
       <div style={{ width: '100%', maxWidth: 400 }}>
-        <div style={{ fontSize: 28, color: '#4364F7', marginBottom: 8, textAlign: 'center' }}>
+        <div style={{ fontSize: 28, color: theme.primary, marginBottom: 8, textAlign: 'center' }}>
           <span className="brand-wordmark">Quest!</span> Admin
         </div>
-        <p style={{ color: '#64748B', textAlign: 'center', marginBottom: 32 }}>Sign in to continue</p>
+        <p style={{ color: theme.textMuted, textAlign: 'center', marginBottom: 32 }}>Sign in to continue</p>
 
         <form onSubmit={handleSubmit} style={{ display: 'grid', gap: 16 }}>
           <div>
-            <label style={{ color: '#94A3B8', fontSize: 13, display: 'block', marginBottom: 6 }}>Email</label>
+            <label style={{ color: theme.textMuted, fontSize: 13, display: 'block', marginBottom: 6 }}>Email</label>
             <input
               name="email"
               type="email"
@@ -72,16 +73,16 @@ export default function LoginForm({ initialError }: { initialError?: string }) {
               style={{
                 width: '100%',
                 boxSizing: 'border-box',
-                background: '#1E293B',
-                color: '#F1F5F9',
-                border: '1px solid #334155',
+                background: theme.surface,
+                color: theme.text,
+                border: '1px solid ${theme.borderStrong}',
                 borderRadius: 8,
                 padding: 12,
               }}
             />
           </div>
           <div>
-            <label style={{ color: '#94A3B8', fontSize: 13, display: 'block', marginBottom: 6 }}>Password</label>
+            <label style={{ color: theme.textMuted, fontSize: 13, display: 'block', marginBottom: 6 }}>Password</label>
             <input
               name="password"
               type="password"
@@ -90,9 +91,9 @@ export default function LoginForm({ initialError }: { initialError?: string }) {
               style={{
                 width: '100%',
                 boxSizing: 'border-box',
-                background: '#1E293B',
-                color: '#F1F5F9',
-                border: '1px solid #334155',
+                background: theme.surface,
+                color: theme.text,
+                border: '1px solid ${theme.borderStrong}',
                 borderRadius: 8,
                 padding: 12,
               }}
@@ -102,13 +103,13 @@ export default function LoginForm({ initialError }: { initialError?: string }) {
           {displayError && (
             <div
               style={{
-                background: isAccessDenied ? '#450A0A' : '#1E293B',
-                border: `1px solid ${isAccessDenied ? '#EF4444' : '#334155'}`,
+                background: isAccessDenied ? theme.dangerSoft : theme.surface,
+                border: `1px solid ${isAccessDenied ? theme.danger : theme.borderStrong}`,
                 borderRadius: 8,
                 padding: '10px 14px',
               }}
             >
-              <p style={{ color: '#EF4444', fontSize: 14, margin: 0 }}>{displayError}</p>
+              <p style={{ color: theme.danger, fontSize: 14, margin: 0 }}>{displayError}</p>
             </div>
           )}
 
@@ -117,8 +118,8 @@ export default function LoginForm({ initialError }: { initialError?: string }) {
             disabled={pending}
             style={{
               width: '100%',
-              background: '#4364F7',
-              color: '#fff',
+              background: theme.primary,
+              color: theme.onPrimary,
               border: 'none',
               borderRadius: 8,
               padding: '12px 20px',
@@ -132,7 +133,7 @@ export default function LoginForm({ initialError }: { initialError?: string }) {
           </button>
           <a
             href="/login/forgot-password"
-            style={{ color: '#94A3B8', textAlign: 'center', fontSize: 14, textDecoration: 'none' }}
+            style={{ color: theme.textMuted, textAlign: 'center', fontSize: 14, textDecoration: 'none' }}
           >
             Forgot password?
           </a>
