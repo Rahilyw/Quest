@@ -214,6 +214,23 @@ function NewQuestForm() {
           }}
         />
 
+        <section className="admin-card" style={{ marginBottom: 20 }}>
+          <label style={{ display: 'flex', alignItems: 'flex-start', gap: 10, cursor: 'pointer' }}>
+            <input
+              type="checkbox"
+              name="is_starter"
+              value="true"
+              style={{ width: 18, height: 18, accentColor: theme.primary, marginTop: 2 }}
+            />
+            <span>
+              <strong style={{ display: 'block' }}>Use as the first quest</strong>
+              <span style={{ display: 'block', color: theme.textMuted, fontSize: 13, marginTop: 4 }}>
+                New players see this before their first completion. It must be live now.
+              </span>
+            </span>
+          </label>
+        </section>
+
         {/* Sponsor */}
         <section className="admin-card" style={{ marginBottom: 20 }}>
           <label style={{ display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer', marginBottom: isSponsored ? 16 : 0 }}>

@@ -1,7 +1,7 @@
 # Quest! — Product Roadmap
 
 **Last updated:** November 9, 2026
-**Stage:** Cutouts redesign on the current feature branch; next product work is Spec 05 (weekly drops + community suggestions). Verify launch operations against [LAUNCH-RUNBOOK.md](LAUNCH-RUNBOOK.md) before TestFlight.
+**Stage:** Cutouts redesign on the current feature branch; next product work is Spec 06's Sunday recap. Verify launch operations against [LAUNCH-RUNBOOK.md](LAUNCH-RUNBOOK.md) before TestFlight.
 
 > **November 2026 status.** A full audit (Nov 7) found and fixed an RPC that let any signed-in user mint XP (migration 030, applied live), added server-side admin checks to every admin action, moved the weekly rank snapshot into the database and aligned the leaderboard week to Victoria time (migration 031, ready to apply), and got the admin dashboard building and live on Vercel for the first time since August. The app's visual direction was redesigned as **Cutouts** ([docs/design/BRAND.md](docs/design/BRAND.md)); Phase 1 of the rebuild (tokens, Figtree, copy pass) is merged; the review stack (#9 to #12) is merged to main.
 
@@ -26,8 +26,8 @@ are not evidence of remote application.
 |---|---|---|
 | Spec 05: weekly drops | Implemented Nov 9, 2026 on this branch: admin schedule + Next Monday preset, dashboard count, Victoria active window, “New this week” / “Ends Sunday”. Migration 034 is local. Monday push source exists and is not deployed. | Done in repo. |
 | Spec 05: community suggestions | Implemented Nov 9, 2026: migration 035 (local), mobile form, admin queue, one-time +100 XP and City Author. Chains still deferred. | Done in repo. |
-| Spec 07: merchant redemption | Implemented Nov 9, 2026: migration 036 (local), public `/redeem/[merchantKey]`, sponsor metrics and CSV columns, player redeemed state. Not applied and not tried at a counter. | Done in repo. Next product feature is Spec 06, starter quest first. |
-| Spec 06: growth | No Sunday recap, starter quest, XP events, offline queue or duo party implementation found. | After the content engine; follow Spec 06's sequence and ship in separate increments. |
+| Spec 07: merchant redemption | Implemented Nov 9, 2026: migration 036 (local), public `/redeem/[merchantKey]`, sponsor metrics and CSV columns, player redeemed state. Not applied and not tried at a counter. | Done in repo; verify deployment and a live counter flow separately. |
+| Spec 06: growth | Starter quest is now implemented in local migration 037 and the This week surface. No Sunday recap, XP events, offline queue or duo party implementation found. | Next: Sunday recap card, then XP events, offline queue and duo quests per Spec 06. |
 
 Operational items elsewhere in this roadmap (migration application, push deployment, analytics
 keys/dashboards, store credentials) must be checked against the live project/runbook before
@@ -300,7 +300,7 @@ Decisions D1 to D8 are recorded in the plan (wordmark, tabs, category colours, d
 
 | # | Task | Status |
 |---|---|---|
-| F.1 | First-quest onboarding: `is_starter` quest pinned post-signup; time-to-first-XP < 5 min | ❌ |
+| F.1 | First-quest onboarding: `is_starter` quest pinned post-signup; time-to-first-XP < 5 min | In repo (037 local); seed, admin designation and This week card implemented Nov 9 |
 | F.2 | Sunday recap share card (view-shot + native share) + Sunday push | ❌ |
 | F.3 | XP economy events: `xp_events` table, double-XP weekends, first-finisher bonus, lapsed-player win-back | ❌ |
 | F.4 | Offline submission queue with retry | ❌ |

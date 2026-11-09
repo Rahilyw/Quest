@@ -114,6 +114,40 @@ export default function ThisWeekScreen() {
           </Pressable>
         ) : null}
 
+        {!week.loading && !week.error && week.starterQuest ? (
+          <Pressable
+            onPress={() => router.push(`/quest/${week.starterQuest!.id}?source=first-quest`)}
+            accessibilityRole="button"
+            accessibilityLabel={`Your first quest: ${week.starterQuest.title}. Open quest.`}
+            style={[
+              styles.starterCard,
+              { backgroundColor: CATEGORY[week.starterQuest.category as keyof typeof CATEGORY]?.color ?? CATEGORY.community.color },
+            ]}
+          >
+            <View style={styles.starterCopy}>
+              <Small color={CATEGORY[week.starterQuest.category as keyof typeof CATEGORY]?.onColor ?? CATEGORY.community.onColor}>
+                Your first quest
+              </Small>
+              <Sentence
+                color={CATEGORY[week.starterQuest.category as keyof typeof CATEGORY]?.onColor ?? CATEGORY.community.onColor}
+                style={styles.starterTitle}
+              >
+                {week.starterQuest.title}
+              </Sentence>
+              <Small color={CATEGORY[week.starterQuest.category as keyof typeof CATEGORY]?.onColor ?? CATEGORY.community.onColor}>
+                You can do this anywhere. Start here.
+              </Small>
+            </View>
+            <Cutout
+              uri={week.starterQuest.cutout_url}
+              category={week.starterQuest.category}
+              questTitle={week.starterQuest.title}
+              role="row"
+              style={styles.starterCutout}
+            />
+          </Pressable>
+        ) : null}
+
         {week.loading ? (
           <Sentence color={COLOR.inkFaint} style={styles.sentence}>
             Finding this week…
@@ -275,6 +309,26 @@ const styles = StyleSheet.create({
     minHeight: 48,
     justifyContent: 'center',
     marginBottom: SPACE.s4,
+  },
+  starterCard: {
+    minHeight: 144,
+    borderRadius: RADIUS.card,
+    padding: SPACE.s4,
+    marginBottom: SPACE.s5,
+    flexDirection: 'row',
+    alignItems: 'center',
+    overflow: 'hidden',
+  },
+  starterCopy: {
+    flex: 1,
+    gap: SPACE.s2,
+  },
+  starterTitle: {
+    marginVertical: SPACE.s1,
+  },
+  starterCutout: {
+    width: 86,
+    marginLeft: SPACE.s2,
   },
   sentence: {
     marginBottom: SPACE.s4,

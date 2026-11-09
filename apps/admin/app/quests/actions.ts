@@ -49,6 +49,7 @@ export interface Quest {
   created_at: string
   active_from?: string | null
   active_until?: string | null
+  is_starter?: boolean
   suggested_by?: string | null
   quest_badges?: { badge_id: string; badge: Badge | null }[]
   quest_geofences?: QuestGeofenceRow[]
@@ -294,6 +295,10 @@ export async function createQuest(formData: FormData): Promise<{ ok: true; quest
     const badgeIds = formData.getAll('badge_ids').map(String)
     const coverFile = formData.get('cover') as File | null
     const suggestionId = String(formData.get('suggestion_id') ?? '').trim() || null
+    const isStarter = formData.get('is_starter') === 'true'
+    if (suggestionId && isStarter) {
+      return { ok: false, error: 'Publish the suggestion first, then choose its quest as the first quest.' }
+    }
     const schedule = scheduleFromForm(formData)
     if ('error' in schedule) return { ok: false, error: schedule.error }
 
@@ -394,6 +399,16 @@ export async function createQuest(formData: FormData): Promise<{ ok: true; quest
       }
     }
 
+    if (isStarter) {
+      const { error: starterError } = await supabaseAdmin.rpc('set_starter_quest', {
+        p_quest_id: quest.id,
+      })
+      if (starterError) {
+        await supabaseAdmin.from('quests').delete().eq('id', quest.id)
+        return { ok: false, error: starterError.message }
+      }
+    }
+
     if (suggestionId) {
       const linked = await linkPublishedSuggestion(suggestionId, quest.id)
       if (!linked.ok) {
@@ -417,9 +432,27 @@ export async function createQuest(formData: FormData): Promise<{ ok: true; quest
   }
 }
 
-export async function toggleQuestStatus(id: string, current: string): Promise<string> {
+export async function setStarterQuest(id: string): Promise<{ ok: true } | { ok: false; error: string }> {
   await requireAdmin()
-  const next = current === 'active' ? 'inactive' : 'active'
+  const { error } = await supabaseAdmin.rpc('set_starter_quest', { p_quest_id: id })
+  if (error) return { ok: false, error: error.message }
+  revalidatePath('/quests')
+  revalidatePath('/')
+  return { ok: true }
+}
+
+export async function toggleQuestStatus(id: string): Promise<string> {
+  await requireAdmin()
+  const { data: quest, error: readError } = await supabaseAdmin
+    .from('quests')
+    .select('status, is_starter')
+    .eq('id', id)
+    .single()
+  if (readError || !quest) throw new Error(readError?.message ?? 'Quest not found.')
+  if (quest.status === 'active' && quest.is_starter) {
+    throw new Error('Choose another active quest as the first quest before deactivating this one.')
+  }
+  const next = quest.status === 'active' ? 'inactive' : 'active'
   const { error } = await supabaseAdmin.from('quests').update({ status: next }).eq('id', id)
   if (error) throw new Error(error.message)
   revalidatePath('/quests')

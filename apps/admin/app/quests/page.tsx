@@ -3,7 +3,7 @@
 import Link from 'next/link'
 import { useEffect, useState } from 'react'
 import { windowSummary } from '@quest/geofence'
-import { getQuests, toggleQuestStatus, updateQuest, type Quest } from './actions'
+import { getQuests, setStarterQuest, toggleQuestStatus, updateQuest, type Quest } from './actions'
 import { theme, VICTORIA_DEFAULT } from '@/lib/theme'
 import { QuestScheduleFields } from '@/components/QuestScheduleFields'
 import { normalizeSchedule, vancouverInputToIso, vancouverInputValue } from '@/lib/schedule'
@@ -337,6 +337,8 @@ export default function QuestsPage() {
   const [quests, setQuests] = useState<Quest[]>([])
   const [loading, setLoading] = useState(true)
   const [editingId, setEditingId] = useState<string | null>(null)
+  const [starterBusyId, setStarterBusyId] = useState<string | null>(null)
+  const [actionError, setActionError] = useState<string | null>(null)
 
   useEffect(() => {
     getQuests().then((data) => {
@@ -345,9 +347,31 @@ export default function QuestsPage() {
     })
   }, [])
 
-  async function handleToggle(id: string, status: string) {
-    const next = await toggleQuestStatus(id, status)
-    setQuests((prev) => prev.map((q) => (q.id === id ? { ...q, status: next } : q)))
+  async function handleToggle(id: string) {
+    setActionError(null)
+    try {
+      const next = await toggleQuestStatus(id)
+      setQuests((prev) => prev.map((q) => (q.id === id ? { ...q, status: next } : q)))
+    } catch (error) {
+      setActionError(error instanceof Error ? error.message : 'Could not update this quest.')
+    }
+  }
+
+  async function handleSetStarter(id: string) {
+    setActionError(null)
+    setStarterBusyId(id)
+    try {
+      const result = await setStarterQuest(id)
+      if (!result.ok) {
+        setActionError(result.error)
+        return
+      }
+      setQuests((prev) => prev.map((q) => ({ ...q, is_starter: q.id === id })))
+    } catch (error) {
+      setActionError(error instanceof Error ? error.message : 'Could not set the first quest.')
+    } finally {
+      setStarterBusyId(null)
+    }
   }
 
   function handleEditSave(updated: Quest) {
@@ -377,6 +401,10 @@ export default function QuestsPage() {
           </Link>
         </div>
       ) : (
+        <>
+        {actionError ? (
+          <p role="alert" style={{ color: theme.danger, marginBottom: 16 }}>{actionError}</p>
+        ) : null}
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 16 }}>
           {quests.map((q) => {
             const cat = theme.categories[q.category]
@@ -433,6 +461,9 @@ export default function QuestsPage() {
                     {q.is_sponsored && (
                       <span style={{ fontSize: 10, fontWeight: 700, color: theme.highlight }}>Sponsored</span>
                     )}
+                    {q.is_starter && (
+                      <span style={{ fontSize: 10, fontWeight: 700, color: theme.success }}>First quest</span>
+                    )}
                     {(q.geofence_type ?? 'circle') === 'none' && (
                       <span style={{ fontSize: 10, fontWeight: 700, color: theme.textMuted }}>Anywhere</span>
                     )}
@@ -475,7 +506,7 @@ export default function QuestsPage() {
                       )}
                     </div>
                   )}
-                  <div style={{ display: 'flex', gap: 8, marginTop: 14 }}>
+                  <div style={{ display: 'flex', gap: 8, marginTop: 14, flexWrap: 'wrap' }}>
                     <button
                       type="button"
                       onClick={() => setEditingId(isEditing ? null : q.id)}
@@ -486,11 +517,20 @@ export default function QuestsPage() {
                     </button>
                     <button
                       type="button"
-                      onClick={() => handleToggle(q.id, q.status)}
+                      onClick={() => handleToggle(q.id)}
                       className="admin-btn admin-btn-ghost"
                       style={{ flex: 1, fontSize: 12 }}
                     >
                       {q.status === 'active' ? 'Deactivate' : 'Activate'}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleSetStarter(q.id)}
+                      className="admin-btn admin-btn-ghost"
+                      style={{ flex: 1, fontSize: 12 }}
+                      disabled={q.is_starter || q.status !== 'active' || starterBusyId === q.id}
+                    >
+                      {q.is_starter ? 'First quest' : starterBusyId === q.id ? 'Saving…' : 'Set as first quest'}
                     </button>
                   </div>
                 </div>
@@ -506,6 +546,7 @@ export default function QuestsPage() {
             )
           })}
         </div>
+        </>
       )}
     </div>
   )

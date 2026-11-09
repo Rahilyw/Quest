@@ -72,10 +72,15 @@ async function loadPosition(): Promise<{ lat: number; lng: number } | null> {
   }
 }
 
-async function loadQuests(): Promise<{ quests: ThisWeekCandidate[]; newCount: number; endingCount: number }> {
+async function loadQuests(): Promise<{
+  quests: ThisWeekCandidate[]
+  starterQuest: ThisWeekCandidate | null
+  newCount: number
+  endingCount: number
+}> {
   const { data, error } = await supabase
     .from('quests')
-    .select('id, title, category, action_phrase, cutout_url, lat, lng, created_at, xp_reward, active_from, active_until')
+    .select('id, title, category, action_phrase, cutout_url, lat, lng, created_at, xp_reward, active_from, active_until, is_starter')
     .eq('status', 'active')
   if (error) throw new Error(error.message)
   const now = new Date()
@@ -92,10 +97,12 @@ async function loadQuests(): Promise<{ quests: ThisWeekCandidate[]; newCount: nu
       xp_reward: asNumber(row.xp_reward) ?? 0,
       active_from: (row.active_from as string | null) ?? null,
       active_until: (row.active_until as string | null) ?? null,
+      is_starter: row.is_starter === true,
     }))
     .filter((quest) => includeInScope(quest, 'live', now))
   return {
     quests,
+    starterQuest: quests.find((quest) => quest.is_starter) ?? null,
     newCount: quests.filter((quest) => isNewThisWeek(quest, now)).length,
     endingCount: quests.filter((quest) => endsThisSunday(quest, now)).length,
   }
@@ -253,6 +260,7 @@ export function useThisWeek(
   streakWeeks: number,
   enabled = true,
 ) {
+  const [starterQuest, setStarterQuest] = useState<ThisWeekCandidate | null>(null)
   const [picked, setPicked] = useState<PickedQuest[]>([])
   const [poolSize, setPoolSize] = useState(0)
   const [usedLocation, setUsedLocation] = useState(false)
@@ -270,6 +278,7 @@ export function useThisWeek(
   const load = useCallback(
     async (mode: 'initial' | 'refresh') => {
       if (!userId) {
+        setStarterQuest(null)
         setLoading(false)
         return
       }
@@ -317,6 +326,7 @@ export function useThisWeek(
         if (requestId.current !== id) return
 
         setPicked(result.picked)
+        setStarterQuest(playedIds.size === 0 ? loaded.starterQuest : null)
         setPoolSize(result.poolSize)
         setUsedLocation(result.usedLocation)
         setFriends(shownFriends)
@@ -351,6 +361,7 @@ export function useThisWeek(
   const refresh = useCallback(() => load('refresh'), [load])
 
   return {
+    starterQuest,
     picked,
     poolSize,
     usedLocation,

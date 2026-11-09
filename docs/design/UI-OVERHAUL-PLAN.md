@@ -46,8 +46,9 @@ handoff; update this snapshot as work lands so later agents do not duplicate Cur
 **Feature handoff update (Nov 9, later the same day):** Spec 05 and Spec 07 are implemented
 on this branch. Migrations `034`, `035`, and `036` are local and were not applied. Monday
 push was not deployed. Merchant redemption was not tried at a counter. Quest chains stay
-deferred. The next product feature is Spec 06, starter quest first, then the other Spec 06
-slices one at a time. The earlier Nov 9 audit note described the checkout before this work.
+deferred. Spec 06's starter quest is now implemented locally in migration 037. The next
+product feature is the Sunday recap card. The earlier Nov 9 audit note described the checkout
+before this work.
 
 **Feature handoff update (Nov 9, earlier):** the redesign work has advanced since the Nov 8 notes
 below. At that point the next priority was Spec 05. That audit is historical. See

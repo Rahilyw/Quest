@@ -76,6 +76,12 @@ The no-geofence starter quest ("Write a Journal Entry About Your City") is the p
 - With Spec 02, verification is instant → every new player can earn XP within 5 minutes of installing.
 - Target metric (Spec 04): median time-to-first-XP < 24h, aspiration < 5 min.
 
+**Implementation note (Nov 9, 2026):** The starter quest is implemented in migration 037.
+It designates the seeded anywhere journal quest, lets admins move the designation to another
+live quest, and surfaces it on This week until a player records their first completion.
+Migration 037 is local and must be applied before the new column and admin action work against
+a database. The remaining Spec 06 features are still unimplemented.
+
 ## 5. Offline submission queue
 
 People submit from breakwaters and summits with one bar of signal; a failed upload at the moment of triumph is a brutal first impression.

@@ -17,6 +17,7 @@ export interface ThisWeekCandidate {
   lng: number | null
   created_at: string
   xp_reward: number
+  is_starter?: boolean
 }
 
 export interface PickedQuest {

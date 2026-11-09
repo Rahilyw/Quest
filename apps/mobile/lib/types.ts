@@ -59,6 +59,8 @@ export interface Quest {
   active_from?: string | null
   /** Exclusive end. Null means no end. */
   active_until?: string | null
+  /** One currently live quest recommended to players before their first completion. */
+  is_starter?: boolean
   /** Set when the quest was published from a player suggestion. */
   suggested_by?: string | null
   suggester_username?: string | null
