@@ -24,46 +24,16 @@ INSERT INTO storage.buckets (id, name, public)
 VALUES ('quest-cutouts', 'quest-cutouts', true)
 ON CONFLICT (id) DO NOTHING;
 
+-- Public read, same as quest covers. Admin uploads use the service role,
+-- which bypasses storage RLS. There is no profiles.is_admin column.
 DROP POLICY IF EXISTS "Anyone can view quest cutouts" ON storage.objects;
 CREATE POLICY "Anyone can view quest cutouts"
   ON storage.objects FOR SELECT
   USING (bucket_id = 'quest-cutouts');
 
 DROP POLICY IF EXISTS "Admins can upload quest cutouts" ON storage.objects;
-CREATE POLICY "Admins can upload quest cutouts"
-  ON storage.objects FOR INSERT
-  TO authenticated
-  WITH CHECK (
-    bucket_id = 'quest-cutouts'
-    AND EXISTS (
-      SELECT 1 FROM profiles
-      WHERE id = auth.uid() AND is_admin = true
-    )
-  );
-
 DROP POLICY IF EXISTS "Admins can update quest cutouts" ON storage.objects;
-CREATE POLICY "Admins can update quest cutouts"
-  ON storage.objects FOR UPDATE
-  TO authenticated
-  USING (
-    bucket_id = 'quest-cutouts'
-    AND EXISTS (
-      SELECT 1 FROM profiles
-      WHERE id = auth.uid() AND is_admin = true
-    )
-  );
-
 DROP POLICY IF EXISTS "Admins can delete quest cutouts" ON storage.objects;
-CREATE POLICY "Admins can delete quest cutouts"
-  ON storage.objects FOR DELETE
-  TO authenticated
-  USING (
-    bucket_id = 'quest-cutouts'
-    AND EXISTS (
-      SELECT 1 FROM profiles
-      WHERE id = auth.uid() AND is_admin = true
-    )
-  );
 
 -- ─── D. proof-selfies BUCKET (private — no public URL) ───────────────────────
 -- Selfies contain faces. No public = true, no SELECT policy for the world.
@@ -94,34 +64,16 @@ CREATE POLICY "Owners can view own proof selfies"
     AND (owner = auth.uid() OR owner_id = auth.uid()::text)
   );
 
--- Admins can read all selfies (for moderation).
+-- Admin moderation reads and deletes through the service role.
 DROP POLICY IF EXISTS "Admins can view all proof selfies" ON storage.objects;
-CREATE POLICY "Admins can view all proof selfies"
-  ON storage.objects FOR SELECT
-  TO authenticated
-  USING (
-    bucket_id = 'proof-selfies'
-    AND EXISTS (
-      SELECT 1 FROM profiles
-      WHERE id = auth.uid() AND is_admin = true
-    )
-  );
 
--- Owner or admin can delete a selfie.
 DROP POLICY IF EXISTS "Owner or admin can delete proof selfies" ON storage.objects;
-CREATE POLICY "Owner or admin can delete proof selfies"
+CREATE POLICY "Owners can delete proof selfies"
   ON storage.objects FOR DELETE
   TO authenticated
   USING (
     bucket_id = 'proof-selfies'
-    AND (
-      owner = auth.uid()
-      OR owner_id = auth.uid()::text
-      OR EXISTS (
-        SELECT 1 FROM profiles
-        WHERE id = auth.uid() AND is_admin = true
-      )
-    )
+    AND (owner = auth.uid() OR owner_id = auth.uid()::text)
   );
 
 -- ─── E. PERFORMANCE INDEX ─────────────────────────────────────────────────────
