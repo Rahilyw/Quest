@@ -109,6 +109,26 @@ in a dev server. Not run: `next build`, authenticated pages in a browser (the in
 browser could not open localhost this session), a contrast audit. A dev server may still 
 be running on port 3011 from this check.
 
+**Core-loop audit (Claude, Nov 8).** Read This week, Quests, quest detail, submit and the 
+Verified screen against BRAND.md sections 7, 8b and 11. Fixed: Start quest is now disabled 
+outside the zone (8b), with the zone line as its accessibility hint; place photo has a real 
+alt text instead of "Photo: Quest!"; the Quests tab no longer shows "Nothing in Victoria 
+yet" when the load failed (it shows a retry) and supports pull to refresh; raw database 
+error text is no longer shown in submit alerts; camera-permission copy names the app and 
+the two photos; the selfie countdown is a polite live region; the XP pill and Verified 
+sentence have screen-reader labels and roles. Audited and fine: This week sentence 
+(separate pressable phrases, refresh, error, empty), zone chip states and copy, shutter 
+disabled outside the zone, selfie skip, celebration copy and reduced-motion path.
+**Gaps found, not fixed:** (1) the camera screen has no small zone map with the dashed 
+geofence polygon (spec 7, The zone); (2) the cutout does not fly into the You avatar after 
+landing, and Verified has no new-rank pill; (3) "Photos from here" rows lack the time 
+(name and hearts only); (4) the camera hint is generic, per-quest framing hints need a 
+column; (5) upload-failure copy cannot promise "you're still verified" because the 
+completion is only created after both uploads, so a retry queue would be needed; (6) no 
+skeleton loaders for folders and bubbles (text loading states); (7) nothing was exercised 
+on a device, at 130% text, or against a real backend, so contrast, touch targets and the 
+geofence edge cases are code-read only.
+
 **Still open / next:** apply and verify 032+033 on a staging project, then test selfie
 signing across own / follower / blocked / hidden cases; feed bubbles and celebration for
 other users' selfies are not yet wired to `useSignedSelfie`; Phase 5 (icon, splash, share

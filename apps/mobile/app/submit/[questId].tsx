@@ -262,7 +262,7 @@ export default function Submit() {
           Alert.alert('Slow down', 'You are submitting quests too quickly. Take a breather and try again in a few minutes.')
           setStep('failed')
         } else {
-          Alert.alert('Submission failed', insertError.message)
+          Alert.alert('That didn’t go through', 'Check your signal and try again. If it keeps happening, close the app and reopen it.')
           setStep('failed')
         }
         return
@@ -295,8 +295,7 @@ export default function Submit() {
         sponsorReward: quest.is_sponsored ? quest.sponsor_reward : null,
       })
     } catch (err) {
-      const message = err instanceof Error ? err.message : 'Something went wrong. Try again.'
-      Alert.alert('Submission failed', message)
+      Alert.alert('That didn’t go through', 'Check your signal and try again.')
       setStep('failed')
     } finally {
       setSubmitting(false)
@@ -428,7 +427,7 @@ export default function Submit() {
       ) : !cameraReady ? (
         <View style={styles.message}>
           <Body color={COLOR.white} style={styles.messageText}>
-            Quest needs the camera to take the place, then you.
+            Quest! uses the camera for two photos: the place, then you.
           </Body>
           <Pressable
             onPress={() => (camPermission?.canAskAgain ? requestCamPermission() : Linking.openSettings())}
@@ -478,7 +477,7 @@ export default function Submit() {
             </Pressable>
           ) : (
             <View style={styles.selfieRow}>
-              <Title color={COLOR.white}>{countdown && countdown > 0 ? String(countdown) : ''}</Title>
+              <Title color={COLOR.white} accessibilityLiveRegion="polite">{countdown && countdown > 0 ? String(countdown) : ''}</Title>
               <Pressable
                 onPress={skipSelfie}
                 accessibilityRole="button"

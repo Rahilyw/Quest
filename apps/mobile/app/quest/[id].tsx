@@ -242,6 +242,9 @@ export default function QuestDetail() {
     }
   }
 
+  // BRAND.md 8b: outside the zone the primary button is disabled and the zone line says why.
+  const outsideZone = zone === 'outside'
+
   return (
     <View style={styles.screen}>
       <ScrollView
@@ -253,7 +256,7 @@ export default function QuestDetail() {
             source={{ uri: coverUri }}
             style={StyleSheet.absoluteFill}
             resizeMode="cover"
-            accessibilityLabel={quest.cover_image_url ? 'Photo: Quest!' : `${quest.title} place`}
+            accessibilityLabel={`${quest.title}, place photo`}
           />
 
           <View style={[styles.topBar, { top: insets.top + SPACE.s2 }]}>
@@ -425,16 +428,22 @@ export default function QuestDetail() {
       <View style={[styles.footer, { paddingBottom: footerPad }]}>
         <Pressable
           onPress={startQuest}
+          disabled={outsideZone}
           accessibilityRole="button"
           accessibilityLabel={`Start quest: ${quest.title}`}
-          accessibilityHint="Takes you to the photo submission screen"
-          style={({ pressed }) => [styles.start, pressed && styles.startPressed]}
+          accessibilityHint={outsideZone ? zoneText : 'Takes you to the photo submission screen'}
+          accessibilityState={{ disabled: outsideZone }}
+          style={({ pressed }) => [
+            styles.start,
+            outsideZone && styles.startOff,
+            pressed && !outsideZone && styles.startPressed,
+          ]}
         >
-          <BodyStrong color={COLOR.white}>Start quest</BodyStrong>
+          <BodyStrong color={outsideZone ? COLOR.inkSoft : COLOR.white}>Start quest</BodyStrong>
           <Ionicons
             name="camera-outline"
             size={20}
-            color={COLOR.white}
+            color={outsideZone ? COLOR.inkSoft : COLOR.white}
             accessibilityElementsHidden
             importantForAccessibility="no"
           />
@@ -687,6 +696,9 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     gap: SPACE.s2,
     paddingHorizontal: SPACE.s5,
+  },
+  startOff: {
+    backgroundColor: COLOR.disabledFill,
   },
   startPressed: {
     backgroundColor: COLOR.inkPressed,

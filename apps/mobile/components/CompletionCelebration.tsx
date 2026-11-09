@@ -174,11 +174,11 @@ export default function CompletionCelebration({
                 />
               </Animated.View>
             </View>
-            <Sentence color={ink} style={styles.line}>
+            <Sentence color={ink} style={styles.line} accessibilityRole="header">
               {`You ${phrase}. ${cat.label} is in your collection.`}
             </Sentence>
             <View style={styles.pills}>
-              <View style={styles.pill}>
+              <View style={styles.pill} accessible accessibilityLabel={`${xpReward} XP earned`}>
                 <Micro color={COLOR.white} tabular>{`+${shownXp} XP`}</Micro>
               </View>
               {streakCount > 0 ? (

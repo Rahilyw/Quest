@@ -1,24 +1,33 @@
-import { useMemo } from 'react'
-import { ScrollView, StyleSheet, View } from 'react-native'
+import { useMemo, useState } from 'react'
+import { Pressable, RefreshControl, ScrollView, StyleSheet, View } from 'react-native'
 import { useRouter } from 'expo-router'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { Cutout } from '@/components/Cutout'
 import { Folder } from '@/components/Folder'
 import { Sprite } from '@/components/Sprite'
-import { Small, Title } from '@/components/ui/Text'
+import { BodyStrong, Small, Title } from '@/components/ui/Text'
 import { useAuth } from '@/hooks/useAuth'
 import { useQuests } from '@/hooks/useQuests'
 import { useUserCompletions } from '@/hooks/useUserCompletions'
 import { plural } from '@/lib/copy'
 import { getQuestCoverImage, TAB_BAR_CLEARANCE } from '@/lib/constants'
 import { sizedImageUrl } from '@/lib/sizedImageUrl'
-import { CATEGORY_KEYS, COLOR, SPACE, type CategoryKey } from '@/lib/theme'
+import { CATEGORY_KEYS, COLOR, RADIUS, SPACE, type CategoryKey } from '@/lib/theme'
 
 export default function QuestsScreen() {
   const router = useRouter()
   const insets = useSafeAreaInsets()
   const { profile } = useAuth()
-  const { quests, loading } = useQuests()
+  const { quests, loading, error, refetch } = useQuests()
+  const [refreshing, setRefreshing] = useState(false)
+  const onRefresh = async () => {
+    setRefreshing(true)
+    try {
+      await refetch()
+    } finally {
+      setRefreshing(false)
+    }
+  }
   const { excludedQuestIds } = useUserCompletions(profile?.id)
 
   const newest = useMemo(() => {
@@ -44,6 +53,7 @@ export default function QuestsScreen() {
   return (
     <View style={styles.screen}>
       <ScrollView
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
         contentContainerStyle={{
           paddingTop: insets.top + SPACE.s5,
           paddingHorizontal: SPACE.s4,
@@ -70,6 +80,18 @@ export default function QuestsScreen() {
 
         {loading && quests.length === 0 ? (
           <Small tone="soft">Finding quests…</Small>
+        ) : error && quests.length === 0 ? (
+          <View style={styles.empty}>
+            <Small tone="soft">Couldn’t load quests. Check your signal and try again.</Small>
+            <Pressable
+              onPress={onRefresh}
+              accessibilityRole="button"
+              accessibilityLabel="Try again"
+              style={({ pressed }) => [styles.retry, pressed && styles.retryPressed]}
+            >
+              <BodyStrong color={COLOR.white}>Try again</BodyStrong>
+            </Pressable>
+          </View>
         ) : quests.length === 0 ? (
           <View style={styles.empty}>
             <Sprite name="gull" size={88} />
@@ -123,6 +145,15 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     marginTop: SPACE.s2,
   },
+  retry: {
+    minHeight: 48,
+    borderRadius: RADIUS.pill,
+    backgroundColor: COLOR.ink,
+    paddingHorizontal: SPACE.s6,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  retryPressed: { backgroundColor: COLOR.inkPressed, transform: [{ scale: 0.97 }] },
   empty: {
     alignItems: 'center',
     gap: SPACE.s3,
