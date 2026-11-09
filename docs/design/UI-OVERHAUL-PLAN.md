@@ -33,7 +33,7 @@ You, comments, reports and notifications). These commits are ahead of `main` in 
 | Phase 2: Cutout pipeline | Mostly implemented: migration 032, cutout processing script, Cutout/Pillow/Sprite/scrap components, `useQuestPhotos`, and the private selfie upload path. Migration 032 is now listed in `supabase/migrations/README.md`. | Admin cutout upload/preview and category defaults are not present; verify that public photo selection respects privacy/RLS and that private selfies are signed for authorized viewers. |
 | Phase 3: Core loop | Main surfaces are implemented: new tab bar, This week, category folders, quest detail/photo viewer, in-app place/selfie camera, and celebration. | Review against BRAND.md and complete integration/accessibility/responsive polish; confirm the entire flow against a real backend with migration 032 applied. |
 | Phase 4: Social and status | City/feed bubbles, Rankings, You, comments, reports and notification surfaces were redesigned in the latest Cursor commits. | Audit each screen against the spec, including feed privacy, blocked users, reactions, empty/loading/error states, reduce motion and large text. |
-| Phase 5: Brand surfaces | Share card and onboarding done (Claude, Nov 8): see below. | Icon and splash remain. |
+| Phase 5: Brand surfaces | Share card, onboarding, icon and splash done (Claude, Nov 8): see below. | Store screenshots on the `desk` grid (needs real screens and content). |
 | Phase 6: Admin dashboard | Not completed. | Apply the Cutouts admin tokens and build the quest cutout uploader/preview. |
 | Phase 7: Content | Founder-owned and ongoing. | Real place photos, processed cutouts, action phrases, sprite artwork and copy remain. |
 
@@ -83,6 +83,17 @@ curly apostrophes, no arrows or emoji. The city picker is gone (Victoria is the 
 city, so `completeOnboarding` always gets `CITY.name`); `lib/onboarding.ts` is unchanged. 
 `OnboardingVisuals.tsx` (old illustrations) is deleted. Cutouts stay placeholders until 
 Phase 7 supplies category defaults. Not verified on device or at 130% text / small Android.
+
+**Icon and splash (Phase 5, fourth Claude increment).** `scripts/gen-app-icons.js` rewritten 
+(it still described Harbour Electric): it now renders the real Pilowlava glyphs (outlines in 
+`scripts/data/pilowlava-glyphs.json`, extracted from the bundled OFL font) with `sharp`. 
+`icon.png` is ink `Q!` on a sunflower field, `adaptive-icon.png` is the mark inside the 
+Android safe circle (adaptive background `#FFCE1F`), `splash.png` is the ink `Quest!` 
+wordmark on paper (`splash.backgroundColor` `#F6F2EC`). Notification tint is now sunflower. 
+The glyphs are all-caps because Pilowlava is a caps display face. Assets are regenerated 
+and checked visually as flat renders only; not tested in a dev build, on iOS icon masking 
+or a real Android launcher. Needs a native build to take effect (icon and splash are not 
+OTA-updatable).
 
 **Still open / next:** apply and verify 032+033 on a staging project, then test selfie
 signing across own / follower / blocked / hidden cases; feed bubbles and celebration for
