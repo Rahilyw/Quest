@@ -1,5 +1,6 @@
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native'
-import { COLORS, RADIUS, SPACING } from '@/lib/constants'
+import { View, TouchableOpacity, StyleSheet } from 'react-native'
+import { COLOR, RADIUS, SPACE } from '@/lib/theme'
+import { Body, Small } from '@/components/ui/Text'
 
 interface Props {
   icon: string
@@ -13,13 +14,17 @@ export function EmptyState({ icon, title, subtitle, ctaLabel, onCtaPress }: Prop
   return (
     <View style={styles.container}>
       <View style={styles.iconWrap}>
-        <Text style={styles.icon}>{icon}</Text>
+        <Body style={styles.icon}>{icon}</Body>
       </View>
-      <Text style={styles.title}>{title}</Text>
-      {subtitle !== undefined && <Text style={styles.subtitle}>{subtitle}</Text>}
+      <Body style={styles.title}>{title}</Body>
+      {subtitle !== undefined && (
+        <Small tone="soft" style={styles.subtitle}>
+          {subtitle}
+        </Small>
+      )}
       {ctaLabel !== undefined && onCtaPress !== undefined && (
         <TouchableOpacity style={styles.cta} onPress={onCtaPress} activeOpacity={0.85}>
-          <Text style={styles.ctaText}>{ctaLabel}</Text>
+          <Small color={COLOR.white}>{ctaLabel}</Small>
         </TouchableOpacity>
       )}
     </View>
@@ -29,44 +34,34 @@ export function EmptyState({ icon, title, subtitle, ctaLabel, onCtaPress }: Prop
 const styles = StyleSheet.create({
   container: {
     alignItems: 'center',
-    paddingVertical: SPACING.xxl * 2,
-    paddingHorizontal: SPACING.xl,
+    paddingVertical: SPACE.s8,
+    paddingHorizontal: SPACE.s6,
   },
   iconWrap: {
     width: 72,
     height: 72,
     borderRadius: 36,
-    backgroundColor: COLORS.accentSoft,
+    backgroundColor: COLOR.secondaryFill,
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: SPACING.lg,
+    marginBottom: SPACE.s4,
   },
   icon: { fontSize: 34 },
   title: {
-    color: COLORS.textPrimary,
-    fontSize: 17,
     fontWeight: '800',
     textAlign: 'center',
-    marginBottom: SPACING.sm,
+    marginBottom: SPACE.s2,
   },
   subtitle: {
-    color: COLORS.textMuted,
-    fontSize: 14,
     textAlign: 'center',
-    lineHeight: 21,
     maxWidth: 260,
+    lineHeight: 21,
   },
   cta: {
-    marginTop: SPACING.lg,
-    backgroundColor: COLORS.accent,
-    borderRadius: RADIUS.md,
-    paddingHorizontal: SPACING.xl,
-    paddingVertical: SPACING.md,
-    shadowColor: COLORS.accent,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.28,
-    shadowRadius: 8,
-    elevation: 4,
+    marginTop: SPACE.s4,
+    backgroundColor: COLOR.ink,
+    borderRadius: RADIUS.pill,
+    paddingHorizontal: SPACE.s6,
+    paddingVertical: SPACE.s3,
   },
-  ctaText: { color: '#FFFFFF', fontWeight: '700', fontSize: 14 },
 })

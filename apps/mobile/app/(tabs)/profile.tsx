@@ -293,21 +293,39 @@ export default function Profile() {
           Your stats
         </BrandText>
         <View style={styles.statsGrid}>
-          {STAT_TILES.map((tile) => (
-            <View
-              key={tile.key}
-              style={[
-                styles.statTile,
-                { width: tileWidth, backgroundColor: tile.tint, borderColor: `${tile.accent}33` },
-              ]}
-            >
-              <Text style={styles.statIcon}>{tile.icon}</Text>
-              <Text style={[styles.statValue, { color: statAccents[tile.key] }]}>
-                {statValues[tile.key]}
-              </Text>
-              <Text style={styles.statLabel}>{tile.label}</Text>
-            </View>
-          ))}
+          {STAT_TILES.map((tile) => {
+            const tileStyle = [
+              styles.statTile,
+              { width: tileWidth, backgroundColor: tile.tint, borderColor: `${tile.accent}33` },
+            ]
+            const body = (
+              <>
+                <Text style={styles.statIcon}>{tile.icon}</Text>
+                <Text style={[styles.statValue, { color: statAccents[tile.key] }]}>
+                  {statValues[tile.key]}
+                </Text>
+                <Text style={styles.statLabel}>{tile.label}</Text>
+              </>
+            )
+            if (tile.key === 'badges') {
+              return (
+                <TouchableOpacity
+                  key={tile.key}
+                  style={tileStyle}
+                  onPress={() => router.push('/badges')}
+                  accessibilityRole="button"
+                  accessibilityLabel="Badges"
+                >
+                  {body}
+                </TouchableOpacity>
+              )
+            }
+            return (
+              <View key={tile.key} style={tileStyle}>
+                {body}
+              </View>
+            )
+          })}
         </View>
       </View>
 

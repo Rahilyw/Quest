@@ -26,7 +26,12 @@ export default function QuestDetail() {
   useEffect(() => {
     if (!quest) return
     const questSource: QuestSource =
-      source === 'explore' || source === 'map' || source === 'feed' || source === 'deep_link'
+      source === 'explore' ||
+      source === 'this-week' ||
+      source === 'quests' ||
+      source === 'map' ||
+      source === 'feed' ||
+      source === 'deep_link'
         ? source
         : 'unknown'
     track('quest_viewed', {

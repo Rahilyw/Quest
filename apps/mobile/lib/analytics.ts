@@ -35,7 +35,7 @@ export type AnalyticsEvent =
   | 'notifications_viewed'
   | 'notification_opened'
 
-export type QuestSource = 'explore' | 'map' | 'feed' | 'deep_link' | 'unknown'
+export type QuestSource = 'explore' | 'this-week' | 'quests' | 'map' | 'feed' | 'deep_link' | 'unknown'
 
 export type SubmissionBlockReason =
   | 'outside_zone'

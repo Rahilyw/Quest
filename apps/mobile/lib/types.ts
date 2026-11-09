@@ -47,6 +47,14 @@ export interface Quest {
   boundary_geojson?: PolygonGeometry | null
   /** Child areas when geofence_type is multi */
   quest_geofences?: QuestGeofenceLocation[] | null
+  /** WebP cutout asset with pre-baked shadow (migration 032). */
+  cutout_url?: string | null
+  /** Short verb phrase shown on the card, e.g. "Take a photo at..." */
+  action_phrase?: string | null
+  /** Approximate walking/travel distance for this quest in metres. */
+  distance_m?: number | null
+  /** Approximate time-to-complete in minutes. */
+  duration_min?: number | null
 }
 
 export interface QuestWithBadges extends Quest {
@@ -64,6 +72,8 @@ export interface Completion {
   completed_at: string
   status: CompletionStatus
   redemption_code: string | null
+  /** Optional selfie uploaded as proof; served via signed URL only (migration 032). */
+  selfie_url?: string | null
 }
 
 export interface Badge {

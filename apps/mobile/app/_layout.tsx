@@ -86,6 +86,7 @@ function RootLayoutNav() {
         <Stack.Screen name="(auth)" />
         <Stack.Screen name="(tabs)" />
         <Stack.Screen name="quest/[id]" options={{ presentation: 'card' }} />
+        <Stack.Screen name="category/[key]" options={{ presentation: 'card' }} />
         <Stack.Screen name="submit/[questId]" options={{ presentation: 'modal' }} />
         <Stack.Screen name="settings" options={{ presentation: 'card', headerShown: false }} />
         <Stack.Screen name="edit-profile" options={{ presentation: 'card', headerShown: false }} />
