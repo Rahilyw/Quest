@@ -19,6 +19,7 @@ import { supabase } from '@/lib/supabase'
 import { COLOR, FONT, RADIUS, SPACE } from '@/lib/theme'
 import { readUriAsArrayBuffer } from '@/lib/uploadImage'
 import { outsideZoneCopy } from '@/lib/zoneStatus'
+import { ZoneMap } from '@/components/ZoneMap'
 
 interface CelebrationState {
   variant: CelebrationVariant
@@ -399,6 +400,11 @@ export default function Submit() {
             </Pressable>
           ) : null}
         </View>
+        {quest && step === 'place' && !alreadyCompleted ? (
+          <View style={styles.zoneMap}>
+            <ZoneMap quest={quest} coords={effectiveCoords} />
+          </View>
+        ) : null}
       </View>
 
       {alreadyCompleted ? (
@@ -567,6 +573,7 @@ const styles = StyleSheet.create({
     paddingVertical: SPACE.s2,
     maxWidth: '100%',
   },
+  zoneMap: { alignSelf: 'flex-start' },
   chipText: {
     flexShrink: 1,
     fontFamily: FONT.bold,

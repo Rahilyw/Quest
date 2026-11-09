@@ -129,6 +129,16 @@ skeleton loaders for folders and bubbles (text loading states); (7) nothing was 
 on a device, at 130% text, or against a real backend, so contrast, touch targets and the 
 geofence edge cases are code-read only.
 
+**Zone map (Claude, Nov 8, follow-up to the audit).** New `components/ZoneMap.tsx` draws the 
+quest's real geofence on a small 112 pt map on the camera screen during the place shot: 
+circle, polygon, multi-area or the city boundary, dashed in the category's deep colour with 
+a 35% category fill and an ink player dot, hidden from screen readers (the zone chip carries 
+the status) and not shown for anywhere quests or during the selfie. Audit gap (1) is closed. 
+Unverified: it type-checks but has not been run on iOS or Android; `liteMode` (Android only) 
+and `lineDashPattern` rendering, Google Maps key setup and the fit-to-zone behaviour need a 
+device check. The Map tab (`app/(tabs)/map.tsx`) still uses the old palette and 
+`CATEGORY_COLORS`; it was not part of this increment.
+
 **Still open / next:** apply and verify 032+033 on a staging project, then test selfie
 signing across own / follower / blocked / hidden cases; feed bubbles and celebration for
 other users' selfies are not yet wired to `useSignedSelfie`; Phase 5 (icon, splash, share
