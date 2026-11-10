@@ -1,12 +1,12 @@
 import { useCallback, useState } from 'react'
-import { ActivityIndicator, Pressable, ScrollView, StyleSheet, View } from 'react-native'
+import { ActivityIndicator, Pressable, RefreshControl, ScrollView, StyleSheet, View } from 'react-native'
 import { useFocusEffect, useRouter } from 'expo-router'
 import { Ionicons } from '@expo/vector-icons'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import MapView, { Marker } from 'react-native-maps'
 import { FeedBubble } from '@/components/FeedBubble'
 import { Sprite } from '@/components/Sprite'
-import { Body, Micro, Small, Title } from '@/components/ui/Text'
+import { Body, BodyStrong, Micro, Small, Title } from '@/components/ui/Text'
 import { useActivityFeed, type FeedMode } from '@/hooks/useActivityFeed'
 import { useAuth } from '@/hooks/useAuth'
 import { useBlockedUsers } from '@/hooks/useBlockedUsers'
@@ -44,6 +44,16 @@ export default function FeedScreen() {
     }, [refetchUnread]),
   )
 
+  const [refreshing, setRefreshing] = useState(false)
+  const onRefresh = useCallback(async () => {
+    setRefreshing(true)
+    try {
+      await Promise.all([refetch(), refetchUnread()])
+    } finally {
+      setRefreshing(false)
+    }
+  }, [refetch, refetchUnread])
+
   const modes: { key: FeedMode; label: string }[] = [
     { key: 'city', label: 'City' },
     { key: 'following', label: 'Following' },
@@ -57,6 +67,9 @@ export default function FeedScreen() {
           paddingBottom: insets.bottom + TAB_BAR_CLEARANCE,
         }}
         showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={COLOR.ink} colors={[COLOR.ink]} />
+        }
       >
         <View style={styles.titleRow}>
           <Title>City</Title>
@@ -78,7 +91,7 @@ export default function FeedScreen() {
         <Pressable
           onPress={() => router.push('/(tabs)/map')}
           accessibilityRole="button"
-          accessibilityLabel="See the map"
+          accessibilityLabel={`See the map. ${plural(quests.length, 'quest')} in Victoria.`}
           style={({ pressed }) => [styles.mapCard, SHADOW.lift, pressed && styles.pressed]}
         >
           <View style={styles.mapClip}>
@@ -89,6 +102,9 @@ export default function FeedScreen() {
               rotateEnabled={false}
               pitchEnabled={false}
               pointerEvents="none"
+              liteMode
+              cacheEnabled
+              toolbarEnabled={false}
               initialRegion={{
                 latitude: CITY.lat,
                 longitude: CITY.lng,
@@ -106,7 +122,7 @@ export default function FeedScreen() {
             </MapView>
             <View style={styles.mapOverlay} pointerEvents="none">
               <View style={styles.mapPill}>
-                <Small>{plural(quests.length, 'quest')} nearby</Small>
+                <Small>{`${plural(quests.length, 'quest')} in Victoria`}</Small>
               </View>
               <View style={styles.mapPill}>
                 <Small>See the map</Small>
@@ -115,14 +131,14 @@ export default function FeedScreen() {
           </View>
         </Pressable>
 
-        <View style={styles.modes}>
+        <View style={styles.modes} accessibilityRole="tablist">
           {modes.map((tab) => {
             const active = mode === tab.key
             return (
               <Pressable
                 key={tab.key}
                 onPress={() => setMode(tab.key)}
-                accessibilityRole="button"
+                accessibilityRole="tab"
                 accessibilityState={{ selected: active }}
                 accessibilityLabel={`Show the ${tab.label} feed`}
                 style={[styles.mode, active && styles.modeOn]}
@@ -151,9 +167,9 @@ export default function FeedScreen() {
               onPress={() => (mode === 'following' ? setMode('city') : router.push('/quests'))}
               accessibilityRole="button"
               accessibilityLabel={mode === 'following' ? 'Browse the city feed' : 'Find a quest'}
-              style={styles.cta}
+              style={({ pressed }) => [styles.cta, pressed && styles.ctaPressed]}
             >
-              <Small color={COLOR.white}>{mode === 'following' ? 'Browse the city' : 'Find a quest'}</Small>
+              <BodyStrong color={COLOR.white}>{mode === 'following' ? 'Browse the city' : 'Find a quest'}</BodyStrong>
             </Pressable>
           </View>
         ) : (
@@ -264,6 +280,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
+  ctaPressed: { backgroundColor: COLOR.inkPressed, transform: [{ scale: 0.97 }] },
   more: {
     alignSelf: 'center',
     minHeight: 48,

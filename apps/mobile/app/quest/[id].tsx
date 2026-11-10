@@ -187,16 +187,26 @@ export default function QuestDetail() {
 
   if (loading) {
     return (
-      <View style={[styles.screen, styles.centered, { paddingTop: insets.top + SPACE.s3 }]}>
-        <Pressable
-          onPress={() => router.back()}
-          accessibilityRole="button"
-          accessibilityLabel="Back"
-          style={styles.backPlain}
-        >
-          <Ionicons name="chevron-back" size={22} color={COLOR.ink} />
-        </Pressable>
-        <Small tone="soft">Finding this quest…</Small>
+      <View style={styles.screen} accessibilityLabel="Finding this quest" accessibilityRole="progressbar">
+        <View style={[styles.hero, { height: Math.round(windowHeight * 0.46) }]}>
+          <View style={[styles.topBar, { top: insets.top + SPACE.s2 }]}>
+            <Pressable
+              onPress={() => router.back()}
+              accessibilityRole="button"
+              accessibilityLabel="Back"
+              style={styles.back}
+            >
+              <Ionicons name="chevron-back" size={22} color={COLOR.ink} />
+            </Pressable>
+          </View>
+        </View>
+        <View style={styles.skeleton}>
+          <View style={[styles.bone, styles.boneTitle]} />
+          <View style={[styles.bone, styles.boneMeta]} />
+          <View style={[styles.bone, styles.boneLine]} />
+          <View style={[styles.bone, styles.boneLine]} />
+          <View style={[styles.bone, styles.boneShort]} />
+        </View>
       </View>
     )
   }
@@ -533,9 +543,6 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: COLOR.paper,
   },
-  centered: {
-    paddingHorizontal: SPACE.s4,
-  },
   missing: {
     paddingHorizontal: SPACE.s5,
     gap: SPACE.s3,
@@ -550,14 +557,20 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  backPlain: {
-    width: 48,
-    height: 48,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginLeft: -SPACE.s3,
-    marginBottom: SPACE.s2,
+  skeleton: {
+    paddingHorizontal: SPACE.s4,
+    paddingTop: SPACE.s5,
+    gap: SPACE.s3,
   },
+  bone: {
+    height: 14,
+    borderRadius: RADIUS.pill,
+    backgroundColor: COLOR.paperDeep,
+  },
+  boneTitle: { height: 24, width: '62%' },
+  boneMeta: { width: '40%', marginBottom: SPACE.s3 },
+  boneLine: { width: '100%' },
+  boneShort: { width: '70%' },
   hero: {
     backgroundColor: COLOR.paperDeep,
     overflow: 'hidden',

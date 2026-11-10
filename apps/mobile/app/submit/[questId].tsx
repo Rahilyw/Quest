@@ -68,6 +68,7 @@ export default function Submit() {
   const [celebration, setCelebration] = useState<CelebrationState | null>(null)
   const [alreadyCompleted, setAlreadyCompleted] = useState(false)
   const [shareOpen, setShareOpen] = useState(false)
+  const [failMessage, setFailMessage] = useState<string | null>(null)
 
   const userId = profile?.id ?? session?.user?.id
   const submissionCoords = getSubmissionCoords(quest?.lat, quest?.lng)
@@ -175,6 +176,11 @@ export default function Submit() {
 
   const handleSubmit = useCallback(async () => {
     if (!placePhoto || !effectiveCoords || !quest || !userId || !questId || !profile) {
+      setFailMessage(
+        placePhoto && !effectiveCoords
+          ? 'We lost your location. Retake the photo once the chip says you’re in the zone.'
+          : 'That didn’t go through. Retake the photo and try again.',
+      )
       setStep('failed')
       return
     }
@@ -207,7 +213,7 @@ export default function Submit() {
         .from('proof-photos')
         .upload(placeName, placeData, { contentType: 'image/jpeg', upsert: false })
       if (placeError) {
-        Alert.alert('That photo didn’t upload', 'You’re still here. Try again when you have a signal.')
+        setFailMessage('That photo didn’t upload. Your shot is saved here: try again when you have signal.')
         setStep('failed')
         return
       }
@@ -271,10 +277,10 @@ export default function Submit() {
           setStep('place')
         } else if (insertError.message?.includes('RATE_LIMITED') || insertError.hint === 'RATE_LIMITED') {
           trackSubmissionBlocked('rate_limited')
-          Alert.alert('Slow down', 'You are submitting quests too quickly. Take a breather and try again in a few minutes.')
+          setFailMessage('You’re submitting quests too quickly. Give it a few minutes, then try again.')
           setStep('failed')
         } else {
-          Alert.alert('That didn’t go through', 'Check your signal and try again. If it keeps happening, close the app and reopen it.')
+          setFailMessage('That didn’t go through. Check your signal and try again.')
           setStep('failed')
         }
         return
@@ -307,7 +313,7 @@ export default function Submit() {
         sponsorReward: quest.is_sponsored ? quest.sponsor_reward : null,
       })
     } catch (err) {
-      Alert.alert('That didn’t go through', 'Check your signal and try again.')
+      setFailMessage('That didn’t go through. Check your signal and try again.')
       setStep('failed')
     } finally {
       setSubmitting(false)
@@ -353,7 +359,20 @@ export default function Submit() {
 
   function retryUpload() {
     uploadStarted.current = false
+    setFailMessage(null)
     setStep('upload')
+  }
+
+  function retake() {
+    uploadStarted.current = false
+    skipRef.current = false
+    selfieStarted.current = false
+    setFailMessage(null)
+    setPlacePhoto(null)
+    setSelfiePhoto(null)
+    setCountdown(null)
+    setFacing('back')
+    setStep('place')
   }
 
   let zoneText = 'Finding you…'
@@ -415,7 +434,7 @@ export default function Submit() {
         >
           <Ionicons name="close" size={22} color={COLOR.ink} />
         </Pressable>
-        <View style={styles.chip} accessibilityRole="text">
+        <View style={styles.chip} accessible accessibilityRole="text" accessibilityLiveRegion="polite">
           {zoneText === 'Finding you…' ? (
             <ActivityIndicator size="small" color={COLOR.ink} />
           ) : (
@@ -474,15 +493,33 @@ export default function Submit() {
         </View>
       ) : step === 'failed' ? (
         <View style={styles.message}>
-          <Body color={COLOR.white} style={styles.messageText}>That photo didn’t upload. Try again.</Body>
-          <Pressable onPress={retryUpload} style={styles.whiteBtn} accessibilityRole="button" accessibilityLabel="Try again">
-            <Body style={styles.btnLabel}>Try again</Body>
+          <Body color={COLOR.white} style={styles.messageText} accessibilityLiveRegion="polite">
+            {failMessage ?? 'That photo didn’t upload. Try again.'}
+          </Body>
+          {placePhoto && effectiveCoords ? (
+            <Pressable onPress={retryUpload} style={styles.whiteBtn} accessibilityRole="button" accessibilityLabel="Try again">
+              <Body style={styles.btnLabel}>Try again</Body>
+            </Pressable>
+          ) : null}
+          <Pressable
+            onPress={retake}
+            style={placePhoto && effectiveCoords ? styles.skip : styles.whiteBtn}
+            accessibilityRole="button"
+            accessibilityLabel="Retake photo"
+          >
+            <Body
+              color={placePhoto && effectiveCoords ? COLOR.white : COLOR.ink}
+              style={styles.btnLabel}
+            >
+              Retake photo
+            </Body>
           </Pressable>
         </View>
       ) : step === 'upload' || submitting ? (
         <View style={styles.message}>
           <ActivityIndicator color={COLOR.white} />
-          <Body color={COLOR.white}>Uploading photo…</Body>
+          <Body color={COLOR.white} accessibilityLiveRegion="polite">Uploading photo…</Body>
+          <Small color={COLOR.inkFaint} style={styles.messageText}>Keep the app open. This takes a few seconds.</Small>
         </View>
       ) : (
         <View style={[styles.bottom, { paddingBottom: insets.bottom + SPACE.s4 }]}>

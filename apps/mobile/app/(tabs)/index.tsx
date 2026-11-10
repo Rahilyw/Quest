@@ -97,22 +97,27 @@ export default function ThisWeekScreen() {
         <Small color={COLOR.inkFaint} style={styles.clock}>
           {`Week ${getISOWeek()}, ${daysLeftLabel(getDaysLeftInWeek())}`}
         </Small>
-        {!week.loading && !week.error ? (
+        {week.loading || week.error ? null : week.newCount > 0 ? (
           <Pressable
             onPress={() => router.push('/(tabs)/quests')}
             accessibilityRole="button"
-            accessibilityLabel={
-              week.newCount > 0 ? `${week.newCount} new this week` : 'Nothing new this week'
-            }
-            style={styles.dropLink}
+            accessibilityLabel={`${week.newCount} new this week. See them in Quests.`}
+            style={({ pressed }) => [styles.dropLink, pressed && styles.dropPressed]}
           >
-            <Small color={COLOR.white}>
-              {week.newCount > 0
-                ? `${week.newCount} new this week`
-                : 'Nothing new this week. The next drop is Monday.'}
-            </Small>
+            <Small color={COLOR.white}>{`${week.newCount} new this week`}</Small>
+            <Ionicons
+              name="chevron-forward"
+              size={14}
+              color={COLOR.white}
+              accessibilityElementsHidden
+              importantForAccessibility="no"
+            />
           </Pressable>
-        ) : null}
+        ) : (
+          <Small color={COLOR.inkFaint} style={styles.dropNote}>
+            Nothing new this week. The next drop is Monday.
+          </Small>
+        )}
 
         {!week.loading && !week.error && week.starterQuest ? (
           <Pressable
@@ -307,8 +312,15 @@ const styles = StyleSheet.create({
   dropLink: {
     alignSelf: 'flex-start',
     minHeight: 48,
-    justifyContent: 'center',
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: SPACE.s1,
     marginBottom: SPACE.s4,
+  },
+  dropPressed: { opacity: 0.6 },
+  dropNote: {
+    marginTop: SPACE.s1,
+    marginBottom: SPACE.s5,
   },
   starterCard: {
     minHeight: 144,

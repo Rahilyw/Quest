@@ -1,155 +1,93 @@
-import { useState } from 'react'
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert } from 'react-native'
+import { useRef, useState } from 'react'
+import { type TextInput } from 'react-native'
 import { useRouter } from 'expo-router'
 import { supabase } from '@/lib/supabase'
-import { BrandText } from '@/components/BrandText'
-import { COLORS } from '@/lib/constants'
+import {
+  AuthScreen,
+  Field,
+  FormError,
+  LinkRow,
+  PrimaryButton,
+  SecondaryButton,
+  authErrorCopy,
+} from '@/components/auth/AuthKit'
 
 export default function SignIn() {
   const router = useRouter()
+  const passwordRef = useRef<TextInput>(null)
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [loading, setLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 
   async function handleSignIn() {
+    if (!email.trim() || !password) {
+      setError('Enter your email and password.')
+      return
+    }
+    setError(null)
     setLoading(true)
-    const { error } = await supabase.auth.signInWithPassword({ email, password })
-    if (error) Alert.alert('Couldn\'t sign in', error.message)
+    const { error: signInError } = await supabase.auth.signInWithPassword({
+      email: email.trim(),
+      password,
+    })
+    if (signInError) setError(authErrorCopy(signInError.message))
     setLoading(false)
   }
 
   async function handleDemoSignIn() {
     if (!__DEV__) return // dev-only: never create or use the demo account in release builds
+    setError(null)
     setLoading(true)
     const demoEmail = 'explorer@demo.quest'
     const demoPassword = 'demopassword123'
-    let { error } = await supabase.auth.signInWithPassword({ email: demoEmail, password: demoPassword })
-    if (error) {
-      // Auto create demo user if not existing in database
+    const { error: signInError } = await supabase.auth.signInWithPassword({
+      email: demoEmail,
+      password: demoPassword,
+    })
+    if (signInError) {
+      // Create the demo user if it does not exist yet.
       const { error: signUpErr } = await supabase.auth.signUp({ email: demoEmail, password: demoPassword })
-      if (signUpErr) {
-        Alert.alert('Demo Sign In', signUpErr.message)
-      }
+      if (signUpErr) setError(authErrorCopy(signUpErr.message))
     }
     setLoading(false)
   }
 
   return (
-    <View style={styles.container}>
-      <View style={styles.hero}>
-        <BrandText size="logo" style={styles.logo} />
-        <Text style={styles.tagline}>Real life, gamified.</Text>
-      </View>
-
-      <TextInput
-        style={styles.input}
-        placeholder="Email"
-        placeholderTextColor="#94A3B8"
+    <AuthScreen title="Sign in" lead="Victoria’s still out there. Pick up where you left off.">
+      <Field
+        label="Email"
         value={email}
         onChangeText={setEmail}
-        autoCapitalize="none"
         keyboardType="email-address"
-        accessibilityLabel="Email address"
+        autoComplete="email"
+        textContentType="emailAddress"
+        returnKeyType="next"
+        submitBehavior="submit"
+        onSubmitEditing={() => passwordRef.current?.focus()}
       />
-      <TextInput
-        style={styles.input}
-        placeholder="Password"
-        placeholderTextColor="#94A3B8"
+      <Field
+        label="Password"
+        secure
+        inputRef={passwordRef}
         value={password}
         onChangeText={setPassword}
-        secureTextEntry
-        accessibilityLabel="Password"
+        autoComplete="current-password"
+        textContentType="password"
+        returnKeyType="go"
+        onSubmitEditing={handleSignIn}
       />
 
-      <TouchableOpacity
-        style={styles.button}
-        onPress={handleSignIn}
-        disabled={loading}
-        activeOpacity={0.85}
-        accessibilityRole="button"
-        accessibilityLabel={loading ? 'Signing in' : 'Sign in'}
-        accessibilityState={{ disabled: loading }}
-      >
-        <Text style={styles.buttonText}>{loading ? 'Signing in…' : 'Sign In'}</Text>
-      </TouchableOpacity>
+      <FormError message={error} />
 
-      {__DEV__ && (
-        <TouchableOpacity
-          style={[styles.button, styles.demoButton]}
-          onPress={handleDemoSignIn}
-          disabled={loading}
-          activeOpacity={0.85}
-          accessibilityRole="button"
-          accessibilityLabel="Explore with Demo Account"
-        >
-          <Text style={styles.demoButtonText}>⚡ Explore with Demo Account</Text>
-        </TouchableOpacity>
-      )}
+      <PrimaryButton label="Sign in" busyLabel="Signing in…" busy={loading} onPress={handleSignIn} />
 
-      <TouchableOpacity
-        onPress={() => router.push('/(auth)/forgot-password')}
-        accessibilityRole="link"
-        accessibilityLabel="Forgot password"
-      >
-        <Text style={styles.link}>Forgot password?</Text>
-      </TouchableOpacity>
+      {__DEV__ ? (
+        <SecondaryButton label="Use the demo account" onPress={handleDemoSignIn} disabled={loading} />
+      ) : null}
 
-      <TouchableOpacity
-        onPress={() => router.push('/(auth)/sign-up')}
-        accessibilityRole="link"
-        accessibilityLabel="Create an account"
-      >
-        <Text style={styles.link}>Don't have an account? Sign up</Text>
-      </TouchableOpacity>
-    </View>
+      <LinkRow action="Forgot your password?" onPress={() => router.push('/(auth)/forgot-password')} />
+      <LinkRow lead="New here?" action="Create an account" onPress={() => router.push('/(auth)/sign-up')} />
+    </AuthScreen>
   )
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#F0F9FF',
-    padding: 24,
-    justifyContent: 'center',
-  },
-  hero: { alignItems: 'center', marginBottom: 48 },
-  logo: { marginBottom: 6 },
-  tagline: { color: '#94A3B8', fontSize: 16 },
-  input: {
-    backgroundColor: COLORS.surface,
-    color: COLORS.textPrimary,
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 12,
-    fontSize: 16,
-    borderWidth: 1.5,
-    borderColor: 'rgba(15,23,42,0.07)',
-    shadowColor: COLORS.navy,
-    shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.05,
-    shadowRadius: 8,
-    elevation: 2,
-  },
-  button: {
-    backgroundColor: COLORS.primary,
-    borderRadius: 12,
-    padding: 16,
-    alignItems: 'center',
-    marginTop: 8,
-    marginBottom: 16,
-    shadowColor: COLORS.primary,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.28,
-    shadowRadius: 10,
-    elevation: 5,
-  },
-  buttonText: { color: COLORS.surface, fontWeight: '700', fontSize: 16 },
-  demoButton: {
-    backgroundColor: '#0F172A',
-    marginTop: 0,
-    marginBottom: 20,
-    shadowColor: '#0F172A',
-  },
-  demoButtonText: { color: '#F8FAFC', fontWeight: '700', fontSize: 15 },
-  link: { color: COLORS.primary, textAlign: 'center', fontWeight: '600', marginBottom: 8 },
-})

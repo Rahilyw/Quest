@@ -1,99 +1,74 @@
-import { useState } from 'react'
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert } from 'react-native'
+import { useRef, useState } from 'react'
+import { type TextInput } from 'react-native'
 import { useRouter } from 'expo-router'
 import { supabase } from '@/lib/supabase'
-import { BrandText } from '@/components/BrandText'
-import { COLORS } from '@/lib/constants'
+import { AuthScreen, Field, FormError, PrimaryButton, authErrorCopy } from '@/components/auth/AuthKit'
 
 export default function ResetPassword() {
   const router = useRouter()
+  const confirmRef = useRef<TextInput>(null)
   const [password, setPassword] = useState('')
   const [confirm, setConfirm] = useState('')
   const [loading, setLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const [done, setDone] = useState(false)
 
   async function handleUpdatePassword() {
     if (password.length < 8) {
-      Alert.alert('Error', 'Password must be at least 8 characters')
+      setError('That password is too short. Use at least 8 characters.')
       return
     }
     if (password !== confirm) {
-      Alert.alert('Error', 'Passwords do not match')
+      setError('Those two passwords don’t match. Type them again.')
       return
     }
 
+    setError(null)
     setLoading(true)
-    const { error } = await supabase.auth.updateUser({ password })
+    const { error: updateError } = await supabase.auth.updateUser({ password })
     setLoading(false)
 
-    if (error) {
-      Alert.alert('Error', error.message)
+    if (updateError) {
+      setError(authErrorCopy(updateError.message))
       return
     }
+    setDone(true)
+  }
 
-    Alert.alert('Password updated', 'You can now sign in with your new password.', [
-      { text: 'OK', onPress: () => router.replace('/(auth)/sign-in') },
-    ])
+  if (done) {
+    return (
+      <AuthScreen title="Password updated" lead="Use the new one next time you sign in.">
+        <PrimaryButton label="Continue" onPress={() => router.replace('/(auth)/sign-in')} />
+      </AuthScreen>
+    )
   }
 
   return (
-    <View style={styles.container}>
-      <View style={styles.hero}>
-        <BrandText size="logo" style={styles.logo} />
-        <Text style={styles.tagline}>Choose a new password</Text>
-      </View>
-
-      <TextInput
-        style={styles.input}
-        placeholder="New password"
-        placeholderTextColor="#94A3B8"
+    <AuthScreen title="Choose a new password" lead="At least 8 characters.">
+      <Field
+        label="New password"
+        secure
         value={password}
         onChangeText={setPassword}
-        secureTextEntry
         autoComplete="new-password"
+        textContentType="newPassword"
+        returnKeyType="next"
+        submitBehavior="submit"
+        onSubmitEditing={() => confirmRef.current?.focus()}
       />
-      <TextInput
-        style={styles.input}
-        placeholder="Confirm password"
-        placeholderTextColor="#94A3B8"
+      <Field
+        label="Confirm password"
+        secure
+        inputRef={confirmRef}
         value={confirm}
         onChangeText={setConfirm}
-        secureTextEntry
         autoComplete="new-password"
+        textContentType="newPassword"
+        returnKeyType="go"
+        onSubmitEditing={handleUpdatePassword}
       />
-
-      <TouchableOpacity
-        style={styles.button}
-        onPress={handleUpdatePassword}
-        disabled={loading}
-        activeOpacity={0.85}
-      >
-        <Text style={styles.buttonText}>{loading ? 'Saving…' : 'Update Password'}</Text>
-      </TouchableOpacity>
-    </View>
+      <FormError message={error} />
+      <PrimaryButton label="Update password" busyLabel="Saving…" busy={loading} onPress={handleUpdatePassword} />
+    </AuthScreen>
   )
 }
-
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#F0F9FF', padding: 24, justifyContent: 'center' },
-  hero: { alignItems: 'center', marginBottom: 40 },
-  logo: { marginBottom: 6 },
-  tagline: { color: '#94A3B8', fontSize: 16 },
-  input: {
-    backgroundColor: '#FFFFFF',
-    color: '#0F172A',
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 12,
-    fontSize: 16,
-    borderWidth: 1.5,
-    borderColor: 'rgba(15,23,42,0.07)',
-  },
-  button: {
-    backgroundColor: '#4364F7',
-    borderRadius: 12,
-    padding: 16,
-    alignItems: 'center',
-    marginTop: 8,
-  },
-  buttonText: { color: '#FFFFFF', fontWeight: '700', fontSize: 16 },
-})
