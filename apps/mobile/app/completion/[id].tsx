@@ -161,7 +161,6 @@ export default function CompletionScreen() {
     return (
       <View style={[styles.centerScreen, { paddingTop: insets.top }]}>
         <EmptyState
-          icon="🌫️"
           title="Completion unavailable"
           subtitle="This post was removed or isn't visible to you."
         />

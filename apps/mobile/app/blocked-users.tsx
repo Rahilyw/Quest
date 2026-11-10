@@ -84,7 +84,6 @@ export default function BlockedUsersScreen() {
           contentContainerStyle={[styles.list, { paddingTop: insets.top + 64 }]}
           ListEmptyComponent={
             <EmptyState
-              icon="🤝"
               title="No blocked accounts"
               subtitle="People you block from a post or profile show up here."
             />
