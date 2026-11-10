@@ -17,9 +17,11 @@ Spec 05 (drops and suggestions) and Spec 07 (merchant redemption) are in this wo
 Migrations 034–037 are local. The starter quest is implemented; the next feature is the Spec 06
 Sunday recap card.
 
-**Design.** The visual and UX direction ("Cutouts") lives in [`docs/design/BRAND.md`](../design/BRAND.md), with the
-build plan in [`docs/design/UI-OVERHAUL-PLAN.md`](../design/UI-OVERHAUL-PLAN.md). Phase 1 (tokens, Figtree, copy pass) is merged (#12);
-Phase 2 is next; specs 05 to 07 should be built in that visual language.
+**Design.** The visual and UX direction ("Cutouts") lives in [`docs/design/BRAND.md`](../design/BRAND.md).
+The build status is the Nov 9 snapshot in [`docs/design/UI-OVERHAUL-PLAN.md`](../design/UI-OVERHAUL-PLAN.md):
+tokens, cutout pipeline, core loop, social screens, brand surfaces and the admin restyle are in this
+branch. Real photographs, commissioned sprites and a device pass are still founder work. The sentence
+above that called Phase 2 "next" is historical.
 
 ## Why (product rationale)
 

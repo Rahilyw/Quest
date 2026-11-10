@@ -80,25 +80,30 @@ export default function Profile() {
 
   const loadRewards = useCallback(async () => {
     if (!profile) return
-    const { data } = await supabase
-      .from('completions')
-      .select('id, redemption_code, redeemed_at, quest:quests(title, sponsor_reward, is_sponsored)')
-      .eq('user_id', profile.id)
-      .eq('status', 'approved')
-      .not('redemption_code', 'is', null)
+    const { data, error } = await supabase.rpc('own_reward_codes')
+    if (error || !Array.isArray(data)) {
+      setRewards([])
+      return
+    }
     const cards: RewardCard[] = []
-    for (const row of data ?? []) {
-      const quest = Array.isArray(row.quest) ? row.quest[0] : row.quest
-      if (!quest?.is_sponsored || !row.redemption_code) continue
+    for (const row of data) {
+      if (!row || typeof row !== 'object') continue
+      const reward = row as {
+        id?: unknown
+        title?: unknown
+        sponsor_reward?: unknown
+        redemption_code?: unknown
+        redeemed_at?: unknown
+      }
+      if (typeof reward.id !== 'string' || typeof reward.redemption_code !== 'string') continue
       cards.push({
-        id: row.id as string,
-        title: quest.title as string,
-        reward: (quest.sponsor_reward as string | null) ?? null,
-        code: row.redemption_code as string,
-        redeemedAt: (row.redeemed_at as string | null) ?? null,
+        id: reward.id,
+        title: typeof reward.title === 'string' ? reward.title : 'Quest',
+        reward: typeof reward.sponsor_reward === 'string' ? reward.sponsor_reward : null,
+        code: reward.redemption_code,
+        redeemedAt: typeof reward.redeemed_at === 'string' ? reward.redeemed_at : null,
       })
     }
-    cards.sort((a, b) => Number(Boolean(a.redeemedAt)) - Number(Boolean(b.redeemedAt)))
     setRewards(cards)
   }, [profile])
 

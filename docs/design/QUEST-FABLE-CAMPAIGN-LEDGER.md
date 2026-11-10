@@ -39,36 +39,69 @@ Fable for synthesis, security judgments and acceptance.
 Not run (external/credentialed): EAS builds, `supabase db push`, edge function deploy, Vercel deploy,
 any Supabase MCP call (read or write). Remote migration state is **unknown** to this campaign.
 
+## 1b. Resume (Nov 10, 2026, after the credit stop)
+
+| Fact | Value |
+|---|---|
+| Orchestration | Claude Code Workflow `wf_d4216b6f-7de` died when the Claude credit balance hit zero. Scouts that returned: mobile design/a11y (partial) and SQL 001–017. Spec matrices, design matrices, verifiers and the critic did not return. **This checkout is now Cursor, not Claude Fable.** There is no Fable tool here. Work continues in this session directly. Cursor subagents are not Fable. |
+| HEAD now | `18b57e2` feat: enhance quest detail loading state and add skeleton UI. Includes the previously dirty auth screens, AuthKit, feed, leaderboard, and this ledger. |
+| Dirty again | Another editor is active. Do not touch `apps/mobile/app/settings.tsx`, `components/Avatar.tsx`, `components/EmptyState.tsx`, `components/ErrorBoundary.tsx`, `components/FollowButton.tsx`, `components/ui/Screen.tsx`. `tsc --noEmit` currently fails only because `EmptyState` no longer accepts `icon` while six callers still pass it. That failure is the in-flight edit, not this campaign. |
+| Remote state | Still unknown. No Supabase or Vercel call was made. |
+
 ## 2. Conflict register
 
-Populated after audit synthesis (section 4).
+| Conflict | Evidence | Current resolution |
+|---|---|---|
+| README/roadmap say 001–030 are the live set and 031 is the next push | `LAUNCH-RUNBOOK.md` opening (edited this session); `supabase/migrations/` now contains 031–038 | Local files through **038**. Hosted application is not visible from the repo. |
+| Specs README still says Phase 2 of Cutouts is next | `docs/specs/README.md` design paragraph vs `docs/design/UI-OVERHAUL-PLAN.md` Nov 9 status | UI-OVERHAUL-PLAN is the later status. Specs README is stale. Not rewritten yet. |
+| Roadmap “What’s fully implemented” still says Harbour Electric and 44 geofence tests | `ROADMAP.md` implemented tables vs `lib/theme.ts` and a 50-test geofence run on Nov 10 | Code and the Nov 9 audit section are ahead of the older tables. Not rewritten yet. |
+| Streak week was UTC; leaderboard week is Vancouver | `017` lines 46–47 vs `031` leaderboard `America/Vancouver` | **038** moves streak week to Vancouver. One-time streak discontinuity for rows already labelled with a UTC week. |
+| `settings.tsx` “Weekly digest” writes both AsyncStorage and `push_drops` | `apps/mobile/app/settings.tsx` (in-flight, not edited here) | The database flag is what `enqueue_weekly_drop` reads. AsyncStorage can disagree until the in-flight edit settles. |
 
 ## 3. Phase plan and state
 
 | Phase | Scope | State | Notes |
 |---|---|---|---|
-| Audit | Repo-wide read-only audit, spec matrix (01–07), Cutouts matrix (phases 1–7), migration audit 001–037 | in progress | Workflow dispatched Nov 10 |
-| 0 | Baseline, security and launch truth | queued | |
-| 1 | Spec and documentation reconciliation | queued | |
-| 2 | Cutouts design completion and accessibility | queued | |
-| 3 | Spec 06 §2 Sunday recap | queued | |
+| Audit | Repo-wide read-only audit | in progress | Two slices returned. P0/P1 claims from SQL part A were re-checked by hand against 026–037. Remaining slices were not rerun. |
+| 0 | Baseline, security and launch truth | in progress | `038` repaired and re-checked. Fresh verifier [verdict](530bd2c6-2d9b-4d0f-88b9-bbbe94833b23): pass. Not applied remotely. Other Phase 0 items remain (F-004, F-005). |
+| 1 | Spec and documentation reconciliation | in progress | Runbook step 0, migration README, and the specs README design paragraph are updated. `ROADMAP.md` “fully implemented” tables are still stale. |
+| 2 | Cutouts design completion and accessibility | queued | In-flight editor owns EmptyState, settings, Avatar, ErrorBoundary, FollowButton. |
+| 3 | Spec 06 §2 Sunday recap | queued | Not started. Needs its own week query, not the live `leaderboard` view. |
 | 4 | Spec 06 §3 XP economy events | queued | |
 | 5 | Spec 06 §5 offline submission queue | queued | |
-| 6 | Spec 06 §1 duo quests and referral loop | queued | |
-| 7 | Spec 05 chains (decision gate) | queued | Deferred unless catalog ≥ ~35 and owner intent confirmed |
-| 8 | Spec 05/07/weekly drops integration hardening | queued | |
-| 9 | Final integration and release-readiness report | queued | |
+| 6 | Spec 06 §1 duo quests | queued | |
+| 7 | Spec 05 chains | queued | Stay deferred. Catalog is the seed (~25 quests), under the ~35 note. Owner has not overridden that. |
+| 8 | Spec 05/07 hardening | queued | `send-push-outbox` sends at most 100 rows per invoke and does not loop. Local only. |
+| 9 | Final report | queued | |
+
+### Phase 0 slice — completion secrets
+
+**Acceptance:** anon and authenticated cannot read `completions.redemption_code`, `lat`, `lng`, or `gps_accuracy`. The signed-in owner can still see their own sponsor code. A client cannot store a redemption code on a non-sponsored completion. Streak week uses America/Vancouver. No production command is run.
+
+**Implemented locally:** `supabase/migrations/038_completion_secret_columns.sql`, `apps/mobile/app/submit/[questId].tsx` (insert returns `id`, then `own_completion_reward`), `apps/mobile/app/(tabs)/profile.tsx` (`own_reward_codes`), migration README row, runbook rollout note.
+
+**Not verified:** applied on a database, device submission, merchant redeem after the revoke. Admin reads use the service role, which keeps the columns.
 
 ## 4. Findings
 
-Populated after audit synthesis.
+| ID | Sev | Status | Evidence | Impact |
+|---|---|---|---|---|
+| F-001 | P0 | repair applied locally, not applied remotely | `008`/`028` feed SELECT is row-only, and Supabase’s table-level SELECT made a column-only REVOKE a no-op. `038` now revokes table SELECT and grants back the non-secret columns. Reviewer: [Review](679eda00-2269-4c08-9e8e-65112b224f2c). | Anyone with the anon key could read unredeemed sponsor codes and exact proof coordinates for feed-public completions. |
+| F-002 | P0 | closed by 026/029 | `026` revokes profile UPDATE and grants named columns. `protect_profile_insert` zeroes XP. `029` re-grants the list plus `push_social`. `034` adds `push_drops` only. | Client XP/level writes do not survive once 026 is applied. The SQL-A scout’s P0 was the pre-026 state. |
+| F-003 | P1 | closed by 026 | `026` `normalize_completion_on_insert` sets `NEW.completed_at := now()` before the rate-limit counts. | Backdated `completed_at` does not bypass the cap once 026 is applied. |
+| F-004 | P1 | open, blocked by in-flight file | `profiles` SELECT policy is `using (true)` (`20260619010246_initial_schema.sql` line 16). `push_token` has no column revoke. | Any client can read every player’s Expo push token. Fix needs `settings.tsx`, which another editor has open. |
+| F-005 | P2 | open | Fresh filename order applies `002` before `20260619010246_initial_schema.sql`. README says both “filename order” and “`--include-all`”. | A brand-new database fails at migration 002. Do not rename the initial file: hosted history uses that version name. |
+| F-006 | P2 | fixed in 038, local only | `017` streak week uses `to_char(now(), ...)`. `031` leaderboard week uses Vancouver. | Sunday evening Pacific could fall in the next UTC streak week. |
+| F-007 | P2 | open | `send-push-outbox/index.ts` limits 100 rows and tells the caller to invoke again. The webhook does not. | A Monday drop to more than 100 opted-in players would leave the rest unsent. Function is not deployed. |
+| F-008 | P3 | open | `node scripts/check-tokens.js` on Nov 10: 218 raw tokens in 28 files. | Token debt. Do not mass-rewrite files the other editor has open. |
+| F-009 | P2 | open, doc | `ROADMAP.md` “fully implemented” and `docs/specs/README.md` still describe Harbour Electric and an earlier Cutouts phase. | Operators can follow the wrong status. Phase 1. |
 
 ## 5. Unresolved questions for the owner
 
-1. May the campaign use the **read-only** Supabase MCP tools (`list_migrations`, `list_edge_functions`,
-   `get_advisors`) to establish remote state? Until answered, remote state is reported as unknown.
-2. Chains (Spec 05 §3): current intent to build before ~35 quests? Default: stay deferred.
+1. May a later session use **read-only** Supabase tools to list remote migrations and edge functions? Until yes, remote state stays unknown.
+2. Chains stay deferred. Say so if that should change.
+3. Apply `031`–`038` only when you are ready. `038` breaks completion submit on app builds older than this commit.
 
 ## 6. Next concrete action
 
-Wait for the audit workflow; synthesize findings into sections 2 and 4; define Phase 0 acceptance criteria.
+Phase 1: correct the stale “current status” paragraphs in `docs/specs/README.md` and the older tables in `ROADMAP.md`, without rewriting product intent. Leave the in-flight mobile files alone. F-004 (push token column) waits until `settings.tsx` is free. Sunday recap stays queued.

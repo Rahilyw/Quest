@@ -252,7 +252,7 @@ export default function Submit() {
           gps_accuracy: effectiveCoords.accuracy ?? null,
           completed_at: new Date().toISOString(),
         })
-        .select('redemption_code')
+        .select('id')
         .single()
 
       if (insertError) {
@@ -301,6 +301,17 @@ export default function Submit() {
       if (newStreak > previousStreak) track('streak_extended', { length: newStreak })
       else if (newStreak < previousStreak) track('streak_broken', { length: previousStreak })
 
+      let redemptionCode: string | null = null
+      if (quest.is_sponsored && completion?.id) {
+        const { data: reward } = await supabase.rpc('own_completion_reward', {
+          p_completion_id: completion.id,
+        })
+        if (reward && typeof reward === 'object' && !Array.isArray(reward)) {
+          const code = (reward as { redemption_code?: unknown }).redemption_code
+          redemptionCode = typeof code === 'string' ? code : null
+        }
+      }
+
       setAlreadyCompleted(true)
       openCelebration({
         variant: 'success',
@@ -309,7 +320,7 @@ export default function Submit() {
         level: newLevel,
         levelUp: didLevelUp(previousXp, newXp),
         streakCount: newStreak,
-        redemptionCode: completion?.redemption_code ?? null,
+        redemptionCode,
         sponsorReward: quest.is_sponsored ? quest.sponsor_reward : null,
       })
     } catch (err) {

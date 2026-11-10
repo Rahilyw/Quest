@@ -10,9 +10,21 @@ Work top to bottom; each step says what it unblocks.
 
 ## Step 0 — Database migrations ✅ through 030, then 031 🟠
 
-**Status (Nov 7, 2026):** 001 to 030 are live, including 023 (account deletion) and 030
-(definer-function lockdown). **031** (audit fixes, rank snapshot cron, Pacific-time
-leaderboard week) is written and dry-run tested but not applied yet.
+**Status (Nov 7, 2026, rechecked Nov 10 against the repo only):** 001 to 030 were
+recorded as live in this runbook. **031** through **038** exist as local files.
+Nothing in the repository proves which of 031–038 are on the hosted database.
+Do not treat a local file as applied.
+
+**038** (completion secret columns) must be included in the same push. Until it is
+applied, a public read of `completions` can return other players' sponsor codes and
+exact proof coordinates. After it is applied, the player app reads a code only
+through `own_completion_reward` / `own_reward_codes`.
+
+Apply **038** only with an app build from this commit or later. The insert returns
+`id`, then asks for the code. An older build that does `.select('redemption_code')`
+on insert will fail the whole submission once the column privilege is revoked.
+There is no TestFlight/store binary yet, so this is a dev-build cutoff, not a
+live-user migration.
 
 The Supabase CLI now targets the local stack by default, so always pass `--remote`:
 

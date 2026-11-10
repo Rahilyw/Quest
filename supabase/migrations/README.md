@@ -49,6 +49,7 @@ numbered files. Check with `--dry-run` first.
 | `035_quest_suggestions.sql` | `quest_suggestions`, 3-open cap, `quests.suggested_by`, one-time +100 XP and City Author via `publish_suggested_quest` (service role only). Local only. |
 | `036_merchant_redemption.sql` | `sponsors` plus an unguessable `merchant_key`. Service-role lookup and idempotent mark-redeemed, 10 attempts per minute per sponsor. Players cannot set `redeemed_at` (`redeemed_at` itself is from 017). Local only. |
 | `037_starter_quest.sql` | Adds `quests.is_starter`, designates the anywhere journal quest, and provides a service-role-only transaction for safely moving the designation. Local only. |
+| `038_completion_secret_columns.sql` | Drops anon/authenticated table SELECT on `completions`, then grants every column except `redemption_code`, `lat`, `lng`, `gps_accuracy` and `reviewed_by`. Owners read their own code via `own_completion_reward` / `own_reward_codes`. Non-sponsored inserts cannot keep a client-supplied code. Streak week uses `America/Vancouver`. A later column on `completions` needs its own GRANT. Local only. |
 
 ## Env var naming drift
 
