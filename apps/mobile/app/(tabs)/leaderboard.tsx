@@ -1,12 +1,14 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { FlatList, Pressable, RefreshControl, StyleSheet, View, type ViewToken } from 'react-native'
 import { useFocusEffect, useRouter } from 'expo-router'
+import { Ionicons } from '@expo/vector-icons'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { Avatar } from '@/components/Avatar'
 import { Cutout } from '@/components/Cutout'
 import { Sprite } from '@/components/Sprite'
 import { Body, BodyStrong, Micro, Name, Small, Title } from '@/components/ui/Text'
 import { useAuth } from '@/hooks/useAuth'
+import { currentRecapWeek } from '@/hooks/useWeekRecap'
 import { track } from '@/lib/analytics'
 import { daysLeftLabel, plural, xpLabel } from '@/lib/copy'
 import { getDaysLeftInWeek, getISOWeek, TAB_BAR_HEIGHT, TAB_BAR_CLEARANCE } from '@/lib/constants'
@@ -34,6 +36,7 @@ export default function RankingsScreen() {
   const { profile } = useAuth()
   const weekNum = getISOWeek()
   const daysLeft = getDaysLeftInWeek()
+  const recapInProgress = currentRecapWeek().inProgress
   const [entries, setEntries] = useState<LeaderboardEntry[]>([])
   const [cutouts, setCutouts] = useState<Record<string, LatestCutout>>({})
   const [loading, setLoading] = useState(true)
@@ -160,6 +163,27 @@ export default function RankingsScreen() {
               {`Week ${weekNum}. ${daysLeftLabel(daysLeft)}.`}
             </Small>
 
+            {profile ? (
+              <Pressable
+                onPress={() => router.push('/recap')}
+                accessibilityRole="button"
+                accessibilityLabel={recapInProgress ? 'Your week so far' : 'Your recap of last week'}
+                accessibilityHint="Opens a card you can share"
+                style={({ pressed }) => [styles.recap, pressed && styles.recapPressed]}
+              >
+                <BodyStrong style={styles.recapLabel}>
+                  {recapInProgress ? 'Your week so far' : 'Your recap of last week'}
+                </BodyStrong>
+                <Ionicons
+                  name="chevron-forward"
+                  size={18}
+                  color={COLOR.ink}
+                  accessibilityElementsHidden
+                  importantForAccessibility="no"
+                />
+              </Pressable>
+            ) : null}
+
             {loading ? (
               <View style={styles.podium}>
                 {[0, 1, 2].map((slot) => (
@@ -284,7 +308,21 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingHorizontal: SPACE.s4,
   },
-  week: { paddingHorizontal: SPACE.s4, marginTop: SPACE.s2, marginBottom: SPACE.s5 },
+  week: { paddingHorizontal: SPACE.s4, marginTop: SPACE.s2, marginBottom: SPACE.s4 },
+  recap: {
+    minHeight: 48,
+    marginHorizontal: SPACE.s4,
+    marginBottom: SPACE.s5,
+    paddingHorizontal: SPACE.s4,
+    paddingVertical: SPACE.s3,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: SPACE.s2,
+    borderRadius: RADIUS.control,
+    backgroundColor: COLOR.secondaryFill,
+  },
+  recapPressed: { transform: [{ scale: 0.97 }] },
+  recapLabel: { flex: 1 },
   podium: {
     flexDirection: 'row',
     alignItems: 'flex-end',

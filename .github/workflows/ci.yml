@@ -26,6 +26,10 @@ jobs:
           node-version: '20'
       - name: Run logic tests
         run: node apps/mobile/__tests__/logic.test.js
+      - name: Run recap tests
+        run: node apps/mobile/__tests__/recap.test.js
+      - name: Run profile privacy guard
+        run: node apps/mobile/__tests__/profilePrivacy.test.js
 
   typescript-check-mobile:
     name: typescript-check (mobile)
