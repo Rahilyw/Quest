@@ -1,6 +1,6 @@
 # Quest! Launch Runbook — Your Remaining Steps
 
-**Last updated:** November 7, 2026
+**Last updated:** November 10, 2026
 
 Everything code-side is done and committed. The steps below are the ones that need
 **your accounts** (Apple, PostHog, Sentry, Vercel) or **your approval** (production DB).
@@ -8,45 +8,28 @@ Work top to bottom; each step says what it unblocks.
 
 ---
 
-## Step 0 — Database migrations ✅ through 030, then 031 🟠
+## Step 0 — Database migrations ✅ through 038
 
-**Status (Nov 7, 2026, rechecked Nov 10 against the repo only):** 001 to 030 were
-recorded as live in this runbook. **031** through **038** exist as local files.
-Nothing in the repository proves which of 031–038 are on the hosted database.
-Do not treat a local file as applied.
+**Status (Nov 10, 2026):** `migration list --remote` shows **002–038** and
+`20260619010246` on production project Quest (`xuviwarpgvxzpouqesrv`). An earlier
+history row, `20261109032058`, was the same cutouts SQL as **032** under a timestamp.
+That row was marked reverted, then **032** was applied under its real version.
 
-**038** (completion secret columns) must be included in the same push. Until it is
-applied, a public read of `completions` can return other players' sponsor codes and
-exact proof coordinates. After it is applied, the player app reads a code only
-through `own_completion_reward` / `own_reward_codes`.
+**038** is live. Anon and authenticated have no table-level SELECT on `completions`.
+Column SELECT covers the public columns only. `redemption_code`, `lat`, `lng`,
+`gps_accuracy`, and `reviewed_by` are not granted. Owners read a sponsor code through
+`own_completion_reward` / `own_reward_codes`.
 
-Apply **038** only with an app build from this commit or later. The insert returns
-`id`, then asks for the code. An older build that does `.select('redemption_code')`
-on insert will fail the whole submission once the column privilege is revoked.
-There is no TestFlight/store binary yet, so this is a dev-build cutoff, not a
-live-user migration.
+A dev build older than this working tree fails quest submission until it is updated.
+The insert returns `id`, then asks for the code. There is no TestFlight/store binary
+yet, so this is a dev-build cutoff.
 
-The Supabase CLI now targets the local stack by default, so always pass `--remote`:
+Weekly-drop rows are written by **034**. No phone receives them until
+`send-push-outbox` is deployed.
 
-```powershell
-npx supabase db push --remote --include-all --dry-run
-npx supabase db push --remote --include-all
-```
+The Supabase CLI targets the local stack by default, so always pass `--remote`.
 
-The original Step 0 notes follow for reference.
-
-Account deletion (App Store requirement) exists in code but the RPC isn't on the
-remote database until you push it:
-
-```powershell
-cd C:\Users\rahil\Documents\Projects\Quest
-npx supabase db push --remote --include-all
-```
-
-Confirm the prompt lists the migrations you expect and answer `Y`.
-
-**Verify:** in the Supabase dashboard → SQL Editor, run
-`select proname from pg_proc where proname = 'delete_own_account';` — one row expected.
+Do not push again. The Nov 7 instruction to apply `delete_own_account` is already done; that function has been on production since migration 023, and 032 extended it to delete proof selfies.
 
 ---
 
@@ -231,8 +214,8 @@ The admin app denies **all** logins until `ADMIN_ALLOWED_EMAILS` is set.
 ## Step 6 — Clean-up from the Nov 2026 audit 🟡
 
 - **Delete retired edge functions** still deployed: `award-xp` and
-  `generate-redemption-code` (retired by migration 017), and `snapshot-ranks` once 031 is
-  applied. All require the service-role secret, so they aren't publicly callable, but they're
+  `generate-redemption-code` (retired by migration 017), and `snapshot-ranks` (031 is
+  applied). All require the service-role secret, so they aren't publicly callable, but they're
   dead code. `npx supabase functions delete <name>`.
 - **Enable leaked-password protection:** Supabase → Authentication → Settings.
 - **`send-social-push` is not deployed** and no notifications webhook exists (Step 0b), so
@@ -245,8 +228,7 @@ The admin app denies **all** logins until `ADMIN_ALLOWED_EMAILS` is set.
 
 ## Done when
 
-- [x] Migrations 023 and 027 to 030 applied
-- [ ] Migration 031 applied (`npx supabase db push --remote --include-all`)
+- [x] Migrations 023 and 027 to 038 applied (confirmed Nov 10, 2026)
 - [ ] `send-social-push` deployed + notifications webhook created
 - [ ] TestFlight build installed on your phone
 - [ ] PostHog shows live events + 4 dashboards exist

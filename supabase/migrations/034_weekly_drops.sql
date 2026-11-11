@@ -88,7 +88,7 @@ GRANT UPDATE (push_drops) ON profiles TO authenticated;
 -- ─── Outbox ─────────────────────────────────────────────────────────────────
 
 CREATE TABLE IF NOT EXISTS push_outbox (
-  id          UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id          UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id     UUID NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
   kind        TEXT NOT NULL CHECK (kind IN ('weekly_drop', 'suggestion_live')),
   title       TEXT NOT NULL,

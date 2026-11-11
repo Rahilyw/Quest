@@ -4,7 +4,7 @@
 -- that mark a code used exactly once. Nothing here is granted to the app.
 
 CREATE TABLE IF NOT EXISTS sponsors (
-  id uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   name text NOT NULL,
   merchant_key text NOT NULL,
   created_at timestamptz NOT NULL DEFAULT now(),
@@ -16,7 +16,7 @@ CREATE UNIQUE INDEX IF NOT EXISTS sponsors_name_lower_idx ON sponsors (lower(btr
 CREATE UNIQUE INDEX IF NOT EXISTS sponsors_merchant_key_idx ON sponsors (merchant_key);
 
 CREATE TABLE IF NOT EXISTS redemption_lookups (
-  id uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   sponsor_id uuid NOT NULL REFERENCES sponsors (id) ON DELETE CASCADE,
   created_at timestamptz NOT NULL DEFAULT now()
 );

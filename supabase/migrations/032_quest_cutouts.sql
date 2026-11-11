@@ -68,6 +68,7 @@ CREATE POLICY "Owners can view own proof selfies"
 DROP POLICY IF EXISTS "Admins can view all proof selfies" ON storage.objects;
 
 DROP POLICY IF EXISTS "Owner or admin can delete proof selfies" ON storage.objects;
+DROP POLICY IF EXISTS "Owners can delete proof selfies" ON storage.objects;
 CREATE POLICY "Owners can delete proof selfies"
   ON storage.objects FOR DELETE
   TO authenticated
