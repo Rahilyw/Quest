@@ -1,10 +1,14 @@
 # Quest! Launch Runbook — Your Remaining Steps
 
-**Last updated:** November 10, 2026
+**Last updated:** November 11, 2026
 
-Everything code-side is done and committed. The steps below are the ones that need
-**your accounts** (Apple, PostHog, Sentry, Vercel) or **your approval** (production DB).
-Work top to bottom; each step says what it unblocks.
+This runbook records hosted/credential-dependent launch steps. It does not mean all engineering
+work is complete: the Nov 11 code audit found a profile `push_token` exposure (SEC-01) and a
+clean-install migration ordering hazard. The fix for the first is written as migration 039 and
+is **not applied** (Step 0a). See
+[the audit](docs/design/CODEBASE-AUDIT-2026-11-11.md) and
+[roadmap](ROADMAP.md). Steps below that need **your accounts** (Apple, PostHog, Sentry, Vercel)
+or hosted-project access remain owner tasks. Work top to bottom; each step says what it unblocks.
 
 ---
 
@@ -27,20 +31,58 @@ yet, so this is a dev-build cutoff.
 Weekly-drop rows are written by **034**. No phone receives them until
 `send-push-outbox` is deployed.
 
+The sender processes at most 100 pending outbox rows per invocation and returns a remaining
+hint; confirm the webhook or a scheduled drain invokes it again until caught up before relying
+on delivery to a large audience.
+
 The Supabase CLI targets the local stack by default, so always pass `--remote`.
 
 Do not push again. The Nov 7 instruction to apply `delete_own_account` is already done; that function has been on production since migration 023, and 032 extended it to delete proof selfies.
 
 ---
 
-## Step 0b — Social layer: migrations 027–029 + social push (10 min) 🟠
+## Step 0a — Apply 039 and 040 (15 min) 🔴 not done
 
-Likes / comments / follows (027), comment reports (028) and rate limits + the
-Activity inbox (029) need the same `npx supabase db push` as Step 0 — confirm the
-prompt lists 027, 028 and 029.
+Two migrations exist only in the repository. Nothing below has been run.
 
-The inbox works as soon as 029 is applied. **Push** for comments, replies and new
-followers needs the edge function plus a webhook:
+- **039** stops anyone with the anon key from reading `profiles.push_token` (SEC-01). Until it
+  is applied the production database still exposes every player's Expo push token.
+- **040** adds `own_week_recap`, which the Sunday recap screen calls. Without it the recap
+  screen shows its "couldn't load" state.
+
+Order:
+
+1. Put every test phone on a build from this checkout **first**. After 039, a build that
+   still sends `select=*` on `profiles` cannot load its profile and looks signed out.
+2. Dry-run and read the list. It should name exactly 039 and 040:
+
+   ```powershell
+   cd C:\Users\rahil\Documents\Projects\Quest
+   npx supabase db push --remote --dry-run
+   ```
+
+3. If the list is right, apply:
+
+   ```powershell
+   npx supabase db push --remote
+   ```
+
+4. Run the checks under "Verifying 039" in
+   [`supabase/migrations/README.md`](supabase/migrations/README.md). The repository tests only
+   read the SQL text; these queries are the real proof.
+5. Open Settings on a phone: "Quest alerts" should show the real state and toggle both ways.
+6. Open Rankings → the recap row. Check a week with quests, a week without, and Share.
+
+Neither file's SQL has been executed anywhere. If the push fails, stop and read the error; do
+not edit an applied migration.
+
+---
+
+## Step 0b — Social push delivery (10 min) 🟠
+
+The Nov 10 migration report includes 027–029, which provide likes, comments, follows, comment
+reports, rate limits and the Activity inbox. Do not push those migrations again. **Push** for
+comments, replies and new followers needs the Edge Function and webhook:
 
 ```powershell
 cd C:\Users\rahil\Documents\Projects\Quest
@@ -63,10 +105,10 @@ Likes never push (inbox only) by design.
 
 ## Step 0c — Weekly drop push (migration 034) 🟠
 
-Not done by the Nov 9 implementation. The SQL job `enqueue_weekly_drop()` only
-writes `push_outbox`. Phones get nothing until you deploy the function and the webhook.
-
-Apply migrations through `035` with the same `npx supabase db push` as Step 0, then:
+The SQL job `enqueue_weekly_drop()` writes `push_outbox`; phones get nothing until you deploy
+the function and webhook. The Nov 10 migration report includes migration 034. Do not push it
+again as part of this step. Before enabling delivery, verify the sender's batch-drain behavior
+and delivery preferences, then:
 
 ```powershell
 cd C:\Users\rahil\Documents\Projects\Quest
@@ -229,6 +271,8 @@ The admin app denies **all** logins until `ADMIN_ALLOWED_EMAILS` is set.
 ## Done when
 
 - [x] Migrations 023 and 027 to 038 applied (confirmed Nov 10, 2026)
+- [ ] Migrations 039 and 040 applied, 039 checks run (Step 0a)
+- [ ] Recap screen and share checked on an iPhone and an Android phone
 - [ ] `send-social-push` deployed + notifications webhook created
 - [ ] TestFlight build installed on your phone
 - [ ] PostHog shows live events + 4 dashboards exist

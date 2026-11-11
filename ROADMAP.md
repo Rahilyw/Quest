@@ -1,42 +1,40 @@
 # Quest! — Product Roadmap
 
-**Last updated:** November 9, 2026
-**Stage:** Cutouts redesign on the current feature branch; next product work is Spec 06's Sunday recap. Verify launch operations against [LAUNCH-RUNBOOK.md](LAUNCH-RUNBOOK.md) before TestFlight.
+**Last reconciled:** November 11, 2026
+**Current product priority:** apply and verify migrations 039 (profile-token fix) and 040 (recap), device-test the Sunday recap, then harden weekly push draining before any recap reminder push.
 
-> **November 2026 status.** A full audit (Nov 7) found and fixed an RPC that let any signed-in user mint XP (migration 030, applied live), added server-side admin checks to every admin action, moved the weekly rank snapshot into the database and aligned the leaderboard week to Victoria time (migration 031, ready to apply), and got the admin dashboard building and live on Vercel for the first time since August. The app's visual direction was redesigned as **Cutouts** ([docs/design/BRAND.md](docs/design/BRAND.md)); Phase 1 of the rebuild (tokens, Figtree, copy pass) is merged; the review stack (#9 to #12) is merged to main.
+This section is the current status for the checkout. It is not a deployment certification.
+For detailed findings and exact local checks, see the [Nov 11 audit](docs/design/CODEBASE-AUDIT-2026-11-11.md).
 
-All launch-blocking *code* is shipped: instant verification, moderation, analytics + crash reporting SDKs, account deletion (App Store 5.1.1(v)), real app icons, real Victoria boundary. What remains before real users is **operations, not engineering** — Apple credentials, PostHog/Sentry keys, one `db push`, and Vercel env vars; every step is written up in the runbook.
-
-Completions are verified by the server-side geofence at the moment of submission (migrations 013–017); XP, level, streak, and sponsored redemption codes land before the celebration modal renders. Community reports, block-user, feed privacy, and an admin moderation queue (migration 018) replace pre-approval review — satisfying Apple Guideline 1.2. Badges are now fully admin-configurable with per-badge thresholds (migrations 019–021). The full spec set lives in [`docs/specs/`](docs/specs/README.md).
-
-> **Migration numbering note (fixed Jul 7):** earlier revisions of this doc said 016 = instant verification and 017 = moderation. The actual files are `016_completion_status_removed` + `017_instant_verification` and `018_completion_reports`. This doc now uses the real file numbers; `supabase/migrations/README.md` is the source of truth.
-
-**The strategy in one sentence:** automate approval so XP is instant, make the community generate the content, instrument everything, and ship the UGC moderation Apple will demand.
-
-## Code audit — Nov 9, 2026
-
-This snapshot reflects the current `cursor/cutouts-this-week-quests` checkout, which is ahead
-of `main`; it is a code audit, not a deployment audit. Later redesign work has landed since
-the Nov 7 status above: Cutouts core screens, the place/selfie flow, private selfie signing,
-admin cutout upload, share card, onboarding, app icon/splash, admin restyle and camera ZoneMap.
-See [the detailed design status](docs/design/UI-OVERHAUL-PLAN.md). Local migrations 032–033
-are not evidence of remote application.
-
-| Next product feature | Code audit finding | Order |
+| Area | Current code/docs status | Next step |
 |---|---|---|
-| Spec 05: weekly drops | Implemented Nov 9, 2026 on this branch: admin schedule + Next Monday preset, dashboard count, Victoria active window, “New this week” / “Ends Sunday”. Migration 034 is local. Monday push source exists and is not deployed. | Done in repo. |
-| Spec 05: community suggestions | Implemented Nov 9, 2026: migration 035 (local), mobile form, admin queue, one-time +100 XP and City Author. Chains still deferred. | Done in repo. |
-| Spec 07: merchant redemption | Implemented Nov 9, 2026: migration 036 (local), public `/redeem/[merchantKey]`, sponsor metrics and CSV columns, player redeemed state. Not applied and not tried at a counter. | Done in repo; verify deployment and a live counter flow separately. |
-| Spec 06: growth | Starter quest is now implemented in local migration 037 and the This week surface. No Sunday recap, XP events, offline queue or duo party implementation found. | Next: Sunday recap card, then XP events, offline queue and duo quests per Spec 06. |
+| Core verification and moderation | Implemented in migrations and app code: geofences, instant rewards, reports, blocks, moderation, account deletion, badges and social layer. | Resolve audit issues and maintain server authority. |
+| Profile privacy | **P1, fix written:** migration 039 removes `push_token` from client SELECT; mobile reads explicit columns. Not applied to any database; SQL not executed. | Owner applies 039 after testers are on a build from this checkout, then runs the checks in the migration README. See SEC-01. |
+| Migration bootstrap | Files are timestamped initial schema plus numbered 002–040. Fresh lexical order is unsafe. A clean-install procedure is documented in the migration README. | Run the procedure once on a throwaway database; it has not been executed. |
+| Community content | Weekly drops and suggestions are implemented in code (034–035); chains remain deferred. | Verify sender/webhook separately; improve outbox draining before enabling at scale. |
+| Merchant redemption | Implementation is present (036) with public merchant page and sponsor reporting. | Live counter flow remains unverified; do not infer from code. |
+| Starter quest | Implemented (037) and surfaced in This week. | Keep current as implemented; no duplicate work. |
+| Cutouts | Main mobile and admin surfaces are implemented. Real place photography/cutouts and device/accessibility validation remain. | See [UI overhaul status](docs/design/UI-OVERHAUL-PLAN.md). |
+| Analytics | Mobile event wrapper/SDK integration is present. Production keys and dashboards are operational tasks. | See Spec 04 and runbook. |
+| Growth | Sunday recap implemented in checkout (migration 040, recap screen from Rankings, on-device share card). Not applied, not device-tested. No Sunday reminder push. XP events, offline queue and duo quests are not implemented. | Apply 040, test on iOS and Android, then XP events (Spec 06 §3). |
+| Push | Social and weekly sender source exists. Repository docs report the functions/webhooks are not deployed. Weekly sender caps each invocation at 100 rows. | Deploy and validate only through the runbook; harden repeat draining. |
 
-Operational items elsewhere in this roadmap (migration application, push deployment, analytics
-keys/dashboards, store credentials) must be checked against the live project/runbook before
-being called done or pending. Use the [Claude next-feature prompt](docs/design/CLAUDE-NEXT-IMPLEMENTATION-PROMPT.md)
-to implement the product backlog; the prompt records this audit and the intended sequence.
+The Nov 10 runbook reports hosted migrations through 038 plus the timestamped initial schema.
+That is a repository-recorded operational claim, not independently verified during this doc
+update. Local source, remote migration history, function deployment, webhook delivery and
+device verification are separate states. See [LAUNCH-RUNBOOK.md](LAUNCH-RUNBOOK.md).
+
+Use the [Claude implementation prompt](docs/design/CLAUDE-NEXT-IMPLEMENTATION-PROMPT.md) for
+the audited next steps. Historical phase plans and dated snapshots below are retained as
+history; they are not the current implementation status.
 
 ---
 
-## Snapshot
+## Historical roadmap snapshots
+
+The sections below preserve earlier planning snapshots and implementation history. Their
+status tables reflect the dates and assumptions at the time and are superseded by the current
+status table above and the linked audit.
 
 | Area | Status |
 |---|---|
@@ -301,7 +299,7 @@ Decisions D1 to D8 are recorded in the plan (wordmark, tabs, category colours, d
 | # | Task | Status |
 |---|---|---|
 | F.1 | First-quest onboarding: `is_starter` quest pinned post-signup; time-to-first-XP < 5 min | In repo (037 local); seed, admin designation and This week card implemented Nov 9 |
-| F.2 | Sunday recap share card (view-shot + native share) + Sunday push | ❌ |
+| F.2 | Sunday recap share card (view-shot + native share) + Sunday push | Card and screen in repo (040 local, Nov 11); not applied or device-tested. Sunday push not built: waits on outbox draining (OPS-01). |
 | F.3 | XP economy events: `xp_events` table, double-XP weekends, first-finisher bonus, lapsed-player win-back | ❌ |
 | F.4 | Offline submission queue with retry | ❌ |
 | F.5 | Duo quests: `min_party_size`, party codes/QR, duo bonus, referral kicker + Recruiter badge, duo seed quests | ❌ |
@@ -374,7 +372,7 @@ Findings from a full codebase + docs review. **R-items** are process/tooling rec
 | Weekly drop ritual (E.1) | Low | High (retention) | **P1** | ❌ |
 | First-quest onboarding (F.1) | Low | High (activation) | **P1** | ❌ |
 | Community quest suggestions (E.2) | Medium | High (content) | **P1** | ❌ |
-| Sunday recap share card (F.2) | Medium | High (growth) | **P1** | ❌ |
+| Sunday recap share card (F.2) | Medium | High (growth) | **P1** | In repo, not applied or device-tested |
 | Merchant redemption validation (Spec 07) | Low–Med | High (revenue) | **P1** | Done in repo, not applied |
 | XP economy events (F.3) | Low | Medium–High | **P2** | ❌ |
 | Offline submission queue (F.4) | Medium | Medium | **P2** | ❌ |

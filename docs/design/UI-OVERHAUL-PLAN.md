@@ -5,7 +5,7 @@ so the app is never half-migrated for long.
 
 ---
 
-## Decisions to confirm before Phase 1
+## Approved design decisions
 
 | # | Decision | Recommendation |
 |---|---|---|
@@ -18,7 +18,14 @@ so the app is never half-migrated for long.
 | D7 | A real place photo for every quest (~29), alongside its cutout | Yes. `cover_image_url` already exists; this replaces the Unsplash placeholders |
 | D8 | A sprite set (~12 Victoria creatures and weather) and a scrap kit (tape, torn paper, pen marks) | Yes. Commission one illustrator or 3D artist for one consistent style; Lottie or Rive for the idle loops |
 
-## Implementation status (Nov 9, 2026)
+## Current implementation status (reconciled Nov 11, 2026)
+
+The Nov 9 snapshots and session notes below are historical. Current code includes the Cutouts
+foundation, core mobile screens, signed selfie flow, social surfaces, brand surfaces and admin
+restyle described below. The Nov 10 launch runbook reports migrations through 038 applied,
+including 032–033. This was not re-queried during this documentation update. Real place/cutout
+assets and device/accessibility validation remain outstanding. See [the audit](CODEBASE-AUDIT-2026-11-11.md)
+for distinct code, migration, deployment and verification states.
 
 Cursor has completed several redesign increments on the `cursor/cutouts-this-week-quests`
 branch. Its work is already in the current checkout; treat the code as the starting point and
@@ -30,25 +37,34 @@ You, comments, reports and notifications). These commits are ahead of `main` in 
 | Plan area | Current state in the Cursor branch | Remaining work |
 |---|---|---|
 | Phase 1: Foundation | Implemented: `lib/theme.ts`, Figtree and text primitives, category tokens, token lint script. | Continue reducing the existing token-lint backlog and audit remaining screens when touched. |
-| Phase 2: Cutout pipeline | Implemented in code: migrations 032–033, processing script, mobile cutout/photo components, signed private selfie access, and admin cutout uploader. | Migrations 032–033 remain local until verified/applied remotely; real category/quest cutout assets are still needed. |
+| Phase 2: Cutout pipeline | Implemented in code: migrations 032–033, processing script, mobile cutout/photo components, signed private selfie access, and admin cutout uploader. | Runbook reports migrations 032–033 applied; real category/quest cutout assets are still needed. |
 | Phase 3: Core loop | This week, Quests, quest detail/photo viewer, in-app place/selfie camera, Verified celebration, and camera ZoneMap are implemented. | Visual/device/backend verification remains; the map tab and a few motion/content details still need a Cutouts audit. |
 | Phase 4: Social and status | City/feed bubbles, Rankings, You, comments, reports and notifications are redesigned. | Continue accessibility and device checks; signed selfies are not wired into every feed/celebration surface. |
 | Phase 5: Brand surfaces | Share card, onboarding, app/adaptive icons and splash implemented (Claude, Nov 8). | Store screenshots on the `desk` grid need real screens and content; verify native assets in device builds. |
 | Phase 6: Admin dashboard | Cutouts restyle and quest cutout uploader implemented (Claude, Nov 8). | Live folder/bubble preview remains; verify all admin pages for visual consistency and device-independent layouts. |
 | Phase 7: Content | Founder-owned and ongoing. | Real place photos, processed cutouts, action phrases, sprite artwork and copy remain. |
 
-This snapshot is a codebase observation, not a claim that the Cursor commits have been merged
-to `main`, deployed, or that migrations 032–033 have been applied to Supabase. Recheck branch state,
-the working tree and migration status before making changes. Use
+This snapshot describes code in the current checkout, not a claim that every change is merged
+to `main`, deployed, or device-verified. The hosted migration statement above is based on the
+runbook and should be rechecked before operations. Recheck branch state and working tree before
+making changes. Use
 [the Claude next-implementation prompt](CLAUDE-NEXT-IMPLEMENTATION-PROMPT.md) as the task
 handoff; update this snapshot as work lands so later agents do not duplicate Cursor's work.
 
-**Feature handoff update (Nov 9, later the same day):** Spec 05 and Spec 07 are implemented
-on this branch. Migrations `034`, `035`, and `036` are local and were not applied. Monday
-push was not deployed. Merchant redemption was not tried at a counter. Quest chains stay
-deferred. Spec 06's starter quest is now implemented locally in migration 037. The next
-product feature is the Sunday recap card. The earlier Nov 9 audit note described the checkout
-before this work.
+**Historical handoff (Nov 9):** Spec 05 and Spec 07 had just landed in the branch. At that
+time migrations 034–037 were described as local. The Nov 10 runbook now reports migrations
+through 038 applied. Monday push delivery and merchant counter use still require their own
+verification. Quest chains stay deferred. The next product feature is the Sunday recap card.
+
+**Recap card (Nov 11, Claude).** `RecapShareCard` and `app/recap.tsx` are in the checkout. The
+card follows §7: 9:16, the photo's category colour as the whole background (paper and ink when
+there is no photo), the proof photo as a pillow, one torn label for the week and one strip of
+tape, which is the two-scrap limit. The rank is the one large figure; `TYPE.numeral` was added
+to `lib/theme.ts` for it and is for share artifacts only. No animation was added, so there is
+nothing for reduce-motion to turn off. Card text ignores the system font scale because the
+output is a fixed image; the preview has an accessibility label with the same content and the
+screen around it scales. Not seen on a device: check the layout with long quest titles, three
+pills wrapping, and community blue (white text). Real photos and cutouts remain owner content.
 
 **Feature handoff update (Nov 9, earlier):** the redesign work has advanced since the Nov 8 notes
 below. At that point the next priority was Spec 05. That audit is historical. See

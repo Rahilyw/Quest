@@ -1,5 +1,11 @@
 # Claude + Fable master prompt for Quest!
 
+> **Historical campaign template (Nov 10, 2026).** Its branch, migration and orchestration
+> assumptions are stale. Use [the current Nov 11 audit](CODEBASE-AUDIT-2026-11-11.md) and
+> [next implementation prompt](CLAUDE-NEXT-IMPLEMENTATION-PROMPT.md) for current work. Recheck
+> this template before reusing it; do not follow its stale baseline or claim the old findings
+> are still open without checking the current docs and code.
+
 Copy the prompt below into Claude Code from the Quest repository root. It is designed for a long-running implementation campaign. Fable is the coordinator and judge; lower-cost agents perform bounded discovery, implementation, independent review, and repair. Work through the repository in small releasable slices and keep a durable phase ledger so the campaign can resume after context limits.
 
 ---

@@ -1,6 +1,6 @@
 # Quest! Architecture
 
-Visual map of the codebase — a monorepo for a gamified city quest app with two clients, a Figma web prototype, and a Supabase backend.
+Visual map of the codebase — a monorepo for a gamified city quest app with a mobile client, an admin web app, and a Supabase backend. Current status and audit findings: [ROADMAP.md](ROADMAP.md) and [Nov 11 audit](docs/design/CODEBASE-AUDIT-2026-11-11.md).
 
 ## High-level architecture
 
@@ -18,7 +18,7 @@ flowchart TB
         DB["PostgreSQL + RLS + PostGIS"]
         Storage["Storage: proof-photos · avatars · quest-covers"]
         Edge["Edge Functions"]
-        Migrations["migrations/001–031"]
+        Migrations["timestamped initial schema + migrations 002–040"]
         Seed["seed.sql"]
     end
 
@@ -119,7 +119,7 @@ Four zone types, all enforced **server-side** by a `BEFORE INSERT` trigger on `c
 | `city` | Anywhere inside the city boundary | `ST_Covers` against `cities.boundary` |
 | `polygon` | Hand-drawn perimeter (admin ✏️ Draw mode) | `ST_DWithin` against `quests.boundary` + accuracy buffer |
 
-Shape data flows to clients via the generated `quests.boundary_geojson` column (plain `select *`, no RPC). The admin writes boundaries through the validated `set_quest_boundary()` function (3–100 vertices, 400 m²–250 km², self-intersection repair). Client-side mirror logic lives in the shared `packages/geofence` package (44 tests).
+Shape data flows to clients via generated `quests.boundary_geojson`; admin writes boundaries through validated database functions. Client-side mirror logic lives in `packages/geofence` (50 geofence assertions plus redemption tests).
 
 ## Core quest flow — instant verification (shipped)
 
@@ -165,13 +165,13 @@ Anti-abuse at the same layer: rate limits (2 per 10 min, 10 per 24 h) in the `BE
 
 | System | Spec | Status | Touches |
 |---|---|---|---|
-| Geofence drawing | [01](docs/specs/01-geofence-drawing.md) | ✅ Shipped (014–015) | `quests.boundary`, admin ✏️ Draw mode, `@quest/geofence` |
-| Instant verification | [02](docs/specs/02-instant-verification.md) | ✅ Shipped (016–017) | `completions` insert path, mobile celebration, admin queue → log |
-| Reports & moderation | [03](docs/specs/03-report-moderation.md) | ✅ Shipped (018) | `FeedPostCard` + `ReportPostSheet`, `/moderation`, feed RLS, `removed` status, `feed_public`, `blocked_users` |
-| Analytics | [04](docs/specs/04-analytics-instrumentation.md) | Planned | `lib/analytics.ts`, PostHog in `_layout.tsx` |
-| Content engine | [05](docs/specs/05-community-quests.md) | Planned | `quest_suggestions`, weekly drops (012), `quest_chains` |
-| Growth & engagement | [06](docs/specs/06-growth-engagement.md) | Planned | duo parties, recap share card, `xp_events`, offline queue |
-| Merchant redemption | [07](docs/specs/07-merchant-redemption.md) | Planned (`redeemed_at` already landed in 016) | `/redeem/[merchantKey]`, `sponsors` |
+| Geofence drawing | [01](docs/specs/01-geofence-drawing.md) | Implemented in checkout | PostGIS geofences, admin draw/multi-area editors, `@quest/geofence` |
+| Instant verification | [02](docs/specs/02-instant-verification.md) | Implemented in checkout | `completions` insert path, mobile celebration, admin log |
+| Reports & moderation | [03](docs/specs/03-report-moderation.md) | Implemented in checkout | Report/block, comment moderation, feed RLS, `/moderation` |
+| Analytics | [04](docs/specs/04-analytics-instrumentation.md) | Mobile wrapper present; dashboards/keys are operations | `lib/analytics.ts`, PostHog in `_layout.tsx` |
+| Content engine | [05](docs/specs/05-community-quests.md) | Drops and suggestions implemented; chains deferred | SQL 034–035, mobile/admin flows |
+| Growth & engagement | [06](docs/specs/06-growth-engagement.md) | Starter quest and Sunday recap implemented in checkout; other features planned | SQL 037, 040 (040 not applied); `app/recap.tsx` |
+| Merchant redemption | [07](docs/specs/07-merchant-redemption.md) | Implemented in checkout; live counter flow unverified | SQL 036, `/redeem/[merchantKey]`, `sponsors` |
 
 Index and dependency order: [docs/specs/README.md](docs/specs/README.md). Product rationale: [PRODUCT.md](PRODUCT.md), phase plan: [ROADMAP.md](ROADMAP.md).
 
@@ -181,25 +181,23 @@ Index and dependency order: [docs/specs/README.md](docs/specs/README.md). Produc
 Quest!/
 ├── apps/
 │   ├── mobile/              Expo app (player-facing)
-│   │   ├── app/(tabs)/      index, feed, leaderboard, badges, profile, map
+│   │   ├── app/(tabs)/      This week, Quests, City, Rankings, You
 │   │   ├── components/      QuestHeroCard, PlayerCard, Podium, FeedPostCard, …
 │   │   ├── hooks/           useAuth, useQuests, useActivityFeed, …
 │   │   └── lib/             constants.ts, types, supabase (+ analytics.ts — Spec 04)
 │   └── admin/               Next.js dashboard
 │       └── app/             completions (log), moderation, quests, users, sponsors
-│                            (+ suggestions, redeem — specced)
+│                            (+ suggestions, merchant redemption)
 ├── packages/
-│   └── geofence/            @quest/geofence — shared client geofence logic (44 tests)
+│   └── geofence/            @quest/geofence — shared geofence and redemption logic (50 geofence assertions)
 ├── docs/specs/              01–07 feature specs (instant verification era)
 ├── docs/design/            Cutouts brand spec + UI overhaul plan
 ├── DESIGN.md                Earlier Harbour Electric spec (superseded)
 ├── PRODUCT.md               Product positioning, content engine, safety
 ├── ROADMAP.md               Phase plan and status
 └── supabase/
-    ├── migrations/          001–031 (geofence 013–015, instant verification 016–017, moderation 018, badges 019–021,
-    │                        account deletion 023, multi-geofence 024–026, social 027–029, hardening 030–031)
-    ├── functions/           send-social-push (rank snapshot moved to pg_cron in 031; award-xp and
-    │                        generate-redemption-code retired in 017)
+    ├── migrations/          timestamped initial schema + 002–040; see migrations/README.md
+    ├── functions/           send-social-push, send-push-outbox (deployment/webhook state is separate)
     └── seed.sql
 ```
 
@@ -222,7 +220,7 @@ and the build plan is [docs/design/UI-OVERHAUL-PLAN.md](docs/design/UI-OVERHAUL-
 
 `DESIGN.md` describes the earlier Harbour Electric spec and is kept for history.
 
-## Analytics data flow (Spec 04 — planned)
+## Analytics data flow (Spec 04 — code wired; hosted keys/dashboards remain operational)
 
 ```mermaid
 flowchart LR

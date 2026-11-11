@@ -1,27 +1,27 @@
-# Quest! Specs — Instant Verification Era
+# Quest! Feature Specs — Current Status
 
-The spec set behind the post-MVP strategy: make rewards instant, let the community generate content, instrument everything, and ship the moderation Apple demands.
+The product specifications for Quest!'s verification, safety, analytics, content, growth and merchant flows. Status below describes implementation in this checkout; deployment is called out separately in the [launch runbook](../../LAUNCH-RUNBOOK.md).
 
 | # | Spec | One-liner | Status |
 |---|---|---|---|
-| [01](01-geofence-drawing.md) | **Geofence Drawing** | Admin draws quest perimeters on a map — none / circle / city / custom polygon | ✅ **Shipped** (migrations 014–015, admin draw UI, mobile rendering) |
-| [02](02-instant-verification.md) | **Instant Verification** | Geofence pass = proof. Completions auto-approve on submit; XP, streaks, badges, redemption codes fire instantly. Manual approval removed. | ✅ **Shipped** (migration 016, instant celebration, admin log, rate limits) |
-| [03](03-report-moderation.md) | **Reports & Moderation** | Report button on feed posts, block user, feed privacy opt-out, admin moderation queue with XP revocation — Apple Guideline 1.2 compliance | ✅ **Shipped** (migration 017, ReportPostSheet, /moderation, feed_public) |
-| [04](04-analytics-instrumentation.md) | **Analytics** | PostHog + ~15-event schema so the success metrics in PRODUCT.md are actually measurable | ✅ **Mobile wired** — dashboards manual |
-| [05](05-community-quests.md) | **Community Quests & Drops** | Player-suggested quests with credit, Monday drop ritual, quest chains — solves the content treadmill | Drops + suggestions in repo (034–035, local). Chains deferred. Push not deployed. |
-| [06](06-growth-engagement.md) | **Growth & Engagement** | Duo quests + referral loop, Sunday recap share card, XP economy events, first-quest onboarding, offline queue | Starter quest in repo (037, local); remaining features draft |
-| [07](07-merchant-redemption.md) | **Merchant Redemption** | No-login merchant page to validate & redeem sponsor codes; redemption-rate reporting | In repo (036, local). Not applied, not tried live. |
+| [01](01-geofence-drawing.md) | **Geofences** | Anywhere, circle, city, polygon and multi-area zones | Implemented in checkout (013–015, 022, 024–026); local tests pass |
+| [02](02-instant-verification.md) | **Instant Verification** | Server geofence validation; instant rewards and moderation removal | Implemented in checkout (016–017, later hardening) |
+| [03](03-report-moderation.md) | **Reports & Moderation** | Post/comment reports, blocking, feed privacy and admin moderation | Implemented in checkout (018, 028–030) |
+| [04](04-analytics-instrumentation.md) | **Analytics** | PostHog event wrapper and product event schema | Mobile wrapper present; production keys/dashboards are operational work |
+| [05](05-community-quests.md) | **Community Quests & Drops** | Suggestions, weekly drops and chains | Drops/suggestions implemented (034–035); push deployment remains; chains deferred |
+| [06](06-growth-engagement.md) | **Growth & Engagement** | Starter quest, recap, XP events, offline queue and duo loop | Starter quest implemented (037). Sunday recap implemented in checkout (040, not applied or device-tested; no reminder push). Other features planned |
+| [07](07-merchant-redemption.md) | **Merchant Redemption** | No-login merchant validation and redemption reporting | Implemented in checkout (036); live counter flow unverified |
 
 **Next feature handoff:** [Claude implementation prompt](../design/CLAUDE-NEXT-IMPLEMENTATION-PROMPT.md).
-Spec 05 (drops and suggestions) and Spec 07 (merchant redemption) are in this working tree.
-Migrations 034–037 are local. The starter quest is implemented; the next feature is the Spec 06
-Sunday recap card.
+The Nov 10 runbook reports migrations through 038 applied remotely. This doc update did not
+independently query Supabase. Migrations 039 (profile-token privacy) and 040 (recap) are in the
+checkout and not applied. After they are applied and the recap is device-tested, the next
+product feature is Spec 06 §3 (XP events).
 
-**Design.** The visual and UX direction ("Cutouts") lives in [`docs/design/BRAND.md`](../design/BRAND.md).
-The build status is the Nov 9 snapshot in [`docs/design/UI-OVERHAUL-PLAN.md`](../design/UI-OVERHAUL-PLAN.md):
-tokens, cutout pipeline, core loop, social screens, brand surfaces and the admin restyle are in this
-branch. Real photographs, commissioned sprites and a device pass are still founder work. The sentence
-above that called Phase 2 "next" is historical.
+**Design.** Cutouts is the approved visual direction in [`docs/design/BRAND.md`](../design/BRAND.md).
+The implementation snapshot and remaining founder-owned assets/device checks are in
+[`docs/design/UI-OVERHAUL-PLAN.md`](../design/UI-OVERHAUL-PLAN.md). Local code, remote migrations,
+deployed functions and device verification are separate states.
 
 ## Why (product rationale)
 
@@ -50,7 +50,10 @@ Plus the growth reality: word-of-mouth in a ~90k city is the entire distribution
 
 **Hard rule:** 02 and 03 ship in the same release — never auto-approval without the report mechanism, for both content safety and App Store review.
 
-## Rollout plan
+## Original rollout sequence (historical)
+
+The phase names below preserve the dependency sequence from the initial Spec 01–07 rollout.
+For current status, use the table at the top of this page and the [roadmap](../../ROADMAP.md).
 
 | Phase | Contents | Migrations | Status |
 |---|---|---|---|

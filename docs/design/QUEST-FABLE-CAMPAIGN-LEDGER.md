@@ -3,6 +3,44 @@
 Durable state for the Nov 2026 audit-and-implementation campaign. One current status per item.
 Updated at every phase boundary. Historical notes are labelled as history.
 
+## Current continuation (Nov 11, 2026)
+
+This continuation supersedes the session-specific Nov 10 baseline, conflict register and
+"next concrete action" below where they disagree. Current checkout: `cursor/cutouts-this-week-quests`
+at `9221463`; worktree was clean before the documentation reconciliation. Local tests passed:
+50 geofence assertions plus redemption tests, 159 mobile logic assertions, 9 quest-window
+cases, and TypeScript checks for both apps.
+
+- Documentation reconciliation updated README, PRODUCT, ROADMAP, ARCHITECTURE, launch runbook,
+  migration index, specs 01–07/index, UI overhaul plan, seed note and this ledger.
+- SEC-01 remains open: broad profiles SELECT exposes `push_token` to authenticated clients.
+- Migration clean-install ordering remains unresolved; timestamped baseline sorts after numbered
+  follow-ups. No hosted database or function was accessed in this continuation.
+- The Nov 10 runbook reports hosted migrations through 038 plus the timestamped baseline. This
+  is a repository-recorded claim, not independently verified here. Push sender/webhook deployment
+  and live merchant counter use also remain unverified.
+- Next: use [CLAUDE-NEXT-IMPLEMENTATION-PROMPT.md](CLAUDE-NEXT-IMPLEMENTATION-PROMPT.md) to
+  resolve SEC-01 and migration bootstrap documentation, then implement the Spec 06 Sunday recap.
+
+### Continuation — November 11, 2026, implementation session
+
+That prompt was run. Supersedes the "Next" line above and F-004, F-005 and Phase 3 below.
+
+- SEC-01 / F-004: migration `039` plus mobile changes are in the checkout. **Not applied.** The
+  hosted database still exposes `push_token` (to `anon` as well: the policy names no role).
+- DB-01 / F-005: clean-install procedure written in `supabase/migrations/README.md`. **Not
+  executed** (no CLI, no `psql`, Docker not running).
+- Phase 3, Spec 06 §2: migration `040`, recap screen, share card, Rankings entry. **Not applied,
+  not device-tested.** No Sunday push.
+- Local checks: 50 geofence + redemption, 159 logic, 9 quest-window, 24 recap, 8 profile-privacy,
+  both `tsc`. No hosted service was accessed.
+- Nothing was committed by that session unless the git log says otherwise.
+- Next concrete action: owner runs runbook Step 0a (apply 039 and 040, run the 039 checks),
+  then device-tests the recap. After that: outbox draining (F-007), then Spec 06 §3.
+
+The sections below preserve the Nov 10 campaign record and may contain facts that were true
+only for that session; use the continuation above and linked current docs for present status.
+
 ## 1. Baseline (recorded Nov 10, 2026, 15:12 PT)
 
 | Fact | Value |
@@ -53,8 +91,8 @@ any Supabase MCP call (read or write). Remote migration state is **unknown** to 
 | Conflict | Evidence | Current resolution |
 |---|---|---|
 | README/roadmap say 001–030 are the live set and 031 is the next push | `LAUNCH-RUNBOOK.md` Step 0 and the Done-when list, updated Nov 10 after the push | Hosted database has **002–038**. `ROADMAP.md` tables were not rewritten. |
-| Specs README still says Phase 2 of Cutouts is next | `docs/specs/README.md` design paragraph vs `docs/design/UI-OVERHAUL-PLAN.md` Nov 9 status | UI-OVERHAUL-PLAN is the later status. Specs README is stale. Not rewritten yet. |
-| Roadmap “What’s fully implemented” still says Harbour Electric and 44 geofence tests | `ROADMAP.md` implemented tables vs `lib/theme.ts` and a 50-test geofence run on Nov 10 | Code and the Nov 9 audit section are ahead of the older tables. Not rewritten yet. |
+| Specs README says Phase 2 is next (Nov 10 snapshot) | Historical conflict row | Addressed Nov 11: top status table is current; original rollout plan is labelled historical. |
+| Roadmap older tables say Harbour Electric and 44 tests (Nov 10 snapshot) | Historical conflict row | Addressed Nov 11: current status is at the top; legacy phase/status tables are labelled historical. |
 | Streak week was UTC; leaderboard week is Vancouver | `017` lines 46–47 vs `031` leaderboard `America/Vancouver` | **038** moves streak week to Vancouver. One-time streak discontinuity for rows already labelled with a UTC week. |
 | `settings.tsx` “Weekly digest” writes both AsyncStorage and `push_drops` | `apps/mobile/app/settings.tsx` (in-flight, not edited here) | The database flag is what `enqueue_weekly_drop` reads. AsyncStorage can disagree until the in-flight edit settles. |
 
@@ -94,7 +132,7 @@ any Supabase MCP call (read or write). Remote migration state is **unknown** to 
 | F-006 | P2 | fixed in 038, applied | `038` streak week uses `America/Vancouver`. Existing `last_completion_week` UTC labels can still reset a streak once. | Sunday evening Pacific now matches the leaderboard week. |
 | F-007 | P2 | open | `send-push-outbox/index.ts` limits 100 rows and tells the caller to invoke again. The webhook does not. | A Monday drop to more than 100 opted-in players would leave the rest unsent. Function is not deployed. |
 | F-008 | P3 | open | `node scripts/check-tokens.js` on Nov 10: 218 raw tokens in 28 files. | Token debt. Do not mass-rewrite files the other editor has open. |
-| F-009 | P2 | open, doc | `ROADMAP.md` “fully implemented” and `docs/specs/README.md` still describe Harbour Electric and an earlier Cutouts phase. | Operators can follow the wrong status. Phase 1. |
+| F-009 | P2 | addressed Nov 11 | Current status tables in `ROADMAP.md` and `docs/specs/README.md` were reconciled and prior rollout content labelled historical. | Historical notes remain but are identified as such. |
 
 ## 5. Unresolved questions for the owner
 

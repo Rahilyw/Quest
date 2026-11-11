@@ -1,6 +1,6 @@
 # Spec 04 — Analytics Instrumentation
 
-**Status:** Draft → **Implemented in mobile** (dashboards still manual in PostHog UI)
+**Status:** Mobile wrapper and event instrumentation are implemented. Production keys, live event verification and PostHog dashboards remain operational work.
 **Depends on:** nothing (ship before or alongside anything else)
 **Priority:** P0 before launch — the pilot's entire purpose is learning, and today there are zero instruments
 
@@ -15,7 +15,12 @@ PRODUCT.md defines the success metrics (WAU retention after first quest, week-2 
 - **Admin:** no client analytics in v1 (one operator). Sponsor-facing numbers come from the database (Spec 07), not PostHog.
 - **Identity:** `identify(profile.id)` on sign-in with traits `{ city, level, created_at }`. Reset on sign-out. No email/username sent as traits — the profile id is enough to join against the DB when needed.
 
-## 2. Event schema (keep it under ~15 events)
+## 2. Core event schema
+
+This table records the initial core funnel events, not an exhaustive current union. The typed
+wrapper in `apps/mobile/lib/analytics.ts` currently includes 31 event names, including the
+social, notification, weekly-drop and suggestion events added later. Keep new events minimal
+and privacy-safe; do not send GPS coordinates, photos, usernames or free text.
 
 | Event | Properties | Answers |
 |---|---|---|
@@ -33,7 +38,7 @@ PRODUCT.md defines the success metrics (WAU retention after first quest, week-2 
 | `badge_unlocked` | `badge_name` | Progression depth |
 | `streak_extended` / `streak_broken` | `length` | Retention mechanic health |
 | `redemption_code_viewed` | `quest_id`, `sponsor_name` | Sponsor loop top |
-| `share_completed` | `surface` (recap/quest) | Growth loop (Spec 06) |
+| `share_completed` | `surface` (`recap` / `completion`) and nothing else: no image, username or place | Growth loop (Spec 06) |
 
 Time-to-first-XP is **derived**, not an event: `completion_verified` (first) minus `signed_up`, per user. Target: median under 24 hours; the Spec 06 starter-quest work aims at under 5 minutes.
 

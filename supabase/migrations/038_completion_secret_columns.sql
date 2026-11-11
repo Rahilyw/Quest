@@ -14,7 +14,8 @@
 --
 -- Owners read their own code through the functions below. service_role
 -- (admin, merchant redeem) keeps table-level SELECT.
--- This file is local until applied. It does not change a hosted database.
+-- The Nov 10, 2026 launch runbook reports this migration applied to the hosted
+-- Quest project. Re-verify that operational state before future deployment work.
 
 REVOKE SELECT ON TABLE completions FROM PUBLIC, anon, authenticated;
 

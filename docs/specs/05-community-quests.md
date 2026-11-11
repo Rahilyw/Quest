@@ -1,6 +1,6 @@
 # Spec 05 — Community Quests, Weekly Drops & Quest Chains
 
-**Status:** Weekly drops and community suggestions implemented in the repo (Nov 9, 2026). Quest chains remain deferred. Migrations `034` and `035` are local until applied. Monday push is written, not deployed.
+**Status:** Weekly drops and community suggestions are implemented in the checkout (migrations 034–035); quest chains remain deferred. The Nov 10 launch runbook reports migrations through 038 applied. Weekly push source exists, but function/webhook delivery is not reported deployed.
 **Depends on:** Spec 02 (instant verification) for the suggester-XP moment; migration `012_quest_scheduling.sql` (shipped) for drops
 **Problem:** ~28 seeded quests. An engaged player exhausts them in 4–6 weeks and churns. The roadmap covers quest *scheduling* but not where new content comes from.
 
@@ -90,17 +90,17 @@ CREATE TABLE quest_chain_steps (
 2. Community suggestions — the content flywheel.
 3. Chains — once there are ~35+ quests to weave together.
 
-## Implementation note (Nov 9, 2026)
+## Implementation note (reconciled Nov 11, 2026)
 
 Weekly drops and suggestions are in this branch. Chains are not.
 
 - **Window.** `active_from` is inclusive, `active_until` is exclusive, null means that side is open. Labels use `America/Vancouver`. "New this week" is the last 7×24 hours from `active_from`, or `created_at` when the start is open. "Ends Sunday" means the exclusive end is still after now and at or before the next Monday 00:00 Victoria (the leaderboard boundary).
 - **Admin.** Create and edit expose both timestamps, with a Next Monday preset (09:00 Victoria through the following Monday 00:00). The dashboard counts quests whose `active_from` falls on that upcoming Monday.
 - **Mobile.** Discovery lists and the map hide future and ended quests. A player's shelf still shows quests they already finished. Direct links to a quest that has not dropped say it isn't available, and a completion insert is rejected once migration 034 is applied.
-- **Push.** `enqueue_weekly_drop()` writes `push_outbox` once per Victoria week. Nothing is delivered until `send-push-outbox` is deployed and a webhook on `weekly_drop_sends` INSERT is created (see LAUNCH-RUNBOOK Step 0c). The Settings "Weekly digest" toggle stores `profiles.push_drops`. A published suggestion pushes "Your quest idea is live in Victoria." from the admin server when the one-time XP grant is new. That push was not sent in this change.
+- **Push.** `enqueue_weekly_drop()` writes `push_outbox` once per Victoria week. Nothing is delivered until `send-push-outbox` is deployed and a webhook on `weekly_drop_sends` INSERT is created (see LAUNCH-RUNBOOK Step 0c). The Settings "Weekly digest" toggle stores `profiles.push_drops`. The sender handles at most 100 rows per invocation; confirm repeat draining before relying on delivery to a larger audience. Suggestion-live push delivery is also unverified.
 - **Suggestions.** Migration 035. Players insert their own rows (max 3 with status `submitted`, enforced in the database). Admins accept into `/quests/new?suggestion=…` or reject with an optional note. Publishing calls `publish_suggested_quest`, which sets `quests.suggested_by`, pays +100 XP once, and grants City Author at the badge config minimum (seeded at 3).
 - **Analytics.** `weekly_drop_seen` (`new_count`, `ending_count`, `source`) and `suggestion_submitted` (`category`, `has_pin`). `quest_viewed` / `quest_started` also carry `new_this_week` and `ends_sunday`. No free text or coordinates.
-- **Not deployed.** Migrations 034 and 035 were not applied to the hosted database. No push was delivered.
+- **Deployment boundary.** The Nov 10 launch runbook reports migrations 034–035 applied as part of history through 038. This is a repository-recorded claim, not re-verified here. Push delivery remains unavailable until the sender function and webhook are deployed and verified.
 
 ## 5. Non-goals (v1)
 

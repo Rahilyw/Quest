@@ -1,5 +1,6 @@
 -- Seed 20 Victoria, BC quests for Season 1 pilot
--- Run this after 001_initial_schema.sql
+-- Run this only after the full schema has been established. See
+-- supabase/migrations/README.md for the timestamped baseline/order caveat.
 
 insert into quests (title, description, category, lat, lng, xp_reward) values
 ('Run Dallas Road', 'Log a run along the Dallas Road oceanfront path — one of Victoria''s most iconic routes. Go from Clover Point to Beacon Hill Park and back.', 'fitness', 48.4097, -123.3686, 150),
