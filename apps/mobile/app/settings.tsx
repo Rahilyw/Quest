@@ -29,14 +29,18 @@ export default function Settings() {
   useEffect(() => {
     if (!session?.user?.id) return
 
-    // Derive questNearby from actual push token presence
+    // Whether a push token is stored for this account. The token itself is not
+    // readable by clients (migration 039), so ask for a yes/no instead.
+    supabase.rpc('own_push_enabled').then(({ data, error }) => {
+      if (!error) setQuestNearby(data === true)
+    })
+
     supabase
       .from('profiles')
-      .select('push_token, feed_public, push_social, push_drops')
+      .select('feed_public, push_social, push_drops')
       .eq('id', session.user.id)
       .single()
       .then(({ data }) => {
-        setQuestNearby(!!data?.push_token)
         if (data?.feed_public != null) setFeedPublic(data.feed_public)
         if (data?.push_social != null) setPushSocial(data.push_social)
         if (data?.push_drops != null) setWeeklyDigest(data.push_drops)

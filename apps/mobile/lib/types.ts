@@ -123,7 +123,6 @@ export interface UserProfile {
   total_xp: number
   level: number
   avatar_url: string | null
-  push_token: string | null
   current_streak: number
   longest_streak: number
   last_completion_week: string | null
@@ -210,7 +209,8 @@ export type Database = {
           avatar_url?: string | null
           push_token?: string | null
         }
-        Update: Partial<Omit<UserProfile, 'id' | 'created_at'>>
+        /** `push_token` is write-only for clients: UPDATE is granted, SELECT is not (039). */
+        Update: Partial<Omit<UserProfile, 'id' | 'created_at'>> & { push_token?: string | null }
         Relationships: []
       }
       badges: {
@@ -257,7 +257,10 @@ export type Database = {
       }
     }
     Functions: {
-      [_ in never]: never
+      /** Whether the caller has a push token stored. Never returns the token (039). */
+      own_push_enabled: { Args: Record<string, never>; Returns: boolean }
+      /** The caller's rank, XP, streak and best own photo for one Victoria week (040). */
+      own_week_recap: { Args: { p_week_start: string }; Returns: unknown }
     }
   }
 }
