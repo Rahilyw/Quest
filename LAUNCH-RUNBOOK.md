@@ -41,9 +41,12 @@ Do not push again. The Nov 7 instruction to apply `delete_own_account` is alread
 
 ---
 
-## Step 0a — Apply 039 and 040 (15 min) 🔴 not done
+## Step 0a — Apply 039 and 040 (15 min) 🟡 applied, checks pending
 
-Two migrations exist only in the repository. Nothing below has been run.
+Applied to production (`xuviwarpgvxzpouqesrv`) by the owner on Nov 11, 2026 with `npx supabase db push --remote --include-all`. Steps 1–3 are done.
+The CLI needed `--include-all` because the remote history records the timestamped baseline after
+the numbered files. Steps 4–6 (the 039 checks, Settings toggle, recap on device) are not recorded
+as done.
 
 - **039** stops anyone with the anon key from reading `profiles.push_token` (SEC-01). Until it
   is applied the production database still exposes every player's Expo push token.
@@ -271,7 +274,8 @@ The admin app denies **all** logins until `ADMIN_ALLOWED_EMAILS` is set.
 ## Done when
 
 - [x] Migrations 023 and 027 to 038 applied (confirmed Nov 10, 2026)
-- [ ] Migrations 039 and 040 applied, 039 checks run (Step 0a)
+- [x] Migrations 039 and 040 applied (Nov 11, 2026, `db push --remote --include-all`)
+- [ ] 039 checks run (Step 0a, step 4)
 - [ ] Recap screen and share checked on an iPhone and an Android phone
 - [ ] `send-social-push` deployed + notifications webhook created
 - [ ] TestFlight build installed on your phone

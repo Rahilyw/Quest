@@ -26,16 +26,18 @@ cases, and TypeScript checks for both apps.
 
 That prompt was run. Supersedes the "Next" line above and F-004, F-005 and Phase 3 below.
 
-- SEC-01 / F-004: migration `039` plus mobile changes are in the checkout. **Not applied.** The
-  hosted database still exposes `push_token` (to `anon` as well: the policy names no role).
+- SEC-01 / F-004: migration `039` plus mobile changes are in the checkout. **Applied to production
+  by the owner Nov 11, 2026** (`db push --remote --include-all`). The "Verifying 039" queries are
+  not yet recorded as run, so the fix is applied but unverified.
 - DB-01 / F-005: clean-install procedure written in `supabase/migrations/README.md`. **Not
   executed** (no CLI, no `psql`, Docker not running).
-- Phase 3, Spec 06 §2: migration `040`, recap screen, share card, Rankings entry. **Not applied,
-  not device-tested.** No Sunday push.
+- Phase 3, Spec 06 §2: migration `040`, recap screen, share card, Rankings entry. **040 applied to
+  production Nov 11, 2026; not device-tested.** No Sunday push.
 - Local checks: 50 geofence + redemption, 159 logic, 9 quest-window, 24 recap, 8 profile-privacy,
   both `tsc`. No hosted service was accessed.
 - Nothing was committed by that session unless the git log says otherwise.
-- Next concrete action: owner runs runbook Step 0a (apply 039 and 040, run the 039 checks),
+- Next concrete action: owner runs the remaining runbook Step 0a items (the 039 checks; 039 and
+  040 are applied),
   then device-tests the recap. After that: outbox draining (F-007), then Spec 06 §3.
 
 The sections below preserve the Nov 10 campaign record and may contain facts that were true

@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from 'react'
+import { currentWeekStart } from '@quest/geofence'
 import { supabase } from '@/lib/supabase'
 
 export interface QuestPhoto {
@@ -24,23 +25,6 @@ type PhotoRow = {
   completed_at: string
   profile: { username: string; avatar_url: string | null } | null
   likes: { count: number }[]
-}
-
-/** Start of current week (Monday 00:00) in America/Vancouver */
-function getWeekStart(): Date {
-  // Use a date formatter to get the Vancouver local date
-  const now = new Date()
-  const vanStr = now.toLocaleString('en-CA', { timeZone: 'America/Vancouver' })
-  // vanStr format: "YYYY-MM-DD, HH:MM:SS AM/PM"
-  const vanDate = new Date(vanStr)
-  const day = vanDate.getDay() // 0 = Sunday, 1 = Monday, …
-  const daysFromMonday = day === 0 ? 6 : day - 1
-  const monday = new Date(vanDate)
-  monday.setHours(0, 0, 0, 0)
-  monday.setDate(monday.getDate() - daysFromMonday)
-  // Convert back to UTC ISO string for the Supabase query
-  const offset = now.getTime() - vanDate.getTime()
-  return new Date(monday.getTime() + offset)
 }
 
 export function useQuestPhotos(
@@ -95,7 +79,7 @@ export function useQuestPhotos(
     setPhotos(mapped)
 
     // Weekly count: Monday 00:00 America/Vancouver to now
-    const weekStart = getWeekStart()
+    const weekStart = currentWeekStart(new Date())
     const { count } = await supabase
       .from('completions')
       .select('id', { count: 'exact', head: true })

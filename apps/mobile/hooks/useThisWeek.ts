@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { endsThisSunday, includeInScope, isNewThisWeek } from '@quest/geofence'
+import { endsThisSunday, includeInScope, isNewThisWeek, partsInZone, zonedToUtc } from '@quest/geofence'
 import * as Location from 'expo-location'
 import { NBSP } from '@/lib/copy'
 import { supabase } from '@/lib/supabase'
@@ -140,12 +140,10 @@ async function loadFriendHits(userId: string): Promise<
     .filter((row): row is NonNullable<typeof row> => row != null)
 }
 
+/** Midnight today in America/Vancouver, as a UTC ISO string. */
 function vancouverDayStartIso(): string {
-  const now = new Date()
-  const vanNow = new Date(now.toLocaleString('en-US', { timeZone: 'America/Vancouver' }))
-  vanNow.setHours(0, 0, 0, 0)
-  const offset = now.getTime() - new Date(now.toLocaleString('en-US', { timeZone: 'America/Vancouver' })).getTime()
-  return new Date(vanNow.getTime() + offset).toISOString()
+  const today = partsInZone(new Date())
+  return zonedToUtc(today.year, today.month, today.day).toISOString()
 }
 
 async function loadCity(

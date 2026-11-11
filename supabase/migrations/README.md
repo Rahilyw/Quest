@@ -3,7 +3,7 @@
 The baseline schema is `20260619010246_initial_schema.sql`; numbered follow-ups are `002`–`040`.
 There is no `001_initial_schema.sql`. The Nov 10, 2026 runbook reports the existing Quest project
 has the baseline and migrations through 038 applied; that report was not independently re-queried.
-**039 and 040 are present in this checkout only. Nothing here records them as applied anywhere.**
+**039 and 040: Applied to production (`xuviwarpgvxzpouqesrv`) by the owner on Nov 11, 2026 with `npx supabase db push --remote --include-all`. The "Verifying 039" checks below have not been recorded as run.**
 
 For any authorized hosted migration operation, inspect the target and dry-run first. The Supabase
 CLI defaults to the local stack; `--remote` explicitly targets the linked hosted project.
@@ -110,8 +110,8 @@ SELECT grantee, column_name FROM information_schema.column_privileges
 | `036_merchant_redemption.sql` | `sponsors` plus an unguessable `merchant_key`. Service-role lookup and idempotent mark-redeemed, 10 attempts per minute per sponsor. Players cannot set `redeemed_at` (`redeemed_at` itself is from 017). Applied Nov 10, 2026. New ids use `gen_random_uuid()`. |
 | `037_starter_quest.sql` | Adds `quests.is_starter`, designates the anywhere journal quest, and provides a service-role-only transaction for safely moving the designation. Applied Nov 10, 2026. |
 | `038_completion_secret_columns.sql` | Drops anon/authenticated table SELECT on `completions`, then grants every column except `redemption_code`, `lat`, `lng`, `gps_accuracy` and `reviewed_by`. Owners read their own code via `own_completion_reward` / `own_reward_codes`. Non-sponsored inserts cannot keep a client-supplied code. Streak week uses `America/Vancouver`. A later column on `completions` needs its own GRANT. Runbook reports applied Nov 10, 2026. |
-| `039_profile_push_token_privacy.sql` | SEC-01. Drops anon/authenticated table SELECT on `profiles`, then grants every column except `push_token`. `own_push_enabled()` gives Settings a yes/no for the caller. Own-row `push_token` UPDATE is unchanged. `select=*` on profiles from a client now fails, so ship the client first. A later column on `profiles` needs its own GRANT. **Not applied anywhere.** |
-| `040_week_recap.sql` | Spec 06 §2. `own_week_recap(date)` returns the caller's rank, weekly XP, quest count, derived streak and best own place photo for one `America/Vancouver` week (current or previous only). Authenticated only. Recomputed from live rows; no snapshot table. **Not applied anywhere.** |
+| `039_profile_push_token_privacy.sql` | SEC-01. Drops anon/authenticated table SELECT on `profiles`, then grants every column except `push_token`. `own_push_enabled()` gives Settings a yes/no for the caller. Own-row `push_token` UPDATE is unchanged. `select=*` on profiles from a client now fails, so ship the client first. A later column on `profiles` needs its own GRANT. **Applied to production Nov 11, 2026; verification checks not yet recorded.** |
+| `040_week_recap.sql` | Spec 06 §2. `own_week_recap(date)` returns the caller's rank, weekly XP, quest count, derived streak and best own place photo for one `America/Vancouver` week (current or previous only). Authenticated only. Recomputed from live rows; no snapshot table. **Applied to production Nov 11, 2026.** |
 
 ## Column grants: what a new column needs
 

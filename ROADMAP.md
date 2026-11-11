@@ -1,7 +1,7 @@
 # Quest! — Product Roadmap
 
 **Last reconciled:** November 11, 2026
-**Current product priority:** apply and verify migrations 039 (profile-token fix) and 040 (recap), device-test the Sunday recap, then harden weekly push draining before any recap reminder push.
+**Current product priority:** verify migration 039 (profile-token fix; 039 and 040 applied to production Nov 11, 2026), device-test the Sunday recap, then harden weekly push draining before any recap reminder push.
 
 This section is the current status for the checkout. It is not a deployment certification.
 For detailed findings and exact local checks, see the [Nov 11 audit](docs/design/CODEBASE-AUDIT-2026-11-11.md).
@@ -9,14 +9,14 @@ For detailed findings and exact local checks, see the [Nov 11 audit](docs/design
 | Area | Current code/docs status | Next step |
 |---|---|---|
 | Core verification and moderation | Implemented in migrations and app code: geofences, instant rewards, reports, blocks, moderation, account deletion, badges and social layer. | Resolve audit issues and maintain server authority. |
-| Profile privacy | **P1, fix written:** migration 039 removes `push_token` from client SELECT; mobile reads explicit columns. Not applied to any database; SQL not executed. | Owner applies 039 after testers are on a build from this checkout, then runs the checks in the migration README. See SEC-01. |
+| Profile privacy | **P1, fix written:** migration 039 removes `push_token` from client SELECT; mobile reads explicit columns. Applied to production Nov 11, 2026; verification queries not yet recorded. | Owner runs the "Verifying 039" checks in the migration README. See SEC-01. |
 | Migration bootstrap | Files are timestamped initial schema plus numbered 002–040. Fresh lexical order is unsafe. A clean-install procedure is documented in the migration README. | Run the procedure once on a throwaway database; it has not been executed. |
 | Community content | Weekly drops and suggestions are implemented in code (034–035); chains remain deferred. | Verify sender/webhook separately; improve outbox draining before enabling at scale. |
 | Merchant redemption | Implementation is present (036) with public merchant page and sponsor reporting. | Live counter flow remains unverified; do not infer from code. |
 | Starter quest | Implemented (037) and surfaced in This week. | Keep current as implemented; no duplicate work. |
 | Cutouts | Main mobile and admin surfaces are implemented. Real place photography/cutouts and device/accessibility validation remain. | See [UI overhaul status](docs/design/UI-OVERHAUL-PLAN.md). |
 | Analytics | Mobile event wrapper/SDK integration is present. Production keys and dashboards are operational tasks. | See Spec 04 and runbook. |
-| Growth | Sunday recap implemented in checkout (migration 040, recap screen from Rankings, on-device share card). Not applied, not device-tested. No Sunday reminder push. XP events, offline queue and duo quests are not implemented. | Apply 040, test on iOS and Android, then XP events (Spec 06 §3). |
+| Growth | Sunday recap implemented in checkout (migration 040, recap screen from Rankings, on-device share card). 040 applied to production Nov 11, 2026; not device-tested. No Sunday reminder push. XP events, offline queue and duo quests are not implemented. | Test on iOS and Android, then XP events (Spec 06 §3). |
 | Push | Social and weekly sender source exists. Repository docs report the functions/webhooks are not deployed. Weekly sender caps each invocation at 100 rows. | Deploy and validate only through the runbook; harden repeat draining. |
 
 The Nov 10 runbook reports hosted migrations through 038 plus the timestamped initial schema.
@@ -299,7 +299,7 @@ Decisions D1 to D8 are recorded in the plan (wordmark, tabs, category colours, d
 | # | Task | Status |
 |---|---|---|
 | F.1 | First-quest onboarding: `is_starter` quest pinned post-signup; time-to-first-XP < 5 min | In repo (037 local); seed, admin designation and This week card implemented Nov 9 |
-| F.2 | Sunday recap share card (view-shot + native share) + Sunday push | Card and screen in repo (040 local, Nov 11); not applied or device-tested. Sunday push not built: waits on outbox draining (OPS-01). |
+| F.2 | Sunday recap share card (view-shot + native share) + Sunday push | Card and screen in repo; 040 applied to production Nov 11; not device-tested. Sunday push not built: waits on outbox draining (OPS-01). |
 | F.3 | XP economy events: `xp_events` table, double-XP weekends, first-finisher bonus, lapsed-player win-back | ❌ |
 | F.4 | Offline submission queue with retry | ❌ |
 | F.5 | Duo quests: `min_party_size`, party codes/QR, duo bonus, referral kicker + Recruiter badge, duo seed quests | ❌ |

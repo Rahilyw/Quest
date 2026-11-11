@@ -7,9 +7,9 @@
     "packages/geofence"
   ],
   "scripts": {
-    "mobile": "yarn workspace mobile start",
-    "admin": "yarn workspace admin dev",
-    "test:geofence": "yarn workspace @quest/geofence test",
+    "mobile": "npm run start --workspace mobile",
+    "admin": "npm run dev --workspace admin",
+    "test:geofence": "npm test --workspace @quest/geofence",
     "postinstall": "node scripts/link-expo-deps.js"
   },
   "devDependencies": {

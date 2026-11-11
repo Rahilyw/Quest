@@ -425,7 +425,7 @@ function/webhook deployment.
 ### Prerequisites
 
 - Node.js 22.13+ (required by Expo SDK 58)
-- Yarn (for workspace scripts) or npm
+- npm (the repo uses npm workspaces and `package-lock.json`)
 - [Supabase account](https://supabase.com)
 - [Expo Go](https://expo.dev/go) app on your phone (for development) or a simulator
 
@@ -435,8 +435,8 @@ function/webhook deployment.
 git clone https://github.com/your-org/quest.git
 cd quest
 
-# Install root dependencies
-yarn install
+# Install all workspaces (mobile, admin, geofence) from the repo root
+npm install
 
 # Install app dependencies
 cd apps/mobile && npm install
