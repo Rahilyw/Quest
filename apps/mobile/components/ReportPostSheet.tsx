@@ -126,7 +126,7 @@ export function ReportPostSheet<R extends string = ReportReason>({
 
 const styles = StyleSheet.create({
   overlay: { flex: 1, justifyContent: 'flex-end' },
-  backdrop: { ...StyleSheet.absoluteFillObject, backgroundColor: COLOR.scrim },
+  backdrop: { ...StyleSheet.absoluteFill, backgroundColor: COLOR.scrim },
   sheet: {
     backgroundColor: COLOR.paper,
     borderTopLeftRadius: RADIUS.sheet,

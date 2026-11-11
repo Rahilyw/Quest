@@ -1,5 +1,5 @@
 import { useRef, useState } from 'react'
-import { type TextInput } from 'react-native'
+import type { TextInputInstance } from 'react-native'
 import { useRouter } from 'expo-router'
 import { supabase } from '@/lib/supabase'
 import {
@@ -14,7 +14,7 @@ import {
 
 export default function SignIn() {
   const router = useRouter()
-  const passwordRef = useRef<TextInput>(null)
+  const passwordRef = useRef<TextInputInstance>(null)
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [loading, setLoading] = useState(false)

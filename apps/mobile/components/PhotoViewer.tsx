@@ -7,7 +7,6 @@ import { useEffect, useRef, useState } from 'react'
 import {
   Modal,
   PanResponder,
-  Platform,
   Pressable,
   StatusBar,
   StyleSheet,
@@ -56,10 +55,8 @@ export function PhotoViewer({
   useEffect(() => {
     if (!visible) return
     StatusBar.setBarStyle('light-content')
-    if (Platform.OS === 'android') StatusBar.setBackgroundColor(COLOR.ink)
     return () => {
       StatusBar.setBarStyle('dark-content')
-      if (Platform.OS === 'android') StatusBar.setBackgroundColor(COLOR.paper)
     }
   }, [visible])
 

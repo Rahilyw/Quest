@@ -8,6 +8,7 @@ import {
   StyleSheet,
   TextInput,
   View,
+  type TextInputInstance,
   type TextInputProps,
 } from 'react-native'
 import { Ionicons } from '@expo/vector-icons'
@@ -78,7 +79,7 @@ export interface FieldProps extends TextInputProps {
   /** Adds a Show / Hide toggle and hides the text by default. */
   secure?: boolean
   hint?: string
-  inputRef?: Ref<TextInput>
+  inputRef?: Ref<TextInputInstance>
 }
 
 export function Field({ label, secure, hint, inputRef, style, onFocus, onBlur, ...input }: FieldProps) {

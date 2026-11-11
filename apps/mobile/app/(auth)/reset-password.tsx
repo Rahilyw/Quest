@@ -1,12 +1,12 @@
 import { useRef, useState } from 'react'
-import { type TextInput } from 'react-native'
+import type { TextInputInstance } from 'react-native'
 import { useRouter } from 'expo-router'
 import { supabase } from '@/lib/supabase'
 import { AuthScreen, Field, FormError, PrimaryButton, authErrorCopy } from '@/components/auth/AuthKit'
 
 export default function ResetPassword() {
   const router = useRouter()
-  const confirmRef = useRef<TextInput>(null)
+  const confirmRef = useRef<TextInputInstance>(null)
   const [password, setPassword] = useState('')
   const [confirm, setConfirm] = useState('')
   const [loading, setLoading] = useState(false)

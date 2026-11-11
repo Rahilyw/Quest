@@ -1,5 +1,5 @@
 import { useRef, useState } from 'react'
-import { type TextInput } from 'react-native'
+import type { TextInputInstance } from 'react-native'
 import { useRouter } from 'expo-router'
 import { supabase } from '@/lib/supabase'
 import { getOnboardingCity } from '@/lib/onboarding'
@@ -16,8 +16,8 @@ import { Body } from '@/components/ui/Text'
 
 export default function SignUp() {
   const router = useRouter()
-  const emailRef = useRef<TextInput>(null)
-  const passwordRef = useRef<TextInput>(null)
+  const emailRef = useRef<TextInputInstance>(null)
+  const passwordRef = useRef<TextInputInstance>(null)
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [username, setUsername] = useState('')

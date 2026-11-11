@@ -239,7 +239,7 @@ export function CommentsSheet({ visible, completionId, currentUserId, onClose, o
 }
 
 const styles = StyleSheet.create({
-  backdrop: { ...StyleSheet.absoluteFillObject, backgroundColor: COLOR.scrim },
+  backdrop: { ...StyleSheet.absoluteFill, backgroundColor: COLOR.scrim },
   sheetWrap: { flex: 1, justifyContent: 'flex-end' },
   sheet: {
     backgroundColor: COLOR.paper,

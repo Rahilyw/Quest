@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { FlatList, Pressable, RefreshControl, StyleSheet, View, type ViewToken } from 'react-native'
+import { FlatList, Pressable, RefreshControl, StyleSheet, View, type ListViewToken } from 'react-native'
 import { useFocusEffect, useRouter } from 'expo-router'
 import { Ionicons } from '@expo/vector-icons'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
@@ -128,7 +128,7 @@ export default function RankingsScreen() {
   const showPin = Boolean(profile) && !loading && (myEntry ? myEntry.rank > 3 && ownVisible === false : true)
 
   const onViewableItemsChanged = useRef(
-    ({ viewableItems }: { viewableItems: ViewToken[] }) => {
+    ({ viewableItems }: { viewableItems: ListViewToken[] }) => {
       setOwnVisible(viewableItems.some((token) => token.item?.user_id === selfId.current))
     },
   ).current

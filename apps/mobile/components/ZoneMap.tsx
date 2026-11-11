@@ -137,7 +137,7 @@ export function ZoneMap({
         pitchEnabled={false}
         toolbarEnabled={false}
         showsCompass={false}
-        showsPointsOfInterest={false}
+        showsPointsOfInterests={false}
         liteMode
       >
         {shapes.map((s, i) =>

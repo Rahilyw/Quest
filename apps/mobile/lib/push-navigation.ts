@@ -1,11 +1,11 @@
 import * as Notifications from 'expo-notifications'
-import type { Router } from 'expo-router'
+import type { ImperativeRouter } from 'expo-router'
 import { notificationRoute, type SocialNotificationType } from './socialNotifications'
 import { track } from './analytics'
 
 type NotificationData = Record<string, unknown>
 
-function handleNotificationTap(data: NotificationData, router: Router) {
+function handleNotificationTap(data: NotificationData, router: ImperativeRouter) {
   // Social pushes (029) carry completion_id too, so match them first.
   if (data?.type === 'weekly_drop') {
     track('notification_opened', { type: 'weekly_drop', source: 'push' })
@@ -34,7 +34,7 @@ function handleNotificationTap(data: NotificationData, router: Router) {
   }
 }
 
-export function mountPushListeners(router: Router): () => void {
+export function mountPushListeners(router: ImperativeRouter): () => void {
   const receivedSub = Notifications.addNotificationReceivedListener(() => {
     // foreground receive — no action needed; handler in notifications.ts shows alert
   })

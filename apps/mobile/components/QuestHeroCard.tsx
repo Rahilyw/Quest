@@ -96,7 +96,7 @@ const styles = StyleSheet.create({
   imageWrap: { height: 176, position: 'relative' },
   image: { width: '100%', height: '100%' },
   scrim: {
-    ...StyleSheet.absoluteFillObject,
+    ...StyleSheet.absoluteFill,
     backgroundColor: 'rgba(28,25,21,0.42)',
   },
   tagRow: {

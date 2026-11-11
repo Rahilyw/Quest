@@ -9,6 +9,7 @@ import {
   Alert,
   Share,
   useWindowDimensions,
+  type ViewInstance,
 } from 'react-native'
 import { captureRef } from 'react-native-view-shot'
 import * as Sharing from 'expo-sharing'
@@ -35,7 +36,7 @@ interface Props {
  * (Instagram / Facebook / Messages — whatever the device offers).
  */
 export function ShareStoryModal({ visible, data, onClose }: Props) {
-  const cardRef = useRef<View>(null)
+  const cardRef = useRef<ViewInstance>(null)
   const [sharing, setSharing] = useState(false)
   const { width, height } = useWindowDimensions()
 

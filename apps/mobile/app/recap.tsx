@@ -8,6 +8,7 @@ import {
   StyleSheet,
   View,
   useWindowDimensions,
+  type ViewInstance,
 } from 'react-native'
 import { useRouter } from 'expo-router'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
@@ -50,7 +51,7 @@ export default function RecapScreen() {
   const { width } = useWindowDimensions()
   const { session, profile } = useAuth()
   const { week, recap, loading, failed, photoReady, reload } = useWeekRecap(session?.user?.id)
-  const cardRef = useRef<View>(null)
+  const cardRef = useRef<ViewInstance>(null)
   const [sharing, setSharing] = useState(false)
   const [note, setNote] = useState<string | null>(null)
 

@@ -3,7 +3,7 @@ import { Pressable, StyleSheet, View } from 'react-native'
 import { Ionicons } from '@expo/vector-icons'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import Animated, { useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated'
-import type { BottomTabBarProps } from '@react-navigation/bottom-tabs'
+import type { BottomTabBarProps } from 'expo-router/tabs'
 import { Avatar } from '@/components/Avatar'
 import { useAuth } from '@/hooks/useAuth'
 import { COLOR, RADIUS, SHADOW } from '@/lib/theme'
@@ -21,7 +21,7 @@ const YOU_ROUTE = 'profile'
  * White pill with four icon buttons, plus an avatar circle for You.
  * The active icon is an ink pill. No blur.
  */
-export function QuestTabBar({ state, navigation }: BottomTabBarProps) {
+export function QuestTabBar({ state, emitter, navigateToTab }: BottomTabBarProps) {
   const insets = useSafeAreaInsets()
   const { profile } = useAuth()
   const focusedName = state.routes[state.index]?.name
@@ -30,16 +30,16 @@ export function QuestTabBar({ state, navigation }: BottomTabBarProps) {
     (name: string) => {
       const route = state.routes.find((item) => item.name === name)
       if (!route) return
-      const event = navigation.emit({
+      const event = emitter.emit({
         type: 'tabPress',
         target: route.key,
         canPreventDefault: true,
       })
       if (route.name !== focusedName && !event.defaultPrevented) {
-        navigation.navigate(route.name as never)
+        navigateToTab(route.key)
       }
     },
-    [focusedName, navigation, state.routes],
+    [emitter, focusedName, navigateToTab, state.routes],
   )
 
   return (

@@ -236,7 +236,7 @@ const styles = StyleSheet.create({
   pressed: { transform: [{ scale: 0.97 }] },
   mapClip: { height: 168, borderRadius: RADIUS.card, overflow: 'hidden', backgroundColor: COLOR.desk },
   mapOverlay: {
-    ...StyleSheet.absoluteFillObject,
+    ...StyleSheet.absoluteFill,
     justifyContent: 'space-between',
     alignItems: 'flex-start',
     padding: SPACE.s3,

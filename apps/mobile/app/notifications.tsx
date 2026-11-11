@@ -65,9 +65,9 @@ export default function NotificationsScreen() {
           keyExtractor={(item) => item.id}
           contentContainerStyle={[styles.list, { paddingBottom: insets.bottom + SPACE.s7 }]}
           refreshControl={<RefreshControl refreshing={refreshing} onRefresh={refresh} tintColor={COLOR.ink} />}
-          ListHeaderComponent={error ? <Body tone="soft" style={styles.error}>{error}</Body> : null}
+          ListHeaderComponent={error ? <Body tone="soft" style={styles.error}>{error}</Body> : undefined}
           ListEmptyComponent={
-            error ? null : (
+            error ? undefined : (
               <View style={styles.empty}>
                 <Sprite name="gull" size={88} />
                 <Body tone="soft">Likes, comments, and new followers show up here.</Body>

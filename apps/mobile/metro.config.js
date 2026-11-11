@@ -16,10 +16,11 @@ config.resolver.nodeModulesPaths = [
 ];
 
 // Force ALL react imports to app's React 19 copy.
-// Without this, @react-navigation (hoisted to root node_modules) picks up React 18 from the
+// Without this, hoisted packages (react-native, expo-router) resolve the root React copy from the
 // admin workspace, creating two React instances → "Cannot read property 'useRef' of null".
 // By spoofing originModulePath to a file inside apps/mobile, Metro walks up from here and
-// finds apps/mobile/node_modules/react (19.1.0) before reaching root node_modules (18.3.1).
+// finds apps/mobile/node_modules/react (19.3.0, required by RN 0.88) before reaching root
+// node_modules/react (19.1.0, pinned by the admin app).
 config.resolver.resolveRequest = (context, moduleName, platform) => {
   if (moduleName === 'react' || moduleName.startsWith('react/')) {
     return context.resolveRequest(

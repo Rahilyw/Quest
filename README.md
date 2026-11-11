@@ -424,7 +424,7 @@ function/webhook deployment.
 
 ### Prerequisites
 
-- Node.js 20+
+- Node.js 22.13+ (required by Expo SDK 58)
 - Yarn (for workspace scripts) or npm
 - [Supabase account](https://supabase.com)
 - [Expo Go](https://expo.dev/go) app on your phone (for development) or a simulator
