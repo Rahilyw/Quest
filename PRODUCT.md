@@ -8,7 +8,7 @@ product
 
 Urban residents aged 20-35 in mid-size walkable cities (pilot: Victoria, BC). They feel the gap between wanting more real-world connection and not knowing how to start. They already use gamified apps daily (Duolingo, Strava) and are comfortable with social proof, streaks, and leaderboards. They use Quest! on their phone outdoors: walking to a quest, standing at a location, or checking the leaderboard on Sunday night. Ambient light is variable; one-handed use is common; they are in motion or about to be.
 
-Secondary user: the admin operator (solo founder in the pilot). Uses the web dashboard at a desk to approve completions, manage quests, and review sponsor reports.
+Secondary user: the admin operator (solo founder in the pilot). Uses the web dashboard at a desk to manage quests, moderate reported content, review users and sponsor reports, and curate suggestions.
 
 ## Product Purpose
 
@@ -38,20 +38,20 @@ The June 2026 Figma reimagining adds a **game-show layer**: photo proof in a pub
 1. **Realness over polish.** The interface should feel like it was made for the city, not for a portfolio. Proof photos in the activity feed are the product — not stock imagery.
 2. **Local identity is the product.** Generic is a bug. Every surface should feel like it could only exist in the city it serves. Quest copy, category names, empty states: all of them should feel written by someone standing on that street.
 3. **Earned, not given — and earned *there*.** XP and badges carry weight because they represent real, verified effort. Verification happens at the location, at the moment: the geofence is the proof, and the reward lands seconds after the real-world act (see `docs/specs/02-instant-verification.md`). No XP for unverified actions, no fake progress — but also no waiting for a stranger to approve what you already did.
-4. **Bold decisions, not safe ones.** Bold · Local · Playful means committing to choices that surprise. A podium leaderboard and navy hero headers are intentional — not a generic list with medals pasted on.
+4. **Bold decisions, not safe ones.** Bold · Local · Playful means committing to choices that surprise. The Cutouts system uses warm paper and ink, category color, photographic proof and strong display type; it should not collapse into a generic list with medals pasted on.
 5. **Design serves getting outside.** Every tap, every screen, every empty state should reduce friction between the user and the real world. If a screen makes someone spend longer in the app, it has failed.
 
 ## Mobile information architecture
 
-Five primary tabs today. The Cutouts overhaul (`docs/design/BRAND.md` §10) renames them to **This week, Quests, City, Rankings, You**, with Badges moving into You:
+The current five primary tabs are **This week, Quests, City, Rankings, You**. Badges live inside You:
 
 | Tab | Job to be done |
 |-----|----------------|
-| **Explore** | "What should I do next?" — discover quests with hero imagery |
-| **Quests** | "What's happening in the city?" — map + social proof feed |
-| **Rankings** | "Where do I stand?" — weekly competition, podium, chasers |
-| **Badges** | "What have I earned?" — collection progress and locked goals |
-| **Profile** | "What's my story?" — stats, recent activity, account access |
+| **This week** | "What should I do next?" — starter quest, weekly drops and featured quests |
+| **Quests** | "What can I do in the city?" — quest discovery, categories and map |
+| **City** | "What's happening in the community?" — activity and social proof |
+| **Rankings** | "Where do I stand?" — weekly competition, podium and chasers |
+| **You** | "What's my story?" — stats, completions, badges and account settings |
 
 Settings, edit profile, quest detail, and submission remain stack screens outside the tab bar.
 
@@ -61,13 +61,17 @@ The city writes the game. Quest content comes from three sources, in rising orde
 
 1. **Seeded quests** — the founder-authored starter set (Victoria pilot: ~28).
 2. **Weekly drops** — new quests land Monday morning; expiring quests end Sunday night, bookending the leaderboard week. The rhythm is the product: Monday pulls you out, Sunday night settles the score.
-3. **Community-suggested quests** — locals submit ideas; the best are curated, published, and credited ("Quest by @sarah"). The people who know the streets write the streets. See `docs/specs/05-community-quests.md`.
+3. **Community-suggested quests** — locals submit ideas; admins curate and publish them with credit ("Quest by @sarah"). The people who know the streets write the streets. See `docs/specs/05-community-quests.md`.
+
+Weekly drops and community suggestions are implemented in this checkout; push delivery and
+hosted behavior are tracked separately in the launch runbook. Quest chains are deferred until
+the catalog and product decision support them.
 
 Quest chains group existing quests into neighbourhood storylines ("The Old Town Trilogy") for progression depth without content volume.
 
 ## Playing together
 
-The mission is real-world connection, so the game can't stay single-player. **Duo quests** require two people at the location — both submit, both earn bonus XP — and bringing someone who doesn't have Quest! yet is the growth loop (see `docs/specs/06-growth-engagement.md`). The **Sunday recap card** (rank, XP, streak, best photo) is the shareable unit: your week in the city, worth showing off. Since Aug 2026 the social layer also has follows, likes, comments and an activity inbox (no DMs). Proof is moving to two shots, the place then a selfie (decision D6), and every quest page shows the people who've been there.
+The mission is real-world connection, so the game can grow beyond single-player. Duo quests are specified but not yet implemented. The **Sunday recap card** (rank, XP, streak, best photo) is implemented in the checkout and opens from Rankings; its migration is not yet applied and it has not been device-tested (see `docs/specs/06-growth-engagement.md`). The social layer has follows, likes, comments and an activity inbox (no DMs). The current proof flow supports a place photo and optional selfie; the selfie is private and not part of public sharing.
 
 ## Safety, privacy & trust
 

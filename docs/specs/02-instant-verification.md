@@ -1,6 +1,6 @@
 # Spec 02 — Instant Verification (remove the approval system)
 
-**Status:** ✅ Implemented (July 2026) — migration `016_instant_verification.sql`
+**Status:** Implemented in the checkout — status enum change is migration 016; instant-verification behavior is migration 017, with later hardening in 026, 030, 031 and 038. Hosted state is in the launch runbook.
 **Depends on:** migration `013` (geofence enforcement on insert); Spec 01 recommended first
 **Must ship with:** Spec 03 (reports & moderation) in the same release — shipped together (migration `017`)
 

@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import { dropDayWindow, formatDropLabel } from '@quest/geofence'
 import { supabaseAdmin } from '@/lib/supabase'
 import { getFlaggedCommentCount, getFlaggedCount } from '@/app/moderation/actions'
 import { theme } from '@/lib/theme'
@@ -14,11 +15,22 @@ export default async function Dashboard() {
     { count: totalCompletions },
     { count: removedCompletions },
     { count: activeQuests },
+    nextDrop,
   ] = await Promise.all([
     supabaseAdmin.from('profiles').select('*', { count: 'exact', head: true }),
     supabaseAdmin.from('completions').select('*', { count: 'exact', head: true }).eq('status', 'approved'),
     supabaseAdmin.from('completions').select('*', { count: 'exact', head: true }).eq('status', 'removed'),
     supabaseAdmin.from('quests').select('*', { count: 'exact', head: true }).eq('status', 'active'),
+    (async () => {
+      const window = dropDayWindow(new Date())
+      const { count, error } = await supabaseAdmin
+        .from('quests')
+        .select('id', { count: 'exact', head: true })
+        .eq('status', 'active')
+        .gte('active_from', window.start.toISOString())
+        .lt('active_from', window.end.toISOString())
+      return { count: error ? null : count ?? 0, label: formatDropLabel(window.at) }
+    })(),
   ])
 
   const stats = [
@@ -50,6 +62,21 @@ export default async function Dashboard() {
             <div key={s.label}>{inner}</div>
           )
         })}
+      </div>
+
+      <div className="admin-card" style={{ marginBottom: 24, maxWidth: 520 }}>
+        <div style={{ fontSize: 13, fontWeight: 700, color: theme.textMuted }}>Next Monday drop</div>
+        <div style={{ fontSize: 28, fontWeight: 800, marginTop: 6 }}>
+          {nextDrop.count == null ? '—' : nextDrop.count}
+        </div>
+        <p style={{ margin: '8px 0 0', color: theme.textMuted, fontSize: 14 }}>
+          {nextDrop.label}
+          {nextDrop.count === 0
+            ? '. Nothing scheduled yet — an empty Monday is visible here before it arrives.'
+            : nextDrop.count == null
+              ? '. Couldn’t count scheduled quests.'
+              : ` scheduled for that morning.`}
+        </p>
       </div>
 
       <Link href="/quests/new" className="admin-btn admin-btn-primary" style={{ textDecoration: 'none' }}>

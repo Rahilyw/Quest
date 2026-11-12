@@ -46,7 +46,7 @@ The core loop is:
 6. Completion appears on the **public activity feed** — unless the player turned off feed publishing in Settings
 7. The community can **report** posts (3 independent reports auto-hide) and **block** users; the admin **moderation queue** reviews flagged posts with GPS evidence — removal revokes the XP
 
-Strategic priorities before launch: analytics instrumentation ([Spec 04](docs/specs/04-analytics-instrumentation.md)), iOS store credentials, applying migrations live — then content and growth specs 05–07.
+The Spec 06 Sunday recap and the fix for the profile `push_token` read exposure (SEC-01) are in this checkout as migrations 039 and 040 plus mobile code. Neither migration is applied to a hosted database and neither feature has run on a device; see the [Nov 11 audit](docs/design/CODEBASE-AUDIT-2026-11-11.md) and [roadmap](ROADMAP.md). Hosted database, push delivery and store readiness are tracked separately in the [launch runbook](LAUNCH-RUNBOOK.md).
 
 ---
 
@@ -91,12 +91,12 @@ Quest! (monorepo root)
 │   │   │   ├── (tabs)/           5-tab main navigation
 │   │   │   ├── quest/[id].tsx    Quest detail page
 │   │   │   ├── submit/[questId]  Camera + GPS submission flow
-│   │   │   ├── onboarding.tsx    3-screen intro + city selection
+│   │   │   ├── onboarding.tsx    3-screen Victoria pilot introduction
 │   │   │   └── ...               Edit profile, settings, legal
 │   │   ├── components/           Reusable UI components (incl. ReportPostSheet)
 │   │   ├── hooks/                Data-fetching hooks (Supabase queries)
 │   │   ├── lib/                  Supabase client, constants, types, celebration
-│   │   └── __tests__/            Logic unit tests (105 assertions)
+│   │   └── __tests__/            Logic and quest-window tests
 │   │
 │   └── admin/                    Next.js admin dashboard
 │       ├── app/                  App Router pages
@@ -110,16 +110,17 @@ Quest! (monorepo root)
 │       └── middleware.ts         Auth redirect guard
 │
 ├── packages/
-│   └── geofence/                 @quest/geofence — shared client geofence (44 tests)
+│   └── geofence/                 @quest/geofence — shared geofence and redemption logic
 │
 ├── docs/
 │   └── specs/                    Feature specs 01–07 (instant verification era)
 │
 ├── supabase/
-│   ├── migrations/               001–031 (index: supabase/migrations/README.md)
+│   ├── migrations/               timestamped initial schema + 002–040 (see migration index)
 │   ├── functions/
-│   │   └── send-social-push/     Push for comments, replies and follows (Database Webhook)
-│   ├── seed.sql                  ~29 Victoria quests + 13 badges + geofence examples
+│   │   ├── send-social-push/     Push for comments, replies and follows (webhook required)
+│   │   └── send-push-outbox/     Weekly-drop sender (webhook required)
+│   ├── seed.sql                  Victoria quests, badges and geofence examples
 │   └── config.toml               Edge function config
 │
 ├── docs/design/                  Cutouts brand spec (BRAND.md) + UI overhaul plan
@@ -154,7 +155,7 @@ Quest! (monorepo root)
 - XP earned instantly on verification; 10-level progression (0 → 15,000 XP)
 - Weekly leaderboard resets every Monday — compete for the top spot
 - Streak system: maintain a weekly completion streak to build momentum
-- 13 collectible badges with distinct unlock conditions
+- Collectible badges with admin-configurable unlock rules and per-badge thresholds
 
 **Social feed**
 - Activity tab shows a live feed of approved completions from the community
@@ -226,8 +227,8 @@ Quest! (monorepo root)
 
 | Technology | Version | Role |
 |-----------|---------|------|
-| Next.js | 14.2 | Framework (App Router, ISR) |
-| React | 18.3 | UI library |
+| Next.js | 15.5.28 | Framework (App Router) |
+| React | 19.1.0 | UI library |
 | TypeScript | 5 | Type safety |
 | @supabase/ssr | 0.5.2 | SSR-safe auth client |
 | @supabase/server | 1.1 | Service-role admin client |
@@ -247,6 +248,12 @@ Quest! (monorepo root)
 
 ## Database Schema
 
+The tables below are an orientation, not a complete current schema dump. Later migrations add
+social relations, notifications, quest suggestions, sponsors, weekly-drop outbox tables,
+multi-area geofences, cutout/selfie fields and additional profile preferences. Use
+[`supabase/migrations/README.md`](supabase/migrations/README.md) and the SQL files as the schema
+reference. Client grants can expose fewer columns than a table contains.
+
 ### Tables
 
 #### `profiles`
@@ -265,7 +272,8 @@ Extends Supabase Auth users with game data.
 | `longest_streak` | integer | Historical best streak |
 | `last_completion_week` | text | ISO week string (e.g., "2026-W25") |
 | `last_week_rank` | integer | Prior week's leaderboard rank (011) |
-| `feed_public` | boolean | Feed privacy opt-out — `false` hides all posts from the public feed (017) |
+| `feed_public` | boolean | Feed privacy opt-out — `false` hides posts from the public feed (018) |
+| `push_social` / `push_drops` | boolean | Social and weekly-drop push preferences (029, 034) |
 
 #### `quests`
 
@@ -276,7 +284,7 @@ Extends Supabase Auth users with game data.
 | `description` | text | What the player must do |
 | `category` | enum | `fitness`, `social`, `food`, `community`, `nature` |
 | `lat` / `lng` | float | Quest location coordinates |
-| `geofence_type` | enum | `none`, `circle`, `city`, `polygon` (migrations 013–015) |
+| `geofence_type` | enum | `none`, `circle`, `city`, `polygon`, `multi` (migrations 013–015, 024–025) |
 | `radius_meters` | integer | Circle radius (50–2000 m) when type is `circle` |
 | `boundary` | geometry | PostGIS polygon when type is `polygon` |
 | `boundary_geojson` | json (generated) | Client-friendly boundary for map rendering |
@@ -287,6 +295,11 @@ Extends Supabase Auth users with game data.
 | `sponsor_reward` | text | Description of the real-world reward |
 | `status` | text | `active` or `inactive` |
 | `cover_image_url` | text | Hero image URL for quest cards |
+| `cutout_url` | text | Transparent quest cutout asset (032) |
+| `action_phrase` | text | Short quest action copy (032) |
+| `distance_m` / `duration_min` | integer | Optional distance/time estimate (032) |
+| `is_starter` | boolean | Starter quest designation (037) |
+| `suggested_by` | uuid | Player credited for a published suggestion (035) |
 
 #### `completions`
 
@@ -296,17 +309,19 @@ Extends Supabase Auth users with game data.
 | `user_id` | uuid (FK) | References `profiles.id` |
 | `quest_id` | uuid (FK) | References `quests.id` |
 | `photo_url` | text | Proof photo URL in `proof-photos` bucket |
+| `selfie_url` | text | Optional private selfie object path (032–033) |
 | `lat` / `lng` | float | GPS coordinates at submission time |
+| `gps_accuracy` | float | GPS accuracy in meters (026) |
 | `completed_at` | timestamptz | Submission timestamp |
-| `status` | enum | `approved` (set at insert) or `removed` (moderation); `pending`/`rejected` are legacy |
-| `redemption_code` | text | Auto-generated at insert for sponsored quests (016) |
+| `status` | enum | `approved` (set at insert) or `removed` (moderation); older values may remain for history |
+| `redemption_code` | text | Auto-generated at insert for sponsored quests (017) |
 | `redeemed_at` | timestamptz | When the merchant marked the code redeemed (Spec 07) |
 | `reviewed_at` | timestamptz | Verification timestamp (set at insert) |
 | `reviewed_by` | text | Admin who actioned a moderation decision (017) |
 | `open_report_count` | integer | Open community reports (maintained by trigger, 017) |
 | `hidden_pending_review` | boolean | Auto-hidden from feed at 3 distinct reporters (017) |
 
-#### `completion_reports` (017)
+#### `completion_reports` (018)
 
 One report per user per post; immutable; can't report your own post; rate-limited (10/24 h) in-DB.
 
@@ -318,7 +333,7 @@ One report per user per post; immutable; can't report your own post; rate-limite
 | `details` | text | Optional free text (≤500 chars) |
 | `status` | enum | `open`, `dismissed`, `actioned` |
 
-#### `blocked_users` (017)
+#### `blocked_users` (018)
 
 Composite PK (`blocker_id`, `blocked_id`). Users manage their own rows; the feed filters blocked users client-side.
 
@@ -348,11 +363,17 @@ Links badges to specific quests. Composite PK on (`quest_id`, `badge_id`).
 
 ### Key Database Triggers (execution order on submit)
 
+For current column grants and the full evolved schema, see the migration index. In particular,
+migration 038 restricts client SELECT columns on `completions`; the public row policy does not
+grant access to its excluded GPS, redemption-code or reviewer columns. Migration 039 does the
+same for `profiles.push_token` (SEC-01 in the [audit](docs/design/CODEBASE-AUDIT-2026-11-11.md)).
+039 is in the checkout and not applied; until it is, a hosted database still exposes the token.
+
 **`trg_enforce_completion_geofence`** (BEFORE INSERT, 013–015) — validates the submission coordinates against the quest's geofence via `check_completion_geofence()`; inserts outside the zone are rejected. Unbypassable by clients.
 
-**`trg_normalize_completion`** (BEFORE INSERT, 016) — enforces rate limits (2/10 min, 10/24 h), then sets `status = 'approved'` and `reviewed_at = now()`, and assigns a redemption code for sponsored quests. Clients cannot choose their own status.
+**`trg_normalize_completion`** (BEFORE INSERT, 017/026/038) — server-sets the timestamp, enforces rate limits (2/10 min, 10/24 h), sets `status = 'approved'` and `reviewed_at = now()`, and assigns a redemption code only for sponsored quests. Clients cannot choose their own status or preserve a supplied code on a non-sponsored quest.
 
-**`trg_apply_completion_rewards_on_insert`** (AFTER INSERT, 016) — calls `apply_completion_rewards()`: XP increment, level recalculation, weekly streak update.
+**`trg_apply_completion_rewards_on_insert`** (AFTER INSERT, 017; hardened in 030/031/038) — calls `apply_completion_rewards()`: XP increment, level recalculation, weekly streak update. Streak and leaderboard weeks use `America/Vancouver` after migration 038.
 
 **`on_xp_update`** (005) — fires on `profiles.total_xp` change; evaluates all badge unlock conditions and inserts newly earned badges.
 
@@ -364,15 +385,17 @@ Links badges to specific quests. Composite PK on (`quest_id`, `badge_id`).
 
 | Bucket | Access | Purpose |
 |--------|--------|---------|
-| `proof-photos` | Public read, auth upload | Quest proof images from players |
+| `proof-photos` | Public bucket | Place-proof images; completion row visibility is separately controlled by RLS |
+| `proof-selfies` | Private | Optional selfie proof, served through authorized signed URLs |
 | `avatars` | Public read, auth upload | Player profile photos |
 | `quest-covers` | Public read, admin upload | Hero images for quest cards |
+| `quest-cutouts` | Public read, admin upload | Quest cutout assets |
 
 ### Row Level Security Summary
 
 | Table | Who can read | Who can write |
 |-------|-------------|---------------|
-| `profiles` | All authenticated users | Own row only |
+| `profiles` | Anyone with the anon key, all columns except `push_token` once migration 039 is applied (before 039, `push_token` too: SEC-01) | Own permitted columns only; XP and progression are server-owned |
 | `quests` | All authenticated users (active only) | Admin (service-role) |
 | `completions` | Own rows + approved rows that aren't hidden and whose owner has `feed_public = true` (017) | Own rows only (insert) |
 | `completion_reports` | Own reports | Own reports (insert only, not own posts) |
@@ -383,29 +406,17 @@ Links badges to specific quests. Composite PK on (`quest_id`, `badge_id`).
 
 ### Migrations
 
-Apply these in order via the Supabase SQL Editor or CLI:
+The initial schema is `20260619010246_initial_schema.sql`; numbered follow-ups run from
+`002` through `038`. There is no `001_initial_schema.sql`. Lexical ordering puts the timestamped
+baseline after the numbered migrations, so a naive clean-project push order is unsafe. Do not
+rename files already recorded in hosted history. For a new project, establish and verify a
+supported baseline/restore procedure first. See [the migration index](supabase/migrations/README.md)
+for schema details and the runbook's reported hosted state.
 
-| File | What it adds |
-|------|-------------|
-| `001_initial_schema.sql` | Core tables, XP trigger on approval, proof-photos bucket |
-| `002_badge_unlock_trigger.sql` | Initial badge trigger (superseded by 005) |
-| `003_add_quest_categories.sql` | Category enum values |
-| `004_push_token.sql` | `push_token` column on profiles |
-| `005_align_badge_unlock_logic.sql` | Replaces 002 with complete 13-badge unlock logic |
-| `006_streak_system.sql` | Streak columns; extends XP trigger with weekly tracking |
-| `007_avatar_bucket.sql` | `avatars` storage bucket + RLS |
-| `008_public_feed_completions.sql` | RLS policy for public activity feed |
-| `009_quest_cover_and_badges.sql` | `cover_image_url` on quests + `quest_badges` table |
-| `010_quest_covers_bucket.sql` | `quest-covers` storage bucket |
-| `011_leaderboard_rank_snapshot.sql` | `last_week_rank` on profiles |
-| `012_quest_scheduling.sql` | `active_from` / `active_until` on quests |
-| `013_geofence_system.sql` | PostGIS, `cities`, geofence enum, server-side insert trigger |
-| `014_geofence_polygon_enum.sql` | Adds `polygon` to geofence enum |
-| `015_geofence_polygon.sql` | `quests.boundary`, `set_quest_boundary()`, polygon validation |
-| `016_instant_verification.sql` | Auto-approve on insert, rewards on insert path, rate limits, in-DB redemption codes, `removed` status + XP revocation, pending backfill |
-| `017_completion_reports.sql` | Reports, blocking, feed privacy (`feed_public`), auto-hide at 3 reports, moderation GPS evidence |
-
-Specs 05–07 define migrations `018+` (content engine, growth, merchant redemption). See [docs/specs/README.md](docs/specs/README.md).
+The complete migration list and descriptions are maintained in
+[`supabase/migrations/README.md`](supabase/migrations/README.md). The project has migrations
+through 040 in this checkout (039 and 040 are not recorded as applied anywhere). Local migration presence does not prove remote application or
+function/webhook deployment.
 
 ---
 
@@ -413,8 +424,8 @@ Specs 05–07 define migrations `018+` (content engine, growth, merchant redempt
 
 ### Prerequisites
 
-- Node.js 20+
-- Yarn (for workspace scripts) or npm
+- Node.js 22.13+ (required by Expo SDK 58)
+- npm (the repo uses npm workspaces and `package-lock.json`)
 - [Supabase account](https://supabase.com)
 - [Expo Go](https://expo.dev/go) app on your phone (for development) or a simulator
 
@@ -424,8 +435,8 @@ Specs 05–07 define migrations `018+` (content engine, growth, merchant redempt
 git clone https://github.com/your-org/quest.git
 cd quest
 
-# Install root dependencies
-yarn install
+# Install all workspaces (mobile, admin, geofence) from the repo root
+npm install
 
 # Install app dependencies
 cd apps/mobile && npm install
@@ -434,10 +445,10 @@ cd ../admin && npm install
 
 ### 2. Set up Supabase
 
-1. Create a new project at [supabase.com](https://supabase.com)
-2. Go to **SQL Editor** in your Supabase dashboard
-3. Apply each migration file in order (001 through **017**) — paste and run each file from `supabase/migrations/`
-4. Run `supabase/seed.sql` to load starter quests, badges, and geofence examples
+1. Create or select a Supabase project at [supabase.com](https://supabase.com).
+2. **Do not apply these files in naive filename order to a fresh project.** The baseline is timestamped `20260619010246_initial_schema.sql`, while numbered follow-ups begin at 002 and sort before it. A verified clean-bootstrap procedure is not yet documented; resolve that migration baseline before applying SQL. See [`supabase/migrations/README.md`](supabase/migrations/README.md).
+3. For the existing Quest project, consult [LAUNCH-RUNBOOK.md](LAUNCH-RUNBOOK.md) before touching its migration history. Do not reapply migrations already recorded there.
+4. Run `supabase/seed.sql` only after the complete schema is established.
 5. Go to **Project Settings → API** and copy your:
    - Project URL
    - `anon` public key
@@ -541,11 +552,11 @@ The app uses [Expo Router](https://expo.github.io/router/) with file-based routi
 
 | Tab | Route | What's here |
 |-----|-------|------------|
-| Explore | `index` | Hero quest cards, player XP card, category filter chips |
-| Quests | `feed` | Map preview + public activity feed of approved completions |
-| Rankings | `leaderboard` | Weekly podium (top 3), chasers (4–10), featured badges |
-| Badges | `badges` | Full 13-badge collection with lock/earned states |
-| Profile | `profile` | Stats grid, recent 5 completions, settings link |
+| This week | `index` | Weekly highlights, starter quest and featured quests |
+| Quests | `quests` | Quest discovery and category browsing |
+| City | `feed` | Community activity and social feed |
+| Rankings | `leaderboard` | Weekly podium, chasers and featured badges |
+| You | `profile` | Player stats, completed cutouts, badges and settings |
 
 **Other routes**
 
@@ -554,7 +565,7 @@ The app uses [Expo Router](https://expo.github.io/router/) with file-based routi
 | `quest/[id]` | Quest detail — description, category, XP, sponsor info |
 | `submit/[questId]` | Photo capture + GPS submission flow |
 | `onboarding` | 3-screen intro shown once on first launch |
-| `edit-profile` | Update username and city |
+| `edit-profile` | Update username and profile details |
 | `settings` | Push toggle, **feed privacy toggle**, weekly digest, sign out |
 | `legal/privacy` | Privacy policy |
 | `legal/terms` | Terms of service |
@@ -740,13 +751,15 @@ and the build plan is [docs/design/UI-OVERHAUL-PLAN.md](docs/design/UI-OVERHAUL-
 
 ### Unit Tests
 
-Logic tests live at `apps/mobile/__tests__/logic.test.js` (**105 assertions**). Geofence package tests at `packages/geofence/src/__tests__/geofence.test.js` (**44 assertions**). CI runs both (see `.github/workflows/ci.yml`).
+Logic tests live at `apps/mobile/__tests__/logic.test.js` (**159 assertions**). Quest-window tests are in `apps/mobile/__tests__/questWindow.test.js` (**9 cases**), recap tests in `recap.test.js` (**24 cases**) and the profile-token guard in `profilePrivacy.test.js` (**8 checks**, text only: it does not execute SQL). Geofence and redemption tests are in `packages/geofence/src/__tests__`; the geofence suite has **50 assertions**. CI currently runs geofence, mobile logic, recap, the profile-token guard, both TypeScript checks and a critical production dependency audit. It does not run the redemption or quest-window tests.
 
 Coverage includes XP/level thresholds, celebration/level-up derivation, leaderboard logic, Haversine and polygon geofence checks, moderation logic, greeting text, and avatar URL helpers.
 
 ```bash
 node apps/mobile/__tests__/logic.test.js
+node apps/mobile/__tests__/questWindow.test.js
 node packages/geofence/src/__tests__/geofence.test.js
+node packages/geofence/src/__tests__/redemption.test.js
 ```
 
 ### Type Checking
@@ -763,10 +776,11 @@ cd apps/admin && npx tsc --noEmit
 
 Every push to `main` and every pull request targeting `main` runs `.github/workflows/ci.yml`:
 
-1. **geofence-tests** — 44 assertions in `packages/geofence`
-2. **logic-tests** — 105 assertions in `apps/mobile`
+1. **geofence-tests** — `geofence.test.js` in `packages/geofence`
+2. **logic-tests** — `logic.test.js` in `apps/mobile`
 3. **typescript-check-mobile** — `tsc --noEmit` on the mobile app
 4. **typescript-check-admin** — `tsc --noEmit` on the admin dashboard
+5. **dependency-audit** — `npm audit --omit=dev --audit-level=critical`
 
 ---
 
@@ -825,12 +839,14 @@ The admin app uses Next.js ISR for the user directory page (60-second revalidati
 
 See [ROADMAP.md](ROADMAP.md) for the full phase plan and [docs/specs/README.md](docs/specs/README.md) for feature specs.
 
-**Shipped:** geofence system (four zone types, admin draw UI, `@quest/geofence` package), **instant verification** (Spec 02 — no approval queue, rewards on insert), **reports & moderation** (Spec 03 — report/block/feed-privacy, admin moderation queue, Apple 1.2 compliant), activity feed, social layer (likes, comments, follows, inbox; 027 to 029), quest scheduling schema, admin on Vercel. Security hardening in Nov 2026 (migration 030, admin action auth).
+**Implemented in this checkout:** geofence drawing and multi-geofences, instant verification,
+moderation/social, analytics SDK wrapper, weekly drops and suggestions, starter quest, merchant
+redemption, and most Cutouts screens/admin styling. This does not imply every migration or
+function is deployed. The Spec 06 Sunday recap (040) and the **P1 profile push-token fix** (039)
+are written but not applied or device-tested; clean-install migration ordering is documented but
+not verified. All three are tracked in the [audit](docs/design/CODEBASE-AUDIT-2026-11-11.md).
 
-**P0 before launch:** iOS submit credentials, PostHog + Sentry keys, apply migration 031, deploy `send-social-push`. See LAUNCH-RUNBOOK.md.
-
-**In progress:** the Cutouts UI overhaul (docs/design/UI-OVERHAUL-PLAN.md); Phase 1 foundations merged (#12); Phase 2 (cutout pipeline) is next.
-
-**Post-launch:** community quests & weekly drops (Spec 05), duo quests & recap card (Spec 06), merchant redemption validation (Spec 07).
-
-**Deliberately deferred:** multi-city, self-serve sponsor portal.
+**Operational state:** use the dated [launch runbook](LAUNCH-RUNBOOK.md) for repository-reported
+hosted migration history and remaining keys, webhooks, builds and device validation. Do not infer
+deployment from local source. XP events, offline submission queue and duo quests remain planned;
+quest chains remain deferred. Multi-city and a self-serve sponsor portal remain out of v1 scope.

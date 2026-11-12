@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import type { EmailOtpType } from '@supabase/supabase-js'
 import { getSupabaseBrowser } from '@/lib/supabase-browser'
+import { theme } from '@/lib/theme'
 
 export default function AuthConfirmPage() {
   const router = useRouter()
@@ -47,8 +48,8 @@ export default function AuthConfirmPage() {
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        background: '#0F172A',
-        color: '#64748B',
+        background: theme.bg,
+        color: theme.textMuted,
       }}
     >
       {message}

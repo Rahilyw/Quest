@@ -148,7 +148,7 @@ export default function PublicProfile() {
   if (!user) {
     return (
       <View style={[styles.centerScreen, { paddingTop: insets.top }]}>
-        <EmptyState icon="🕵️" title="Adventurer not found" subtitle="This profile doesn't exist anymore." />
+        <EmptyState title="Adventurer not found" subtitle="This profile doesn't exist anymore." />
         <TouchableOpacity style={styles.backLink} onPress={() => router.back()}>
           <Text style={styles.backLinkText}>← Go back</Text>
         </TouchableOpacity>
@@ -258,19 +258,16 @@ export default function PublicProfile() {
 
       {isBlocked ? (
         <EmptyState
-          icon="🚫"
           title={`You blocked @${user.username}`}
           subtitle="Unblock to see their quests again."
         />
       ) : isPrivate ? (
         <EmptyState
-          icon="🔒"
           title="This trail log is private"
           subtitle={`@${user.username} keeps their quests off the public feed.`}
         />
       ) : posts.length === 0 ? (
         <EmptyState
-          icon="🧭"
           title="No quests yet"
           subtitle={
             isSelf

@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
+import { theme } from '@/lib/theme'
 import {
   checkRecoverySession,
   establishSessionFromTokens,
@@ -88,39 +89,39 @@ export default function ResetPasswordPage() {
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        background: '#0F172A',
-        color: '#F1F5F9',
+        background: theme.bg,
+        color: theme.text,
         padding: 24,
       }}
     >
       <div style={{ width: '100%', maxWidth: 400 }}>
-        <div style={{ fontSize: 28, color: '#4364F7', marginBottom: 8, textAlign: 'center' }}>
+        <div style={{ fontSize: 28, color: theme.primary, marginBottom: 8, textAlign: 'center' }}>
           <span className="brand-wordmark">Quest!</span> Admin
         </div>
-        <p style={{ color: '#64748B', textAlign: 'center', marginBottom: 32 }}>Choose a new password</p>
+        <p style={{ color: theme.textMuted, textAlign: 'center', marginBottom: 32 }}>Choose a new password</p>
 
         {!ready ? (
-          <p style={{ color: '#64748B', textAlign: 'center' }}>Verifying reset link…</p>
+          <p style={{ color: theme.textMuted, textAlign: 'center' }}>Verifying reset link…</p>
         ) : done ? (
           <div style={{ textAlign: 'center' }}>
             <p style={{ marginBottom: 16 }}>Password updated. You can sign in now.</p>
-            <Link href="/login" style={{ color: '#4364F7', fontWeight: 600 }}>
+            <Link href="/login" style={{ color: theme.primary, fontWeight: 600 }}>
               Go to sign in
             </Link>
           </div>
         ) : !sessionReady ? (
           <div style={{ textAlign: 'center' }}>
-            <p style={{ color: '#EF4444', marginBottom: 16, lineHeight: 1.5 }}>
+            <p style={{ color: theme.danger, marginBottom: 16, lineHeight: 1.5 }}>
               {error ?? 'This reset link is invalid or has expired.'}
             </p>
-            <Link href="/login/forgot-password" style={{ color: '#4364F7', fontWeight: 600 }}>
+            <Link href="/login/forgot-password" style={{ color: theme.primary, fontWeight: 600 }}>
               Request a new reset link
             </Link>
           </div>
         ) : (
           <form onSubmit={handleSubmit} style={{ display: 'grid', gap: 16 }}>
             <div>
-              <label style={{ color: '#94A3B8', fontSize: 13, display: 'block', marginBottom: 6 }}>
+              <label style={{ color: theme.textMuted, fontSize: 13, display: 'block', marginBottom: 6 }}>
                 New password
               </label>
               <input
@@ -133,16 +134,16 @@ export default function ResetPasswordPage() {
                 style={{
                   width: '100%',
                   boxSizing: 'border-box',
-                  background: '#1E293B',
-                  color: '#F1F5F9',
-                  border: '1px solid #334155',
+                  background: theme.surface,
+                  color: theme.text,
+                  border: '1px solid ${theme.borderStrong}',
                   borderRadius: 8,
                   padding: 12,
                 }}
               />
             </div>
             <div>
-              <label style={{ color: '#94A3B8', fontSize: 13, display: 'block', marginBottom: 6 }}>
+              <label style={{ color: theme.textMuted, fontSize: 13, display: 'block', marginBottom: 6 }}>
                 Confirm password
               </label>
               <input
@@ -155,22 +156,22 @@ export default function ResetPasswordPage() {
                 style={{
                   width: '100%',
                   boxSizing: 'border-box',
-                  background: '#1E293B',
-                  color: '#F1F5F9',
-                  border: '1px solid #334155',
+                  background: theme.surface,
+                  color: theme.text,
+                  border: '1px solid ${theme.borderStrong}',
                   borderRadius: 8,
                   padding: 12,
                 }}
               />
             </div>
-            {error && <p style={{ color: '#EF4444', fontSize: 14, margin: 0 }}>{error}</p>}
+            {error && <p style={{ color: theme.danger, fontSize: 14, margin: 0 }}>{error}</p>}
             <button
               type="submit"
               disabled={pending}
               style={{
                 width: '100%',
-                background: '#4364F7',
-                color: '#fff',
+                background: theme.primary,
+                color: theme.onPrimary,
                 border: 'none',
                 borderRadius: 8,
                 padding: '12px 20px',
@@ -181,7 +182,7 @@ export default function ResetPasswordPage() {
             >
               {pending ? 'Saving…' : 'Update password'}
             </button>
-            <Link href="/login" style={{ color: '#94A3B8', textAlign: 'center', fontSize: 14 }}>
+            <Link href="/login" style={{ color: theme.textMuted, textAlign: 'center', fontSize: 14 }}>
               Back to sign in
             </Link>
           </form>

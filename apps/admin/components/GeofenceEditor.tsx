@@ -87,7 +87,7 @@ function vertexIcon(color: string, size = 14) {
 function midpointIcon() {
   return L.divIcon({
     className: '',
-    html: '<div style="width:10px;height:10px;border-radius:50%;background:rgba(255,255,255,0.85);border:2px solid rgba(67,100,247,0.6);cursor:grab"></div>',
+    html: '<div style="width:10px;height:10px;border-radius:50%;background:rgba(255,255,255,0.85);border:2px solid rgba(28,25,21,0.6);cursor:grab"></div>',
     iconSize: [10, 10],
     iconAnchor: [5, 5],
   })
@@ -452,11 +452,6 @@ export default function GeofenceEditor({
                 fontFamily: 'inherit',
               }}
             >
-              {type === 'none' && '📍 '}
-              {type === 'circle' && '⭕ '}
-              {type === 'city' && '🌆 '}
-              {type === 'polygon' && '✏️ '}
-              {type === 'multi' && '📌 '}
               {label}
             </button>
           )
@@ -491,7 +486,7 @@ export default function GeofenceEditor({
                   disabled={draft.length < POLYGON_MIN_VERTICES}
                   onClick={finishDraft}
                 >
-                  ✓ Finish shape ({draft.length})
+                  Finish shape ({draft.length})
                 </button>
                 <button
                   type="button"
@@ -509,7 +504,7 @@ export default function GeofenceEditor({
                   disabled={draft.length === 0}
                   onClick={clearPolygon}
                 >
-                  ✕ Clear
+                  Clear
                 </button>
               </div>
             </>
@@ -522,8 +517,8 @@ export default function GeofenceEditor({
                 {' — '}drag points to adjust · drag a midpoint to add detail · right-click a point to remove it.
               </p>
               {polygonValidation && !polygonValidation.ok && (
-                <p style={{ margin: '0 0 10px', fontSize: 13, color: '#fca5a5', fontWeight: 600 }}>
-                  ⚠ {polygonValidation.error}
+                <p style={{ margin: '0 0 10px', fontSize: 13, color: theme.danger, fontWeight: 600 }}>
+                  {polygonValidation.error}
                 </p>
               )}
               <button
@@ -532,7 +527,7 @@ export default function GeofenceEditor({
                 style={{ fontSize: 12 }}
                 onClick={clearPolygon}
               >
-                ✕ Clear and redraw
+                Clear and redraw
               </button>
             </>
           )}

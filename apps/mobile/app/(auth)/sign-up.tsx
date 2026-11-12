@@ -1,33 +1,55 @@
-import { useState } from 'react'
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert } from 'react-native'
+import { useRef, useState } from 'react'
+import type { TextInputInstance } from 'react-native'
 import { useRouter } from 'expo-router'
 import { supabase } from '@/lib/supabase'
 import { getOnboardingCity } from '@/lib/onboarding'
-import { BrandText } from '@/components/BrandText'
-import { APP_NAME, COLORS } from '@/lib/constants'
 import { track } from '@/lib/analytics'
+import {
+  AuthScreen,
+  Field,
+  FormError,
+  LinkRow,
+  PrimaryButton,
+  authErrorCopy,
+} from '@/components/auth/AuthKit'
+import { Body } from '@/components/ui/Text'
 
 export default function SignUp() {
   const router = useRouter()
+  const emailRef = useRef<TextInputInstance>(null)
+  const passwordRef = useRef<TextInputInstance>(null)
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [username, setUsername] = useState('')
   const [loading, setLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const [created, setCreated] = useState(false)
+
+  // Onboarding lands here with replace(), so there may be no screen to go back to.
+  function toSignIn() {
+    if (router.canGoBack()) router.back()
+    else router.replace('/(auth)/sign-in')
+  }
 
   async function handleSignUp() {
-    if (!username.trim()) {
-      Alert.alert('Username required', 'Choose a username to get started.')
+    const trimmedUsername = username.trim().toLowerCase()
+    if (!trimmedUsername) {
+      setError('Pick a username. It’s the name on the rankings.')
       return
     }
+    if (!email.trim() || !password) {
+      setError('Add your email and a password.')
+      return
+    }
+    setError(null)
     setLoading(true)
-    const trimmedUsername = username.trim().toLowerCase()
-    const { data, error } = await supabase.auth.signUp({
-      email,
+    const { data, error: signUpError } = await supabase.auth.signUp({
+      email: email.trim(),
       password,
       options: { data: { username: trimmedUsername } },
     })
-    if (error) {
-      Alert.alert('Account creation failed', error.message)
+    if (signUpError) {
+      setError(authErrorCopy(signUpError.message))
       setLoading(false)
       return
     }
@@ -41,115 +63,77 @@ export default function SignUp() {
         level: 1,
       })
       if (profileError && profileError.code !== '23505') {
-        Alert.alert('Setup error', profileError.message)
+        setError(
+          profileError.message?.toLowerCase().includes('username')
+            ? 'That username is taken. Try another.'
+            : authErrorCopy(profileError.message),
+        )
         setLoading(false)
         return
       }
     }
     setLoading(false)
     track('signed_up')
-    Alert.alert('Welcome to Quest!', 'Your account is ready. Sign in to start exploring.', [
-      { text: 'Sign In', onPress: () => router.back() },
-    ])
+    // With a session the root layout takes you straight in; otherwise say what happens next.
+    if (!data.session) setCreated(true)
+  }
+
+  if (created) {
+    return (
+      <AuthScreen title="You’re in" lead="Your account is ready. Sign in and pick your first quest.">
+        <PrimaryButton label="Sign in" onPress={toSignIn} />
+        <Body tone="soft">If we emailed you a confirmation link, open it first.</Body>
+      </AuthScreen>
+    )
   }
 
   return (
-    <View style={styles.container}>
-      <View style={styles.hero}>
-        <BrandText size="logo" style={styles.logo} />
-        <Text style={styles.tagline}>Join the city challenge.</Text>
-      </View>
-
-      <TextInput
-        style={styles.input}
-        placeholder="Username"
-        placeholderTextColor="#94A3B8"
+    <AuthScreen title="Create an account" lead="One account, one city. Your username shows on the rankings.">
+      <Field
+        label="Username"
         value={username}
         onChangeText={setUsername}
-        autoCapitalize="none"
-        accessibilityLabel="Username"
+        autoComplete="username-new"
+        textContentType="username"
+        returnKeyType="next"
+        submitBehavior="submit"
+        onSubmitEditing={() => emailRef.current?.focus()}
       />
-      <TextInput
-        style={styles.input}
-        placeholder="Email"
-        placeholderTextColor="#94A3B8"
+      <Field
+        label="Email"
+        inputRef={emailRef}
         value={email}
         onChangeText={setEmail}
-        autoCapitalize="none"
         keyboardType="email-address"
-        accessibilityLabel="Email address"
+        autoComplete="email"
+        textContentType="emailAddress"
+        returnKeyType="next"
+        submitBehavior="submit"
+        onSubmitEditing={() => passwordRef.current?.focus()}
       />
-      <TextInput
-        style={styles.input}
-        placeholder="Password"
-        placeholderTextColor="#94A3B8"
+      <Field
+        label="Password"
+        secure
+        hint="At least 8 characters."
+        inputRef={passwordRef}
         value={password}
         onChangeText={setPassword}
-        secureTextEntry
-        accessibilityLabel="Password"
+        autoComplete="new-password"
+        textContentType="newPassword"
+        returnKeyType="go"
+        onSubmitEditing={handleSignUp}
       />
 
-      <TouchableOpacity
-        style={styles.button}
-        onPress={handleSignUp}
-        disabled={loading}
-        activeOpacity={0.85}
-        accessibilityRole="button"
-        accessibilityLabel={loading ? 'Creating account' : 'Create account'}
-        accessibilityState={{ disabled: loading }}
-      >
-        <Text style={styles.buttonText}>{loading ? 'Creating account…' : 'Create Account'}</Text>
-      </TouchableOpacity>
+      <FormError message={error} />
 
-      <TouchableOpacity
-        onPress={() => router.back()}
-        accessibilityRole="link"
-        accessibilityLabel="Sign in to existing account"
-      >
-        <Text style={styles.link}>Already have an account? Sign in</Text>
-      </TouchableOpacity>
-    </View>
+      <PrimaryButton
+        label="Create account"
+        busyLabel="Creating account…"
+        busy={loading}
+        onPress={handleSignUp}
+      />
+
+      <LinkRow lead="Already playing?" action="Sign in" onPress={toSignIn} />
+    </AuthScreen>
   )
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#F0F9FF',
-    padding: 24,
-    justifyContent: 'center',
-  },
-  hero: { alignItems: 'center', marginBottom: 40 },
-  logo: { marginBottom: 6 },
-  tagline: { color: '#94A3B8', fontSize: 16 },
-  input: {
-    backgroundColor: COLORS.surface,
-    color: COLORS.textPrimary,
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 12,
-    fontSize: 16,
-    borderWidth: 1.5,
-    borderColor: 'rgba(15,23,42,0.07)',
-    shadowColor: COLORS.navy,
-    shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.05,
-    shadowRadius: 8,
-    elevation: 2,
-  },
-  button: {
-    backgroundColor: COLORS.primary,
-    borderRadius: 12,
-    padding: 16,
-    alignItems: 'center',
-    marginTop: 8,
-    marginBottom: 16,
-    shadowColor: COLORS.primary,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.28,
-    shadowRadius: 10,
-    elevation: 5,
-  },
-  buttonText: { color: COLORS.surface, fontWeight: '700', fontSize: 16 },
-  link: { color: COLORS.primary, textAlign: 'center', fontWeight: '600' },
-})

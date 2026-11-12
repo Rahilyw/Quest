@@ -13,9 +13,13 @@ export interface FeedPost {
     level: number
     avatar_url: string | null
   }
+  questId: string
   quest: {
     title: string
     xp_reward: number
+    category: string
+    cutout_url: string | null
+    action_phrase: string | null
   }
   viewerReported: boolean
   like_count: number
@@ -24,15 +28,22 @@ export interface FeedPost {
 }
 
 const POST_SELECT =
-  'id, user_id, photo_url, completed_at, profile:profiles(username, level, avatar_url), quest:quests(title, xp_reward), likes:completion_likes(count), comments:completion_comments(count)'
+  'id, user_id, quest_id, photo_url, completed_at, profile:profiles(username, level, avatar_url), quest:quests(title, xp_reward, category, cutout_url, action_phrase), likes:completion_likes(count), comments:completion_comments(count)'
 
 type Row = {
   id: string
   user_id: string
+  quest_id: string
   photo_url: string
   completed_at: string
   profile: { username: string; level: number; avatar_url: string | null } | null
-  quest: { title: string; xp_reward: number } | null
+  quest: {
+    title: string
+    xp_reward: number
+    category: string
+    cutout_url: string | null
+    action_phrase: string | null
+  } | null
   likes: { count: number }[]
   comments: { count: number }[]
 }
@@ -95,6 +106,7 @@ export function useActivityFeed(
         .map((row) => ({
           id: row.id,
           user_id: row.user_id,
+          questId: row.quest_id,
           photo_url: row.photo_url,
           completed_at: row.completed_at,
           user: row.profile!,

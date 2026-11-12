@@ -13,7 +13,7 @@ export default function QuestMap() {
   return (
     <View style={styles.container}>
       <MapView
-        style={StyleSheet.absoluteFillObject}
+        style={StyleSheet.absoluteFill}
         initialRegion={{
           latitude: CITY.lat,
           longitude: CITY.lng,

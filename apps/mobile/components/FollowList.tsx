@@ -130,7 +130,6 @@ export function FollowList({ userId, mode }: Props) {
         <ActivityIndicator color={COLORS.primary} style={styles.loader} />
       ) : users.length === 0 ? (
         <EmptyState
-          icon={mode === 'followers' ? '👋' : '🧭'}
           title={mode === 'followers' ? 'No followers yet' : 'Not following anyone yet'}
           subtitle={
             mode === 'followers'

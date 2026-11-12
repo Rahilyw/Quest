@@ -1,5 +1,6 @@
 -- Seed 20 Victoria, BC quests for Season 1 pilot
--- Run this after 001_initial_schema.sql
+-- Run this only after the full schema has been established. See
+-- supabase/migrations/README.md for the timestamped baseline/order caveat.
 
 insert into quests (title, description, category, lat, lng, xp_reward) values
 ('Run Dallas Road', 'Log a run along the Dallas Road oceanfront path — one of Victoria''s most iconic routes. Go from Clover Point to Beacon Hill Park and back.', 'fitness', 48.4097, -123.3686, 150),
@@ -56,8 +57,8 @@ insert into quests (title, description, category, lat, lng, xp_reward, is_sponso
 
 -- Geofence examples (requires migration 013 applied)
 -- 1. Remote / home quest (none)
-insert into quests (title, description, category, lat, lng, xp_reward, status, radius_meters, geofence_type, city_id) values
-('Write a Journal Entry About Your City', 'Reflect on one thing you love about Victoria. Snap a photo of your journal entry — no need to be anywhere specific.', 'community', 48.4284, -123.3656, 75, 'active', 0, 'none', null);
+insert into quests (title, description, category, lat, lng, xp_reward, status, radius_meters, geofence_type, city_id, is_starter) values
+('Write a Journal Entry About Your City', 'Reflect on one thing you love about Victoria. Snap a photo of your journal entry — no need to be anywhere specific.', 'community', 48.4284, -123.3656, 75, 'active', 0, 'none', null, true);
 
 -- 2. City-wide quest
 insert into quests (title, description, category, lat, lng, xp_reward, status, radius_meters, geofence_type, city_id) values

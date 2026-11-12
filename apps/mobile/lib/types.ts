@@ -47,6 +47,23 @@ export interface Quest {
   boundary_geojson?: PolygonGeometry | null
   /** Child areas when geofence_type is multi */
   quest_geofences?: QuestGeofenceLocation[] | null
+  /** WebP cutout asset with pre-baked shadow (migration 032). */
+  cutout_url?: string | null
+  /** Short verb phrase shown on the card, e.g. "Take a photo at..." */
+  action_phrase?: string | null
+  /** Approximate walking/travel distance for this quest in metres. */
+  distance_m?: number | null
+  /** Approximate time-to-complete in minutes. */
+  duration_min?: number | null
+  /** Inclusive start. Null means already available. */
+  active_from?: string | null
+  /** Exclusive end. Null means no end. */
+  active_until?: string | null
+  /** One currently live quest recommended to players before their first completion. */
+  is_starter?: boolean
+  /** Set when the quest was published from a player suggestion. */
+  suggested_by?: string | null
+  suggester_username?: string | null
 }
 
 export interface QuestWithBadges extends Quest {
@@ -64,6 +81,9 @@ export interface Completion {
   completed_at: string
   status: CompletionStatus
   redemption_code: string | null
+  redeemed_at?: string | null
+  /** Optional selfie uploaded as proof; served via signed URL only (migration 032). */
+  selfie_url?: string | null
 }
 
 export interface Badge {
@@ -103,7 +123,6 @@ export interface UserProfile {
   total_xp: number
   level: number
   avatar_url: string | null
-  push_token: string | null
   current_streak: number
   longest_streak: number
   last_completion_week: string | null
@@ -111,6 +130,8 @@ export interface UserProfile {
   feed_public: boolean
   /** Push for comments / replies / follows (029). Inbox is unaffected. */
   push_social: boolean
+  /** Monday drop pushes (034). */
+  push_drops?: boolean
   created_at: string
 }
 
@@ -188,7 +209,8 @@ export type Database = {
           avatar_url?: string | null
           push_token?: string | null
         }
-        Update: Partial<Omit<UserProfile, 'id' | 'created_at'>>
+        /** `push_token` is write-only for clients: UPDATE is granted, SELECT is not (039). */
+        Update: Partial<Omit<UserProfile, 'id' | 'created_at'>> & { push_token?: string | null }
         Relationships: []
       }
       badges: {
@@ -235,7 +257,10 @@ export type Database = {
       }
     }
     Functions: {
-      [_ in never]: never
+      /** Whether the caller has a push token stored. Never returns the token (039). */
+      own_push_enabled: { Args: Record<string, never>; Returns: boolean }
+      /** The caller's rank, XP, streak and best own photo for one Victoria week (040). */
+      own_week_recap: { Args: { p_week_start: string }; Returns: unknown }
     }
   }
 }

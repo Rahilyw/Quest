@@ -2,8 +2,7 @@ import { useState } from 'react'
 import {
   Modal,
   View,
-  Text,
-  TouchableOpacity,
+  Pressable,
   StyleSheet,
   TextInput,
   ScrollView,
@@ -11,7 +10,8 @@ import {
   KeyboardAvoidingView,
   Platform,
 } from 'react-native'
-import { COLORS, SPACING, RADIUS } from '@/lib/constants'
+import { Body, Heading, Small } from '@/components/ui/Text'
+import { COLOR, RADIUS, SPACE, TYPE } from '@/lib/theme'
 import { REPORT_REASONS, reasonNeedsDetails, type ReasonOption, type ReportReason } from '@/lib/moderation'
 
 interface Props<R extends string> {
@@ -57,7 +57,6 @@ export function ReportPostSheet<R extends string = ReportReason>({
     setSubmitting(true)
     try {
       await onSubmit(reason, detailText.trim())
-      handleClose()
     } finally {
       setSubmitting(false)
     }
@@ -65,61 +64,60 @@ export function ReportPostSheet<R extends string = ReportReason>({
 
   return (
     <Modal transparent animationType="slide" visible={visible} onRequestClose={handleClose}>
-      <KeyboardAvoidingView
-        style={styles.overlay}
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-      >
-        <TouchableOpacity style={styles.backdrop} activeOpacity={1} onPress={handleClose} />
+      <KeyboardAvoidingView style={styles.overlay} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+        <Pressable style={styles.backdrop} onPress={handleClose} accessibilityLabel="Close report" />
         <View style={styles.sheet}>
           <View style={styles.handle} />
-          <Text style={styles.title}>{title}</Text>
-          <Text style={styles.subtitle} numberOfLines={2}>
-            {questTitle}
-          </Text>
+          <Heading>{title}</Heading>
+          <Small tone="soft" numberOfLines={2}>{questTitle}</Small>
 
           {submitting ? (
-            <ActivityIndicator color={COLORS.primary} style={{ marginVertical: 32 }} />
+            <View style={styles.submitting}>
+              <ActivityIndicator color={COLOR.ink} />
+              <Small tone="soft">Sending the report…</Small>
+            </View>
           ) : step === 'reason' ? (
             <ScrollView style={styles.list}>
               {reasons.map((item) => (
-                <TouchableOpacity
+                <Pressable
                   key={item.value}
                   style={styles.reasonRow}
                   onPress={() => pickReason(item.value)}
-                  activeOpacity={0.7}
+                  accessibilityRole="button"
                 >
-                  <Text style={styles.reasonText}>{item.label}</Text>
-                </TouchableOpacity>
+                  <Body>{item.label}</Body>
+                </Pressable>
               ))}
             </ScrollView>
           ) : (
             <View style={styles.detailsBlock}>
-              <Text style={styles.detailsLabel}>Anything else we should know? (optional)</Text>
+              <Small tone="soft">Anything else we should know?</Small>
               <TextInput
                 style={styles.detailsInput}
                 value={details}
                 onChangeText={setDetails}
-                placeholder="Keep it brief (500 characters max)"
-                placeholderTextColor={COLORS.textMuted}
+                placeholder="Keep it brief"
+                placeholderTextColor={COLOR.inkFaint}
                 multiline
                 maxLength={500}
               />
-              <TouchableOpacity
+              <Pressable
                 style={styles.submitBtn}
                 onPress={() => selectedReason && confirmSubmit(selectedReason, details)}
-                activeOpacity={0.85}
+                accessibilityRole="button"
+                accessibilityLabel="Submit report"
               >
-                <Text style={styles.submitText}>Submit report</Text>
-              </TouchableOpacity>
-              <TouchableOpacity onPress={() => setStep('reason')} style={styles.backLink}>
-                <Text style={styles.backLinkText}>← Back</Text>
-              </TouchableOpacity>
+                <Small color={COLOR.white}>Submit report</Small>
+              </Pressable>
+              <Pressable onPress={() => setStep('reason')} style={styles.backLink} accessibilityRole="button">
+                <Small>Back</Small>
+              </Pressable>
             </View>
           )}
 
-          <TouchableOpacity onPress={handleClose} style={styles.cancelBtn}>
-            <Text style={styles.cancelText}>Cancel</Text>
-          </TouchableOpacity>
+          <Pressable onPress={handleClose} style={styles.cancelBtn} accessibilityRole="button">
+            <Small tone="soft">Cancel</Small>
+          </Pressable>
         </View>
       </KeyboardAvoidingView>
     </Modal>
@@ -128,56 +126,51 @@ export function ReportPostSheet<R extends string = ReportReason>({
 
 const styles = StyleSheet.create({
   overlay: { flex: 1, justifyContent: 'flex-end' },
-  backdrop: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(15,23,42,0.45)' },
+  backdrop: { ...StyleSheet.absoluteFill, backgroundColor: COLOR.scrim },
   sheet: {
-    backgroundColor: COLORS.surface,
-    borderTopLeftRadius: RADIUS.xxl,
-    borderTopRightRadius: RADIUS.xxl,
-    paddingHorizontal: SPACING.xl,
-    paddingBottom: SPACING.xxl,
+    backgroundColor: COLOR.paper,
+    borderTopLeftRadius: RADIUS.sheet,
+    borderTopRightRadius: RADIUS.sheet,
+    paddingHorizontal: SPACE.s4,
+    paddingBottom: SPACE.s7,
     maxHeight: '80%',
+    gap: SPACE.s2,
   },
   handle: {
     width: 40,
     height: 4,
-    borderRadius: 2,
-    backgroundColor: COLORS.border,
+    borderRadius: RADIUS.pill,
+    backgroundColor: COLOR.paperDeep,
     alignSelf: 'center',
-    marginTop: SPACING.md,
-    marginBottom: SPACING.lg,
+    marginTop: SPACE.s3,
+    marginBottom: SPACE.s2,
   },
-  title: { fontSize: 18, fontWeight: '800', color: COLORS.textPrimary },
-  subtitle: { color: COLORS.textMuted, fontSize: 13, marginTop: 4, marginBottom: SPACING.lg },
   list: { maxHeight: 320 },
   reasonRow: {
-    paddingVertical: SPACING.lg,
+    minHeight: 48,
+    justifyContent: 'center',
     borderBottomWidth: 1,
-    borderBottomColor: COLORS.border,
+    borderBottomColor: COLOR.rule,
   },
-  reasonText: { color: COLORS.textPrimary, fontSize: 15, fontWeight: '600' },
-  detailsBlock: { marginBottom: SPACING.md },
-  detailsLabel: { color: COLORS.textMuted, fontSize: 13, marginBottom: SPACING.sm },
+  submitting: { alignItems: 'center', gap: SPACE.s3, paddingVertical: SPACE.s6 },
+  detailsBlock: { gap: SPACE.s3, marginTop: SPACE.s2 },
   detailsInput: {
-    backgroundColor: COLORS.bg,
-    borderRadius: RADIUS.md,
-    borderWidth: 1,
-    borderColor: COLORS.border,
-    padding: SPACING.md,
+    ...TYPE.body,
+    color: COLOR.ink,
+    backgroundColor: COLOR.white,
+    borderRadius: RADIUS.control,
+    padding: SPACE.s3,
     minHeight: 88,
-    color: COLORS.textPrimary,
-    fontSize: 14,
     textAlignVertical: 'top',
   },
   submitBtn: {
-    backgroundColor: COLORS.accent,
-    borderRadius: RADIUS.md,
-    paddingVertical: 14,
+    backgroundColor: COLOR.ink,
+    borderRadius: RADIUS.pill,
+    minHeight: 48,
     alignItems: 'center',
-    marginTop: SPACING.lg,
+    justifyContent: 'center',
+    paddingHorizontal: SPACE.s5,
   },
-  submitText: { color: '#FFFFFF', fontWeight: '700', fontSize: 15 },
-  backLink: { alignItems: 'center', marginTop: SPACING.md },
-  backLinkText: { color: COLORS.primary, fontWeight: '600' },
-  cancelBtn: { alignItems: 'center', paddingTop: SPACING.lg },
-  cancelText: { color: COLORS.textMuted, fontWeight: '600' },
+  backLink: { minHeight: 48, alignItems: 'center', justifyContent: 'center' },
+  cancelBtn: { minHeight: 48, alignItems: 'center', justifyContent: 'center' },
 })

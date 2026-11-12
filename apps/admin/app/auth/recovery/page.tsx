@@ -2,6 +2,7 @@
 
 import { useEffect } from 'react'
 import { useRouter } from 'next/navigation'
+import { theme } from '@/lib/theme'
 
 /** Catches Supabase redirects to Site URL (/) with #access_token in the hash. */
 export default function AuthRecoveryRedirect() {
@@ -23,8 +24,8 @@ export default function AuthRecoveryRedirect() {
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        background: '#0F172A',
-        color: '#64748B',
+        background: theme.bg,
+        color: theme.textMuted,
       }}
     >
       Redirecting…

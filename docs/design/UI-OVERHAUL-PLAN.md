@@ -5,7 +5,7 @@ so the app is never half-migrated for long.
 
 ---
 
-## Decisions to confirm before Phase 1
+## Approved design decisions
 
 | # | Decision | Recommendation |
 |---|---|---|
@@ -17,6 +17,161 @@ so the app is never half-migrated for long.
 | D6 | Dual-camera proof: the place, then a quick selfie shown as a corner pillow | **Approved Nov 7, 2026.** Selfie is skippable; see Phase 2 step 7 and 3e |
 | D7 | A real place photo for every quest (~29), alongside its cutout | Yes. `cover_image_url` already exists; this replaces the Unsplash placeholders |
 | D8 | A sprite set (~12 Victoria creatures and weather) and a scrap kit (tape, torn paper, pen marks) | Yes. Commission one illustrator or 3D artist for one consistent style; Lottie or Rive for the idle loops |
+
+## Current implementation status (reconciled Nov 11, 2026)
+
+The Nov 9 snapshots and session notes below are historical. Current code includes the Cutouts
+foundation, core mobile screens, signed selfie flow, social surfaces, brand surfaces and admin
+restyle described below. The Nov 10 launch runbook reports migrations through 038 applied,
+including 032–033. This was not re-queried during this documentation update. Real place/cutout
+assets and device/accessibility validation remain outstanding. See [the audit](CODEBASE-AUDIT-2026-11-11.md)
+for distinct code, migration, deployment and verification states.
+
+Cursor has completed several redesign increments on the `cursor/cutouts-this-week-quests`
+branch. Its work is already in the current checkout; treat the code as the starting point and
+continue from it rather than reimplementing these phases. The latest commits are `ed70048`
+(foundation, cutout components, This week and Quests), `55bc433` (quest detail and photo
+viewer), `86fb7de` (camera submission and celebration), and `c5e4ecb` (City/feed, Rankings,
+You, comments, reports and notifications). These commits are ahead of `main` in this checkout.
+
+| Plan area | Current state in the Cursor branch | Remaining work |
+|---|---|---|
+| Phase 1: Foundation | Implemented: `lib/theme.ts`, Figtree and text primitives, category tokens, token lint script. | Continue reducing the existing token-lint backlog and audit remaining screens when touched. |
+| Phase 2: Cutout pipeline | Implemented in code: migrations 032–033, processing script, mobile cutout/photo components, signed private selfie access, and admin cutout uploader. | Runbook reports migrations 032–033 applied; real category/quest cutout assets are still needed. |
+| Phase 3: Core loop | This week, Quests, quest detail/photo viewer, in-app place/selfie camera, Verified celebration, and camera ZoneMap are implemented. | Visual/device/backend verification remains; the map tab and a few motion/content details still need a Cutouts audit. |
+| Phase 4: Social and status | City/feed bubbles, Rankings, You, comments, reports and notifications are redesigned. | Continue accessibility and device checks; signed selfies are not wired into every feed/celebration surface. |
+| Phase 5: Brand surfaces | Share card, onboarding, app/adaptive icons and splash implemented (Claude, Nov 8). | Store screenshots on the `desk` grid need real screens and content; verify native assets in device builds. |
+| Phase 6: Admin dashboard | Cutouts restyle and quest cutout uploader implemented (Claude, Nov 8). | Live folder/bubble preview remains; verify all admin pages for visual consistency and device-independent layouts. |
+| Phase 7: Content | Founder-owned and ongoing. | Real place photos, processed cutouts, action phrases, sprite artwork and copy remain. |
+
+This snapshot describes code in the current checkout, not a claim that every change is merged
+to `main`, deployed, or device-verified. The hosted migration statement above is based on the
+runbook and should be rechecked before operations. Recheck branch state and working tree before
+making changes. Use
+[the Claude next-implementation prompt](CLAUDE-NEXT-IMPLEMENTATION-PROMPT.md) as the task
+handoff; update this snapshot as work lands so later agents do not duplicate Cursor's work.
+
+**Historical handoff (Nov 9):** Spec 05 and Spec 07 had just landed in the branch. At that
+time migrations 034–037 were described as local. The Nov 10 runbook now reports migrations
+through 038 applied. Monday push delivery and merchant counter use still require their own
+verification. Quest chains stay deferred. The next product feature is the Sunday recap card.
+
+**Recap card (Nov 11, Claude).** `RecapShareCard` and `app/recap.tsx` are in the checkout. The
+card follows §7: 9:16, the photo's category colour as the whole background (paper and ink when
+there is no photo), the proof photo as a pillow, one torn label for the week and one strip of
+tape, which is the two-scrap limit. The rank is the one large figure; `TYPE.numeral` was added
+to `lib/theme.ts` for it and is for share artifacts only. No animation was added, so there is
+nothing for reduce-motion to turn off. Card text ignores the system font scale because the
+output is a fixed image; the preview has an accessibility label with the same content and the
+screen around it scales. Not seen on a device: check the layout with long quest titles, three
+pills wrapping, and community blue (white text). Real photos and cutouts remain owner content.
+
+**Feature handoff update (Nov 9, earlier):** the redesign work has advanced since the Nov 8 notes
+below. At that point the next priority was Spec 05. That audit is historical. See
+[ROADMAP.md](../../ROADMAP.md).
+
+
+### Claude session, Nov 8, 2026 (follow-up on the Cursor branch)
+
+Audit: the Cursor work above is present as described. Two Phase 2 gaps were confirmed and
+closed in this increment; nothing Cursor built was rewritten.
+
+- **Private selfie delivery.** New local migration `033_selfie_signed_url_access.sql`
+  adds a storage SELECT policy on `proof-selfies` backed by `can_view_selfie_object()`,
+  which reuses `can_view_completion()` (own post, or approved + not hidden + feed public +
+  no block) and requires the object to sit in the completion owner's folder. Mobile signs
+  with the viewer's own session (`lib/selfieUrl.ts`, 5 min URLs, cached); `PhotoViewer`
+  uses `useSignedSelfie`. No service-role key reaches mobile, the bucket stays private,
+  and a failed signature just hides the optional selfie, never the place photo.
+- **Admin cutout uploader.** `setQuestCutout` server action (admin-only, transparent WebP
+  from `scripts/make-cutout.js`, 1.5 MB cap, old object cleaned up) and
+  `QuestCutoutUploader` in the quest edit form, previewing on all five category colours.
+
+Checks: mobile `tsc --noEmit` clean; mobile `npm test` 159/159; admin `tsc --noEmit` clean;
+`lint:tokens` still reports the existing warning-level backlog (336 raw tokens in 36 files,
+none newly introduced here). Not run: anything against a real Supabase (migrations 032 and
+033 are not applied), device testing of the signed-URL flow.
+
+**Share card (Phase 5, second Claude increment).** `ShareCompletionCard` and 
+`ShareStoryModal` rebuilt on tokens: the quest's category colour fills the 9:16 card, the 
+proof photo is a tilted white-edged `Pillow`, the quest's `Cutout` overlaps its corner, 
+ink `+XP` pill, Pilowlava wordmark, sentence case, no emoji. `ShareCompletionData` gained 
+optional `category` and `cutoutUrl`; all four call sites (celebration, City bubble, 
+completion page, legacy `FeedPostCard`) pass them. The completion page query now selects 
+`category, cutout_url`. Share files are off the token-lint list (336 to 312 raw tokens). 
+Not verified on a device: the view-shot capture of the new card and the cutout placeholder 
+look. The selfie is not on the share card; feed bubbles do not show selfies yet, so the 
+earlier "not yet wired" note below only applies if a feed surface starts showing them.
+
+**Onboarding (Phase 5, third Claude increment).** `app/onboarding.tsx` rewritten as three 
+paper screens, one sentence each, with three category-colour `Cutout` placeholders per 
+screen and the seal sprite on the first. Ink pill button, dot progress, 48pt targets, 
+curly apostrophes, no arrows or emoji. The city picker is gone (Victoria is the only pilot 
+city, so `completeOnboarding` always gets `CITY.name`); `lib/onboarding.ts` is unchanged. 
+`OnboardingVisuals.tsx` (old illustrations) is deleted. Cutouts stay placeholders until 
+Phase 7 supplies category defaults. Not verified on device or at 130% text / small Android.
+
+**Icon and splash (Phase 5, fourth Claude increment).** `scripts/gen-app-icons.js` rewritten 
+(it still described Harbour Electric): it now renders the real Pilowlava glyphs (outlines in 
+`scripts/data/pilowlava-glyphs.json`, extracted from the bundled OFL font) with `sharp`. 
+`icon.png` is ink `Q!` on a sunflower field, `adaptive-icon.png` is the mark inside the 
+Android safe circle (adaptive background `#FFCE1F`), `splash.png` is the ink `Quest!` 
+wordmark on paper (`splash.backgroundColor` `#F6F2EC`). Notification tint is now sunflower. 
+The glyphs are all-caps because Pilowlava is a caps display face. Assets are regenerated 
+and checked visually as flat renders only; not tested in a dev build, on iOS icon masking 
+or a real Android launcher. Needs a native build to take effect (icon and splash are not 
+OTA-updatable).
+
+**Admin restyle (Phase 6, fifth Claude increment).** `apps/admin/lib/theme.ts` and 
+`app/globals.css` moved from the navy Harbour Electric palette to Cutouts on paper: paper 
+background, white surfaces, ink text, ink pill buttons (no glow), Figtree instead of Inter, 
+sentence-case labels, and the mobile category colours (with `deep` and `onColor`) so 
+category chips read as bright fills with ink text. Sidebar is an ink-pill active state with 
+a Pilowlava `Quest!` wordmark and no emoji. Login, reset and auth screens now use theme 
+tokens instead of raw hex. Emoji and symbol prefixes removed from the quest list, geofence 
+editor, sponsors and badges button (badge icons are user data and stay). Only 
+`lib/badge-rules.ts` rarity colours remain as raw hex, and they are tuned for a dark 
+background. Checks: admin `tsc --noEmit` clean; `/login` returns 200 with the new colours 
+in a dev server. Not run: `next build`, authenticated pages in a browser (the in-app 
+browser could not open localhost this session), a contrast audit. A dev server may still 
+be running on port 3011 from this check.
+
+**Core-loop audit (Claude, Nov 8).** Read This week, Quests, quest detail, submit and the 
+Verified screen against BRAND.md sections 7, 8b and 11. Fixed: Start quest is now disabled 
+outside the zone (8b), with the zone line as its accessibility hint; place photo has a real 
+alt text instead of "Photo: Quest!"; the Quests tab no longer shows "Nothing in Victoria 
+yet" when the load failed (it shows a retry) and supports pull to refresh; raw database 
+error text is no longer shown in submit alerts; camera-permission copy names the app and 
+the two photos; the selfie countdown is a polite live region; the XP pill and Verified 
+sentence have screen-reader labels and roles. Audited and fine: This week sentence 
+(separate pressable phrases, refresh, error, empty), zone chip states and copy, shutter 
+disabled outside the zone, selfie skip, celebration copy and reduced-motion path.
+**Gaps found, not fixed:** (1) the camera screen has no small zone map with the dashed 
+geofence polygon (spec 7, The zone); (2) the cutout does not fly into the You avatar after 
+landing, and Verified has no new-rank pill; (3) "Photos from here" rows lack the time 
+(name and hearts only); (4) the camera hint is generic, per-quest framing hints need a 
+column; (5) upload-failure copy cannot promise "you're still verified" because the 
+completion is only created after both uploads, so a retry queue would be needed; (6) no 
+skeleton loaders for folders and bubbles (text loading states); (7) nothing was exercised 
+on a device, at 130% text, or against a real backend, so contrast, touch targets and the 
+geofence edge cases are code-read only.
+
+**Zone map (Claude, Nov 8, follow-up to the audit).** New `components/ZoneMap.tsx` draws the 
+quest's real geofence on a small 112 pt map on the camera screen during the place shot: 
+circle, polygon, multi-area or the city boundary, dashed in the category's deep colour with 
+a 35% category fill and an ink player dot, hidden from screen readers (the zone chip carries 
+the status) and not shown for anywhere quests or during the selfie. Audit gap (1) is closed. 
+Unverified: it type-checks but has not been run on iOS or Android; `liteMode` (Android only) 
+and `lineDashPattern` rendering, Google Maps key setup and the fit-to-zone behaviour need a 
+device check. The Map tab (`app/(tabs)/map.tsx`) still uses the old palette and 
+`CATEGORY_COLORS`; it was not part of this increment.
+
+**Still open / next:** apply and verify 032+033 on a staging project, then test selfie
+signing across own / follower / blocked / hidden cases; feed bubbles and celebration for
+other users' selfies are not yet wired to `useSignedSelfie`; Phase 5 (icon, splash, share
+card, onboarding) is the next recommended phase, then Phase 6 admin restyle (the admin
+still uses the old navy palette; the uploader is unstyled by design). Category default
+cutouts and all Phase 7 content remain founder work.
 
 ---
 

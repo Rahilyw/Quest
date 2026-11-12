@@ -253,6 +253,8 @@ export function FeedPostCard({ post, currentUserId, onReported, onBlocked }: Pro
             level: post.user.level,
             xpReward: post.quest.xp_reward,
             completedAt: post.completed_at,
+            category: post.quest.category,
+            cutoutUrl: post.quest.cutout_url,
           }}
         />
       ) : null}

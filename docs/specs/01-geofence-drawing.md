@@ -1,19 +1,20 @@
 # Spec 01 — Geofence Drawing (custom polygon perimeters)
 
-**Status:** Draft
+**Status:** Implemented in the checkout (migrations 013–015, 024–026); shared geofence behavior is covered by local tests. Hosted/device verification is tracked separately.
 **Depends on:** migration `013_geofence_system.sql` (shipped)
 **Enables:** Spec 02 (instant verification trusts the geofence as proof)
 
 ## Summary
 
-Admins define where a quest takes place by drawing on a map. Three of the four geofence shapes already exist (`none`, `circle`, `city` — migration 013 + `GeofenceEditor.tsx`). This spec adds the fourth: **`polygon`** — a hand-drawn perimeter for irregular locations (a park, a beach, a market square, a mountain summit trail network).
+Admins define where a quest takes place by drawing on a map. The implemented geofence shapes are `none`, `circle`, `city`, `polygon` and `multi` (multiple circles/polygons OR-matched for one quest). Polygon fences support irregular locations such as parks, beaches, markets and trail networks.
 
 | Type | Example | Status |
 |---|---|---|
 | `none` | Journal-at-home quest, radius 0 | ✅ Shipped |
-| `city` | "Anywhere in Victoria" | ✅ Shipped (placeholder boundary — see §7) |
+| `city` | "Anywhere in Victoria" | ✅ Shipped (official Victoria municipal boundary in migration 022) |
 | `circle` | 50 m around Mount Doug summit marker | ✅ Shipped |
-| `polygon` | Exact outline of Beacon Hill Park | ❌ **This spec** |
+| `polygon` | Exact outline of Beacon Hill Park | ✅ Shipped |
+| `multi` | Several valid areas for one quest | ✅ Shipped (migration 024–025) |
 
 ## 1. Data model (migrations `014`, `015`)
 
@@ -134,6 +135,9 @@ Client checks are UX sugar; the DB trigger remains authoritative (unchanged prin
 - SQL: seed a polygon quest (Beacon Hill Park outline) in `seed.sql`; assert `check_completion_geofence` true inside / false outside via a `supabase test` script or the existing logic-test pattern.
 - Manual: draw → save → reload edit form → shape round-trips identically.
 
-## 7. Pre-existing debt this touches
+## 7. Historical launch debt (resolved)
 
-- The Victoria `city` boundary in 013 is a placeholder bounding box (`-123.412/-123.298 × 48.382/48.472`). Before launch, load the real municipal boundary from `supabase/seeds/victoria-bc-boundary.geojson` — this matters much more once geofence = proof (Spec 02).
+Migration 013 initially used a placeholder bounding box. Migration 022 replaces it with the
+official simplified Victoria municipal boundary, sourced from
+`supabase/seeds/victoria-bc-boundary.geojson`. This replaces the original pre-launch action
+described in the first draft of this spec.

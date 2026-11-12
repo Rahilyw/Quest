@@ -3,6 +3,14 @@ import { supabase } from '@/lib/supabase'
 import { getOnboardingCity } from '@/lib/onboarding'
 import type { UserProfile } from '@/lib/types'
 
+/**
+ * Columns a client role may read on `profiles` (migration 039). `push_token` is not
+ * granted, so `select('*')` fails with 42501. Keep this list inside the 039 grant;
+ * `__tests__/profilePrivacy.test.js` checks it.
+ */
+export const PROFILE_COLUMNS =
+  'id, username, city, total_xp, level, avatar_url, created_at, current_streak, longest_streak, last_completion_week, last_week_rank, feed_public, push_social, push_drops'
+
 const USERNAME_RE = /^[a-z0-9_]{3,20}$/
 
 function sanitizeUsername(raw: string): string {
@@ -42,7 +50,7 @@ async function createProfile(userId: string, session: Session): Promise<UserProf
         total_xp: 0,
         level: 1,
       })
-      .select('*')
+      .select(PROFILE_COLUMNS)
       .single()
 
     if (!error && data) return data
@@ -62,7 +70,7 @@ export async function ensureUserProfile(session: Session): Promise<{
 
   const { data, error } = await supabase
     .from('profiles')
-    .select('*')
+    .select(PROFILE_COLUMNS)
     .eq('id', userId)
     .maybeSingle()
 
@@ -81,7 +89,7 @@ export async function ensureUserProfile(session: Session): Promise<{
 
   const { data: retry, error: retryError } = await supabase
     .from('profiles')
-    .select('*')
+    .select(PROFILE_COLUMNS)
     .eq('id', userId)
     .maybeSingle()
 

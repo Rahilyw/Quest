@@ -1,6 +1,7 @@
-import { TouchableOpacity, Text, View, StyleSheet } from 'react-native'
-import { Ionicons } from '@expo/vector-icons'
-import { COLORS, RADIUS, SPACING } from '@/lib/constants'
+import { TouchableOpacity, View, StyleSheet } from 'react-native'
+import { CATEGORY, COLOR, RADIUS, SHADOW, SPACE } from '@/lib/theme'
+import { CategoryIcon } from '@/components/ui/CategoryIcon'
+import { Small } from '@/components/ui/Text'
 import type { QuestCategory } from '@/lib/types'
 
 interface Props {
@@ -11,59 +12,31 @@ interface Props {
   count?: number
 }
 
-const CHIP_META = {
-  all: {
-    color: COLORS.navy,
-    soft: '#E8EEF7',
-    border: '#B8C6DA',
-    icon: 'sparkles-outline',
-  },
-  fitness: {
-    color: '#15803D',
-    soft: '#DCFCE7',
-    border: '#86D9A4',
-    icon: 'fitness-outline',
-  },
-  social: {
-    color: '#7C3AED',
-    soft: '#F0E7FF',
-    border: '#C8ADF8',
-    icon: 'people-outline',
-  },
-  food: {
-    color: '#C2410C',
-    soft: '#FFF0E5',
-    border: '#FDB98B',
-    icon: 'restaurant-outline',
-  },
-  community: {
-    color: '#1D4ED8',
-    soft: '#E5EDFF',
-    border: '#9DB8F7',
-    icon: 'home-outline',
-  },
-  nature: {
-    color: '#0F766E',
-    soft: '#DDF7F2',
-    border: '#87D8CA',
-    icon: 'leaf-outline',
-  },
-} as const
-
 export function CategoryChip({ label, category, active, onPress, count }: Props) {
-  const meta = CHIP_META[category ?? 'all']
-  const foreground = active ? '#FFFFFF' : meta.color
+  const catToken = category ? CATEGORY[category as keyof typeof CATEGORY] : null
+
+  // Background and text colour per active/inactive + category
+  let bgColor: string
+  let textColor: string
+  let iconColor: string
+
+  if (category && catToken) {
+    bgColor = active ? catToken.color : COLOR.secondaryFill
+    textColor = active ? catToken.onColor : COLOR.inkSoft
+    iconColor = active ? catToken.onColor : COLOR.inkSoft
+  } else {
+    // "All" chip
+    bgColor = active ? COLOR.ink : COLOR.secondaryFill
+    textColor = active ? COLOR.white : COLOR.inkSoft
+    iconColor = active ? COLOR.white : COLOR.inkSoft
+  }
 
   return (
     <TouchableOpacity
       style={[
         styles.chip,
-        {
-          backgroundColor: active ? meta.color : meta.soft,
-          borderColor: active ? meta.color : meta.border,
-          shadowColor: meta.color,
-        },
-        active && styles.chipActive,
+        { backgroundColor: bgColor },
+        active && SHADOW.lift,
       ]}
       onPress={onPress}
       activeOpacity={0.82}
@@ -71,35 +44,13 @@ export function CategoryChip({ label, category, active, onPress, count }: Props)
       accessibilityLabel={label}
       accessibilityState={{ selected: active }}
     >
-      <View
-        pointerEvents="none"
-        style={[
-          styles.patternRing,
-          { borderColor: active ? 'rgba(255,255,255,0.18)' : `${meta.color}16` },
-        ]}
-      />
-      <View
-        pointerEvents="none"
-        style={[
-          styles.patternDot,
-          { backgroundColor: active ? 'rgba(255,255,255,0.34)' : `${meta.color}2B` },
-        ]}
-      />
       <View style={styles.labelWrap}>
-        <View
-          style={[
-            styles.iconMedallion,
-            {
-              backgroundColor: active ? 'rgba(255,255,255,0.17)' : `${meta.color}14`,
-              borderColor: active ? 'rgba(255,255,255,0.25)' : `${meta.color}24`,
-            },
-          ]}
-        >
-          <Ionicons name={meta.icon} size={14} color={foreground} />
-        </View>
-        <Text style={[styles.label, { color: foreground }]}>
+        {category ? (
+          <CategoryIcon category={category} size={14} color={iconColor} />
+        ) : null}
+        <Small color={textColor}>
           {label}{count !== undefined ? ` ${count}` : ''}
-        </Text>
+        </Small>
       </View>
     </TouchableOpacity>
   )
@@ -110,59 +61,15 @@ const styles = StyleSheet.create({
     alignSelf: 'center',
     minHeight: 40,
     borderRadius: RADIUS.pill,
-    paddingHorizontal: SPACING.md,
-    marginRight: SPACING.sm,
-    borderWidth: 1,
+    paddingHorizontal: 14,
+    paddingVertical: SPACE.s2,
+    marginRight: SPACE.s2,
     justifyContent: 'center',
-    overflow: 'hidden',
-    shadowColor: '#0F172A',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.08,
-    shadowRadius: 5,
-    elevation: 1,
   },
   labelWrap: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 7,
-    paddingVertical: 6,
-  },
-  iconMedallion: {
-    width: 24,
-    height: 24,
-    borderRadius: 12,
-    borderWidth: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  patternRing: {
-    position: 'absolute',
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    borderWidth: 8,
-    right: -19,
-    top: -20,
-  },
-  patternDot: {
-    position: 'absolute',
-    width: 5,
-    height: 5,
-    borderRadius: 3,
-    left: 8,
-    bottom: 3,
-  },
-  chipActive: {
-    shadowOpacity: 0.24,
-    shadowRadius: 7,
-    elevation: 3,
-  },
-  label: {
-    fontWeight: '800',
-    fontSize: 12,
-    lineHeight: 16,
-    letterSpacing: 0.35,
-    includeFontPadding: false,
+    gap: SPACE.s2,
   },
 })

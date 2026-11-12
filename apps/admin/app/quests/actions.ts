@@ -4,6 +4,8 @@ import { revalidatePath } from 'next/cache'
 import { validatePolygonRing } from '@quest/geofence'
 import { supabaseAdmin } from '@/lib/supabase'
 import { requireAdmin } from '@/lib/require-admin'
+import { normalizeSchedule, scheduleFromForm } from '@/lib/schedule'
+import { sendExpoPush } from '@/lib/expo-push'
 
 export interface Badge {
   id: string
@@ -42,8 +44,13 @@ export interface Quest {
   sponsor_name: string | null
   sponsor_reward: string | null
   cover_image_url: string | null
+  cutout_url?: string | null
   status: string
   created_at: string
+  active_from?: string | null
+  active_until?: string | null
+  is_starter?: boolean
+  suggested_by?: string | null
   quest_badges?: { badge_id: string; badge: Badge | null }[]
   quest_geofences?: QuestGeofenceRow[]
 }
@@ -215,6 +222,48 @@ async function deleteQuestCoverIfOwned(url: string | null | undefined) {
   }
 }
 
+async function linkPublishedSuggestion(
+  suggestionId: string,
+  questId: string,
+): Promise<{ ok: true } | { ok: false; error: string }> {
+  const { data, error } = await supabaseAdmin.rpc('publish_suggested_quest', {
+    p_suggestion_id: suggestionId,
+    p_quest_id: questId,
+  })
+  if (error) return { ok: false, error: error.message }
+
+  const result = (data ?? {}) as { awarded?: boolean; user_id?: string }
+  revalidatePath('/suggestions')
+
+  if (result.awarded && result.user_id) {
+    const { data: profile } = await supabaseAdmin
+      .from('profiles')
+      .select('push_token, push_drops')
+      .eq('id', result.user_id)
+      .maybeSingle()
+    const sentAt = new Date().toISOString()
+    if (profile?.push_token && profile.push_drops !== false) {
+      await sendExpoPush(profile.push_token, 'Quest!', 'Your quest idea is live in Victoria.', {
+        type: 'suggestion_live',
+        quest_id: questId,
+      })
+      // sent_at is set now so a later outbox drain cannot deliver this twice.
+      // A missing push_outbox table must not undo the published quest.
+      await supabaseAdmin.from('push_outbox').insert({
+        user_id: result.user_id,
+        kind: 'suggestion_live',
+        title: 'Quest!',
+        body: 'Your quest idea is live in Victoria.',
+        data: { type: 'suggestion_live', quest_id: questId },
+        dedupe_key: `suggestion_live:${suggestionId}`,
+        sent_at: sentAt,
+      })
+    }
+  }
+
+  return { ok: true }
+}
+
 export async function createQuest(formData: FormData): Promise<{ ok: true; quest: Quest } | { ok: false; error: string }> {
   await requireAdmin()
   try {
@@ -245,6 +294,13 @@ export async function createQuest(formData: FormData): Promise<{ ok: true; quest
     const sponsor_reward = String(formData.get('sponsor_reward') ?? '').trim()
     const badgeIds = formData.getAll('badge_ids').map(String)
     const coverFile = formData.get('cover') as File | null
+    const suggestionId = String(formData.get('suggestion_id') ?? '').trim() || null
+    const isStarter = formData.get('is_starter') === 'true'
+    if (suggestionId && isStarter) {
+      return { ok: false, error: 'Publish the suggestion first, then choose its quest as the first quest.' }
+    }
+    const schedule = scheduleFromForm(formData)
+    if ('error' in schedule) return { ok: false, error: schedule.error }
 
     if (!title || !description) {
       return { ok: false, error: 'Title and description are required.' }
@@ -299,6 +355,8 @@ export async function createQuest(formData: FormData): Promise<{ ok: true; quest
         sponsor_reward: is_sponsored ? sponsor_reward : null,
         cover_image_url,
         status: 'active',
+        active_from: schedule.active_from,
+        active_until: schedule.active_until,
       })
       .select('*')
       .single()
@@ -341,6 +399,24 @@ export async function createQuest(formData: FormData): Promise<{ ok: true; quest
       }
     }
 
+    if (isStarter) {
+      const { error: starterError } = await supabaseAdmin.rpc('set_starter_quest', {
+        p_quest_id: quest.id,
+      })
+      if (starterError) {
+        await supabaseAdmin.from('quests').delete().eq('id', quest.id)
+        return { ok: false, error: starterError.message }
+      }
+    }
+
+    if (suggestionId) {
+      const linked = await linkPublishedSuggestion(suggestionId, quest.id)
+      if (!linked.ok) {
+        await supabaseAdmin.from('quests').delete().eq('id', quest.id)
+        return linked
+      }
+    }
+
     revalidatePath('/quests')
     revalidatePath('/')
 
@@ -356,9 +432,27 @@ export async function createQuest(formData: FormData): Promise<{ ok: true; quest
   }
 }
 
-export async function toggleQuestStatus(id: string, current: string): Promise<string> {
+export async function setStarterQuest(id: string): Promise<{ ok: true } | { ok: false; error: string }> {
   await requireAdmin()
-  const next = current === 'active' ? 'inactive' : 'active'
+  const { error } = await supabaseAdmin.rpc('set_starter_quest', { p_quest_id: id })
+  if (error) return { ok: false, error: error.message }
+  revalidatePath('/quests')
+  revalidatePath('/')
+  return { ok: true }
+}
+
+export async function toggleQuestStatus(id: string): Promise<string> {
+  await requireAdmin()
+  const { data: quest, error: readError } = await supabaseAdmin
+    .from('quests')
+    .select('status, is_starter')
+    .eq('id', id)
+    .single()
+  if (readError || !quest) throw new Error(readError?.message ?? 'Quest not found.')
+  if (quest.status === 'active' && quest.is_starter) {
+    throw new Error('Choose another active quest as the first quest before deactivating this one.')
+  }
+  const next = quest.status === 'active' ? 'inactive' : 'active'
   const { error } = await supabaseAdmin.from('quests').update({ status: next }).eq('id', id)
   if (error) throw new Error(error.message)
   revalidatePath('/quests')
@@ -385,6 +479,9 @@ export interface UpdateQuestInput {
   remove_cover?: boolean
   /** Child areas when geofence_type is multi */
   multi_areas?: MultiAreaPayload[] | null
+  /** UTC instants. Null clears that side of the window. */
+  active_from: string | null
+  active_until: string | null
 }
 
 export async function updateQuest(
@@ -411,6 +508,8 @@ export async function updateQuest(
       sponsor_reward,
       remove_cover,
       multi_areas,
+      active_from,
+      active_until,
     } = input
 
     if (!title.trim() || !description.trim()) {
@@ -432,6 +531,8 @@ export async function updateQuest(
     if (is_sponsored && (!sponsor_name?.trim() || !sponsor_reward?.trim())) {
       return { ok: false, error: 'Sponsor name and reward are required for sponsored quests.' }
     }
+    const schedule = normalizeSchedule(active_from ?? '', active_until ?? '')
+    if ('error' in schedule) return { ok: false, error: schedule.error }
 
     const { data: existing } = await supabaseAdmin
       .from('quests')
@@ -478,6 +579,8 @@ export async function updateQuest(
         is_sponsored,
         sponsor_name: is_sponsored ? (sponsor_name?.trim() ?? null) : null,
         sponsor_reward: is_sponsored ? (sponsor_reward?.trim() ?? null) : null,
+        active_from: schedule.active_from,
+        active_until: schedule.active_until,
         ...coverPatch,
       })
       .eq('id', id)
@@ -521,5 +624,70 @@ export async function updateQuest(
     return { ok: true, quest: quest as Quest }
   } catch (e) {
     return { ok: false, error: e instanceof Error ? e.message : 'Unknown error' }
+  }
+}
+
+// ─── Cutouts (Cutouts redesign, migration 032) ───────────────────────────────
+// The cutout must already be background-removed: run `scripts/make-cutout.js`
+// first. It outputs a transparent WebP, which is the only format accepted here.
+
+const CUTOUT_MAX_BYTES = 1_500_000
+
+/** Upload (or replace/clear) a quest's cutout. Pass no file to clear it. */
+export async function setQuestCutout(
+  questId: string,
+  cutout: File | null
+): Promise<{ ok: true; cutout_url: string | null } | { ok: false; error: string }> {
+  await requireAdmin()
+  try {
+    const { data: existing, error: readError } = await supabaseAdmin
+      .from('quests')
+      .select('cutout_url')
+      .eq('id', questId)
+      .single()
+    if (readError || !existing) return { ok: false, error: 'Quest not found.' }
+
+    let nextUrl: string | null = null
+    if (cutout && cutout.size > 0) {
+      if (cutout.type !== 'image/webp') {
+        return { ok: false, error: 'Use the transparent WebP from scripts/make-cutout.js.' }
+      }
+      if (cutout.size > CUTOUT_MAX_BYTES) {
+        return { ok: false, error: 'Cutout is over 1.5 MB. Re-run make-cutout.js.' }
+      }
+      const buffer = Buffer.from(await cutout.arrayBuffer())
+      // WebP container: "RIFF" .... "WEBP"
+      if (buffer.toString('ascii', 0, 4) !== 'RIFF' || buffer.toString('ascii', 8, 12) !== 'WEBP') {
+        return { ok: false, error: 'That file is not a valid WebP.' }
+      }
+      const path = `${questId}/${crypto.randomUUID()}.webp`
+      const { error: uploadError } = await supabaseAdmin.storage
+        .from('quest-cutouts')
+        .upload(path, buffer, { contentType: 'image/webp', upsert: false })
+      if (uploadError) return { ok: false, error: `Cutout upload failed: ${uploadError.message}` }
+      nextUrl = supabaseAdmin.storage.from('quest-cutouts').getPublicUrl(path).data.publicUrl
+    }
+
+    const { error: updateError } = await supabaseAdmin
+      .from('quests')
+      .update({ cutout_url: nextUrl })
+      .eq('id', questId)
+    if (updateError) return { ok: false, error: updateError.message }
+
+    // Best-effort cleanup of the previous object.
+    const old = existing.cutout_url as string | null
+    const marker = '/quest-cutouts/'
+    const idx = old ? old.indexOf(marker) : -1
+    if (old && idx !== -1) {
+      const oldPath = decodeURIComponent(old.slice(idx + marker.length).split('?')[0] ?? '')
+      if (oldPath && !oldPath.includes('..')) {
+        await supabaseAdmin.storage.from('quest-cutouts').remove([oldPath]).catch(() => {})
+      }
+    }
+
+    revalidatePath('/quests')
+    return { ok: true, cutout_url: nextUrl }
+  } catch (err) {
+    return { ok: false, error: err instanceof Error ? err.message : 'Cutout update failed.' }
   }
 }

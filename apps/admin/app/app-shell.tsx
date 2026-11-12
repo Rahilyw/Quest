@@ -8,14 +8,15 @@ import { theme } from '@/lib/theme'
 function Sidebar() {
   const pathname = usePathname()
   const links = [
-    { href: '/', label: 'Dashboard', icon: '◆' },
-    { href: '/moderation', label: 'Moderation', icon: '🚩' },
-    { href: '/completions', label: 'Completions', icon: '◎' },
-    { href: '/quests', label: 'Quests', icon: '⚡' },
-    { href: '/quests/new', label: 'New Quest', icon: '＋' },
-    { href: '/badges', label: 'Badges', icon: '🏅' },
-    { href: '/users', label: 'Users', icon: '◉' },
-    { href: '/sponsors', label: 'Sponsors', icon: '★' },
+    { href: '/', label: 'Dashboard' },
+    { href: '/moderation', label: 'Moderation' },
+    { href: '/completions', label: 'Completions' },
+    { href: '/quests', label: 'Quests' },
+    { href: '/quests/new', label: 'New quest' },
+    { href: '/suggestions', label: 'Suggestions' },
+    { href: '/badges', label: 'Badges' },
+    { href: '/users', label: 'Users' },
+    { href: '/sponsors', label: 'Sponsors' },
   ]
 
   return (
@@ -32,11 +33,11 @@ function Sidebar() {
       }}
     >
       <div style={{ padding: '0 10px', marginBottom: 28 }}>
-        <div style={{ color: theme.primary, letterSpacing: 0.5 }} className="brand-wordmark">
-          QUEST!
+        <div style={{ color: theme.text }} className="brand-wordmark">
+          Quest!
         </div>
-        <div style={{ fontSize: 11, color: theme.textDim, fontWeight: 600, letterSpacing: 1, marginTop: 2 }}>
-          ADMIN
+        <div style={{ fontSize: 13, color: theme.textMuted, fontWeight: 600, marginTop: 2 }}>
+          Admin
         </div>
       </div>
 
@@ -55,18 +56,17 @@ function Sidebar() {
               display: 'flex',
               alignItems: 'center',
               gap: 10,
-              color: active ? theme.text : theme.textMuted,
-              background: active ? theme.primarySoft : 'transparent',
-              border: active ? `1px solid ${theme.border}` : '1px solid transparent',
+              color: active ? theme.onPrimary : theme.textMuted,
+              background: active ? theme.primary : 'transparent',
+              border: '1px solid transparent',
               padding: '10px 12px',
-              borderRadius: 10,
+              borderRadius: 999,
               marginBottom: 4,
               textDecoration: 'none',
               fontWeight: active ? 700 : 500,
               fontSize: 14,
             }}
           >
-            <span style={{ opacity: 0.7, fontSize: 12 }}>{l.icon}</span>
             {l.label}
           </Link>
         )
@@ -74,7 +74,7 @@ function Sidebar() {
 
       <form action={signOut} style={{ marginTop: 'auto', paddingTop: 24 }}>
         <button type="submit" className="admin-btn admin-btn-ghost" style={{ width: '100%' }}>
-          Sign Out
+          Sign out
         </button>
       </form>
     </nav>
@@ -84,8 +84,9 @@ function Sidebar() {
 export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname()
   const isLogin = pathname === '/login' || pathname.startsWith('/login/') || pathname.startsWith('/auth/')
+  const isRedeem = pathname === '/redeem' || pathname.startsWith('/redeem/')
 
-  if (isLogin) {
+  if (isLogin || isRedeem) {
     return <>{children}</>
   }
 

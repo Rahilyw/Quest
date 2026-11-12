@@ -142,7 +142,7 @@ export default function ModerationPage() {
                 <button
                   type="button"
                   className="admin-btn"
-                  style={{ background: theme.success, color: '#fff', opacity: busy ? 0.5 : 1 }}
+                  style={{ background: theme.success, color: theme.onPrimary, opacity: busy ? 0.5 : 1 }}
                   disabled={busy}
                   onClick={() => runAction(item.id, () => dismissReports(item.id))}
                 >
@@ -151,7 +151,7 @@ export default function ModerationPage() {
                 <button
                   type="button"
                   className="admin-btn"
-                  style={{ background: theme.danger, color: '#fff', opacity: busy ? 0.5 : 1 }}
+                  style={{ background: theme.danger, color: theme.onPrimary, opacity: busy ? 0.5 : 1 }}
                   disabled={busy}
                   onClick={() => runAction(item.id, () => removeCompletionModeration(item.id))}
                 >
@@ -226,7 +226,7 @@ export default function ModerationPage() {
                 <button
                   type="button"
                   className="admin-btn"
-                  style={{ background: theme.success, color: '#fff', opacity: busy ? 0.5 : 1 }}
+                  style={{ background: theme.success, color: theme.onPrimary, opacity: busy ? 0.5 : 1 }}
                   disabled={busy}
                   onClick={() => runAction(item.id, () => dismissCommentReports(item.id))}
                 >
@@ -235,7 +235,7 @@ export default function ModerationPage() {
                 <button
                   type="button"
                   className="admin-btn"
-                  style={{ background: theme.danger, color: '#fff', opacity: busy ? 0.5 : 1 }}
+                  style={{ background: theme.danger, color: theme.onPrimary, opacity: busy ? 0.5 : 1 }}
                   disabled={busy}
                   onClick={() => runAction(item.id, () => removeCommentModeration(item.id))}
                 >

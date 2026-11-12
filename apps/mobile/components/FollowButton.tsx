@@ -1,5 +1,6 @@
-import { Text, TouchableOpacity, StyleSheet, ActivityIndicator } from 'react-native'
-import { COLORS, RADIUS, SPACING } from '@/lib/constants'
+import { ActivityIndicator, Pressable, StyleSheet } from 'react-native'
+import { Small } from '@/components/ui/Text'
+import { COLOR, RADIUS, SPACE } from '@/lib/theme'
 
 interface Props {
   isFollowing: boolean
@@ -8,55 +9,47 @@ interface Props {
   compact?: boolean
 }
 
+/** Ink pill to follow, quiet pill once you do. Both keep a 48pt target. */
 export function FollowButton({ isFollowing, loading = false, onPress, compact = false }: Props) {
   return (
-    <TouchableOpacity
-      style={[
-        styles.btn,
-        compact && styles.btnCompact,
-        isFollowing ? styles.btnFollowing : styles.btnFollow,
-      ]}
+    <Pressable
       onPress={onPress}
       disabled={loading}
-      activeOpacity={0.85}
       accessibilityRole="button"
-      accessibilityLabel={isFollowing ? 'Unfollow' : 'Follow'}
-      hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
+      accessibilityLabel={isFollowing ? 'Following. Tap to unfollow.' : 'Follow'}
+      accessibilityState={{ selected: isFollowing, busy: loading }}
+      hitSlop={compact ? 6 : 0}
+      style={({ pressed }) => [
+        styles.btn,
+        compact && styles.compact,
+        isFollowing ? styles.following : styles.follow,
+        pressed && styles.pressed,
+      ]}
     >
       {loading ? (
-        <ActivityIndicator size="small" color={isFollowing ? COLORS.textMuted : '#FFFFFF'} />
+        <ActivityIndicator size="small" color={isFollowing ? COLOR.ink : COLOR.white} />
       ) : (
-        <Text style={[styles.label, isFollowing ? styles.labelFollowing : styles.labelFollow]}>
-          {isFollowing ? 'Following' : 'Follow'}
-        </Text>
+        <Small color={isFollowing ? COLOR.ink : COLOR.white}>{isFollowing ? 'Following' : 'Follow'}</Small>
       )}
-    </TouchableOpacity>
+    </Pressable>
   )
 }
 
 const styles = StyleSheet.create({
   btn: {
     borderRadius: RADIUS.pill,
-    paddingHorizontal: SPACING.xl,
-    paddingVertical: SPACING.sm + 2,
-    minWidth: 104,
-    minHeight: 38,
+    paddingHorizontal: SPACE.s5,
+    minWidth: 112,
+    minHeight: 48,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  btnCompact: {
-    paddingHorizontal: SPACING.md,
-    paddingVertical: 6,
-    minWidth: 84,
-    minHeight: 32,
+  compact: {
+    paddingHorizontal: SPACE.s4,
+    minWidth: 96,
+    minHeight: 40,
   },
-  btnFollow: { backgroundColor: COLORS.primary },
-  btnFollowing: {
-    backgroundColor: COLORS.surface,
-    borderWidth: 1.5,
-    borderColor: COLORS.border,
-  },
-  label: { fontSize: 13, fontWeight: '800' },
-  labelFollow: { color: '#FFFFFF' },
-  labelFollowing: { color: COLORS.textMuted },
+  follow: { backgroundColor: COLOR.ink },
+  following: { backgroundColor: COLOR.secondaryFill },
+  pressed: { transform: [{ scale: 0.97 }] },
 })

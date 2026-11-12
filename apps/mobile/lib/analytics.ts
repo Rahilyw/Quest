@@ -34,8 +34,10 @@ export type AnalyticsEvent =
   | 'user_unblocked'
   | 'notifications_viewed'
   | 'notification_opened'
+  | 'weekly_drop_seen'
+  | 'suggestion_submitted'
 
-export type QuestSource = 'explore' | 'map' | 'feed' | 'deep_link' | 'unknown'
+export type QuestSource = 'explore' | 'this-week' | 'quests' | 'map' | 'feed' | 'deep_link' | 'unknown'
 
 export type SubmissionBlockReason =
   | 'outside_zone'

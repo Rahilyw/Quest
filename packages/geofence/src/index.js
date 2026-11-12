@@ -26,6 +26,8 @@ const {
 } = require('./constants')
 
 const { VICTORIA_BOUNDARY } = require('./victoriaBoundary')
+const questWindow = require('./questWindow')
+const redemption = require('./redemption')
 
 module.exports = {
   isWithinGeofence,
@@ -50,4 +52,6 @@ module.exports = {
   POLYGON_MIN_AREA_M2,
   POLYGON_MAX_AREA_M2,
   VICTORIA_BOUNDARY,
+  ...questWindow,
+  ...redemption,
 }

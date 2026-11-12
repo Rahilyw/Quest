@@ -77,77 +77,11 @@ export const SPACING = { xs: 4, sm: 8, md: 12, lg: 16, xl: 20, xxl: 24 } as cons
 export const RADIUS = { sm: 8, md: 12, lg: 16, xl: 20, xxl: 28, pill: 999 } as const
 
 /**
- * Glass tab bar geometry. Screens scroll *behind* the floating bar, so every
- * tab screen pads its content by `insets.bottom + TAB_BAR_CLEARANCE`.
+ * Floating tab bar. Screens scroll behind it and pad by
+ * `insets.bottom + TAB_BAR_CLEARANCE` (pill height + 18pt float + air).
  */
-export const TAB_BAR_HEIGHT = 64
-export const TAB_BAR_CLEARANCE = TAB_BAR_HEIGHT + 32
-
-/**
- * Each tab owns a colour, a glyph and a motif drawn behind the glyph when the
- * tab is active. Same footprint everywhere — only the personality changes.
- */
-export type TabMotif = 'rays' | 'trail' | 'sparks' | 'rings' | 'arc'
-
-export interface TabTheme {
-  label: string
-  icon: string
-  iconOutline: string
-  /** Active chip gradient */
-  from: string
-  to: string
-  /** Glow + inactive glyph tint */
-  glow: string
-  motif: TabMotif
-}
-
-export const TAB_THEMES: Record<string, TabTheme> = {
-  index: {
-    label: 'Explore',
-    icon: 'compass',
-    iconOutline: 'compass-outline',
-    from: '#38BDF8',
-    to: '#0284C7',
-    glow: '#0EA5E9',
-    motif: 'rays',
-  },
-  feed: {
-    label: 'Quests',
-    icon: 'map',
-    iconOutline: 'map-outline',
-    from: '#5EEAD4',
-    to: '#0D9488',
-    glow: '#14B8A6',
-    motif: 'trail',
-  },
-  leaderboard: {
-    label: 'Rankings',
-    icon: 'trophy',
-    iconOutline: 'trophy-outline',
-    from: '#FBBF24',
-    to: '#D97706',
-    glow: '#F59E0B',
-    motif: 'sparks',
-  },
-  badges: {
-    label: 'Badges',
-    icon: 'ribbon',
-    iconOutline: 'ribbon-outline',
-    from: '#C084FC',
-    to: '#7C3AED',
-    glow: '#A855F7',
-    motif: 'rings',
-  },
-  profile: {
-    label: 'Profile',
-    icon: 'person',
-    iconOutline: 'person-outline',
-    from: '#FB923C',
-    to: '#EA580C',
-    glow: '#FF6B35',
-    motif: 'arc',
-  },
-}
+export const TAB_BAR_HEIGHT = 56
+export const TAB_BAR_CLEARANCE = TAB_BAR_HEIGHT + 18 + 16
 
 export const CITY = {
   name: 'Victoria, BC',

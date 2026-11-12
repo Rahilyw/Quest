@@ -3,7 +3,9 @@
   "compilerOptions": {
     "strict": true,
     "paths": {
-      "@/*": ["./*"]
+      "@/*": ["./*"],
+      "react": ["./node_modules/@types/react/index"],
+      "react/jsx-runtime": ["./node_modules/@types/react/jsx-runtime"]
     }
   }
 }

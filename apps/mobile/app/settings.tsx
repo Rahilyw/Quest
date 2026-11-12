@@ -1,27 +1,17 @@
 import { useState, useEffect } from 'react'
-import {
-  View,
-  Text,
-  StyleSheet,
-  TouchableOpacity,
-  ScrollView,
-  Switch,
-  Linking,
-  Alert,
-  ActivityIndicator,
-} from 'react-native'
+import { ActivityIndicator, Alert, Linking, Pressable, ScrollView, StyleSheet, View } from 'react-native'
 import { useRouter } from 'expo-router'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
-import { Ionicons } from '@expo/vector-icons'
 import AsyncStorage from '@react-native-async-storage/async-storage'
-import * as Notifications from 'expo-notifications'
+import * as Application from 'expo-application'
 import { useAuth } from '@/hooks/useAuth'
-import { SectionHeader } from '@/components/SectionHeader'
-import { COLORS, SPACING, RADIUS, LEGAL_URLS } from '@/lib/constants'
-import { BrandText } from '@/components/BrandText'
+import { Row, ScreenHeader, Section, SwitchRow } from '@/components/ui/Screen'
+import { BodyStrong, Small } from '@/components/ui/Text'
+import { LEGAL_URLS } from '@/lib/constants'
 import { supabase } from '@/lib/supabase'
 import { registerForPushNotifications, clearPushToken } from '@/lib/notifications'
 import { track, resetAnalytics } from '@/lib/analytics'
+import { COLOR, RADIUS, SPACE } from '@/lib/theme'
 
 const WEEKLY_DIGEST_KEY = 'pref_weekly_digest'
 
@@ -34,20 +24,26 @@ export default function Settings() {
   const [feedPublic, setFeedPublic] = useState(true)
   const [pushSocial, setPushSocial] = useState(true)
   const [deleting, setDeleting] = useState(false)
+  const [note, setNote] = useState<string | null>(null)
 
   useEffect(() => {
     if (!session?.user?.id) return
 
-    // Derive questNearby from actual push token presence
+    // Whether a push token is stored for this account. The token itself is not
+    // readable by clients (migration 039), so ask for a yes/no instead.
+    supabase.rpc('own_push_enabled').then(({ data, error }) => {
+      if (!error) setQuestNearby(data === true)
+    })
+
     supabase
       .from('profiles')
-      .select('push_token, feed_public, push_social')
+      .select('feed_public, push_social, push_drops')
       .eq('id', session.user.id)
       .single()
       .then(({ data }) => {
-        setQuestNearby(!!data?.push_token)
         if (data?.feed_public != null) setFeedPublic(data.feed_public)
         if (data?.push_social != null) setPushSocial(data.push_social)
+        if (data?.push_drops != null) setWeeklyDigest(data.push_drops)
       })
 
     // Restore weekly digest preference
@@ -56,12 +52,16 @@ export default function Settings() {
     })
   }, [session?.user?.id])
 
+  const notSaved = () => setNote('That change didn’t save. Check your signal and try again.')
+
   async function handleQuestNearbyToggle(enabled: boolean) {
     if (!session?.user?.id) return
+    setNote(null)
     if (enabled) {
       const token = await registerForPushNotifications(session.user.id)
-      // Permission was denied — registerForPushNotifications returns null
+      // Permission was denied: registerForPushNotifications returns null
       setQuestNearby(token !== null)
+      if (token === null) setNote('Notifications are off for Quest! in your phone’s settings. Turn them on there first.')
     } else {
       await clearPushToken(session.user.id)
       setQuestNearby(false)
@@ -69,12 +69,23 @@ export default function Settings() {
   }
 
   async function handleWeeklyDigestToggle(enabled: boolean) {
+    if (!session?.user?.id) return
+    setNote(null)
     setWeeklyDigest(enabled)
     await AsyncStorage.setItem(WEEKLY_DIGEST_KEY, String(enabled))
+    const { error } = await supabase
+      .from('profiles')
+      .update({ push_drops: enabled })
+      .eq('id', session.user.id)
+    if (error) {
+      setWeeklyDigest(!enabled)
+      notSaved()
+    }
   }
 
   async function handlePushSocialToggle(enabled: boolean) {
     if (!session?.user?.id) return
+    setNote(null)
     setPushSocial(enabled)
     const { error } = await supabase
       .from('profiles')
@@ -82,11 +93,13 @@ export default function Settings() {
       .eq('id', session.user.id)
     if (error) {
       setPushSocial(!enabled)
+      notSaved()
     }
   }
 
   async function handleFeedPublicToggle(enabled: boolean) {
     if (!session?.user?.id) return
+    setNote(null)
     setFeedPublic(enabled)
     const { error } = await supabase
       .from('profiles')
@@ -94,6 +107,7 @@ export default function Settings() {
       .eq('id', session.user.id)
     if (error) {
       setFeedPublic(!enabled)
+      notSaved()
     }
   }
 
@@ -105,10 +119,10 @@ export default function Settings() {
   function confirmDeleteAccount() {
     Alert.alert(
       'Delete your account?',
-      'This permanently deletes your profile, XP, badges, streaks, and proof photos. This cannot be undone.',
+      'This permanently deletes your profile, XP, badges, streaks and proof photos. It can’t be undone.',
       [
-        { text: 'Cancel', style: 'cancel' },
-        { text: 'Delete Account', style: 'destructive', onPress: handleDeleteAccount },
+        { text: 'Keep my account', style: 'cancel' },
+        { text: 'Delete account', style: 'destructive', onPress: handleDeleteAccount },
       ]
     )
   }
@@ -120,283 +134,139 @@ export default function Settings() {
       const { error } = await supabase.rpc('delete_own_account')
       if (error) throw error
       resetAnalytics()
-      // The auth user no longer exists, so a global sign-out would 403 —
+      // The auth user no longer exists, so a global sign-out would 403:
       // clear the local session only.
       await supabase.auth.signOut({ scope: 'local' }).catch(() => {})
       router.replace('/(auth)/sign-in')
     } catch {
       setDeleting(false)
       Alert.alert(
-        'Something went wrong',
-        'Your account was not deleted. Check your connection and try again.'
+        'Your account wasn’t deleted',
+        'Check your connection and try again.'
       )
     }
   }
 
   return (
     <View style={styles.container}>
-      <TouchableOpacity
-        style={[styles.back, { top: insets.top + 12, left: SPACING.lg }]}
-        onPress={() => router.back()}
-        activeOpacity={0.8}
-      >
-        <View style={styles.backPill}>
-          <Text style={[styles.backText, { color: COLORS.accent }]}>←</Text>
-        </View>
-      </TouchableOpacity>
-
-      <Text style={[styles.screenTitle, { paddingTop: insets.top + 18 }]}>Settings</Text>
-
+      <ScreenHeader title="Settings" />
       <ScrollView
-        style={styles.scroll}
-        contentContainerStyle={[styles.scrollContent, { paddingTop: insets.top + 64 }]}
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={{ paddingHorizontal: SPACE.s4, paddingBottom: insets.bottom + SPACE.s8 }}
       >
-        {/* ACCOUNT */}
-        <SectionHeader title="Account" />
-        <View style={styles.sectionCard}>
-          <TouchableOpacity
-            style={styles.row}
-            activeOpacity={0.7}
-            onPress={() => router.push('/edit-profile')}
-            accessibilityRole="button"
-            accessibilityLabel="Edit profile"
-          >
-            <Text style={styles.rowLabel}>Edit Profile</Text>
-            <Ionicons name="chevron-forward" size={18} color={COLORS.textMuted} />
-          </TouchableOpacity>
-          <View style={[styles.row, styles.rowBorder]}>
-            <Text style={styles.rowLabel}>Email</Text>
-            <Text style={styles.rowValue} numberOfLines={1}>
-              {session?.user?.email ?? ''}
-            </Text>
+        {note ? (
+          <View style={styles.note} accessibilityRole="alert" accessibilityLiveRegion="polite">
+            <Small>{note}</Small>
           </View>
-          <View style={[styles.row, styles.rowBorder]}>
-            <Text style={styles.rowLabel}>Username</Text>
-            <Text style={styles.rowValue} numberOfLines={1}>
-              {profile?.username ? '@' + profile.username : ''}
-            </Text>
-          </View>
-          <View style={[styles.row, styles.rowBorder]}>
-            <Text style={styles.rowLabel}>City</Text>
-            <Text style={styles.rowValue} numberOfLines={1}>
-              {profile?.city ?? ''}
-            </Text>
-          </View>
-        </View>
+        ) : null}
 
-        {/* NOTIFICATIONS */}
-        <SectionHeader title="Notifications" />
-        <View style={styles.sectionCard}>
-          <View style={styles.row}>
-            <Text style={styles.rowLabel}>Quest Alerts</Text>
-            <Switch
-              value={questNearby}
-              onValueChange={handleQuestNearbyToggle}
-              thumbColor="#FFFFFF"
-              trackColor={{ false: '#CBD5E1', true: COLORS.accent }}
-              ios_backgroundColor="#CBD5E1"
-            />
-          </View>
-          <View style={[styles.row, styles.rowBorder]}>
-            <View style={{ flex: 1, paddingRight: SPACING.md }}>
-              <Text style={styles.rowLabel}>Comments & Followers</Text>
-              <Text style={styles.rowHint}>
-                Push when someone comments, replies to you, or follows you. Everything still shows in Activity.
-              </Text>
-            </View>
-            <Switch
-              value={pushSocial}
-              onValueChange={handlePushSocialToggle}
-              thumbColor="#FFFFFF"
-              trackColor={{ false: '#CBD5E1', true: COLORS.accent }}
-              ios_backgroundColor="#CBD5E1"
-            />
-          </View>
-          <View style={[styles.row, styles.rowBorder]}>
-            <Text style={styles.rowLabel}>Weekly Digest</Text>
-            <Switch
-              value={weeklyDigest}
-              onValueChange={handleWeeklyDigestToggle}
-              thumbColor="#FFFFFF"
-              trackColor={{ false: '#CBD5E1', true: COLORS.accent }}
-              ios_backgroundColor="#CBD5E1"
-            />
-          </View>
-        </View>
+        <Section title="Account" style={styles.firstSection}>
+          <Row first label="Edit profile" onPress={() => router.push('/edit-profile')} />
+          <Row label="Username" value={profile?.username ? `@${profile.username}` : ''} />
+          <Row label="Email" value={session?.user?.email ?? ''} />
+          <Row label="City" value={profile?.city ?? ''} />
+        </Section>
 
-        {/* PRIVACY */}
-        <SectionHeader title="Privacy" />
-        <View style={styles.sectionCard}>
-          <View style={styles.row}>
-            <View style={{ flex: 1, paddingRight: SPACING.md }}>
-              <Text style={styles.rowLabel}>Show in activity feed</Text>
-              <Text style={styles.rowHint}>
-                When off, your proof photos stay on your profile only, not on the public city feed.
-              </Text>
-            </View>
-            <Switch
-              value={feedPublic}
-              onValueChange={handleFeedPublicToggle}
-              thumbColor="#FFFFFF"
-              trackColor={{ false: '#CBD5E1', true: COLORS.accent }}
-              ios_backgroundColor="#CBD5E1"
-            />
-          </View>
-          <TouchableOpacity
-            style={[styles.row, styles.rowBorder]}
-            activeOpacity={0.7}
-            onPress={() => router.push('/blocked-users')}
-            accessibilityRole="button"
-            accessibilityLabel="Blocked accounts"
-          >
-            <Text style={styles.rowLabel}>Blocked accounts</Text>
-            <Ionicons name="chevron-forward" size={18} color={COLORS.textMuted} />
-          </TouchableOpacity>
-        </View>
+        <Section title="Notifications">
+          <SwitchRow
+            first
+            label="Quest alerts"
+            hint="Push notifications from Quest! on this phone."
+            value={questNearby}
+            onValueChange={handleQuestNearbyToggle}
+          />
+          <SwitchRow
+            label="Comments and followers"
+            hint="When someone comments, replies or follows you. Everything still shows in Activity."
+            value={pushSocial}
+            onValueChange={handlePushSocialToggle}
+          />
+          <SwitchRow
+            label="Monday drop"
+            hint="Monday morning, when new quests land in Victoria."
+            value={weeklyDigest}
+            onValueChange={handleWeeklyDigestToggle}
+          />
+        </Section>
 
-        {/* ABOUT */}
-        <SectionHeader title="About" />
-        <View style={styles.sectionCard}>
-          <View style={styles.row}>
-            <Text style={styles.rowLabel}>App</Text>
-            <BrandText size="inline" color={COLORS.textPrimary} />
-          </View>
-          <View style={[styles.row, styles.rowBorder]}>
-            <Text style={styles.rowLabel}>Version</Text>
-            <Text style={styles.rowValue}>1.0.0</Text>
-          </View>
-          <TouchableOpacity
-            style={[styles.row, styles.rowBorder]}
-            activeOpacity={0.7}
-            onPress={() => Linking.openURL(LEGAL_URLS.privacyPolicy).catch(() => {})}
+        <Section title="Privacy">
+          <SwitchRow
+            first
+            label="Show my photos on City"
+            hint="When off, your proof photos stay on your profile and off the public feed."
+            value={feedPublic}
+            onValueChange={handleFeedPublicToggle}
+          />
+          <Row label="Blocked accounts" onPress={() => router.push('/blocked-users')} />
+        </Section>
+
+        <Section title="About">
+          <Row first label="Terms of service" onPress={() => router.push('/legal/terms')} />
+          <Row label="Privacy policy" onPress={() => router.push('/legal/privacy')} />
+          <Row
+            label="Privacy policy on the web"
+            icon="open-outline"
             accessibilityRole="link"
-            accessibilityLabel="Privacy Policy"
-          >
-            <Text style={styles.rowLabel}>Privacy Policy</Text>
-            <Ionicons name="chevron-forward" size={18} color={COLORS.textMuted} />
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={[styles.row, styles.rowBorder]}
-            activeOpacity={0.7}
-            onPress={() => router.push('/legal/terms')}
-            accessibilityRole="button"
-            accessibilityLabel="Terms of Service"
-          >
-            <Text style={styles.rowLabel}>Terms of Service</Text>
-            <Ionicons name="chevron-forward" size={18} color={COLORS.textMuted} />
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={[styles.row, styles.rowBorder]}
-            activeOpacity={0.7}
-            onPress={() => router.push('/legal/privacy')}
-            accessibilityRole="button"
-            accessibilityLabel="Privacy Policy"
-          >
-            <Text style={styles.rowLabel}>Privacy Policy (in app)</Text>
-            <Ionicons name="chevron-forward" size={18} color={COLORS.textMuted} />
-          </TouchableOpacity>
-        </View>
+            onPress={() => Linking.openURL(LEGAL_URLS.privacyPolicy).catch(() => {})}
+          />
+          <Row label="Version" value={Application.nativeApplicationVersion ?? '1.0.0'} />
+        </Section>
 
-        {/* DANGER ZONE */}
-        <SectionHeader title="Danger Zone" />
-        <View style={styles.sectionCard}>
-          <TouchableOpacity
-            style={styles.signOutRow}
-            onPress={handleSignOut}
-            activeOpacity={0.7}
-            accessibilityRole="button"
-            accessibilityLabel="Sign out"
-          >
-            <Text style={styles.signOutText}>Sign Out</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={[styles.signOutRow, styles.rowBorder]}
-            onPress={confirmDeleteAccount}
-            disabled={deleting}
-            activeOpacity={0.7}
-            accessibilityRole="button"
-            accessibilityLabel="Delete account"
-          >
-            {deleting ? (
-              <ActivityIndicator color="#EF4444" />
-            ) : (
-              <Text style={styles.deleteText}>Delete Account</Text>
-            )}
-          </TouchableOpacity>
-        </View>
-        <Text style={styles.deleteHint}>
-          Deleting your account permanently removes your profile, completions, XP, badges, and
-          photos.
-        </Text>
+        <Pressable
+          onPress={handleSignOut}
+          accessibilityRole="button"
+          accessibilityLabel="Sign out"
+          style={({ pressed }) => [styles.signOut, pressed && styles.pressed]}
+        >
+          <BodyStrong>Sign out</BodyStrong>
+        </Pressable>
+
+        <Pressable
+          onPress={confirmDeleteAccount}
+          disabled={deleting}
+          accessibilityRole="button"
+          accessibilityLabel="Delete account"
+          accessibilityHint="Asks you to confirm first"
+          accessibilityState={{ disabled: deleting, busy: deleting }}
+          style={({ pressed }) => [styles.delete, pressed && styles.deletePressed]}
+        >
+          {deleting ? <ActivityIndicator size="small" color={COLOR.ink} /> : null}
+          <Small>{deleting ? 'Deleting your account…' : 'Delete account'}</Small>
+        </Pressable>
+        <Small tone="soft" style={styles.deleteHint}>
+          Deleting removes your profile, completions, XP, badges and photos for good.
+        </Small>
       </ScrollView>
     </View>
   )
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: COLORS.bg },
-  back: { position: 'absolute', zIndex: 10 },
-  backPill: {
-    backgroundColor: 'rgba(255,255,255,0.9)',
-    borderRadius: 999,
-    width: 36,
-    height: 36,
+  container: { flex: 1, backgroundColor: COLOR.paper },
+  firstSection: { marginTop: SPACE.s3 },
+  note: {
+    backgroundColor: COLOR.paperDeep,
+    borderRadius: RADIUS.control,
+    padding: SPACE.s3,
+    marginTop: SPACE.s2,
+  },
+  signOut: {
+    marginTop: SPACE.s7,
+    minHeight: 56,
+    borderRadius: RADIUS.pill,
+    backgroundColor: COLOR.secondaryFill,
     alignItems: 'center',
     justifyContent: 'center',
-    shadowColor: '#0F172A',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.08,
-    shadowRadius: 6,
-    elevation: 3,
   },
-  backText: { fontSize: 20, fontWeight: '700', lineHeight: 28 },
-  screenTitle: {
-    fontSize: 22,
-    fontWeight: '700',
-    color: COLORS.textPrimary,
-    textAlign: 'center',
-    position: 'absolute',
-    left: 0,
-    right: 0,
-    zIndex: 9,
-  },
-  scroll: { flex: 1 },
-  scrollContent: { padding: SPACING.md, paddingBottom: 80 },
-  sectionCard: {
-    backgroundColor: COLORS.surface,
-    borderRadius: RADIUS.md,
-    borderWidth: 1,
-    borderColor: COLORS.border,
-    overflow: 'hidden',
-    marginBottom: SPACING.lg,
-  },
-  row: {
+  pressed: { transform: [{ scale: 0.97 }] },
+  delete: {
+    marginTop: SPACE.s4,
+    minHeight: 48,
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: SPACING.md,
-    height: 52,
+    justifyContent: 'center',
+    gap: SPACE.s2,
   },
-  rowBorder: { borderTopWidth: 1, borderTopColor: COLORS.border },
-  rowLabel: { color: COLORS.textPrimary, fontSize: 15, fontWeight: '500' },
-  rowHint: { color: COLORS.textMuted, fontSize: 12, marginTop: 4, lineHeight: 17 },
-  rowValue: {
-    color: COLORS.textMuted,
-    fontSize: 14,
-    flexShrink: 1,
-    textAlign: 'right',
-    marginLeft: SPACING.md,
-  },
-  signOutRow: { height: 52, alignItems: 'center', justifyContent: 'center' },
-  signOutText: { color: '#EF4444', fontSize: 15, fontWeight: '600' },
-  deleteText: { color: '#EF4444', fontSize: 15, fontWeight: '700' },
-  deleteHint: {
-    color: COLORS.textMuted,
-    fontSize: 12,
-    lineHeight: 17,
-    textAlign: 'center',
-    paddingHorizontal: SPACING.lg,
-    marginTop: -SPACING.md,
-    marginBottom: SPACING.lg,
-  },
+  deletePressed: { opacity: 0.6 },
+  deleteHint: { textAlign: 'center', paddingHorizontal: SPACE.s4 },
 })

@@ -22,6 +22,7 @@ interface Props {
   redemption_code?: string | null
   is_sponsored?: boolean
   sponsor_reward?: string | null
+  redeemed_at?: string | null
   status?: 'approved' | 'removed'
 }
 
@@ -29,7 +30,15 @@ function formatCompletedDate(iso: string) {
   return new Date(iso).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
 }
 
-function RedemptionCodeCard({ code, sponsor_reward }: { code: string; sponsor_reward?: string | null }) {
+function RedemptionCodeCard({
+  code,
+  sponsor_reward,
+  redeemed_at,
+}: {
+  code: string
+  sponsor_reward?: string | null
+  redeemed_at?: string | null
+}) {
   const [copied, setCopied] = useState(false)
   const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
@@ -62,6 +71,12 @@ function RedemptionCodeCard({ code, sponsor_reward }: { code: string; sponsor_re
           <Text style={styles.sponsorReward}>{sponsor_reward}</Text>
         ) : null}
         <Text style={styles.codeText}>{code}</Text>
+        <Text style={styles.date}>
+          {redeemed_at
+            ? `Redeemed ${new Date(redeemed_at).toLocaleString('en-CA', { timeZone: 'America/Vancouver', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })}`
+            : 'Show this screen at the counter'}
+        </Text>
+        {redeemed_at ? null : (
         <TouchableOpacity
           style={[styles.copyBtn, copied && styles.copyBtnCopied]}
           onPress={handleCopy}
@@ -78,6 +93,7 @@ function RedemptionCodeCard({ code, sponsor_reward }: { code: string; sponsor_re
             {copied ? 'Copied!' : 'Copy Code'}
           </Text>
         </TouchableOpacity>
+        )}
       </View>
     </View>
   )
@@ -91,6 +107,7 @@ export function QuestHistoryItem({
   redemption_code,
   is_sponsored,
   sponsor_reward,
+  redeemed_at,
   status = 'approved',
 }: Props) {
   const color = CATEGORY_COLORS[category] ?? COLORS.accent
@@ -112,7 +129,7 @@ export function QuestHistoryItem({
         ) : null}
 
         {is_sponsored && redemption_code && status === 'approved' ? (
-          <RedemptionCodeCard code={redemption_code} sponsor_reward={sponsor_reward} />
+          <RedemptionCodeCard code={redemption_code} sponsor_reward={sponsor_reward} redeemed_at={redeemed_at} />
         ) : null}
       </View>
       {status === 'removed' ? (

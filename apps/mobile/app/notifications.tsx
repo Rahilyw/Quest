@@ -1,25 +1,18 @@
 import { useCallback } from 'react'
-import {
-  View,
-  Text,
-  StyleSheet,
-  FlatList,
-  TouchableOpacity,
-  ActivityIndicator,
-  RefreshControl,
-  Image,
-} from 'react-native'
+import { View, StyleSheet, FlatList, Pressable, RefreshControl, Image } from 'react-native'
 import { useFocusEffect, useRouter } from 'expo-router'
+import { Ionicons } from '@expo/vector-icons'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { Avatar } from '@/components/Avatar'
-import { EmptyState } from '@/components/EmptyState'
+import { Sprite } from '@/components/Sprite'
+import { Body, Name, Small, Title } from '@/components/ui/Text'
 import { useAuth } from '@/hooks/useAuth'
 import { useNotifications, type InboxItem } from '@/hooks/useNotifications'
 import { formatTimeAgo } from '@/hooks/useActivityFeed'
 import { notificationRoute, notificationText } from '@/lib/socialNotifications'
 import { track } from '@/lib/analytics'
-import { COLORS, SPACING, RADIUS } from '@/lib/constants'
 import { sizedImageUrl } from '@/lib/sizedImageUrl'
+import { COLOR, RADIUS, SPACE } from '@/lib/theme'
 
 export default function NotificationsScreen() {
   const router = useRouter()
@@ -27,18 +20,16 @@ export default function NotificationsScreen() {
   const { profile } = useAuth()
   const { items, loading, refreshing, error, refresh, markAllRead } = useNotifications(profile?.id)
 
-  // Opening the inbox clears the bell; rows keep their unread dot until the
-  // next visit so the user can still see what's new.
   useFocusEffect(
     useCallback(() => {
       markAllRead()
-    }, [markAllRead])
+    }, [markAllRead]),
   )
 
   useFocusEffect(
     useCallback(() => {
       if (!loading) track('notifications_viewed', { count: items.length })
-    }, [loading, items.length])
+    }, [loading, items.length]),
   )
 
   function open(item: InboxItem) {
@@ -49,60 +40,61 @@ export default function NotificationsScreen() {
   }
 
   return (
-    <View style={styles.container}>
-      <TouchableOpacity
-        style={[styles.back, { top: insets.top + 12, left: SPACING.lg }]}
-        onPress={() => router.back()}
-        activeOpacity={0.8}
-        accessibilityRole="button"
-        accessibilityLabel="Go back"
-      >
-        <View style={styles.backPill}>
-          <Text style={styles.backText}>←</Text>
-        </View>
-      </TouchableOpacity>
-
-      <Text style={[styles.screenTitle, { paddingTop: insets.top + 18 }]}>Activity</Text>
+    <View style={styles.screen}>
+      <View style={[styles.header, { paddingTop: insets.top + SPACE.s3 }]}>
+        <Pressable
+          onPress={() => router.back()}
+          accessibilityRole="button"
+          accessibilityLabel="Go back"
+          style={styles.back}
+        >
+          <Ionicons name="chevron-back" size={22} color={COLOR.ink} />
+        </Pressable>
+        <Title>Activity</Title>
+      </View>
 
       {loading ? (
-        <ActivityIndicator color={COLORS.primary} style={{ marginTop: insets.top + 120 }} />
+        <View style={styles.skeletons}>
+          {[0, 1, 2].map((slot) => (
+            <View key={slot} style={styles.skeleton} />
+          ))}
+        </View>
       ) : (
         <FlatList
           data={items}
           keyExtractor={(item) => item.id}
-          contentContainerStyle={[styles.list, { paddingTop: insets.top + 64 }]}
-          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={refresh} />}
-          ListHeaderComponent={error ? <Text style={styles.error}>{error}</Text> : null}
+          contentContainerStyle={[styles.list, { paddingBottom: insets.bottom + SPACE.s7 }]}
+          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={refresh} tintColor={COLOR.ink} />}
+          ListHeaderComponent={error ? <Body tone="soft" style={styles.error}>{error}</Body> : undefined}
           ListEmptyComponent={
-            error ? null : (
-              <EmptyState
-                icon="🔔"
-                title="No activity yet"
-                subtitle="Likes, comments, replies, and new followers show up here."
-              />
+            error ? undefined : (
+              <View style={styles.empty}>
+                <Sprite name="gull" size={88} />
+                <Body tone="soft">Likes, comments, and new followers show up here.</Body>
+              </View>
             )
           }
           renderItem={({ item }) => (
-            <TouchableOpacity
+            <Pressable
               style={[styles.row, item.read_at == null && styles.rowUnread]}
-              activeOpacity={0.8}
               onPress={() => open(item)}
               accessibilityRole="button"
-              accessibilityLabel={`@${item.actor.username} ${notificationText(item.type)} ${item.comment?.body ?? ''}`}
+              accessibilityLabel={`${item.actor.username} ${notificationText(item.type)}`}
             >
-              <TouchableOpacity
+              <Pressable
                 onPress={() => router.push(`/user/${item.actor_id}`)}
                 accessibilityRole="button"
-                accessibilityLabel={`Open @${item.actor.username}'s profile`}
+                accessibilityLabel={`Open ${item.actor.username}'s profile`}
               >
                 <Avatar username={item.actor.username} uri={item.actor.avatar_url} size={40} />
-              </TouchableOpacity>
+              </Pressable>
               <View style={styles.rowInfo}>
-                <Text style={styles.body} numberOfLines={3}>
-                  <Text style={styles.username}>@{item.actor.username}</Text> {notificationText(item.type)}
-                  {item.comment?.body ? <Text style={styles.quote}> “{item.comment.body}”</Text> : null}
-                </Text>
-                <Text style={styles.time}>{formatTimeAgo(item.created_at)}</Text>
+                <Body numberOfLines={3}>
+                  <Name>{item.actor.username}</Name>
+                  {` ${notificationText(item.type)}`}
+                  {item.comment?.body ? ` “${item.comment.body}”` : ''}
+                </Body>
+                <Small tone="faint">{formatTimeAgo(item.created_at)}</Small>
               </View>
               {item.completion?.photo_url ? (
                 <Image
@@ -110,8 +102,7 @@ export default function NotificationsScreen() {
                   style={styles.thumb}
                 />
               ) : null}
-              {item.read_at == null ? <View style={styles.unreadDot} /> : null}
-            </TouchableOpacity>
+            </Pressable>
           )}
         />
       )}
@@ -120,59 +111,28 @@ export default function NotificationsScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: COLORS.bg },
-  back: { position: 'absolute', zIndex: 10 },
-  backPill: {
-    backgroundColor: 'rgba(255,255,255,0.9)',
-    borderRadius: 999,
-    width: 36,
-    height: 36,
-    alignItems: 'center',
-    justifyContent: 'center',
-    shadowColor: '#0F172A',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.08,
-    shadowRadius: 6,
-    elevation: 3,
+  screen: { flex: 1, backgroundColor: COLOR.paper },
+  header: {
+    paddingHorizontal: SPACE.s4,
+    paddingBottom: SPACE.s3,
+    gap: SPACE.s2,
   },
-  backText: { fontSize: 20, fontWeight: '700', lineHeight: 28, color: COLORS.accent },
-  screenTitle: {
-    fontSize: 22,
-    fontWeight: '700',
-    color: COLORS.textPrimary,
-    textAlign: 'center',
-    position: 'absolute',
-    left: 0,
-    right: 0,
-    zIndex: 9,
-  },
-  list: { padding: SPACING.md, paddingBottom: 80 },
-  error: { color: COLORS.textMuted, textAlign: 'center', marginBottom: SPACING.md },
+  back: { width: 48, height: 48, alignItems: 'center', justifyContent: 'center', marginLeft: -SPACE.s2 },
+  skeletons: { paddingHorizontal: SPACE.s4, gap: SPACE.s3 },
+  skeleton: { height: 72, borderRadius: RADIUS.card, backgroundColor: COLOR.paperDeep },
+  list: { paddingHorizontal: SPACE.s4 },
+  error: { textAlign: 'center', marginBottom: SPACE.s3 },
+  empty: { paddingTop: SPACE.s7, gap: SPACE.s3, alignItems: 'flex-start' },
   row: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: SPACING.md,
-    backgroundColor: COLORS.surface,
-    borderRadius: RADIUS.md,
-    borderWidth: 1,
-    borderColor: COLORS.border,
-    padding: SPACING.md,
-    marginBottom: SPACING.sm,
+    gap: SPACE.s3,
+    minHeight: 72,
+    paddingVertical: SPACE.s3,
+    borderBottomWidth: 1,
+    borderBottomColor: COLOR.rule,
   },
-  rowUnread: { borderColor: COLORS.primary },
-  rowInfo: { flex: 1, minWidth: 0 },
-  body: { color: COLORS.textMuted, fontSize: 14, lineHeight: 19 },
-  username: { color: COLORS.textPrimary, fontWeight: '800' },
-  quote: { color: COLORS.textPrimary },
-  time: { color: COLORS.textMuted, fontSize: 12, marginTop: 4 },
-  thumb: { width: 44, height: 44, borderRadius: RADIUS.sm },
-  unreadDot: {
-    position: 'absolute',
-    top: SPACING.sm,
-    right: SPACING.sm,
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: COLORS.highlight,
-  },
+  rowUnread: { backgroundColor: COLOR.paperDeep, marginHorizontal: -SPACE.s3, paddingHorizontal: SPACE.s3, borderRadius: RADIUS.control },
+  rowInfo: { flex: 1, minWidth: 0, gap: SPACE.s1 },
+  thumb: { width: 48, height: 48, borderRadius: RADIUS.control, backgroundColor: COLOR.desk },
 })

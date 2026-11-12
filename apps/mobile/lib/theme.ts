@@ -80,6 +80,8 @@ export const TYPE = {
   name: { fontFamily: FONT.black, fontSize: 16, lineHeight: 22 },
   small: { fontFamily: FONT.semibold, fontSize: 13, lineHeight: 18 },
   micro: { fontFamily: FONT.bold, fontSize: 11, lineHeight: 14 },
+  /** The one big figure on a share card (the week's rank). Share artifacts only. */
+  numeral: { fontFamily: FONT.black, fontSize: 104, lineHeight: 104, letterSpacing: -5 },
 } as const satisfies Record<string, TextStyle>
 
 export type TypeRole = keyof typeof TYPE
