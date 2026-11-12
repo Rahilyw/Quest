@@ -1,22 +1,18 @@
 import { Pressable, StyleSheet, View } from 'react-native'
-import { Sprite, type SpriteName } from '@/components/Sprite'
 import { Body, BodyStrong } from '@/components/ui/Text'
 import { COLOR, RADIUS, SPACE } from '@/lib/theme'
 
 interface Props {
   title: string
   subtitle?: string
-  /** One of the local cast, for screens that are allowed one (never lists in settings). */
-  sprite?: SpriteName
   ctaLabel?: string
   onCtaPress?: () => void
 }
 
 /** What's missing, why, and one thing to do about it (BRAND.md §8b). */
-export function EmptyState({ title, subtitle, sprite, ctaLabel, onCtaPress }: Props) {
+export function EmptyState({ title, subtitle, ctaLabel, onCtaPress }: Props) {
   return (
     <View style={styles.container}>
-      {sprite ? <Sprite name={sprite} size={88} /> : null}
       <BodyStrong>{title}</BodyStrong>
       {subtitle !== undefined ? (
         <Body tone="soft" style={styles.subtitle}>

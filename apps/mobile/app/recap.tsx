@@ -144,7 +144,6 @@ export default function RecapScreen() {
           </View>
         ) : kind === 'empty' ? (
           <EmptyState
-            sprite="seal"
             title={week.inProgress ? 'No quests yet this week' : 'No quests that week'}
             subtitle={
               week.inProgress

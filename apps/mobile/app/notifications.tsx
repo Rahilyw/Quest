@@ -4,7 +4,6 @@ import { useFocusEffect, useRouter } from 'expo-router'
 import { Ionicons } from '@expo/vector-icons'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { Avatar } from '@/components/Avatar'
-import { Sprite } from '@/components/Sprite'
 import { Body, Name, Small, Title } from '@/components/ui/Text'
 import { useAuth } from '@/hooks/useAuth'
 import { useNotifications, type InboxItem } from '@/hooks/useNotifications'
@@ -69,7 +68,6 @@ export default function NotificationsScreen() {
           ListEmptyComponent={
             error ? undefined : (
               <View style={styles.empty}>
-                <Sprite name="gull" size={88} />
                 <Body tone="soft">Likes, comments, and new followers show up here.</Body>
               </View>
             )

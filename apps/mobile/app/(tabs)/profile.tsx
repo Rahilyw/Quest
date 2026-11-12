@@ -4,14 +4,11 @@ import { useFocusEffect, useRouter } from 'expo-router'
 import { Ionicons } from '@expo/vector-icons'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { Avatar } from '@/components/Avatar'
-import { BadgeVisual } from '@/components/badges/BadgeVisual'
-import { Cutout } from '@/components/Cutout'
-import { Sprite } from '@/components/Sprite'
+import { RewardsRow } from '@/components/RewardsRow'
+import { StickerPage } from '@/components/stickers/StickerPage'
 import { Body, Heading, Name, Small, Title } from '@/components/ui/Text'
 import { useAuth } from '@/hooks/useAuth'
 import { useFollow } from '@/hooks/useFollow'
-import { useQuests } from '@/hooks/useQuests'
-import { isQuestActive } from '@quest/geofence'
 import { useUserCompletions } from '@/hooks/useUserCompletions'
 import { resolveBadgeSpec } from '@/lib/badgeFromDb'
 import type { BadgeSpec } from '@/lib/badgeCatalog'
@@ -49,26 +46,19 @@ export default function Profile() {
   const insets = useSafeAreaInsets()
   const router = useRouter()
   const { profile, loading, profileError, refreshProfile } = useAuth()
-  const { quests, loading: questsLoading } = useQuests(undefined, 'archive')
   const { refetch: refetchCompletions } = useUserCompletions(profile?.id)
   const { followerCount, followingCount, refetch: refetchFollow } = useFollow(profile?.id, profile?.id)
-  const [earnedIds, setEarnedIds] = useState<Set<string>>(new Set())
+  const [dragging, setDragging] = useState(false)
   const [badges, setBadges] = useState<ShelfBadge[]>([])
   const [rewards, setRewards] = useState<RewardCard[]>([])
   const [refreshing, setRefreshing] = useState(false)
 
   const loadShelf = useCallback(async () => {
     if (!profile) return
-    const [doneResult, badgeResult, earnedResult] = await Promise.all([
-      supabase
-        .from('completions')
-        .select('quest_id')
-        .eq('user_id', profile.id)
-        .eq('status', 'approved'),
+    const [badgeResult, earnedResult] = await Promise.all([
       supabase.from('badges').select('*').order('sort_order'),
       supabase.from('user_badges').select('badge_id').eq('user_id', profile.id),
     ])
-    setEarnedIds(new Set((doneResult.data ?? []).map((row) => row.quest_id as string)))
     const earned = new Set((earnedResult.data ?? []).map((row) => row.badge_id as string))
     const rows = ((badgeResult.data ?? []) as Badge[]).filter((badge) => badge.is_active !== false)
     setBadges(
@@ -120,21 +110,12 @@ export default function Profile() {
   async function handleRefresh() {
     setRefreshing(true)
     await Promise.all([refreshProfile(), loadShelf(), loadRewards(), refetchCompletions(), refetchFollow()])
+    setPageKey((k) => k + 1)
     setRefreshing(false)
   }
 
-  const shelf = useMemo(() => {
-    return [...quests]
-      .filter((quest) => earnedIds.has(quest.id) || isQuestActive(quest, new Date()))
-      .sort((a, b) => {
-      const aEarned = earnedIds.has(a.id) ? 0 : 1
-      const bEarned = earnedIds.has(b.id) ? 0 : 1
-      if (aEarned !== bEarned) return aEarned - bEarned
-      return a.title.localeCompare(b.title)
-    })
-  }, [quests, earnedIds])
-
-  const earnedBadges = badges.filter((badge) => badge.earned)
+  const earnedBadges = useMemo(() => badges.filter((badge) => badge.earned), [badges])
+  const [pageKey, setPageKey] = useState(0)
 
   if (loading) {
     return (
@@ -166,6 +147,7 @@ export default function Profile() {
   return (
     <View style={styles.screen}>
       <ScrollView
+        scrollEnabled={!dragging}
         contentContainerStyle={{
           paddingTop: insets.top + SPACE.s5,
           paddingBottom: insets.bottom + TAB_BAR_CLEARANCE,
@@ -228,9 +210,56 @@ export default function Profile() {
           </Pressable>
         </View>
 
+        <View style={styles.sectionHead}>
+          <Heading>Badges and medals</Heading>
+          <Pressable
+            onPress={() => router.push('/badges')}
+            accessibilityRole="button"
+            accessibilityLabel="See all badges"
+            hitSlop={8}
+            style={styles.seeAll}
+          >
+            <Small>See all</Small>
+          </Pressable>
+        </View>
+
+        {earnedBadges.length === 0 && !(profile.last_week_rank && profile.last_week_rank <= 3) ? (
+          <View style={styles.empty}>
+            <Body tone="soft">No badges yet. Verify quests to earn them; a podium finish earns a medal.</Body>
+          </View>
+        ) : (
+          <RewardsRow
+            badges={earnedBadges}
+            lastWeekRank={profile.last_week_rank}
+            onOpenBadge={() => router.push('/badges')}
+          />
+        )}
+
+        <View style={styles.sectionHead}>
+          <Heading>Your page</Heading>
+        </View>
+        <StickerPage
+          key={pageKey}
+          userId={profile.id}
+          owner
+          onDragChange={setDragging}
+          emptyAction={
+            <Pressable
+              onPress={() => router.push('/quests')}
+              accessibilityRole="button"
+              accessibilityLabel="Find a quest"
+              style={styles.cta}
+            >
+              <Small color={COLOR.white}>Find a quest</Small>
+            </Pressable>
+          }
+        />
+
+        <View style={styles.spacer} />
+
         {rewards.length > 0 ? (
           <View style={styles.rewards}>
-            <Heading>Rewards</Heading>
+            <Heading>Codes to redeem</Heading>
             {rewards.map((reward) => (
               <View key={reward.id} style={styles.reward} accessibilityLabel={`${reward.title} code ${reward.code}`}>
                 <Name>{reward.title}</Name>
@@ -255,99 +284,6 @@ export default function Profile() {
           <Body>Suggest a quest</Body>
           <Small tone="soft">If we publish it, the quest carries your name.</Small>
         </Pressable>
-
-        <View style={styles.sectionHead}>
-          <Heading>Cutouts</Heading>
-          <Small tone="soft">{earnedIds.size > 0 ? plural(earnedIds.size, 'cutout') : 'None yet'}</Small>
-        </View>
-
-        {questsLoading && quests.length === 0 ? (
-          <View style={styles.shelfSkeleton}>
-            {[0, 1, 2].map((slot) => (
-              <View key={slot} style={styles.cutoutSkeleton} />
-            ))}
-          </View>
-        ) : shelf.length === 0 ? (
-          <View style={styles.empty}>
-            <Sprite name="seal" size={72} />
-            <Body tone="soft">Your shelf is empty. Finish a quest and the cutout lands here.</Body>
-            <Pressable
-              onPress={() => router.push('/quests')}
-              accessibilityRole="button"
-              accessibilityLabel="Find a quest"
-              style={styles.cta}
-            >
-              <Small color={COLOR.white}>Find a quest</Small>
-            </Pressable>
-          </View>
-        ) : (
-          <View style={styles.grid}>
-            {shelf.map((quest) => {
-              const locked = !earnedIds.has(quest.id)
-              return (
-                <Pressable
-                  key={quest.id}
-                  onPress={() => router.push(`/quest/${quest.id}`)}
-                  accessibilityRole="button"
-                  accessibilityLabel={locked ? `${quest.title}, locked` : quest.title}
-                  style={styles.cell}
-                >
-                  <Cutout
-                    uri={quest.cutout_url}
-                    category={quest.category}
-                    questTitle={quest.title}
-                    role="collection"
-                    locked={locked}
-                  />
-                  <Small numberOfLines={2} tone={locked ? 'faint' : 'ink'} style={styles.cellLabel}>
-                    {locked ? `Finish ${quest.title}` : quest.title}
-                  </Small>
-                </Pressable>
-              )
-            })}
-          </View>
-        )}
-
-        <View style={styles.sectionHead}>
-          <Heading>Badges</Heading>
-          <Pressable
-            onPress={() => router.push('/badges')}
-            accessibilityRole="button"
-            accessibilityLabel="See all badges"
-            hitSlop={8}
-          >
-            <Small>See all</Small>
-          </Pressable>
-        </View>
-
-        {earnedBadges.length === 0 ? (
-          <View style={styles.empty}>
-            <Body tone="soft">No badges yet. They show up here once you earn them.</Body>
-            <Pressable
-              onPress={() => router.push('/badges')}
-              accessibilityRole="button"
-              accessibilityLabel="See badges"
-              style={styles.cta}
-            >
-              <Small color={COLOR.white}>See badges</Small>
-            </Pressable>
-          </View>
-        ) : (
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.badgeRow}>
-            {earnedBadges.map((badge) => (
-              <Pressable
-                key={badge.id}
-                onPress={() => router.push('/badges')}
-                accessibilityRole="button"
-                accessibilityLabel={badge.spec.name}
-                style={styles.badge}
-              >
-                <BadgeVisual spec={badge.spec} size={64} earned />
-                <Small numberOfLines={2} style={styles.cellLabel}>{badge.spec.name}</Small>
-              </Pressable>
-            ))}
-          </ScrollView>
-        )}
       </ScrollView>
     </View>
   )
@@ -410,11 +346,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: SPACE.s4,
     marginBottom: SPACE.s3,
   },
-  grid: { flexDirection: 'row', flexWrap: 'wrap', paddingHorizontal: SPACE.s2, marginBottom: SPACE.s6 },
-  cell: { width: '33.33%', alignItems: 'center', paddingHorizontal: SPACE.s1, marginBottom: SPACE.s4, gap: SPACE.s1 },
-  cellLabel: { textAlign: 'center' },
-  shelfSkeleton: { flexDirection: 'row', gap: SPACE.s3, paddingHorizontal: SPACE.s4, marginBottom: SPACE.s6 },
-  cutoutSkeleton: { width: 88, height: 96, borderRadius: RADIUS.card, backgroundColor: COLOR.paperDeep },
+  seeAll: { minHeight: 48, justifyContent: 'center' },
+  spacer: { height: SPACE.s7 },
   empty: { paddingHorizontal: SPACE.s4, gap: SPACE.s3, marginBottom: SPACE.s6, alignItems: 'flex-start' },
   cta: {
     minHeight: 48,
@@ -424,6 +357,4 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  badgeRow: { paddingHorizontal: SPACE.s4, gap: SPACE.s4, paddingBottom: SPACE.s4 },
-  badge: { width: 84, alignItems: 'center', gap: SPACE.s2 },
 })

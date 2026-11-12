@@ -3,10 +3,9 @@ import { Pressable, RefreshControl, ScrollView, StyleSheet, View } from 'react-n
 import { useRouter } from 'expo-router'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { endsThisSunday, isNewThisWeek } from '@quest/geofence'
-import { Cutout } from '@/components/Cutout'
+import { Sticker } from '@/components/Sticker'
 import { Folder } from '@/components/Folder'
 import { QuestRow } from '@/components/QuestRow'
-import { Sprite } from '@/components/Sprite'
 import { BodyStrong, Heading, Small, Title } from '@/components/ui/Text'
 import { track } from '@/lib/analytics'
 import { useAuth } from '@/hooks/useAuth'
@@ -44,7 +43,8 @@ export default function QuestsScreen() {
   }, [loading, error, fresh.length, endingCount])
 
   const newest = useMemo(() => {
-    return [...quests].sort((a, b) => b.created_at.localeCompare(a.created_at))[0] ?? null
+    // The newest quest that has a sticker; none means no breakout.
+    return [...quests].filter((q) => q.cutout_url).sort((a, b) => b.created_at.localeCompare(a.created_at))[0] ?? null
   }, [quests])
 
   const byCategory = useMemo(() => {
@@ -58,7 +58,7 @@ export default function QuestsScreen() {
         photos: newestInFolder
           .slice(0, 2)
           .map((quest) => sizedImageUrl(getQuestCoverImage(quest), { width: 120, height: 90 })),
-        cutout: newestInFolder[0] ?? null,
+        cutout: newestInFolder.find((quest) => quest.cutout_url) ?? null,
       }
     })
   }, [quests, excludedQuestIds])
@@ -79,15 +79,9 @@ export default function QuestsScreen() {
           <Small tone="soft">{loading ? '…' : plural(quests.length, 'quest')}</Small>
         </View>
 
-        {newest ? (
+        {newest?.cutout_url ? (
           <View style={styles.breakout} pointerEvents="none">
-            <Cutout
-              uri={newest.cutout_url}
-              category={newest.category}
-              questTitle={newest.title}
-              role="breakout"
-              style={{ width: 150 }}
-            />
+            <Sticker uri={newest.cutout_url} size={150} tilt={-8} />
           </View>
         ) : null}
 
@@ -107,7 +101,6 @@ export default function QuestsScreen() {
           </View>
         ) : quests.length === 0 ? (
           <View style={styles.empty}>
-            <Sprite name="gull" size={88} />
             <Small tone="soft">Nothing in Victoria yet. The next drop is Monday.</Small>
             <Pressable
               onPress={() => router.push('/suggest-quest')}

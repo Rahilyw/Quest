@@ -4,8 +4,7 @@ import { useFocusEffect, useRouter } from 'expo-router'
 import { Ionicons } from '@expo/vector-icons'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { Avatar } from '@/components/Avatar'
-import { Cutout } from '@/components/Cutout'
-import { Sprite } from '@/components/Sprite'
+import { Sticker, questStickerAlt } from '@/components/Sticker'
 import { Body, BodyStrong, Micro, Name, Small, Title } from '@/components/ui/Text'
 import { useAuth } from '@/hooks/useAuth'
 import { currentRecapWeek } from '@/hooks/useWeekRecap'
@@ -204,7 +203,6 @@ export default function RankingsScreen() {
               </View>
             ) : entries.length === 0 ? (
               <View style={styles.empty}>
-                <Sprite name="gull" size={88} />
                 <Body tone="soft">Nobody’s on the board yet. Finish a quest and take the first spot.</Body>
                 <Pressable
                   onPress={() => router.push('/quests')}
@@ -230,15 +228,9 @@ export default function RankingsScreen() {
                     >
                       <View>
                         <Avatar username={entry.username} uri={entry.avatar_url} size={first ? 88 : 64} />
-                        {cutout ? (
+                        {cutout?.cutout_url ? (
                           <View style={styles.spotCutout}>
-                            <Cutout
-                              uri={cutout.cutout_url}
-                              category={cutout.category}
-                              questTitle={cutout.title}
-                              role="row"
-                              style={{ width: 40, height: 40 }}
-                            />
+                            <Sticker uri={cutout.cutout_url} size={44} tilt={8} alt={questStickerAlt(cutout)} />
                           </View>
                         ) : null}
                         <View style={styles.place}>
