@@ -14,7 +14,7 @@ import * as Location from 'expo-location'
 import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { endsThisSunday, formatDropLabel, isNewThisWeek, isQuestActive } from '@quest/geofence'
-import { Cutout } from '@/components/Cutout'
+import { Sticker, questStickerAlt } from '@/components/Sticker'
 import { PhotoViewer } from '@/components/PhotoViewer'
 import { Pillow, PILLOW_SIZES } from '@/components/Pillow'
 import { Body, BodyStrong, Heading, Micro, Small } from '@/components/ui/Text'
@@ -340,13 +340,7 @@ export default function QuestDetail() {
 
         <View style={styles.body}>
           <View pointerEvents="none" style={styles.cutout}>
-            <Cutout
-              uri={quest.cutout_url}
-              category={quest.category}
-              questTitle={quest.title}
-              role="breakout"
-              style={{ width: 112 }}
-            />
+            <Sticker uri={quest.cutout_url} size={112} tilt={-6} alt={questStickerAlt(quest)} />
           </View>
 
           <View style={styles.copy}>

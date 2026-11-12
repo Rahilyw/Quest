@@ -15,6 +15,9 @@ import { useLocation } from '@/hooks/useLocation'
 import { useQuest } from '@/hooks/useQuests'
 import { track, type SubmissionBlockReason } from '@/lib/analytics'
 import { didLevelUp } from '@/lib/celebration'
+import { resolveBadgeSpec } from '@/lib/badgeFromDb'
+import type { BadgeSpec } from '@/lib/badgeCatalog'
+import type { Badge } from '@/lib/types'
 import { paramAsString } from '@/lib/routeParams'
 import { supabase } from '@/lib/supabase'
 import { COLOR, FONT, RADIUS, SPACE } from '@/lib/theme'
@@ -31,6 +34,8 @@ interface CelebrationState {
   streakCount: number
   redemptionCode: string | null
   sponsorReward: string | null
+  /** The badge this completion earned, if any: it leads the Verified screen. */
+  earnedBadge: BadgeSpec | null
 }
 
 type Step = 'place' | 'selfie' | 'upload' | 'failed'
@@ -204,6 +209,9 @@ export default function Submit() {
 
     const previousXp = profile.total_xp
     const previousStreak = profile.current_streak
+    // Badges unlock in the same transaction as the completion; anything earned
+    // from a minute before submitting (device clocks drift) belongs to it.
+    const badgesSince = new Date(Date.now() - 60_000).toISOString()
     setSubmitting(true)
 
     try {
@@ -270,6 +278,7 @@ export default function Submit() {
             streakCount: profile.current_streak,
             redemptionCode: null,
             sponsorReward: null,
+            earnedBadge: null,
           })
         } else if (insertError.message?.includes('GEOFENCE_VIOLATION') || insertError.code === '23514') {
           trackSubmissionBlocked('outside_zone')
@@ -312,9 +321,22 @@ export default function Submit() {
         }
       }
 
+      let earnedBadge: BadgeSpec | null = null
+      const { data: newBadges } = await supabase
+        .from('user_badges')
+        .select('earned_at, badge:badges(*)')
+        .eq('user_id', userId)
+        .gte('earned_at', badgesSince)
+        .order('earned_at', { ascending: false })
+        .limit(1)
+      const newest = newBadges?.[0]?.badge as Badge | Badge[] | null | undefined
+      const badgeRow = Array.isArray(newest) ? newest[0] : newest
+      if (badgeRow) earnedBadge = resolveBadgeSpec(badgeRow)
+
       setAlreadyCompleted(true)
       openCelebration({
         variant: 'success',
+        earnedBadge,
         xpReward: quest.xp_reward,
         totalXp: newXp,
         level: newLevel,
@@ -479,6 +501,7 @@ export default function Submit() {
                 streakCount: profile?.current_streak ?? 0,
                 redemptionCode: null,
                 sponsorReward: null,
+                earnedBadge: null,
               })
             }
             style={styles.whiteBtn}
@@ -589,6 +612,7 @@ export default function Submit() {
         streakCount={celebration?.streakCount ?? 0}
         redemptionCode={celebration?.redemptionCode}
         sponsorReward={celebration?.sponsorReward}
+        earnedBadge={celebration?.earnedBadge ?? null}
         onDone={handleCelebrationDone}
         onShare={placePhoto && profile && quest ? () => setShareOpen(true) : undefined}
       />

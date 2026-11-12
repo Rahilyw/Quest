@@ -4,8 +4,7 @@ import { useEffect, useRef } from 'react'
 import { useRouter } from 'expo-router'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { Avatar } from '@/components/Avatar'
-import { Cutout } from '@/components/Cutout'
-import { Sprite } from '@/components/Sprite'
+import { Sticker } from '@/components/Sticker'
 import { PenRing } from '@/components/scraps'
 import { Body, Heading, Sentence, Small, Title } from '@/components/ui/Text'
 import { useAuth } from '@/hooks/useAuth'
@@ -143,13 +142,7 @@ export default function ThisWeekScreen() {
                 You can do this anywhere. Start here.
               </Small>
             </View>
-            <Cutout
-              uri={week.starterQuest.cutout_url}
-              category={week.starterQuest.category}
-              questTitle={week.starterQuest.title}
-              role="row"
-              style={styles.starterCutout}
-            />
+            <Sticker uri={week.starterQuest.cutout_url} size="folder" tilt={6} style={styles.starterSticker} />
           </Pressable>
         ) : null}
 
@@ -174,14 +167,6 @@ export default function ThisWeekScreen() {
               return (
                 <Sentence key={item.quest.id} color={COLOR.inkFaint}>
                   {joiner}
-                  {item.quest.cutout_url ? (
-                    <Cutout
-                      uri={item.quest.cutout_url}
-                      category={item.quest.category}
-                      questTitle={item.quest.title}
-                      role="inline"
-                    />
-                  ) : null}
                   <Sentence
                     color={COLOR.white}
                     style={styles.phrase}
@@ -192,6 +177,13 @@ export default function ThisWeekScreen() {
                   >
                     {item.phrase}
                   </Sentence>
+                  {item.quest.cutout_url ? (
+                    <>
+                      {' '}
+                      {/* Decorative: the phrase before it is the accessible button. */}
+                      <Sticker uri={item.quest.cutout_url} size="inline" tilt={index % 2 === 0 ? -6 : 5} />
+                    </>
+                  ) : null}
                 </Sentence>
               )
             })}
@@ -215,10 +207,6 @@ export default function ThisWeekScreen() {
         ) : null}
 
         <View style={styles.sheet}>
-          <View style={styles.seal} pointerEvents="none">
-            <Sprite name="seal" size={72} />
-          </View>
-
           {week.standing?.rank ? (
             <View style={styles.standingRow}>
               <Body>You’re </Body>
@@ -259,12 +247,7 @@ export default function ThisWeekScreen() {
                     {`\u2026${note.phrase}`}
                   </Small>
                 </View>
-                <Cutout
-                  uri={note.cutoutUrl}
-                  category={note.category}
-                  questTitle={note.phrase}
-                  role="row"
-                />
+                <Sticker uri={note.cutoutUrl} size="row" />
               </View>
             ))
           )}
@@ -338,8 +321,7 @@ const styles = StyleSheet.create({
   starterTitle: {
     marginVertical: SPACE.s1,
   },
-  starterCutout: {
-    width: 86,
+  starterSticker: {
     marginLeft: SPACE.s2,
   },
   sentence: {
@@ -374,11 +356,6 @@ const styles = StyleSheet.create({
     padding: SPACE.s4,
     paddingTop: SPACE.s6,
     gap: SPACE.s2,
-  },
-  seal: {
-    position: 'absolute',
-    top: -36,
-    right: SPACE.s5,
   },
   standingRow: {
     flexDirection: 'row',

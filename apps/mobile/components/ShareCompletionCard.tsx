@@ -1,6 +1,6 @@
 import { View, StyleSheet } from 'react-native'
 import { BrandText } from '@/components/BrandText'
-import { Cutout } from '@/components/Cutout'
+import { Sticker } from '@/components/Sticker'
 import { Pillow } from '@/components/Pillow'
 import { Body, Heading, Small } from '@/components/ui/Text'
 import { getLevelTitle } from '@/lib/constants'
@@ -57,14 +57,7 @@ export function ShareCompletionCard({ data }: { data: ShareCompletionData }) {
           edge="white"
           style={styles.photo}
         />
-        <Cutout
-          uri={data.cutoutUrl}
-          category={data.category ?? 'fitness'}
-          questTitle={data.questTitle}
-          role="breakout"
-          rotation={6}
-          style={styles.cutout}
-        />
+        <Sticker uri={data.cutoutUrl} size={128} tilt={6} style={styles.cutout} />
       </View>
 
       <View style={styles.copy}>

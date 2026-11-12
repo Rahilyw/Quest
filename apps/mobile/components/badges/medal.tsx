@@ -28,14 +28,34 @@ interface PaletteStops {
   face: [string, string, string]
 }
 
+// Metals are BRAND.md §6c tokens. The coloured palettes are the category
+// brights (§3), so a badge in a category's colour reads as that category:
+// sapphire = cobalt (Community), ember = tomato (Food), teal = grass (Nature),
+// sky = lilac (Social). Each runs light → token → deep, like the metals.
 export const MEDAL_PALETTES: Record<MedalPalette, PaletteStops> = {
   gold: { rim: ['#FFF6D5', '#F2C14E', '#B97709'], face: ['#FFE9A8', '#F6B93B', '#C87F0A'] },
   bronze: { rim: ['#FBDDC0', '#C97B3D', '#7C3F16'], face: ['#F2B27C', '#C97B3D', '#8C4A1D'] },
   silver: { rim: ['#FFFFFF', '#C6D2DD', '#8195A8'], face: ['#EDF2F7', '#B9C6D3', '#8DA2B5'] },
-  sapphire: { rim: ['#F2F7FB', '#C6D2DD', '#7C90A3'], face: ['#7DD3FC', '#0EA5E9', '#075985'] },
-  ember: { rim: ['#FFE3C2', '#FF8A50', '#C2410C'], face: ['#FFB27D', '#FF6B35', '#C2410C'] },
-  teal: { rim: ['#D9FBF4', '#2DD4BF', '#0F766E'], face: ['#99F6E4', '#2DD4BF', '#0D9488'] },
-  sky: { rim: ['#EAF7FF', '#7DD3FC', '#0369A1'], face: ['#BAE6FD', '#38BDF8', '#0284C7'] },
+  sapphire: { rim: ['#E4ECFD', '#8FAEF6', '#2553BB'], face: ['#9DBAF8', '#2F6BF0', '#1D4496'] },
+  ember: { rim: ['#FDE4E0', '#F59A90', '#BD453A'], face: ['#F9AEA6', '#F2584A', '#9A372E'] },
+  teal: { rim: ['#DEF5E6', '#86D7A3', '#298F4E'], face: ['#9CE0B5', '#34B864', '#21723F'] },
+  sky: { rim: ['#F6F2FD', '#DCD0F6', '#9A8BBB'], face: ['#EAE2FA', '#C6B2F0', '#85779F'] },
+}
+
+/** The medal palette that carries a quest category's colour. */
+export function categoryMedalPalette(category: string | null | undefined): MedalPalette {
+  switch (category) {
+    case 'community':
+      return 'sapphire'
+    case 'food':
+      return 'ember'
+    case 'nature':
+      return 'teal'
+    case 'social':
+      return 'sky'
+    default:
+      return 'gold'
+  }
 }
 
 interface MedalProps {
@@ -71,7 +91,7 @@ export function Medal({ size, palette, children }: MedalProps) {
       </Defs>
 
       {/* Ground shadow */}
-      <Circle cx="50" cy="53.5" r="46" fill="rgba(26,43,74,0.16)" />
+      <Circle cx="50" cy="53.5" r="46" fill="rgba(28,25,21,0.16)" />
       {/* Rim */}
       <Circle cx="50" cy="50" r="46" fill={`url(#${rimId})`} />
       {/* Recessed bevel */}

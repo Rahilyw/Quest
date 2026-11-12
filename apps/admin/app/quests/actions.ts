@@ -6,6 +6,7 @@ import { supabaseAdmin } from '@/lib/supabase'
 import { requireAdmin } from '@/lib/require-admin'
 import { normalizeSchedule, scheduleFromForm } from '@/lib/schedule'
 import { sendExpoPush } from '@/lib/expo-push'
+import { processAndStoreSticker, removeStoredSticker, validateAltText } from '@/lib/sticker-storage'
 
 export interface Badge {
   id: string
@@ -45,6 +46,7 @@ export interface Quest {
   sponsor_reward: string | null
   cover_image_url: string | null
   cutout_url?: string | null
+  cutout_alt?: string | null
   status: string
   created_at: string
   active_from?: string | null
@@ -627,67 +629,72 @@ export async function updateQuest(
   }
 }
 
-// ─── Cutouts (Cutouts redesign, migration 032) ───────────────────────────────
-// The cutout must already be background-removed: run `scripts/make-cutout.js`
-// first. It outputs a transparent WebP, which is the only format accepted here.
+// ─── Stickers (BRAND.md §6; migrations 032 and 041) ─────────────────────────
+// The admin uploads a real photo; the server cuts it out, adds the die-cut edge
+// and shadow (lib/sticker-pipeline.js) and stores a 600px WebP. The quest's
+// row in `stickers` follows quests.cutout_url through a trigger (041).
 
-const CUTOUT_MAX_BYTES = 1_500_000
+export type QuestStickerResult =
+  | { ok: true; cutout_url: string | null; cutout_alt: string | null; warnings: string[] }
+  | { ok: false; error: string }
 
-/** Upload (or replace/clear) a quest's cutout. Pass no file to clear it. */
-export async function setQuestCutout(
-  questId: string,
-  cutout: File | null
-): Promise<{ ok: true; cutout_url: string | null } | { ok: false; error: string }> {
+/**
+ * Upload, replace, re-describe or remove a quest's sticker.
+ * FormData: questId, alt (required unless removing), photo (optional File),
+ * remove ("1" to clear the sticker).
+ */
+export async function setQuestSticker(formData: FormData): Promise<QuestStickerResult> {
   await requireAdmin()
   try {
+    const questId = String(formData.get('questId') ?? '')
+    const remove = formData.get('remove') === '1'
+    const photo = formData.get('photo')
+    const file = photo instanceof File && photo.size > 0 ? photo : null
+
     const { data: existing, error: readError } = await supabaseAdmin
       .from('quests')
       .select('cutout_url')
       .eq('id', questId)
       .single()
     if (readError || !existing) return { ok: false, error: 'Quest not found.' }
+    const oldUrl = (existing.cutout_url as string | null) ?? null
 
-    let nextUrl: string | null = null
-    if (cutout && cutout.size > 0) {
-      if (cutout.type !== 'image/webp') {
-        return { ok: false, error: 'Use the transparent WebP from scripts/make-cutout.js.' }
-      }
-      if (cutout.size > CUTOUT_MAX_BYTES) {
-        return { ok: false, error: 'Cutout is over 1.5 MB. Re-run make-cutout.js.' }
-      }
-      const buffer = Buffer.from(await cutout.arrayBuffer())
-      // WebP container: "RIFF" .... "WEBP"
-      if (buffer.toString('ascii', 0, 4) !== 'RIFF' || buffer.toString('ascii', 8, 12) !== 'WEBP') {
-        return { ok: false, error: 'That file is not a valid WebP.' }
-      }
-      const path = `${questId}/${crypto.randomUUID()}.webp`
-      const { error: uploadError } = await supabaseAdmin.storage
-        .from('quest-cutouts')
-        .upload(path, buffer, { contentType: 'image/webp', upsert: false })
-      if (uploadError) return { ok: false, error: `Cutout upload failed: ${uploadError.message}` }
-      nextUrl = supabaseAdmin.storage.from('quest-cutouts').getPublicUrl(path).data.publicUrl
+    if (remove) {
+      const { error } = await supabaseAdmin.from('quests').update({ cutout_url: null }).eq('id', questId)
+      if (error) return { ok: false, error: error.message }
+      await removeStoredSticker(oldUrl)
+      revalidatePath('/quests')
+      return { ok: true, cutout_url: null, cutout_alt: null, warnings: [] }
     }
 
-    const { error: updateError } = await supabaseAdmin
+    const alt = validateAltText(formData.get('alt'))
+    if (!alt.ok) return alt
+    if (!file && !oldUrl) return { ok: false, error: 'Choose a photo of the quest’s object.' }
+
+    let nextUrl = oldUrl
+    let warnings: string[] = []
+    if (file) {
+      const stored = await processAndStoreSticker(file, questId)
+      if (!stored.ok) return stored
+      nextUrl = stored.url
+      warnings = stored.warnings
+    }
+
+    let { error: updateError } = await supabaseAdmin
       .from('quests')
-      .update({ cutout_url: nextUrl })
+      .update({ cutout_url: nextUrl, cutout_alt: alt.alt })
       .eq('id', questId)
+    if (updateError && /cutout_alt/.test(updateError.message)) {
+      // Migration 041 not applied yet: store the image, keep the alt text for later.
+      ;({ error: updateError } = await supabaseAdmin.from('quests').update({ cutout_url: nextUrl }).eq('id', questId))
+      warnings.push('Alt text was not saved: apply migration 041 to store it.')
+    }
     if (updateError) return { ok: false, error: updateError.message }
 
-    // Best-effort cleanup of the previous object.
-    const old = existing.cutout_url as string | null
-    const marker = '/quest-cutouts/'
-    const idx = old ? old.indexOf(marker) : -1
-    if (old && idx !== -1) {
-      const oldPath = decodeURIComponent(old.slice(idx + marker.length).split('?')[0] ?? '')
-      if (oldPath && !oldPath.includes('..')) {
-        await supabaseAdmin.storage.from('quest-cutouts').remove([oldPath]).catch(() => {})
-      }
-    }
-
+    if (file && oldUrl && oldUrl !== nextUrl) await removeStoredSticker(oldUrl)
     revalidatePath('/quests')
-    return { ok: true, cutout_url: nextUrl }
+    return { ok: true, cutout_url: nextUrl, cutout_alt: alt.alt, warnings }
   } catch (err) {
-    return { ok: false, error: err instanceof Error ? err.message : 'Cutout update failed.' }
+    return { ok: false, error: err instanceof Error ? err.message : 'Sticker update failed.' }
   }
 }

@@ -5,7 +5,6 @@ import { Ionicons } from '@expo/vector-icons'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import MapView, { Marker } from 'react-native-maps'
 import { FeedBubble } from '@/components/FeedBubble'
-import { Sprite } from '@/components/Sprite'
 import { Body, BodyStrong, Micro, Small, Title } from '@/components/ui/Text'
 import { useActivityFeed, type FeedMode } from '@/hooks/useActivityFeed'
 import { useAuth } from '@/hooks/useAuth'
@@ -157,7 +156,6 @@ export default function FeedScreen() {
           </View>
         ) : posts.length === 0 ? (
           <View style={styles.empty}>
-            <Sprite name={mode === 'following' ? 'gull' : 'seal'} size={88} />
             <Body tone="soft" style={styles.emptyCopy}>
               {mode === 'following'
                 ? 'Follow people from the city feed and their quests land here.'

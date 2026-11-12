@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import {
   View,
   StyleSheet,
@@ -11,25 +11,24 @@ import {
 import { useRouter } from 'expo-router'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { BrandText } from '@/components/BrandText'
-import { Cutout } from '@/components/Cutout'
-import { Sprite, type SpriteName } from '@/components/Sprite'
+import { Sticker } from '@/components/Sticker'
 import { Body, BodyStrong, Sentence, Small } from '@/components/ui/Text'
 import { CITY } from '@/lib/constants'
 import { completeOnboarding } from '@/lib/onboarding'
+import { supabase } from '@/lib/supabase'
 import { track } from '@/lib/analytics'
 import { COLOR, RADIUS, SPACE } from '@/lib/theme'
 
 /**
  * Three screens, one sentence each, on paper (BRAND.md §9, UI-OVERHAUL-PLAN Phase 5).
- * The cutouts are category-colour placeholders until real per-quest cutouts exist
- * (Phase 7). Victoria is the only pilot city, so there is no city picker.
+ * Each slide shows real quest stickers when there are some; with none, the
+ * slide is just its sentence (no stand-ins). Victoria is the only pilot city,
+ * so there is no city picker.
  */
 interface Slide {
   id: string
   sentence: string
   detail: string
-  categories: [string, string, string]
-  sprite?: SpriteName
 }
 
 const TILT = [-6, 3, 7]
@@ -40,21 +39,17 @@ const SLIDES: Slide[] = [
     sentence: 'Pick a real place in Victoria and go there.',
     detail:
       'Moss Street Market, Dallas Road, the harbour ferries. Quests are things you can actually do today.',
-    categories: ['food', 'fitness', 'nature'],
-    sprite: 'seal',
   },
   {
     id: 'proof',
     sentence: 'Take a photo of the place. That’s your proof.',
     detail:
       'We check you’re in the zone, then you can add a quick selfie. You can always skip it.',
-    categories: ['community', 'social', 'food'],
   },
   {
     id: 'reward',
-    sentence: 'Get your XP the second you’re verified.',
-    detail: `Collect a cutout for every quest, climb this week’s rankings, and see what the rest of ${CITY.name} is up to.`,
-    categories: ['nature', 'fitness', 'community'],
+    sentence: 'Earn badges and medals the second you’re verified.',
+    detail: `Each quest’s sticker lands in your drawer for your page. Climb this week’s rankings and see what the rest of ${CITY.name} is up to.`,
   },
 ]
 
@@ -65,6 +60,24 @@ export default function Onboarding() {
   const listRef = useRef<FlatList<Slide>>(null)
   const [step, setStep] = useState(0)
   const isLast = step === SLIDES.length - 1
+  const [stickers, setStickers] = useState<{ id: string; title: string; cutout_url: string }[]>([])
+
+  useEffect(() => {
+    let alive = true
+    supabase
+      .from('quests')
+      .select('id, title, cutout_url')
+      .eq('status', 'active')
+      .not('cutout_url', 'is', null)
+      .order('created_at', { ascending: false })
+      .limit(9)
+      .then(({ data }) => {
+        if (alive && data) setStickers(data as { id: string; title: string; cutout_url: string }[])
+      })
+    return () => {
+      alive = false
+    }
+  }, [])
 
   async function finish(destination: '/(auth)/sign-up' | '/(auth)/sign-in') {
     await completeOnboarding(CITY.name)
@@ -83,24 +96,23 @@ export default function Onboarding() {
     if (index !== step) setStep(index)
   }
 
-  function renderSlide({ item }: { item: Slide }) {
+  function renderSlide({ item, index }: { item: Slide; index: number }) {
+    // Three stickers per slide, rotating through what the city has; repeats
+    // are fine when there are only a few.
+    const mine = stickers.length
+      ? [0, 1, 2].map((i) => stickers[(index * 3 + i) % stickers.length])
+      : []
     return (
       <View style={[styles.slide, { width }]}>
-        <View style={styles.stage}>
-          {item.categories.map((category, i) => (
-            <Cutout
-              key={`${item.id}-${i}`}
-              category={category}
-              role="collection"
-              rotation={TILT[i]}
-            />
-          ))}
-          {item.sprite ? (
-            <View style={styles.sprite}>
-              <Sprite name={item.sprite} size={64} />
-            </View>
-          ) : null}
-        </View>
+        {mine.length ? (
+          <View style={styles.stage}>
+            {mine.map((quest, i) => (
+              <Sticker key={`${item.id}-${i}`} uri={quest.cutout_url} size={96} tilt={TILT[i]} />
+            ))}
+          </View>
+        ) : (
+          <View style={styles.stageEmpty} />
+        )}
         <Sentence accessibilityRole="header">{item.sentence}</Sentence>
         <Body tone="soft" style={styles.detail}>
           {item.detail}
@@ -198,7 +210,7 @@ const styles = StyleSheet.create({
     marginBottom: SPACE.s7,
     minHeight: 150,
   },
-  sprite: { position: 'absolute', right: 0, top: -SPACE.s5 },
+  stageEmpty: { height: SPACE.s8 },
   detail: { marginTop: SPACE.s3 },
   footer: { paddingHorizontal: SPACE.s5, paddingTop: SPACE.s3, gap: SPACE.s3 },
   dots: { flexDirection: 'row', gap: SPACE.s2, alignSelf: 'center', marginBottom: SPACE.s2 },

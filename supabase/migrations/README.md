@@ -3,6 +3,7 @@
 The baseline schema is `20260619010246_initial_schema.sql`; numbered follow-ups are `002`–`040`.
 There is no `001_initial_schema.sql`. The Nov 10, 2026 runbook reports the existing Quest project
 has the baseline and migrations through 038 applied; that report was not independently re-queried.
+**041 (stickers) is not applied anywhere; apply it only with the founder.**
 **039 and 040: Applied to production (`xuviwarpgvxzpouqesrv`) by the owner on Nov 11, 2026 with `npx supabase db push --remote --include-all`. The "Verifying 039" checks below have not been recorded as run.**
 
 For any authorized hosted migration operation, inspect the target and dry-run first. The Supabase
@@ -112,6 +113,7 @@ SELECT grantee, column_name FROM information_schema.column_privileges
 | `038_completion_secret_columns.sql` | Drops anon/authenticated table SELECT on `completions`, then grants every column except `redemption_code`, `lat`, `lng`, `gps_accuracy` and `reviewed_by`. Owners read their own code via `own_completion_reward` / `own_reward_codes`. Non-sponsored inserts cannot keep a client-supplied code. Streak week uses `America/Vancouver`. A later column on `completions` needs its own GRANT. Runbook reports applied Nov 10, 2026. |
 | `039_profile_push_token_privacy.sql` | SEC-01. Drops anon/authenticated table SELECT on `profiles`, then grants every column except `push_token`. `own_push_enabled()` gives Settings a yes/no for the caller. Own-row `push_token` UPDATE is unchanged. `select=*` on profiles from a client now fails, so ship the client first. A later column on `profiles` needs its own GRANT. **Applied to production Nov 11, 2026; verification checks not yet recorded.** |
 | `040_week_recap.sql` | Spec 06 §2. `own_week_recap(date)` returns the caller's rank, weekly XP, quest count, derived streak and best own place photo for one `America/Vancouver` week (current or previous only). Authenticated only. Recomputed from live rows; no snapshot table. **Applied to production Nov 11, 2026.** |
+| `041_stickers.sql` | BRAND.md §6, §6c, §7. `quests.cutout_alt`; `stickers` (one per quest, kept in step with `quests.cutout_url` by trigger, plus library stickers unlocked by a badge, a season or an admin); `user_stickers` (the drawer: granted when a completion is verified or a badge is earned, revoked with its placements when a completion leaves `approved`); `sticker_placements` (x/y as board fractions, tilt −12..12, scale 0.6..1.6, z, max 60 per player). Owners write their own placements (column-level INSERT/UPDATE grants; the composite FK proves ownership). Drawers, boards and earned badges are readable on pages that follow the City feed rules (`feed_public`, blocks). Backfills stickers for quests that already have a cutout. Behaviour checked against PGlite with stub tables (36 checks), not a real Supabase stack. **Not applied to production; apply only with the founder.** |
 
 ## Column grants: what a new column needs
 

@@ -18,6 +18,11 @@ import { Ionicons } from '@expo/vector-icons'
 import { Avatar } from '@/components/Avatar'
 import { FollowButton } from '@/components/FollowButton'
 import { EmptyState } from '@/components/EmptyState'
+import { RewardsRow } from '@/components/RewardsRow'
+import { StickerPage } from '@/components/stickers/StickerPage'
+import { resolveBadgeSpec } from '@/lib/badgeFromDb'
+import type { BadgeSpec } from '@/lib/badgeCatalog'
+import type { Badge } from '@/lib/types'
 import { useAuth } from '@/hooks/useAuth'
 import { useFollow } from '@/hooks/useFollow'
 import { useBlockedUsers } from '@/hooks/useBlockedUsers'
@@ -33,6 +38,7 @@ interface ProfileHeader {
   level: number
   avatar_url: string | null
   feed_public: boolean
+  last_week_rank: number | null
 }
 
 interface GridPost {
@@ -62,6 +68,7 @@ export default function PublicProfile() {
   const [user, setUser] = useState<ProfileHeader | null>(null)
   const [posts, setPosts] = useState<GridPost[]>([])
   const [postCount, setPostCount] = useState(0)
+  const [badges, setBadges] = useState<{ id: string; spec: BadgeSpec }[]>([])
   const [loading, setLoading] = useState(true)
 
   const cellSize = (width - GRID_GAP * 2) / 3
@@ -69,10 +76,10 @@ export default function PublicProfile() {
   const load = useCallback(async () => {
     if (!userId) return
 
-    const [profileResult, postsResult] = await Promise.all([
+    const [profileResult, postsResult, badgeResult] = await Promise.all([
       supabase
         .from('profiles')
-        .select('id, username, level, avatar_url, feed_public')
+        .select('id, username, level, avatar_url, feed_public, last_week_rank')
         .eq('id', userId)
         .maybeSingle(),
       supabase
@@ -83,7 +90,20 @@ export default function PublicProfile() {
         .eq('hidden_pending_review', false)
         .not('photo_url', 'is', null)
         .order('completed_at', { ascending: false }),
+      // Readable for visible pages once migration 041 is applied; empty before.
+      supabase
+        .from('user_badges')
+        .select('earned_at, badge:badges(*)')
+        .eq('user_id', userId)
+        .order('earned_at', { ascending: false }),
     ])
+    const earned: { id: string; spec: BadgeSpec }[] = []
+    for (const row of badgeResult.data ?? []) {
+      const raw = (row as { badge: Badge | Badge[] | null }).badge
+      const badge = Array.isArray(raw) ? raw[0] : raw
+      if (badge && badge.is_active !== false && !badge.is_secret) earned.push({ id: badge.id, spec: resolveBadgeSpec(badge) })
+    }
+    setBadges(earned)
 
     setUser((profileResult.data as ProfileHeader | null) ?? null)
     setPosts((postsResult.data ?? []) as GridPost[])
@@ -256,6 +276,13 @@ export default function PublicProfile() {
         ) : null}
       </View>
 
+      {!isBlocked && !isPrivate ? (
+        <View style={styles.page}>
+          <RewardsRow badges={badges} lastWeekRank={user.last_week_rank} />
+          <StickerPage userId={user.id} owner={false} />
+        </View>
+      ) : null}
+
       {isBlocked ? (
         <EmptyState
           title={`You blocked @${user.username}`}
@@ -331,6 +358,7 @@ export default function PublicProfile() {
 }
 
 const styles = StyleSheet.create({
+  page: { gap: SPACING.md, marginBottom: SPACING.md },
   container: { flex: 1, backgroundColor: COLORS.bg },
   centerScreen: {
     flex: 1,

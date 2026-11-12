@@ -11,10 +11,16 @@ import Animated, {
   Easing,
   useAnimatedStyle,
   useSharedValue,
+  withDelay,
   withTiming,
 } from 'react-native-reanimated'
-import { Cutout } from '@/components/Cutout'
 import { Pillow } from '@/components/Pillow'
+import { Sticker } from '@/components/Sticker'
+import { BadgeVisual } from '@/components/badges/BadgeVisual'
+import { Medal, categoryMedalPalette } from '@/components/badges/medal'
+import type { BadgeSpec } from '@/lib/badgeCatalog'
+import { STICKER_SIZE } from '@/lib/stickerBoard'
+import { Text as SvgText } from 'react-native-svg'
 import { Sparkle } from '@/components/scraps'
 import { Body, Micro, Sentence, Small } from '@/components/ui/Text'
 import { phraseFor } from '@/lib/thisWeek'
@@ -38,11 +44,18 @@ interface Props {
   streakCount?: number
   redemptionCode?: string | null
   sponsorReward?: string | null
+  /** The badge this completion earned. Without one, the XP lands as a medal. */
+  earnedBadge?: BadgeSpec | null
   onDone: () => void
   onShare?: () => void
 }
 
+/** BRAND.md §8: the reward lands in 420ms on ease-out-quint, no bounce. */
 const LAND = { duration: 420, easing: Easing.bezier(0.22, 1, 0.36, 1) }
+/** Then the sticker slides into the drawer (300ms, ease-out). */
+const SLIDE = { duration: 300, easing: Easing.bezier(0.16, 1, 0.3, 1) }
+const SLIDE_DELAY = 420 + 380
+const REWARD_SIZE = 168
 
 function verifiedClock(date: Date): string {
   return new Intl.DateTimeFormat('en-US', {
@@ -69,6 +82,7 @@ export default function CompletionCelebration({
   streakCount = 0,
   redemptionCode,
   sponsorReward,
+  earnedBadge = null,
   onDone,
   onShare,
 }: Props) {
@@ -83,6 +97,7 @@ export default function CompletionCelebration({
   const scale = useSharedValue(1)
   const rotate = useSharedValue(0)
   const fade = useSharedValue(1)
+  const slide = useSharedValue(1)
 
   useEffect(() => {
     let alive = true
@@ -106,6 +121,8 @@ export default function CompletionCelebration({
       rotate.value = 0
       fade.value = 0
       fade.value = withTiming(1, { duration: 150 })
+      // Nothing flies with reduce motion: the sticker is simply in the drawer.
+      slide.value = 1
       setShownXp(xpReward)
       return
     }
@@ -115,6 +132,8 @@ export default function CompletionCelebration({
     fade.value = 1
     scale.value = withTiming(1, LAND)
     rotate.value = withTiming(0, LAND)
+    slide.value = 0
+    slide.value = withDelay(SLIDE_DELAY, withTiming(1, SLIDE))
 
     const start = Date.now()
     let frame = 0
@@ -130,12 +149,22 @@ export default function CompletionCelebration({
       cancelAnimationFrame(frame)
       clearTimeout(haptic)
     }
-  }, [visible, already, reduceMotion, xpReward, scale, rotate, fade])
+  }, [visible, already, reduceMotion, xpReward, scale, rotate, fade, slide])
 
-  const cutoutStyle = useAnimatedStyle(() => ({
+  const rewardStyle = useAnimatedStyle(() => ({
     opacity: fade.value,
     transform: [{ scale: scale.value }, { rotate: `${rotate.value}deg` }],
   }))
+  // From just under the reward, large, down into its drawer slot.
+  const stickerStyle = useAnimatedStyle(() => ({
+    opacity: slide.value < 0.02 ? 0 : 1,
+    transform: [
+      { translateY: (1 - slide.value) * -150 },
+      { scale: 1 + (1 - slide.value) * 0.9 },
+      { rotate: `${(1 - slide.value) * -8 + 4}deg` },
+    ],
+  }))
+  const hasSticker = Boolean(cutoutUrl)
 
   const phrase = phraseFor({ title: questTitle, action_phrase: actionPhrase })
 
@@ -164,19 +193,34 @@ export default function CompletionCelebration({
                   </View>
                 </>
               ) : null}
-              <Animated.View style={cutoutStyle}>
-                <Cutout
-                  uri={cutoutUrl}
-                  category={category}
-                  questTitle={questTitle}
-                  role="celebration"
-                  style={{ width: 180 }}
-                />
+              <Animated.View style={rewardStyle}>
+                {earnedBadge ? (
+                  <BadgeVisual spec={earnedBadge} size={REWARD_SIZE} earned />
+                ) : (
+                  <XpMedal xp={xpReward} category={category} />
+                )}
               </Animated.View>
             </View>
+            <Small color={ink} accessibilityLiveRegion="polite">
+              {earnedBadge ? `New badge: ${earnedBadge.name}` : `${xpReward} XP for ${questTitle}`}
+            </Small>
             <Sentence color={ink} style={styles.line} accessibilityRole="header">
-              {`You ${phrase}. ${cat.label} is in your collection.`}
+              {hasSticker ? `You ${phrase}. Its sticker is in your drawer.` : `You ${phrase}.`}
             </Sentence>
+            {hasSticker ? (
+              <View
+                style={styles.drawer}
+                accessible
+                accessibilityLabel={`${questTitle} sticker added to your sticker drawer`}
+              >
+                <View style={styles.drawerSlot}>
+                  <Animated.View style={stickerStyle}>
+                    <Sticker uri={cutoutUrl} size="drawer" />
+                  </Animated.View>
+                </View>
+                <Small>Sticker drawer</Small>
+              </View>
+            ) : null}
             <View style={styles.pills}>
               <View style={styles.pill} accessible accessibilityLabel={`${xpReward} XP earned`}>
                 <Micro color={COLOR.white} tabular>{`+${shownXp} XP`}</Micro>
@@ -240,6 +284,22 @@ export default function CompletionCelebration({
   )
 }
 
+/** With no new badge, the XP itself lands as a medal in the quest's colour. */
+function XpMedal({ xp, category }: { xp: number; category: string }) {
+  return (
+    <View accessible accessibilityLabel={`${xp} XP medal`}>
+      <Medal size={REWARD_SIZE} palette={categoryMedalPalette(category)}>
+        <SvgText x="50" y="52" fontSize="22" fontFamily={FONT.black} fill={COLOR.ink} textAnchor="middle">
+          {String(xp)}
+        </SvgText>
+        <SvgText x="50" y="68" fontSize="11" fontFamily={FONT.black} fill={COLOR.ink} textAnchor="middle">
+          XP
+        </SvgText>
+      </Medal>
+    </View>
+  )
+}
+
 function Twinkle({ delay, color }: { delay: number; color: string }) {
   const opacity = useSharedValue(0)
   useEffect(() => {
@@ -279,7 +339,7 @@ const styles = StyleSheet.create({
   },
   cutoutWrap: {
     width: 220,
-    height: 200,
+    height: 196,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -288,6 +348,24 @@ const styles = StyleSheet.create({
   sparkB: { top: 4, right: 28 },
   sparkC: { bottom: 36, right: 16 },
   line: { textAlign: 'center' },
+  drawer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: SPACE.s2,
+    backgroundColor: COLOR.white,
+    borderRadius: RADIUS.pill,
+    paddingVertical: SPACE.s1,
+    paddingLeft: SPACE.s1,
+    paddingRight: SPACE.s4,
+  },
+  drawerSlot: {
+    width: STICKER_SIZE.drawer,
+    height: STICKER_SIZE.drawer,
+    borderRadius: STICKER_SIZE.drawer / 2,
+    backgroundColor: COLOR.desk,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   pills: {
     flexDirection: 'row',
     flexWrap: 'wrap',
