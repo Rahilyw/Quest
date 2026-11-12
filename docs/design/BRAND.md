@@ -1,6 +1,10 @@
 # Quest! Brand & Design Specification
 
 **Direction:** Cutouts
+**Revised Nov 12, 2026:** cut-outs are now **stickers** (real uploaded photos with a white
+die-cut edge, never drawn or generated), the main rewards are **badges, medals and trophies**,
+players decorate their own page with stickers, and the drawn sprite cast is retired. §2, §6, §6b,
+§6c, §7, §8 and §13 below reflect this.
 **Status:** Approved Nov 7, 2026. This is the source of truth for the app's look, feel and
 copy. It replaces `DESIGN.md` ("Harbour Electric") and the "Summer 2026" palette in
 `apps/mobile/lib/constants.ts`, which disagreed with each other.
@@ -35,31 +39,35 @@ big friendly type, flat saturated colour shapes, and real objects cut out and la
 
 Every quest has one object: the thing you hold, eat or ride when you do it. A flat white from
 Moss Street Market, soft-serve from Beacon Drive-In, a harbour ferry, your runners on Dallas
-Road. Each object is photographed for real, cut out, and placed in the interface with a soft
-shadow, so screens feel like a collage of things you could go and touch this week.
+Road. Each object is photographed for real and uploaded as a **sticker**: cut out, with a white
+die-cut edge and a soft shadow, so screens feel like a sticker sheet of things you could go and
+touch this week.
 
 Quest! is a weekly game whose rule is "earned there": the geofence is the proof, and the
-reward lands seconds after the real-world act (PRODUCT.md, principle 3). Cutouts make that
-rule visible. You only collect the object by being verified at the place, so your
-collection is a record of where you've actually been this season.
+reward lands seconds after the real-world act (PRODUCT.md, principle 3). Rewards and stickers make that
+rule visible. What you earn there are **badges, medals and trophies**; the quest's sticker
+lands in your sticker drawer too, and you use stickers to decorate your own page, so your page
+becomes a record of where you've actually been this season.
 
 The design follows one quest from start to finish, and every screen answers one of the
 game's questions: what should I do this week, where do I stand, am I in the zone, did it
 count, who else is out there.
 
-The screens are built like a Pinterest collage: real things cut out of photos, a few drawn
-characters, and scraps of paper and pen holding it together (§6b).
+The screens are built like a sticker sheet: real things cut out of photos as stickers, and
+scraps of paper and pen holding it together (§6b).
 
 The ideas that carry the system:
 
-1. **Cutouts are the content.** Objects sit inside sentences, peek out of folders, and break
-   out over the edges of shapes. They are always real photographs, never clip art or emoji.
+1. **Stickers are the wow, rewards are the point.** Real photographed objects, uploaded as
+   stickers, sit inside sentences, peek out of folders and cover players' pages. They are always
+   real photographs, never clip art, drawings, AI images or emoji. What you earn is a badge,
+   medal or trophy.
 2. **Colour means a kind of quest.** Each category owns one bright colour and keeps it
    everywhere: its folder, its map pin, its feed bubble, its place in your collection.
 3. **Ink means act, and ink means status.** Buttons, the active tab, ticks and zone status
    are warm black. Colour is never the signal for "press me" or "it worked", which frees
    the brights to mean only one thing: a kind of quest.
-4. **The proof photo leads.** In the feed, the player's own photo comes first. The cutout
+4. **The proof photo leads.** In the feed, the player's own photo comes first. The sticker
    says which quest; the photo says they were there.
 5. **Every quest is a real place with real people.** Its page opens on a photo of the
    actual location, with the latest players' proof photos stacked in the corner, the way
@@ -191,7 +199,7 @@ Rules:
 | Lift | `0 10px 24px -14px rgba(60,40,20,.3)` | Cards on paper |
 | Float | `0 8px 20px rgba(0,0,0,.14)` | Floating tab bar, avatar button |
 | Stack | `0 8px 16px rgba(0,0,0,.10)` | Each speech bubble over the next |
-| Cutout | Baked into the PNG (§6) | Every object |
+| Sticker | Baked into the image under the white edge (§6) | Every sticker |
 
 No blur effects anywhere. They caused the Android haze and cost performance.
 
@@ -204,14 +212,14 @@ Each kind of image has one shape and one job, so a glance says what you're looki
 | Picture | Shape | Job | Source |
 |---|---|---|---|
 | **The place** | Full-bleed rectangle, no radius at screen edges | Shows where the quest happens | Shot on location for Quest! (`quests.cover_image_url`), credited `Photo: Quest!` |
-| **The cutout** | No frame, the object and its baked shadow | The thing you collect | §6 |
+| **The sticker** | Die-cut: the object, a white edge and a baked shadow | Makes a quest feel real; decorates the week and your page | §6 |
 | **The pillow** | Bulged squircle (Instants-style) with a 2px ink edge, or warm-white edge on dark | A person's proof photo, and their selfie in its corner | `completions.photo_url`, `completions.selfie_url` |
 
 Rules:
 
 - **If it's a pillow, a real person took it.** Never use the pillow shape for place photos,
   ads, sponsor art or placeholders.
-- **Place photos follow the same shooting rules as cutouts**: on location, natural light,
+- **Place photos follow the same shooting rules as stickers**: on location, natural light,
   no filters, no people's faces. One landscape photo per quest, 16:10, at least 2000px wide.
 - **Pillow sizes:** 62 × 70 in rows and corner stacks, 66 × 74 in feed bubbles, 236 × 268 in
   the full-screen viewer. Always about 8:9, never square, never circular.
@@ -221,31 +229,20 @@ Rules:
 
 ## 6b. The collage kit
 
-Three layers sit on top of the photos. Each has one job.
+Two layers sit on top of the photos. Each has one job.
 
 | Layer | What | Job | Collectible |
 |---|---|---|---|
-| **Real cutouts** | Photographed objects from the actual place (§6) | The reward | Yes, the only layer that is |
-| **Sprites** | Drawn or 3D characters from around Victoria: harbour seals, gulls, crows, a raccoon, rain clouds, the sun | Reaction and feedback | Never |
+| **Stickers** | Photographed objects, uploaded with a white die-cut edge (§6) | Wow, and decorating your page | Yes: earned stickers go in your drawer |
 | **Scraps** | Torn paper labels, washi tape, pen marks (ring, arrow, underline, sparkle) | Pointing at what matters | Never |
 
-### Sprites
+Rewards (badges, medals, trophies) are not a collage layer; see §6c.
 
-- **A cast, not a mascot.** Several local creatures and weather, none with a name, none that
-  speaks or cheers you on. They react to what's happening (a seal dozes on an empty feed, a
-  gull perches on the Food folder, a cloud drips when it's raining). This keeps PRODUCT.md's
-  anti-reference: no Duolingo-style mascot theatre.
-- **Where they live:** This week, Verified, empty states, weather notes, streak moments,
-  loading, onboarding, share cards. Never in lists, forms, settings or the camera.
-- **Style:** soft 3D or thick-outline illustration with real-looking shading, so they sit
-  comfortably next to photographed cutouts, as in the reference collages. One consistent
-  style for the whole set.
-- **Motion:** a gentle idle loop (bob, blink, flap) that plays 3 times and stops. At most one
-  animated sprite per screen. Still with reduce motion on. Built as Lottie or Rive files.
-- **Made for Quest!.** Commissioned or drawn in-house. Pinterest and the reference shots
-  are mood only; never lift images from them.
-- Sprites are decorative to screen readers unless they carry meaning (the rain cloud on a
-  weather note gets a label: `Rain this afternoon`).
+### Sprites (retired Nov 12, 2026)
+
+The drawn and animated character cast (seals, gulls, clouds) is retired: drawn stand-ins read as
+generated and compete with the real stickers. Empty states use words and one action, or a real
+sticker. Remove `Sprite.tsx` usages as screens are touched.
 
 ### Scraps
 
@@ -254,63 +251,86 @@ Three layers sit on top of the photos. Each has one job.
 - **Washi tape:** a translucent butter-yellow strip with faint stripes, holding a proof
   pillow or place photo onto a collage surface (Verified, share cards, You).
 - **Pen marks:** hand-drawn ring, arrow, underline and sparkle, drawn once as SVG paths.
-  Tomato, cobalt or ink. A ring circles your rank on This week; sparkles mark the cutout
+  Tomato, cobalt or ink. A ring circles your rank on This week; sparkles mark the badge
   landing on Verified; an arrow can point at the zone on a share card.
 - **Use them to point, never to fill.** A screen gets at most two scraps. Never on lists,
   forms or settings.
 
-## 6. Cutouts
+## 6. Stickers
 
-The signature element. Every quest gets exactly one.
+The signature element. Every quest gets one sticker; admins can add more to a sticker library.
 
-### Shooting spec
+### Source
 
-- One real object per quest, photographed **at or from the place**: the actual cup, cone,
-  ticket, boat. If the object can't be carried (a ferry, a mural), photograph it whole from a
-  distance that fits it in frame.
-- Daylight or a bright window, side-lit, no flash. Plain contrasting background.
-- Phone camera is fine. At least 1500px on the long edge.
-- No people or faces in cutouts. People appear only in proof photos.
+- **Uploaded, never drawn.** An admin uploads one real photo per quest on the quest's admin page
+  (or through the backend). Library stickers (seasonal, landmarks) are uploaded the same way.
+- A real object photographed **at or from the place**: the actual cup, cone, ticket, boat.
+  Daylight, side-lit, a plain contrasting backdrop or an already transparent PNG; at least
+  1500px on the long edge. No people or faces.
+- **Never** illustrations, AI-generated objects, clip art, emoji, icon tiles or animated drawings.
+  **Never** brand logos, products shown for their branding, or copyrighted characters: the
+  sticker-sheet references are mood, not source.
+- The admin writes the alt text on upload (`Soft-serve cone, Beacon Drive-In quest`).
 
-### Processing (automated, §Plan Phase 2)
+### Processing (on upload)
 
-1. Remove the background to a transparent PNG.
-2. Trim to the object, pad 8%.
-3. Resize to 600px on the long edge.
-4. **Bake the shadow into the image**: `0 5px 5px rgba(0,0,0,.22)` plus
-   `0 1px 1px rgba(0,0,0,.12)`. Android can't shadow transparent images natively, so the
-   shadow has to be part of the file to look the same on both platforms.
+1. Remove the backdrop to transparency; keep the largest object; close small holes.
+2. Add the white die-cut edge (`#FFFDFA`, about 4% of the long side, so it still reads at 48px).
+3. Bake a soft shadow under the edge: `0 4px 10px rgba(28,25,21,.22)`.
+4. Trim, pad, resize to 600px on the long edge.
 5. Store as WebP with alpha in the `quest-cutouts` bucket; `quests.cutout_url` points to it.
 
-Until a quest has its own cutout, it shows its category's default cutout.
+A quest without a sticker shows **no sticker**: no category default, no icon tile.
 
 ### Placement
 
-| Where | Size | Treatment |
+| Where | Fits in | Treatment |
 |---|---|---|
-| Inline in a sentence | 1.5× the line height | Sits on the baseline, slight overlap with neighbouring words is fine |
-| Folder | 54 × 64 | Peeks out of the top-right of the folder, rotated up to 8° |
-| Feed bubble, list row | 48 × 48 | Right edge, unrotated |
-| Breakout | Up to 60% of screen width | One per screen at most, overlapping a shape's edge |
-| Collection (You) | Shelf, 3 across | Objects stand on a shelf line, no cards. Earned: full colour. Locked: grey at 28% opacity with the exact spot (`Beacon Hill Park, by the pond`) |
-| Celebration | 50% of screen width | Drops in (§8) |
+| This week sentence | 44 × 44 | Right after its action phrase, on the baseline |
+| Quest row, feed bubble | 56 × 56 | Right edge |
+| Category folder | 72 × 72 | Over the top-right corner |
+| Your page (sticker board) | 128 × 128, scaled 0.6× to 1.6× | Placed by the player, overlapping freely, held with tape if they like |
+| Sticker drawer | 56 × 56 | Earned in full colour; not yet earned greyed at 28% with what unlocks it |
 
-Never rotate more than 10°, never stack more than three, never add stickers, outlines or
-glows. The photo and its shadow are enough.
+Tilt every sticker between −12° and +12°. Never add outlines, glows or extra shadows on top of the
+baked ones.
 
----
+### Getting stickers
+
+Verifying a quest puts its sticker in your drawer. Library stickers unlock with badges or
+seasons. Players place drawer stickers on their page (§7, Your page).
+
+## 6c. Rewards
+
+Badges, medals and trophies are what you earn. They lead every reward moment.
+
+| Reward | For | Where |
+|---|---|---|
+| **Badges** | Milestones and quest types (first Food quest, 10 quests, a streak) | You, Verified |
+| **Medals** | The week's podium: gold, silver, bronze | Rankings, You, the Sunday recap |
+| **Trophies** | Seasons and big runs (season winner, every quest in a neighbourhood) | You |
+
+- Minted objects: rim lit from above, a recessed bevel, a face with the emblem, a specular arc,
+  a soft ground shadow (`components/badges/medal.tsx`). Metals are the one place gradients are
+  allowed, because they describe a physical object.
+- Medal tokens: gold `#F6B93B` (light `#FFE9A8`, dark `#B97709`), silver `#B9C6D3`
+  (`#EDF2F7`, `#8195A8`), bronze `#C97B3D` (`#F2B27C`, `#7C3F16`). Ink numerals on each.
+- Retune `medal.tsx`'s `sapphire`, `ember`, `teal` and `sky` palettes (old Tailwind colours) to
+  the category brights before badges use them.
+- Unearned ones show greyed at 28% with how far there is to go (`2 to go`).
 
 ## 7. Signature patterns
 
 ### The sentence with objects (This week)
 
-The week's suggestions written as one sentence, with each action in bold ink and its cutout
+The week's suggestions written as one sentence, with each action in bold ink and its sticker
 beside it. The rest of the sentence is `inkFaint` on the dark screen.
 
 > Hi, Ella! This week you could ☕ **grab a flat white** at Moss Street, **run Dallas Road** 👟,
 > **ride a harbour ferry** ⛴ and get 🍦 **soft-serve** at Beacon Drive-In.
 
-(Emoji above stand in for cutouts; the app never uses emoji.) Each bold phrase is a tap
+(Emoji above stand in for stickers; the app never uses emoji.) A quest with no sticker is just
+the words. Each bold phrase is a tap
 target opening that quest. Up to four quests: nearest unplayed, newest drop, expiring soon,
 and one a friend just did. Below it, one line: `Picked from 4 quests near you`, with friends'
 avatars if any of them did these.
@@ -318,14 +338,14 @@ avatars if any of them did these.
 ### The scoreboard sentence (This week)
 
 Under the plan, one line in the same voice says where you stand, with a tomato pen ring
-around your rank and a seal sprite resting on the edge of the sheet below: `You're 7th with 640 XP.
+around your rank: `You're 7th with 640 XP.
 Two quests gets you past Sam. Your streak is 6 weeks.` The week's clock (`3 days left`,
 `Week 45`) sits beside the title. No big-number stat tiles; the game is told, not charted.
 
 ### Category folders (Quests)
 
 A two-column grid of folders, one per category. Back panel in `*Deep` with a tab; up to two
-quest cover photos and one cutout peek out of the top; front panel in the category colour with
+quest cover photos and the category's sticker peek out of the top; front panel in the category colour with
 the name (`name` style) and count (`small`). An unplayed-new count badge sits on the front
 panel. Tapping a folder opens that category's quest list.
 
@@ -336,7 +356,7 @@ panel. Tapping a folder opens that category's quest list.
 │ (<)                 Fitness  │  place photo, full-bleed, top 46%
 │ ▢▢ ← corner stack            │  latest 3 pillows, fanned
 │ 23 this week                 │
-│ Mile Zero. Photo: Quest!  👟 │  cutout overlaps the bottom edge
+│ Mile Zero. Photo: Quest!  👟 │  sticker overlaps the bottom edge
 ├──────────────────────────────┤
 │ Run Dallas Road              │
 │ 4 km, about 40 min, 150 XP   │
@@ -397,8 +417,9 @@ care: it's the rule of the game made visible.
 ### Verified (the celebration)
 
 The one drenched screen: the full background in the quest's category colour. Top line:
-`Verified on Dallas Road, 8:12 am`. The cutout lands large in the middle (§8). One sentence:
-`You ran Dallas Road. Runners are in your collection.` Then pills for XP, streak and new rank,
+`Verified on Dallas Road, 8:12 am`. The badge you earned lands large in the middle (§8). One
+sentence: `You ran Dallas Road. The runners sticker is in your drawer.` Then pills for XP, streak
+and new rank,
 the proof photo with a privacy line (`Only you can see where you were standing.`), and two
 buttons: Share (ink) and Done.
 
@@ -406,10 +427,18 @@ buttons: Share (ink) and Done.
 
 Each post is a bubble in its quest's category colour. It leads with the proof photo as a
 pillow (66 × 74) with the player's avatar on its corner, then name and time, the post text
-and an XP pill (`+150 XP`, ink pill, warm white on cobalt bubbles), with the quest's cutout
-(40) at the right edge. The XP pill doubles as the verification mark: posts only exist once
+and an XP pill (`+150 XP`, ink pill, warm white on cobalt bubbles), with the quest's sticker
+(56) at the right edge, when it has one. The XP pill doubles as the verification mark: posts only exist once
 verified. Bubbles overlap by 12 with a tail pointing to the next; earlier
 posts sit on top. Tapping a bubble opens the photo full screen with likes and comments.
+
+### Your page (You and public profiles)
+
+Rewards first: badges, medals and trophies in a row at the top. Below them, the **sticker
+board**: a warm-white board where the player places stickers from their drawer, tilted and
+overlapping, held with tape if they like. Placements are stored as fractions of the board so they
+look the same on every phone. Visitors see it read-only. Placing works by drag, and by tap-to-pick
+then tap-to-place, with Tilt, Bigger, Smaller and Remove buttons.
 
 ### Floating tab bar
 
@@ -421,21 +450,22 @@ it and opens You.
 
 ## 8. Motion
 
-One orchestrated moment: **the cutout lands.** When a completion is verified, the quest's
-cutout drops from 130% scale and -12° rotation to rest in 420ms on an ease-out-quint curve
-(`cubic-bezier(0.22, 1, 0.36, 1)`, no bounce or overshoot), the XP pill counts up, and a
-single haptic fires on landing. Then the
-cutout flies into the You avatar in the tab bar (300ms) so you see where it went.
+One orchestrated moment: **the badge lands.** When a completion is verified, the badge or
+medal you earned drops from 130% scale and -12° rotation to rest in 420ms on an ease-out-quint
+curve (`cubic-bezier(0.22, 1, 0.36, 1)`, no bounce or overshoot), the XP pill counts up, and a
+single haptic fires on landing. Then the quest's sticker slides into your sticker drawer
+(300ms) so you see where it went.
 
-Sprites idle gently (§6b): 3 loops of about 2.4s, then still; one per screen. The three pen
-sparkles on Verified twinkle 3 times, staggered by 300ms.
+Placing a sticker on your page: it lifts to 108% while held and settles to 100% in 180ms on
+ease-out when let go. Stickers never idle or loop. The three pen sparkles on Verified twinkle 3
+times, staggered by 300ms.
 
 Everything else responds to the user only, in 150 to 250ms on ease-out curves: sheets slide
 from their edge, buttons, bubbles and folders press to 97% scale while held, tab changes are
 instant. No entrance animations on lists, no
 looping motion besides skeleton loaders, no confetti.
 
-With reduce motion on, the cutout and XP appear with a 150ms crossfade and nothing flies.
+With reduce motion on, the badge and XP appear with a 150ms crossfade and nothing flies.
 
 ---
 
@@ -458,7 +488,7 @@ same pill and the same ink. The ones that carry the game:
 | Outside zone | Disabled: `rgba(28,25,21,.12)` fill, text at 45%. The zone chip above says why |
 | Uploading | Ink with a small spinner: `Uploading photo…` |
 
-Empty states show greyed cutouts and one action: `Nobody's posted today. The first proof
+Empty states show one line and one action: `Nobody's posted today. The first proof
 photo of the day sits at the top of City until tomorrow.` + `Find a quest`. Upload errors
 reassure first: `That photo didn't upload. You're still verified; we'll retry when you have
 signal.` Loading uses skeletons in the shape of folders and bubbles, never centred spinners.
@@ -492,10 +522,10 @@ Like a friend texting you plans: specific places, plain verbs, a little dry humo
 | **Quests** | (new) | Every quest, in category folders |
 | **City** | Quests (feed) | The speech-bubble feed and the map |
 | **Rankings** | Rankings | This week's leaderboard |
-| **You** (avatar) | Profile + Badges | Stats, your cutout collection, badges, settings |
+| **You** (avatar) | Profile + Badges | Badges, medals and trophies, your sticker board, settings |
 
 Badges stay as a system (migrations 019–021); they move from their own tab into You, shown
-beside the cutout collection.
+above your sticker board.
 
 ---
 
@@ -504,8 +534,10 @@ beside the cutout collection.
 PRODUCT.md's bar (WCAG AA, 44pt targets, no colour-only meaning, text scaling, reduced
 motion) plus:
 
-- Every cutout has a text alternative naming the object and quest ("Soft-serve cone,
-  Beacon Drive-In quest").
+- Every sticker has a text alternative naming the object and quest ("Soft-serve cone,
+  Beacon Drive-In quest"), written by the admin on upload. Badges and medals say what they're
+  for ("Gold medal, 1st this week").
+- Placing stickers has a non-drag path (tap to pick, tap to place, buttons to tilt and resize).
 - Bold phrases in the This week sentence are separate accessible buttons, read in order.
 - Folders and bubbles are single tap targets with a full label ("Food, 6 quests, 2 new").
 - Tap targets are at least 48 × 48 (people use this while walking).
@@ -579,16 +611,15 @@ primitives (there are 60+ hardcoded hex values in components today).
 
 This look is popular on Dribbble, so it can read as borrowed. Three things make it Quest!'s:
 
-1. **The objects are real Victoria things**, photographed by people who live here. Generic
-   stock cutouts (a random coffee cup, a clip-art scooter) are not allowed.
+1. **The stickers are real Victoria things**, photographed and uploaded for each quest. Drawn,
+   generated or clip-art stickers are not allowed, and neither are other brands' logos.
 2. **Colour has a job.** Brights mean quest types; ink means act. Nothing is coloured for
    decoration.
-3. **A cutout is earned there.** You collect it only by being verified at the place, so your
-   collection is a record of where you've actually been.
+3. **Rewards are earned there.** Badges, medals and trophies come only from verified quests,
+   and the stickers on your page are the ones you collected at the places you've been.
 4. **The zone is drawn as its real shape**, and **the proof photo leads every post**. Both are
    things only Quest! has.
-5. **The sprites are Victoria's own cast**: harbour seals, gulls, crows, rain. Original art,
-   never pulled from Pinterest or stock.
+5. **Your page is yours**: players arrange their own stickers, so no two pages look the same.
 
 Two habits from the reference to watch: the cream canvas and bolded key words. The canvas is
 fine as the reference intends; bold is limited to actions (§9).

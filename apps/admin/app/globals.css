@@ -23,6 +23,8 @@
   --admin-warning: #c77818;
   --admin-danger: #bd453a;
   --admin-radius: 14px;
+  /* Keyboard focus ring: ink, 2px, on every control (design system `focus-ring`). */
+  --admin-focus: #1c1915;
 }
 
 * {
@@ -39,6 +41,22 @@ body {
 
 a {
   color: inherit;
+}
+
+/* Visible focus for keyboard users on every control, inline-styled ones included.
+   :focus-visible keeps the ring off mouse clicks on buttons and links. */
+:focus-visible {
+  outline: 2px solid var(--admin-focus);
+  outline-offset: 2px;
+}
+
+a,
+button,
+input,
+select,
+textarea,
+label {
+  touch-action: manipulation;
 }
 
 .admin-page-title {
@@ -89,6 +107,15 @@ a {
   transform: scale(0.98);
 }
 
+@media (prefers-reduced-motion: reduce) {
+  .admin-btn {
+    transition: none;
+  }
+  .admin-btn:active {
+    transform: none;
+  }
+}
+
 .admin-btn-primary {
   background: var(--admin-primary);
   color: #fffdfa;
@@ -120,14 +147,24 @@ a {
   padding: 11px 14px;
   font-size: 14px;
   font-family: inherit;
-  outline: none;
   transition: border-color 0.15s;
+}
+
+.admin-input::placeholder,
+.admin-textarea::placeholder {
+  color: var(--admin-muted);
 }
 
 .admin-input:focus,
 .admin-select:focus,
 .admin-textarea:focus {
   border-color: var(--admin-primary);
+}
+
+.admin-input:focus-visible,
+.admin-select:focus-visible,
+.admin-textarea:focus-visible {
+  outline-offset: 1px;
 }
 
 .admin-label {
