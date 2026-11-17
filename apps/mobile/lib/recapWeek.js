@@ -169,7 +169,16 @@ function shouldTrackShare(outcome) {
 /** The only analytics payload the recap sends. No image, username or place. */
 const RECAP_SHARE_EVENT = Object.freeze({ surface: 'recap' })
 
+/**
+ * `recap_viewed` payload: which week the screen showed and whether it was
+ * still open. Nothing about the player's numbers, photo or places.
+ */
+function recapViewedEvent(week) {
+  return { week_start: week.weekStart, in_progress: week.inProgress === true }
+}
+
 module.exports = {
+  recapViewedEvent,
   recapWeekFor,
   weekRangeLabel,
   addDays,

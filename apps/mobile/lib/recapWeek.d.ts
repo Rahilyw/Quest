@@ -40,3 +40,7 @@ export function recapKind(recap: WeekRecap | null, photoUsable?: boolean): Recap
 export function shareOutcome(result: unknown): ShareOutcome
 export function shouldTrackShare(outcome: ShareOutcome): boolean
 export const RECAP_SHARE_EVENT: Readonly<{ surface: 'recap' }>
+export function recapViewedEvent(week: Pick<RecapWeek, 'weekStart' | 'inProgress'>): {
+  week_start: string
+  in_progress: boolean
+}

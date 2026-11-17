@@ -287,7 +287,7 @@ export default function Profile() {
               return (
                 <Pressable
                   key={quest.id}
-                  onPress={() => router.push(`/quest/${quest.id}`)}
+                  onPress={() => router.push(`/quest/${quest.id}?source=profile`)}
                   accessibilityRole="button"
                   accessibilityLabel={locked ? `${quest.title}, locked` : quest.title}
                   style={styles.cell}

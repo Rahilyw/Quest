@@ -35,7 +35,7 @@ export default function QuestMap() {
                       <Marker
                         coordinate={{ latitude: area.lat, longitude: area.lng }}
                         pinColor={color}
-                        onPress={() => router.push(`/quest/${quest.id}`)}
+                        onPress={() => router.push(`/quest/${quest.id}?source=map`)}
                         title={quest.title}
                         description={area.label || `${quest.xp_reward} XP`}
                       />
@@ -70,7 +70,7 @@ export default function QuestMap() {
                   <Marker
                     coordinate={{ latitude: quest.lat, longitude: quest.lng }}
                     pinColor={color}
-                    onPress={() => router.push(`/quest/${quest.id}`)}
+                    onPress={() => router.push(`/quest/${quest.id}?source=map`)}
                     title={quest.title}
                     description={`${quest.xp_reward} XP`}
                   />

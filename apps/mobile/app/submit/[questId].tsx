@@ -39,6 +39,8 @@ interface CelebrationState {
   streakCount: number
   redemptionCode: string | null
   sponsorReward: string | null
+  /** Badges this completion unlocked (same transaction as the insert). */
+  newBadgeIds: string[]
 }
 
 type Step = 'place' | 'selfie' | 'upload' | 'failed'
@@ -316,6 +318,7 @@ export default function Submit() {
             streakCount: profile.current_streak,
             redemptionCode: null,
             sponsorReward: null,
+            newBadgeIds: [],
           })
           return
         }
@@ -375,6 +378,18 @@ export default function Submit() {
         }
       }
 
+      // Badge unlocks run in the insert's transaction, so their earned_at equals
+      // the server-set completed_at. Anything at or after it is new.
+      let newBadgeIds: string[] = []
+      if (completion?.completed_at) {
+        const { data: earned } = await supabase
+          .from('user_badges')
+          .select('badge_id')
+          .eq('user_id', userId)
+          .gte('earned_at', completion.completed_at)
+        newBadgeIds = (earned ?? []).map((row) => row.badge_id)
+      }
+
       setAlreadyCompleted(true)
       openCelebration({
         variant: 'success',
@@ -385,6 +400,7 @@ export default function Submit() {
         streakCount: newStreak,
         redemptionCode,
         sponsorReward: quest.is_sponsored ? quest.sponsor_reward : null,
+        newBadgeIds,
       })
     } catch (err) {
       setFailMessage('That didn’t go through. Check your signal and try again.')
@@ -417,6 +433,9 @@ export default function Submit() {
     setShowCelebration(true)
     if (state.variant === 'success') {
       track('celebration_viewed', { level_up: state.levelUp, streak: state.streakCount })
+      for (const badgeId of state.newBadgeIds) {
+        track('badge_unlocked', { badge_id: badgeId, quest_id: quest?.id ?? null })
+      }
       if (state.redemptionCode && quest) {
         track('redemption_code_viewed', {
           quest_id: quest.id,
@@ -562,6 +581,7 @@ export default function Submit() {
                 streakCount: profile?.current_streak ?? 0,
                 redemptionCode: null,
                 sponsorReward: null,
+                newBadgeIds: [],
               })
             }
             style={styles.whiteBtn}
