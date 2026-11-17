@@ -52,8 +52,12 @@ first; chains stay deferred (35 live quests); the plan carries an owner-only lau
   inserts orphan place photos; `badge_unlocked` is never fired.
 - Phase 0 (this session): doc contradictions on 039/040 status, tap targets and sprites reconciled;
   CI widened.
-- Next concrete action: Phase 1 slices (push draining + recap push, admin auth, mobile
-  submission integrity), then the owner checklist in plan Phase 2.
+- Phase 1 (1a–1f) is merged into this branch and locally tested. New migrations are 041
+  (push draining, recap push) and 042 (proof-photo owner policies). Neither has been applied
+  or executed, the function is not deployed, and nothing has been device-tested.
+- Next concrete action: owner checklist in plan Phase 2. That means applying 041 and 042,
+  setting the Vault values for the drain cron, deploying both push functions with their
+  webhooks, and running the "Verifying 039/041/042" queries. Then plan Phase 3 (offline queue).
 
 The sections below preserve the Nov 10 campaign record and may contain facts that were true
 only for that session; use the continuation above and linked current docs for present status.

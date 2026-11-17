@@ -90,6 +90,15 @@ Standing constraints, from the ledger and implementer prompts:
 
 ## Phase 1 — Launch-hardening code (2–3 days, code: Claude)
 
+**Status (Nov 17, 2026): in checkout and locally tested; not applied, deployed or device-tested.**
+- Merged into `cursor/cutouts-this-week-quests`.
+- 1a and 1b landed together in migration `041_push_outbox_draining.sql`.
+- 1d needed `042_proof_photo_owner_policies.sql`, which adds storage UPDATE/DELETE policies on unclaimed own proof photos so that upsert and failed-attempt cleanup work.
+- Checks: 50 geofence, redemption, 147 logic, 9 quest-window, 25 recap, 8 profile-privacy, 18 push-outbox and 6 submission-attempt tests; both `tsc`; admin `next build`.
+- The function only had a `tsc` check with a Deno shim; it was not `deno check`ed.
+- Raw tokens: 126 in 16 files.
+- XP events and duo quests keep 043 and 044.
+
 **1a. Bounded push draining (OPS-01/F-007).** Migration `041_push_outbox_draining.sql`:
 - Add `push_outbox.attempts int default 0`, `last_error text`, `claimed_at timestamptz`.
 - Add a `claim_push_outbox(batch int)` RPC (`FOR UPDATE SKIP LOCKED`; reclaim stale claims older than 10 minutes). Service role only.
