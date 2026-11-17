@@ -16,6 +16,14 @@ import { useQuest } from '@/hooks/useQuests'
 import { track, type SubmissionBlockReason } from '@/lib/analytics'
 import { didLevelUp } from '@/lib/celebration'
 import { paramAsString } from '@/lib/routeParams'
+import {
+  captureAttempt,
+  classifyInsertError,
+  photoUrlMatchesPath,
+  placePhotoPath,
+  selfiePhotoPath,
+  type CapturedAttempt,
+} from '@/lib/submissionAttempt'
 import { supabase } from '@/lib/supabase'
 import { COLOR, FONT, RADIUS, SPACE } from '@/lib/theme'
 import { readUriAsArrayBuffer } from '@/lib/uploadImage'
@@ -34,6 +42,16 @@ interface CelebrationState {
 }
 
 type Step = 'place' | 'selfie' | 'upload' | 'failed'
+
+/** Best effort: a failed delete leaves an orphan file, it never blocks the player. */
+async function removeQuietly(bucket: 'proof-photos' | 'proof-selfies', path: string | null) {
+  if (!path) return
+  try {
+    await supabase.storage.from(bucket).remove([path])
+  } catch {
+    // Orphaned file; storage cleanup can catch it later.
+  }
+}
 
 export default function Submit() {
   const params = useLocalSearchParams<{ questId: string | string[] }>()
@@ -56,12 +74,19 @@ export default function Submit() {
   const skipRef = useRef(false)
   const selfieStarted = useRef(false)
   const uploadStarted = useRef(false)
+  // Storage path of this attempt's place photo once it is uploaded, so a retry
+  // after a failed insert reuses it instead of uploading again.
+  const uploadedPlacePath = useRef<string | null>(null)
+  // True once the server has answered the insert with a rejection, so the row
+  // is known not to exist and the uploaded photo is safe to delete.
+  const insertRejected = useRef(false)
 
   const [facing, setFacing] = useState<'back' | 'front'>('back')
   const [step, setStep] = useState<Step>('place')
   const [countdown, setCountdown] = useState<number | null>(null)
   const [shooting, setShooting] = useState(false)
   const [placePhoto, setPlacePhoto] = useState<string | null>(null)
+  const [captured, setCaptured] = useState<CapturedAttempt | null>(null)
   const [selfiePhoto, setSelfiePhoto] = useState<string | null>(null)
   const [submitting, setSubmitting] = useState(false)
   const [showCelebration, setShowCelebration] = useState(false)
@@ -78,6 +103,9 @@ export default function Submit() {
       ? { lat: quest.lat, lng: quest.lng, accuracy: null }
       : null)
   const { insideGeofence, requiresLocation } = useGeofenceCheck(quest, effectiveCoords, bypassGeofence)
+  // Submissions are judged on where the photo was taken, not where the player
+  // is when the upload (or a retry) runs. The server re-checks these coordinates.
+  const { insideGeofence: capturedInZone } = useGeofenceCheck(quest, captured, bypassGeofence)
 
   const canShoot =
     !shooting &&
@@ -150,11 +178,16 @@ export default function Submit() {
       return
     }
     uploadStarted.current = false
+    // Freeze the fix at the shutter press: retries send these, not live GPS.
+    const attempt = captureAttempt(effectiveCoords)
     setShooting(true)
     try {
       const pic = await cameraRef.current.takePictureAsync({ quality: 0.7 })
       if (!pic?.uri) return
       setPlacePhoto(pic.uri)
+      setCaptured(attempt)
+      uploadedPlacePath.current = null
+      insertRejected.current = false
       skipRef.current = false
       selfieStarted.current = false
       setFacing('front')
@@ -175,9 +208,9 @@ export default function Submit() {
   }
 
   const handleSubmit = useCallback(async () => {
-    if (!placePhoto || !effectiveCoords || !quest || !userId || !questId || !profile) {
+    if (!placePhoto || !captured || !quest || !userId || !questId || !profile) {
       setFailMessage(
-        placePhoto && !effectiveCoords
+        placePhoto && !captured
           ? 'We lost your location. Retake the photo once the chip says you’re in the zone.'
           : 'That didn’t go through. Retake the photo and try again.',
       )
@@ -195,9 +228,9 @@ export default function Submit() {
       setStep('place')
       return
     }
-    if (requiresLocation && !insideGeofence) {
+    if (requiresLocation && !capturedInZone) {
       trackSubmissionBlocked('outside_zone')
-      Alert.alert('Too far away', outsideZoneCopy(quest, effectiveCoords))
+      Alert.alert('Too far away', outsideZoneCopy(quest, captured))
       setStep('place')
       return
     }
@@ -206,40 +239,38 @@ export default function Submit() {
     const previousStreak = profile.current_streak
     setSubmitting(true)
 
+    // One path per capture: a retry overwrites (or skips) instead of adding a file.
+    const placePath = placePhotoPath(userId, questId, captured.attemptId)
     try {
-      const placeName = `${userId}/${questId}/${Date.now()}.jpg`
-      const placeData = await readUriAsArrayBuffer(placePhoto)
-      const { error: placeError } = await supabase.storage
-        .from('proof-photos')
-        .upload(placeName, placeData, { contentType: 'image/jpeg', upsert: false })
-      if (placeError) {
-        setFailMessage('That photo didn’t upload. Your shot is saved here: try again when you have signal.')
-        setStep('failed')
-        return
+      if (uploadedPlacePath.current !== placePath) {
+        const placeData = await readUriAsArrayBuffer(placePhoto)
+        const { error: placeError } = await supabase.storage
+          .from('proof-photos')
+          .upload(placePath, placeData, { contentType: 'image/jpeg', upsert: true })
+        if (placeError) {
+          setFailMessage('That photo didn’t upload. Your shot is saved here: try again when you have signal.')
+          setStep('failed')
+          return
+        }
+        uploadedPlacePath.current = placePath
       }
-      const { data: { publicUrl } } = supabase.storage.from('proof-photos').getPublicUrl(placeName)
+      const { data: { publicUrl } } = supabase.storage.from('proof-photos').getPublicUrl(placePath)
 
       let selfiePath: string | null = null
       if (selfiePhoto) {
         try {
-          selfiePath = `${userId}/${questId}-${Date.now()}.jpg`
+          selfiePath = selfiePhotoPath(userId, questId, captured.attemptId)
           const selfieData = await readUriAsArrayBuffer(selfiePhoto)
           const { error: selfieError } = await supabase.storage
             .from('proof-selfies')
-            .upload(selfiePath, selfieData, { contentType: 'image/jpeg', upsert: false })
+            .upload(selfiePath, selfieData, { contentType: 'image/jpeg', upsert: true })
           if (selfieError) selfiePath = null
         } catch {
           selfiePath = null
         }
       }
 
-      track('proof_submitted', {
-        quest_id: questId,
-        category: quest.category,
-        gps_accuracy: effectiveCoords.accuracy,
-        is_sponsored: quest.is_sponsored,
-      })
-
+      insertRejected.current = false
       const { data: completion, error: insertError } = await supabase
         .from('completions')
         .insert({
@@ -247,19 +278,34 @@ export default function Submit() {
           quest_id: questId,
           photo_url: publicUrl,
           selfie_url: selfiePath,
-          lat: effectiveCoords.lat,
-          lng: effectiveCoords.lng,
-          gps_accuracy: effectiveCoords.accuracy ?? null,
+          lat: captured.lat,
+          lng: captured.lng,
+          gps_accuracy: captured.accuracy,
           completed_at: new Date().toISOString(),
         })
-        .select('id')
+        .select('id, completed_at')
         .single()
 
       if (insertError) {
-        if (selfiePath) {
-          await supabase.storage.from('proof-selfies').remove([selfiePath])
-        }
-        if (insertError.code === '23505') {
+        const kind = classifyInsertError(insertError)
+        // Any server answer other than a duplicate means no row points at this
+        // attempt's photo. A network failure leaves that unknown.
+        insertRejected.current = kind !== 'network' && kind !== 'duplicate'
+        if (kind === 'duplicate') {
+          // A retry whose first insert landed (response lost) also ends here, and
+          // that row uses this attempt's photo. Only delete when the existing
+          // completion is confirmed to be a different attempt.
+          const { data: existing } = await supabase
+            .from('completions')
+            .select('photo_url')
+            .eq('user_id', userId)
+            .eq('quest_id', questId)
+            .maybeSingle()
+          if (existing && !photoUrlMatchesPath(existing.photo_url, placePath)) {
+            await removeQuietly('proof-photos', placePath)
+            await removeQuietly('proof-selfies', selfiePath)
+            uploadedPlacePath.current = null
+          }
           setAlreadyCompleted(true)
           openCelebration({
             variant: 'alreadyDone',
@@ -271,20 +317,37 @@ export default function Submit() {
             redemptionCode: null,
             sponsorReward: null,
           })
-        } else if (insertError.message?.includes('GEOFENCE_VIOLATION') || insertError.code === '23514') {
-          trackSubmissionBlocked('outside_zone')
-          Alert.alert('Too far away', outsideZoneCopy(quest, effectiveCoords))
-          setStep('place')
-        } else if (insertError.message?.includes('RATE_LIMITED') || insertError.hint === 'RATE_LIMITED') {
+          return
+        }
+
+        await removeQuietly('proof-selfies', selfiePath)
+        // RATE_LIMITED shares SQLSTATE 23514 with GEOFENCE_VIOLATION, so the
+        // classifier checks it first.
+        if (kind === 'rate_limited') {
           trackSubmissionBlocked('rate_limited')
           setFailMessage('You’re submitting quests too quickly. Give it a few minutes, then try again.')
           setStep('failed')
+        } else if (kind === 'outside_zone') {
+          // Final for this capture: the player has to shoot again, so this
+          // attempt's photo would never be used.
+          await removeQuietly('proof-photos', placePath)
+          uploadedPlacePath.current = null
+          trackSubmissionBlocked('outside_zone')
+          Alert.alert('Too far away', outsideZoneCopy(quest, captured))
+          setStep('place')
         } else {
           setFailMessage('That didn’t go through. Check your signal and try again.')
           setStep('failed')
         }
         return
       }
+
+      track('proof_submitted', {
+        quest_id: questId,
+        category: quest.category,
+        gps_accuracy: captured.accuracy,
+        is_sponsored: quest.is_sponsored,
+      })
 
       await refreshProfile()
       const { data: freshProfile } = await supabase
@@ -332,14 +395,14 @@ export default function Submit() {
   }, [
     placePhoto,
     selfiePhoto,
-    effectiveCoords,
+    captured,
     quest,
     userId,
     questId,
     profile,
     isMocked,
     requiresLocation,
-    insideGeofence,
+    capturedInZone,
     refreshProfile,
   ])
 
@@ -374,11 +437,31 @@ export default function Submit() {
     setStep('upload')
   }
 
+  /**
+   * The player is giving up on this capture. Delete its uploaded photo only when
+   * the server has rejected the insert; after a network failure the row may
+   * exist and point at that file.
+   */
+  function abandonAttempt() {
+    if (insertRejected.current && uploadedPlacePath.current) {
+      void removeQuietly('proof-photos', uploadedPlacePath.current)
+    }
+    uploadedPlacePath.current = null
+    insertRejected.current = false
+  }
+
+  function close() {
+    if (!submitting) abandonAttempt()
+    router.back()
+  }
+
   function retake() {
+    abandonAttempt()
     uploadStarted.current = false
     skipRef.current = false
     selfieStarted.current = false
     setFailMessage(null)
+    setCaptured(null)
     setPlacePhoto(null)
     setSelfiePhoto(null)
     setCountdown(null)
@@ -438,7 +521,7 @@ export default function Submit() {
 
       <View style={[styles.top, { paddingTop: insets.top + SPACE.s2 }]}>
         <Pressable
-          onPress={() => router.back()}
+          onPress={close}
           accessibilityRole="button"
           accessibilityLabel="Close"
           style={styles.iconBtn}
@@ -507,19 +590,19 @@ export default function Submit() {
           <Body color={COLOR.white} style={styles.messageText} accessibilityLiveRegion="polite">
             {failMessage ?? 'That photo didn’t upload. Try again.'}
           </Body>
-          {placePhoto && effectiveCoords ? (
+          {placePhoto && captured ? (
             <Pressable onPress={retryUpload} style={styles.whiteBtn} accessibilityRole="button" accessibilityLabel="Try again">
               <Body style={styles.btnLabel}>Try again</Body>
             </Pressable>
           ) : null}
           <Pressable
             onPress={retake}
-            style={placePhoto && effectiveCoords ? styles.skip : styles.whiteBtn}
+            style={placePhoto && captured ? styles.skip : styles.whiteBtn}
             accessibilityRole="button"
             accessibilityLabel="Retake photo"
           >
             <Body
-              color={placePhoto && effectiveCoords ? COLOR.white : COLOR.ink}
+              color={placePhoto && captured ? COLOR.white : COLOR.ink}
               style={styles.btnLabel}
             >
               Retake photo
