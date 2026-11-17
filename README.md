@@ -530,7 +530,8 @@ Open [http://localhost:3000](http://localhost:3000). Sign in with an email liste
 | `NEXT_PUBLIC_SUPABASE_URL` | Yes | Your Supabase project URL |
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Yes | Supabase anon key (used for auth UI only) |
 | `SUPABASE_SERVICE_ROLE_KEY` | Yes | Service-role secret key — **never expose to browser** |
-| `ADMIN_ALLOWED_EMAILS` | Yes | Comma-separated admin email allowlist (e.g. `you@example.com,ops@example.com`) |
+| `ADMIN_ALLOWED_EMAILS` | Yes | Comma-separated admin email allowlist (e.g. `you@example.com,ops@example.com`). Empty denies all logins in every environment |
+| `ADMIN_DEV_ALLOW_ALL` | No | Local dev only: `1` allows any email while the allowlist is empty. Ignored when `NODE_ENV=production`; never set on Vercel |
 
 ---
 

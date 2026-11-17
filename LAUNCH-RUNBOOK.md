@@ -284,6 +284,10 @@ Project `kuest-admin` (root directory `apps/admin`). All seven variables from
 | `SUPABASE_JWKS_URL` | Auth JWKS endpoint |
 | `SUPABASE_SECRET_KEY` | Server-only. Switch it to **Sensitive** in Vercel (still Encrypted) |
 | `ADMIN_ALLOWED_EMAILS` | Comma-separated admin emails |
+| `ADMIN_DEV_ALLOW_ALL` | **Do not set on Vercel.** Local-only: `1` lets any email in when the allowlist is empty; ignored in production |
+
+An empty `ADMIN_ALLOWED_EMAILS` denies every login in every environment unless
+`ADMIN_DEV_ALLOW_ALL=1` is set locally (outside production).
 
 Original instructions, kept for reference (variable names corrected above):
 
