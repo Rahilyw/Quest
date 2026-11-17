@@ -8,7 +8,7 @@ import { StyleSheet, View } from 'react-native'
 import MapView, { Circle, Marker, Polygon, type LatLng } from 'react-native-maps'
 import { VICTORIA_BOUNDARY } from '@/lib/victoriaBoundary'
 import type { Quest } from '@/lib/types'
-import { COLOR, getCategory } from '@/lib/theme'
+import { COLOR, getCategory, withAlpha } from '@/lib/theme'
 
 export interface ZoneShape {
   kind: 'circle' | 'polygon'
@@ -70,14 +70,6 @@ export function zonePoints(shapes: ZoneShape[]): LatLng[] {
     }
   }
   return points
-}
-
-/** `#RRGGBB` plus an alpha 0..1 as 8-digit hex. */
-function withAlpha(hex: string, alpha: number): string {
-  const a = Math.round(Math.max(0, Math.min(1, alpha)) * 255)
-    .toString(16)
-    .padStart(2, '0')
-  return `${hex}${a}`
 }
 
 export function ZoneMap({

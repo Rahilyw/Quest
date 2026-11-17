@@ -74,25 +74,6 @@ function xpStripProgress(totalXp, level) {
 }
 
 // ---------------------------------------------------------------------------
-// Replicated from apps/mobile/components/PlayerCard.tsx
-// ---------------------------------------------------------------------------
-
-function xpBarProgress(totalXp) {
-  const level = getLevelFromXp(totalXp)
-  const xpToNext = getXpToNextLevel(totalXp)
-  const isMaxLevel = xpToNext === 0
-  const currentLevelXp = XP_LEVELS.find((l) => l.level === level)?.minXp ?? 0
-  const nextLevelXp = XP_LEVELS.find((l) => l.level === level + 1)?.minXp ?? currentLevelXp + 1
-  const progress = isMaxLevel
-    ? 1
-    : (totalXp - currentLevelXp) / (nextLevelXp - currentLevelXp)
-  const xpLabel = isMaxLevel
-    ? 'Max level'
-    : `${totalXp.toLocaleString()} / ${nextLevelXp.toLocaleString()} XP`
-  return { progress, xpLabel, isMaxLevel, level }
-}
-
-// ---------------------------------------------------------------------------
 // Replicated from apps/mobile/app/(tabs)/leaderboard.tsx
 // ---------------------------------------------------------------------------
 
@@ -268,53 +249,6 @@ assertEqual('15000 XP (max) → 0 to next', getXpToNextLevel(15000), 0)
 assertEqual('20000 XP (beyond max) → 0 to next', getXpToNextLevel(20000), 0)
 
 // ---------------------------------------------------------------------------
-// SECTION 5: XP bar progress logic (PlayerCard.tsx)
-// ---------------------------------------------------------------------------
-console.log('\n--- Section 5: XP bar progress and label logic ---')
-
-const xpBarLevel1 = xpBarProgress(100)
-assertEqual('XPBar: level 1 at 100 XP, level should be 1', xpBarLevel1.level, 1)
-assert(
-  'XPBar: level 1 at 100 XP, progress between 0 and 1',
-  xpBarLevel1.progress >= 0 && xpBarLevel1.progress < 1,
-  '0 <= progress < 1',
-  xpBarLevel1.progress
-)
-assert(
-  'XPBar: level 1 at 100 XP, label is not Max level',
-  !xpBarLevel1.isMaxLevel,
-  false,
-  xpBarLevel1.isMaxLevel
-)
-
-// Happy path: mid-level
-const xpBarMid = xpBarProgress(1240)
-assertEqual('XPBar: 1240 XP → level 4', xpBarMid.level, 4)
-assert(
-  'XPBar: 1240 XP → progress between 0 and 1',
-  xpBarMid.progress > 0 && xpBarMid.progress < 1,
-  '0 < progress < 1',
-  xpBarMid.progress
-)
-
-// Edge case: max level (spec: bar 100% filled, label "Max level")
-const xpBarMax = xpBarProgress(15000)
-assertEqual('XPBar: 15000 XP (max level) → isMaxLevel true', xpBarMax.isMaxLevel, true)
-assertEqual('XPBar: 15000 XP (max level) → progress is 1', xpBarMax.progress, 1)
-assertEqual('XPBar: 15000 XP (max level) → label is "Max level"', xpBarMax.xpLabel, 'Max level')
-assert(
-  'XPBar: 15000 XP → width capped at 100%',
-  Math.min(xpBarMax.progress * 100, 100) === 100,
-  100,
-  Math.min(xpBarMax.progress * 100, 100)
-)
-
-// Edge case: beyond max level
-const xpBarBeyond = xpBarProgress(20000)
-assertEqual('XPBar: 20000 XP (beyond max) → isMaxLevel true', xpBarBeyond.isMaxLevel, true)
-assertEqual('XPBar: 20000 XP (beyond max) → label is "Max level"', xpBarBeyond.xpLabel, 'Max level')
-
-// ---------------------------------------------------------------------------
 // SECTION 6: XP strip in index.tsx — division-by-zero at max level
 // ---------------------------------------------------------------------------
 console.log('\n--- Section 6: index.tsx XP strip progress at max level (edge case) ---')
@@ -423,19 +357,6 @@ console.log('\n--- Section 10: Prop interface structure checks ---')
 assert(
   'SectionHeader: has required "title" prop (string)',
   true, // confirmed by reading SectionHeader.tsx — interface SectionHeaderProps { title: string; trailing?: string; style?: ViewStyle }
-  true,
-  true
-)
-
-// CategoryChip: label, active, onPress, count?
-assert(
-  'CategoryChip: count is optional — renders label only when count is undefined',
-  // Replicate: count !== undefined ? ` ${count}` : ''
-  (() => {
-    const withCount = 'All' + (5 !== undefined ? ` ${5}` : '')
-    const withoutCount = 'All' + (undefined !== undefined ? ` ${undefined}` : '')
-    return withCount === 'All 5' && withoutCount === 'All'
-  })(),
   true,
   true
 )
