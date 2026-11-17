@@ -46,7 +46,7 @@ The core loop is:
 6. Completion appears on the **public activity feed** — unless the player turned off feed publishing in Settings
 7. The community can **report** posts (3 independent reports auto-hide) and **block** users; the admin **moderation queue** reviews flagged posts with GPS evidence — removal revokes the XP
 
-The Spec 06 Sunday recap and the fix for the profile `push_token` read exposure (SEC-01) are in this checkout as migrations 039 and 040 plus mobile code. Neither migration is applied to a hosted database and neither feature has run on a device; see the [Nov 11 audit](docs/design/CODEBASE-AUDIT-2026-11-11.md) and [roadmap](ROADMAP.md). Hosted database, push delivery and store readiness are tracked separately in the [launch runbook](LAUNCH-RUNBOOK.md).
+The Spec 06 Sunday recap and the fix for the profile `push_token` read exposure (SEC-01) are in this checkout as migrations 039 and 040 plus mobile code. Both migrations were applied to production by the owner on Nov 11, 2026 (the 039 verification queries are not yet recorded) and neither feature has run on a device; see the [Nov 11 audit](docs/design/CODEBASE-AUDIT-2026-11-11.md) and [roadmap](ROADMAP.md). Hosted database, push delivery and store readiness are tracked separately in the [launch runbook](LAUNCH-RUNBOOK.md).
 
 ---
 
@@ -367,7 +367,7 @@ For current column grants and the full evolved schema, see the migration index. 
 migration 038 restricts client SELECT columns on `completions`; the public row policy does not
 grant access to its excluded GPS, redemption-code or reviewer columns. Migration 039 does the
 same for `profiles.push_token` (SEC-01 in the [audit](docs/design/CODEBASE-AUDIT-2026-11-11.md)).
-039 is in the checkout and not applied; until it is, a hosted database still exposes the token.
+039 was applied to production Nov 11, 2026; run the "Verifying 039" queries in the migration index to confirm.
 
 **`trg_enforce_completion_geofence`** (BEFORE INSERT, 013–015) — validates the submission coordinates against the quest's geofence via `check_completion_geofence()`; inserts outside the zone are rejected. Unbypassable by clients.
 
@@ -407,7 +407,7 @@ same for `profiles.push_token` (SEC-01 in the [audit](docs/design/CODEBASE-AUDIT
 ### Migrations
 
 The initial schema is `20260619010246_initial_schema.sql`; numbered follow-ups run from
-`002` through `038`. There is no `001_initial_schema.sql`. Lexical ordering puts the timestamped
+`002` through `040`. There is no `001_initial_schema.sql`. Lexical ordering puts the timestamped
 baseline after the numbered migrations, so a naive clean-project push order is unsafe. Do not
 rename files already recorded in hosted history. For a new project, establish and verify a
 supported baseline/restore procedure first. See [the migration index](supabase/migrations/README.md)
@@ -415,7 +415,7 @@ for schema details and the runbook's reported hosted state.
 
 The complete migration list and descriptions are maintained in
 [`supabase/migrations/README.md`](supabase/migrations/README.md). The project has migrations
-through 040 in this checkout (039 and 040 are not recorded as applied anywhere). Local migration presence does not prove remote application or
+through 040 in this checkout; the runbook records 039 and 040 applied to production on Nov 11, 2026. Local migration presence does not prove remote application or
 function/webhook deployment.
 
 ---
@@ -843,7 +843,7 @@ See [ROADMAP.md](ROADMAP.md) for the full phase plan and [docs/specs/README.md](
 moderation/social, analytics SDK wrapper, weekly drops and suggestions, starter quest, merchant
 redemption, and most Cutouts screens/admin styling. This does not imply every migration or
 function is deployed. The Spec 06 Sunday recap (040) and the **P1 profile push-token fix** (039)
-are written but not applied or device-tested; clean-install migration ordering is documented but
+are applied to production (Nov 11) but not verified or device-tested; clean-install migration ordering is documented but
 not verified. All three are tracked in the [audit](docs/design/CODEBASE-AUDIT-2026-11-11.md).
 
 **Operational state:** use the dated [launch runbook](LAUNCH-RUNBOOK.md) for repository-reported

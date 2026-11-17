@@ -40,6 +40,21 @@ That prompt was run. Supersedes the "Next" line above and F-004, F-005 and Phase
   040 are applied),
   then device-tests the recap. After that: outbox draining (F-007), then Spec 06 §3.
 
+### Continuation — November 17, 2026, audit and build plan
+
+Supersedes the "Next concrete action" lines above. A read-only re-audit of code, specs and docs
+produced [NEXT-BUILD-PLAN-2026-11.md](NEXT-BUILD-PLAN-2026-11.md). Owner decisions: pilot launch
+first; chains stay deferred (35 live quests); the plan carries an owner-only launch checklist.
+
+- New findings: `send-push-outbox` never checks `res.ok` and has no row claiming (extends F-007);
+  four moderation read actions and `/api/places/search` skip `requireAdmin`; empty admin
+  allowlist allows all outside production; `proof_submitted` fires before insert and failed
+  inserts orphan place photos; `badge_unlocked` is never fired.
+- Phase 0 (this session): doc contradictions on 039/040 status, tap targets and sprites reconciled;
+  CI widened.
+- Next concrete action: Phase 1 slices (push draining + recap push, admin auth, mobile
+  submission integrity), then the owner checklist in plan Phase 2.
+
 The sections below preserve the Nov 10 campaign record and may contain facts that were true
 only for that session; use the continuation above and linked current docs for present status.
 

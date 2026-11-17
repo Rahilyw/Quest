@@ -1,7 +1,7 @@
 # Quest! — Product Roadmap
 
-**Last reconciled:** November 11, 2026
-**Current product priority:** verify migration 039 (profile-token fix; 039 and 040 applied to production Nov 11, 2026), device-test the Sunday recap, then harden weekly push draining before any recap reminder push.
+**Last reconciled:** November 17, 2026
+**Current product priority:** pilot launch first. Follow the [Nov 17 build plan](docs/design/NEXT-BUILD-PLAN-2026-11.md): truth and CI hygiene, launch-hardening code (push draining, recap push, admin auth, submission integrity), the owner launch checklist, then Spec 06 §5 offline queue, §3 XP events and §1 duo quests. Chains stay deferred until 35 live quests.
 
 This section is the current status for the checkout. It is not a deployment certification.
 For detailed findings and exact local checks, see the [Nov 11 audit](docs/design/CODEBASE-AUDIT-2026-11-11.md).
@@ -24,8 +24,8 @@ That is a repository-recorded operational claim, not independently verified duri
 update. Local source, remote migration history, function deployment, webhook delivery and
 device verification are separate states. See [LAUNCH-RUNBOOK.md](LAUNCH-RUNBOOK.md).
 
-Use the [Claude implementation prompt](docs/design/CLAUDE-NEXT-IMPLEMENTATION-PROMPT.md) for
-the audited next steps. Historical phase plans and dated snapshots below are retained as
+Use the [Nov 17 build plan](docs/design/NEXT-BUILD-PLAN-2026-11.md) for the audited next steps
+(the earlier [Claude implementation prompt](docs/design/CLAUDE-NEXT-IMPLEMENTATION-PROMPT.md) is done). Historical phase plans and dated snapshots below are retained as
 history; they are not the current implementation status.
 
 ---
@@ -277,11 +277,11 @@ Status key: ✅ Done · ⚠️ Partial · ❌ Not started
 | # | Task | Status |
 |---|---|---|
 | H.1 | Foundations: tokens, Figtree, text primitives, category model, copy pass, token report | ✅ Merged (#12) |
-| H.2 | Cutout pipeline: `cutout_url`, processing script, admin upload, `<Cutout>`, `<Pillow>`, quest-photos query, dual-camera proof data (private selfie bucket), collage kit components | ❌ |
-| H.3 | Core loop: floating tab bar + new tabs, This week, Quests folders, quest page + photo viewer, camera (place then selfie), Verified | ❌ |
-| H.4 | City bubbles, Rankings, You (collection shelf + badges) | ❌ |
-| H.5 | Brand surfaces: icon, splash, share card, onboarding | ❌ |
-| H.6 | Admin restyle | ❌ |
+| H.2 | Cutout pipeline: `cutout_url`, processing script, admin upload, `<Cutout>`, `<Pillow>`, quest-photos query, dual-camera proof data (private selfie bucket), collage kit components | ✅ In repo (032–033); collage sprites retired by BRAND Nov 12 |
+| H.3 | Core loop: floating tab bar + new tabs, This week, Quests folders, quest page + photo viewer, camera (place then selfie), Verified | ✅ In repo; not device-validated |
+| H.4 | City bubbles, Rankings, You (collection shelf + badges) | ✅ In repo; map tab still on legacy palette |
+| H.5 | Brand surfaces: icon, splash, share card, onboarding | ✅ In repo; store screenshots open |
+| H.6 | Admin restyle | ✅ In repo |
 | H.7 | Content: ~29 place photos, ~29 cutouts, action phrases, sprite set | ❌ (founder) |
 
 Decisions D1 to D8 are recorded in the plan (wordmark, tabs, category colours, distance/time, dual-camera proof approved Nov 7, place photos, sprites).
@@ -310,7 +310,7 @@ Decisions D1 to D8 are recorded in the plan (wordmark, tabs, category colours, d
 |---|---|---|
 | G.1 | `sponsors` table + `redeemed_at`; merchant page `/redeem/[merchantKey]` (valid/used/invalid + mark redeemed) | Done in repo (036 local). `redeemed_at` was already in 017. |
 | G.2 | Sponsor reporting: issued / redeemed / rate / last redemption + CSV columns | Done in repo |
-| G.3 | Sponsored seed rows + sponsor fields in admin create form + E2E test | ❌ Seed rows and a live counter pass are still open |
+| G.3 | Sponsored seed rows + sponsor fields in admin create form + E2E test | ⚠️ Seed rows (`seed.sql`) and form fields exist; a live counter pass is still open |
 | G.4 | Player-side redeemed state + "show at counter" framing | Done in repo (You tab; refetches on focus) |
 
 ### Deferred (deliberate)
@@ -372,7 +372,7 @@ Findings from a full codebase + docs review. **R-items** are process/tooling rec
 | Weekly drop ritual (E.1) | Low | High (retention) | **P1** | ❌ |
 | First-quest onboarding (F.1) | Low | High (activation) | **P1** | ❌ |
 | Community quest suggestions (E.2) | Medium | High (content) | **P1** | ❌ |
-| Sunday recap share card (F.2) | Medium | High (growth) | **P1** | In repo, not applied or device-tested |
+| Sunday recap share card (F.2) | Medium | High (growth) | **P1** | 040 applied Nov 11; not device-tested; push in build plan Phase 1b |
 | Merchant redemption validation (Spec 07) | Low–Med | High (revenue) | **P1** | Done in repo, not applied |
 | XP economy events (F.3) | Low | Medium–High | **P2** | ❌ |
 | Offline submission queue (F.4) | Medium | Medium | **P2** | ❌ |

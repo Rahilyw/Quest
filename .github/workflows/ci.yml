@@ -2,11 +2,13 @@ name: CI
 
 on:
   push:
-    branches: [main]
+    branches: [main, 'cursor/**', 'claude/**']
   pull_request:
     branches: [main]
 
 jobs:
+  # Test files use relative requires only, so no install is needed. The workspace
+  # `test` scripts list every test file; new files are picked up by adding them there.
   geofence-tests:
     runs-on: ubuntu-latest
     steps:
@@ -14,8 +16,8 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '20'
-      - name: Run geofence tests
-        run: node packages/geofence/src/__tests__/geofence.test.js
+      - name: Run geofence and redemption tests
+        run: npm test --workspace @quest/geofence --ignore-scripts
 
   logic-tests:
     runs-on: ubuntu-latest
@@ -24,12 +26,20 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '20'
-      - name: Run logic tests
-        run: node apps/mobile/__tests__/logic.test.js
-      - name: Run recap tests
-        run: node apps/mobile/__tests__/recap.test.js
-      - name: Run profile privacy guard
-        run: node apps/mobile/__tests__/profilePrivacy.test.js
+      - name: Run mobile tests (logic, quest window, recap, profile privacy)
+        run: npm test --workspace mobile --ignore-scripts
+
+  token-report:
+    name: token report (informational)
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Raw token count
+        run: node apps/mobile/scripts/check-tokens.js
 
   typescript-check-mobile:
     name: typescript-check (mobile)
@@ -56,6 +66,16 @@ jobs:
         run: cd apps/admin && npm install
       - name: TypeScript check
         run: cd apps/admin && npx tsc --noEmit
+      - name: Production build (placeholder env, no network secrets)
+        run: cd apps/admin && npx next build
+        env:
+          SUPABASE_URL: https://placeholder.supabase.co
+          SUPABASE_SECRET_KEY: placeholder
+          SUPABASE_PUBLISHABLE_KEY: placeholder
+          NEXT_PUBLIC_SUPABASE_URL: https://placeholder.supabase.co
+          NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: placeholder
+          ADMIN_ALLOWED_EMAILS: ci@example.com
+          NEXT_TELEMETRY_DISABLED: '1'
 
   dependency-audit:
     name: npm audit (production, critical)

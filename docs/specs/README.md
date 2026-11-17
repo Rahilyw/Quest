@@ -9,14 +9,13 @@ The product specifications for Quest!'s verification, safety, analytics, content
 | [03](03-report-moderation.md) | **Reports & Moderation** | Post/comment reports, blocking, feed privacy and admin moderation | Implemented in checkout (018, 028–030) |
 | [04](04-analytics-instrumentation.md) | **Analytics** | PostHog event wrapper and product event schema | Mobile wrapper present; production keys/dashboards are operational work |
 | [05](05-community-quests.md) | **Community Quests & Drops** | Suggestions, weekly drops and chains | Drops/suggestions implemented (034–035); push deployment remains; chains deferred |
-| [06](06-growth-engagement.md) | **Growth & Engagement** | Starter quest, recap, XP events, offline queue and duo loop | Starter quest implemented (037). Sunday recap implemented in checkout (040, not applied or device-tested; no reminder push). Other features planned |
+| [06](06-growth-engagement.md) | **Growth & Engagement** | Starter quest, recap, XP events, offline queue and duo loop | Starter quest implemented (037). Sunday recap implemented (040 applied Nov 11, not device-tested; no reminder push). Other features planned |
 | [07](07-merchant-redemption.md) | **Merchant Redemption** | No-login merchant validation and redemption reporting | Implemented in checkout (036); live counter flow unverified |
 
-**Next feature handoff:** [Claude implementation prompt](../design/CLAUDE-NEXT-IMPLEMENTATION-PROMPT.md).
-The Nov 10 runbook reports migrations through 038 applied remotely. This doc update did not
-independently query Supabase. Migrations 039 (profile-token privacy) and 040 (recap) are in the
-checkout and not applied. After they are applied and the recap is device-tested, the next
-product feature is Spec 06 §3 (XP events).
+**Next build plan:** [NEXT-BUILD-PLAN-2026-11.md](../design/NEXT-BUILD-PLAN-2026-11.md) (Nov 17, 2026).
+Migrations through 040 are reported applied to production (039 and 040 by the owner on Nov 11);
+the 039 verification queries are not yet recorded and the recap is not device-tested. The plan
+puts pilot launch hardening first, then Spec 06 §5 (offline queue), §3 (XP events) and §1 (duo).
 
 **Design.** Cutouts is the approved visual direction in [`docs/design/BRAND.md`](../design/BRAND.md).
 The implementation snapshot and remaining founder-owned assets/device checks are in

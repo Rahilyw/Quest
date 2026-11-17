@@ -1,6 +1,6 @@
 # Spec 06 — Growth & Engagement (duo quests, recap card, XP events, first-quest onboarding)
 
-**Status:** Partial. The starter quest (section 4) is implemented in migration 037. The Sunday recap (section 2) is implemented in the checkout with migration 040; it is not applied to a hosted database, not device-tested, and has no reminder push. XP events, offline queue and duo quests remain unimplemented.
+**Status:** Partial. The starter quest (section 4) is implemented in migration 037. The Sunday recap (section 2) is implemented with migration 040 (applied to production Nov 11, 2026); it is not device-tested and has no reminder push. XP events, offline queue and duo quests remain unimplemented.
 **Depends on:** Spec 02 (instant verification), Spec 04 (to measure any of it)
 **Original problem statement:** the roadmap lacked acquisition features and the product's real-world connection mission called for social growth and retention loops. The starter quest is now implemented; the remaining proposals below are still future work.
 
@@ -51,8 +51,8 @@ The organic marketing engine. End of week, generate a share image — rank, week
 
 ### Implementation note (Nov 11, 2026)
 
-**State:** in checkout and locally tested (Node tests, `tsc`). Migration 040 is not applied
-anywhere and its SQL has not been executed. Nothing has run on a phone.
+**State:** locally tested (Node tests, `tsc`). Migration 040 was applied to production by the
+owner on Nov 11, 2026. Nothing has run on a phone.
 
 **Where:** `supabase/migrations/040_week_recap.sql`, `apps/mobile/app/recap.tsx`,
 `components/RecapShareCard.tsx`, `hooks/useWeekRecap.ts`, `lib/recapWeek.js`, and a row on
@@ -151,6 +151,8 @@ People submit from breakwaters and summits with one bar of signal; a failed uplo
 
 ## 6. Sequencing & non-goals
 
-Order: 4 (starter quest, ~a day) → 2 (recap card) → 3 (XP events) → 5 (offline queue) → 1 (duo quests — biggest lift, biggest payoff).
+Original order: 4 (starter quest, ~a day) → 2 (recap card) → 3 (XP events) → 5 (offline queue) → 1 (duo quests — biggest lift, biggest payoff).
+
+**Revised Nov 17, 2026** ([build plan](../design/NEXT-BUILD-PLAN-2026-11.md)): 5 (offline queue) moves ahead of 3 (XP events). A failed upload at the summit costs the pilot its one first impression; XP events need an audience first. A queued completion is not verified until the server inserts it, and `completed_at` stays server time, so a queue flushed after Sunday midnight counts toward the new week.
 
 Non-goals: cash/discount referral incentives, contact-book import, DMs or friend graphs (deliberately deferred — a small community fragments), parties larger than 2 (revisit after duo data).

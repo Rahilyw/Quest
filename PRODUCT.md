@@ -71,7 +71,7 @@ Quest chains group existing quests into neighbourhood storylines ("The Old Town 
 
 ## Playing together
 
-The mission is real-world connection, so the game can grow beyond single-player. Duo quests are specified but not yet implemented. The **Sunday recap card** (rank, XP, streak, best photo) is implemented in the checkout and opens from Rankings; its migration is not yet applied and it has not been device-tested (see `docs/specs/06-growth-engagement.md`). The social layer has follows, likes, comments and an activity inbox (no DMs). The current proof flow supports a place photo and optional selfie; the selfie is private and not part of public sharing.
+The mission is real-world connection, so the game can grow beyond single-player. Duo quests are specified but not yet implemented. The **Sunday recap card** (rank, XP, streak, best photo) is implemented in the checkout and opens from Rankings; its migration was applied Nov 11, 2026 and it has not been device-tested (see `docs/specs/06-growth-engagement.md`). The social layer has follows, likes, comments and an activity inbox (no DMs). The current proof flow supports a place photo and optional selfie; the selfie is private and not part of public sharing.
 
 ## Safety, privacy & trust
 
@@ -97,4 +97,4 @@ Instrumented via product analytics from day one of the pilot (see `docs/specs/04
 
 ## Accessibility & Inclusion
 
-WCAG AA minimum. Touch targets 44x44pt minimum. Color contrast 4.5:1 for body text, 3:1 for large text and UI components. Do not rely on color alone to convey state. Support system font size scaling. Respect `prefers-reduced-motion` for any animation.
+WCAG AA minimum. Touch targets 48x48pt minimum (BRAND.md). Color contrast 4.5:1 for body text, 3:1 for large text and UI components. Do not rely on color alone to convey state. Support system font size scaling. Respect `prefers-reduced-motion` for any animation.

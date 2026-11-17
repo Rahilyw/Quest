@@ -16,7 +16,7 @@ so the app is never half-migrated for long.
 | D5 | Replace difficulty (Easy / Medium / Hard) with distance and time | Yes, two optional quest columns (`distance_m`, `duration_min`) |
 | D6 | Dual-camera proof: the place, then a quick selfie shown as a corner pillow | **Approved Nov 7, 2026.** Selfie is skippable; see Phase 2 step 7 and 3e |
 | D7 | A real place photo for every quest (~29), alongside its cutout | Yes. `cover_image_url` already exists; this replaces the Unsplash placeholders |
-| D8 | A sprite set (~12 Victoria creatures and weather) and a scrap kit (tape, torn paper, pen marks) | Yes. Commission one illustrator or 3D artist for one consistent style; Lottie or Rive for the idle loops |
+| D8 | A sprite set (~12 Victoria creatures and weather) and a scrap kit (tape, torn paper, pen marks) | **Superseded Nov 12, 2026:** BRAND.md retires the sprites and category-default cutouts; the scrap kit stays (max two per screen). Sprite steps below are historical. |
 
 ## Current implementation status (reconciled Nov 11, 2026)
 

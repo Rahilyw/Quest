@@ -170,7 +170,7 @@ Anti-abuse at the same layer: rate limits (2 per 10 min, 10 per 24 h) in the `BE
 | Reports & moderation | [03](docs/specs/03-report-moderation.md) | Implemented in checkout | Report/block, comment moderation, feed RLS, `/moderation` |
 | Analytics | [04](docs/specs/04-analytics-instrumentation.md) | Mobile wrapper present; dashboards/keys are operations | `lib/analytics.ts`, PostHog in `_layout.tsx` |
 | Content engine | [05](docs/specs/05-community-quests.md) | Drops and suggestions implemented; chains deferred | SQL 034–035, mobile/admin flows |
-| Growth & engagement | [06](docs/specs/06-growth-engagement.md) | Starter quest and Sunday recap implemented in checkout; other features planned | SQL 037, 040 (040 not applied); `app/recap.tsx` |
+| Growth & engagement | [06](docs/specs/06-growth-engagement.md) | Starter quest and Sunday recap implemented in checkout; other features planned | SQL 037, 040 (040 applied Nov 11); `app/recap.tsx` |
 | Merchant redemption | [07](docs/specs/07-merchant-redemption.md) | Implemented in checkout; live counter flow unverified | SQL 036, `/redeem/[merchantKey]`, `sponsors` |
 
 Index and dependency order: [docs/specs/README.md](docs/specs/README.md). Product rationale: [PRODUCT.md](PRODUCT.md), phase plan: [ROADMAP.md](ROADMAP.md).

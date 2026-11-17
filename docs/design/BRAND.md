@@ -490,8 +490,9 @@ same pill and the same ink. The ones that carry the game:
 
 Empty states show one line and one action: `Nobody's posted today. The first proof
 photo of the day sits at the top of City until tomorrow.` + `Find a quest`. Upload errors
-reassure first: `That photo didn't upload. You're still verified; we'll retry when you have
-signal.` Loading uses skeletons in the shape of folders and bubbles, never centred spinners.
+reassure first without promising what the server has not done: `That photo didn't upload.
+Saved. We'll send it when you're back online.` A queued proof is not verified until the server
+accepts it (Spec 06 §5). Loading uses skeletons in the shape of folders and bubbles, never centred spinners.
 
 ## 9. Voice and copy
 
@@ -531,7 +532,7 @@ above your sticker board.
 
 ## 11. Accessibility
 
-PRODUCT.md's bar (WCAG AA, 44pt targets, no colour-only meaning, text scaling, reduced
+PRODUCT.md's bar (WCAG AA, 48pt targets, no colour-only meaning, text scaling, reduced
 motion) plus:
 
 - Every sticker has a text alternative naming the object and quest ("Soft-serve cone,
