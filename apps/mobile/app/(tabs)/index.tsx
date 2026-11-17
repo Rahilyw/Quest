@@ -121,7 +121,7 @@ export default function ThisWeekScreen() {
 
         {!week.loading && !week.error && week.starterQuest ? (
           <Pressable
-            onPress={() => router.push(`/quest/${week.starterQuest!.id}?source=first-quest`)}
+            onPress={() => router.push(`/quest/${week.starterQuest!.id}?source=starter`)}
             accessibilityRole="button"
             accessibilityLabel={`Your first quest: ${week.starterQuest.title}. Open quest.`}
             style={[

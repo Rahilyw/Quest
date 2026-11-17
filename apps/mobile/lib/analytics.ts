@@ -36,8 +36,36 @@ export type AnalyticsEvent =
   | 'notification_opened'
   | 'weekly_drop_seen'
   | 'suggestion_submitted'
+  | 'recap_viewed'
 
-export type QuestSource = 'explore' | 'this-week' | 'quests' | 'map' | 'feed' | 'deep_link' | 'unknown'
+export type QuestSource =
+  | 'explore'
+  | 'this-week'
+  | 'starter'
+  | 'quests'
+  | 'map'
+  | 'profile'
+  | 'feed'
+  | 'deep_link'
+  | 'unknown'
+
+const QUEST_SOURCES: readonly QuestSource[] = [
+  'explore',
+  'this-week',
+  'starter',
+  'quests',
+  'map',
+  'profile',
+  'feed',
+  'deep_link',
+]
+
+/** Maps a `?source=` route param to a known source. `first-quest` is the old starter-card value. */
+export function questSourceFromParam(param: string | string[] | undefined): QuestSource {
+  const value = Array.isArray(param) ? param[0] : param
+  if (value === 'first-quest') return 'starter'
+  return QUEST_SOURCES.find((s) => s === value) ?? 'unknown'
+}
 
 export type SubmissionBlockReason =
   | 'outside_zone'

@@ -21,7 +21,7 @@ import { Body, BodyStrong, Heading, Micro, Small } from '@/components/ui/Text'
 import { useGeofenceCheck } from '@/hooks/useGeofenceCheck'
 import { useQuest } from '@/hooks/useQuests'
 import { useQuestPhotos, type QuestPhoto } from '@/hooks/useQuestPhotos'
-import { track, type QuestSource } from '@/lib/analytics'
+import { questSourceFromParam, track } from '@/lib/analytics'
 import { plural, xpLabel } from '@/lib/copy'
 import { BYPASS_GEOFENCE, getQuestCoverImage, TAB_BAR_CLEARANCE } from '@/lib/constants'
 import { ensureLocationPermission } from '@/lib/permissions'
@@ -155,15 +155,7 @@ export default function QuestDetail() {
 
   useEffect(() => {
     if (!quest) return
-    const questSource: QuestSource =
-      source === 'explore' ||
-      source === 'this-week' ||
-      source === 'quests' ||
-      source === 'map' ||
-      source === 'feed' ||
-      source === 'deep_link'
-        ? source
-        : 'unknown'
+    const questSource = questSourceFromParam(source)
     const now = new Date()
     track('quest_viewed', {
       quest_id: quest.id,

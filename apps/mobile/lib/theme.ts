@@ -50,6 +50,14 @@ export const SPONSORED = { label: 'Sponsored', color: '#FF9A1F', deep: '#C77818'
 
 export const CATEGORY_KEYS = Object.keys(CATEGORY) as CategoryKey[]
 
+/** A `#RRGGBB` token plus an alpha 0..1, as 8-digit hex (map fills, tints). */
+export function withAlpha(hex: string, alpha: number): string {
+  const a = Math.round(Math.max(0, Math.min(1, alpha)) * 255)
+    .toString(16)
+    .padStart(2, '0')
+  return `${hex}${a}`
+}
+
 /** Look up a category safely; unknown values fall back to Fitness so nothing renders blank. */
 export function getCategory(key: string | null | undefined): CategoryToken {
   return CATEGORY[(key ?? '') as CategoryKey] ?? CATEGORY.fitness

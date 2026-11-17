@@ -21,6 +21,7 @@ const {
   shareOutcome,
   shouldTrackShare,
   RECAP_SHARE_EVENT,
+  recapViewedEvent,
 } = require(path.join(__dirname, '../lib/recapWeek.js'))
 
 let passed = 0
@@ -265,13 +266,33 @@ test('the analytics payload is the surface and nothing else', () => {
 
 // ─── Source guards ──────────────────────────────────────────────────────────
 
-test('the recap screen tracks one event and only on the share path', () => {
+test('recap_viewed carries only the week and whether it is still open', () => {
+  const sunday = weekAt('2026-11-15T20:00:00.000Z')
+  assert.deepStrictEqual(recapViewedEvent(sunday), { week_start: '2026-11-09', in_progress: true })
+  const monday = weekAt('2026-11-16T17:00:00.000Z')
+  assert.deepStrictEqual(recapViewedEvent(monday), { week_start: '2026-11-09', in_progress: false })
+})
+
+test('the recap screen tracks a view on open and a share only on the share path', () => {
   const screen = read('apps/mobile/app/recap.tsx')
+  // The pattern stops at the first ')', so the view call reads up to `(week`.
   const calls = screen.match(/track\([^)]*\)/g) || []
-  assert.deepStrictEqual(calls, ["track('share_completed', { ...RECAP_SHARE_EVENT })"])
+  assert.deepStrictEqual(calls, [
+    "track('recap_viewed', recapViewedEvent(week)",
+    "track('share_completed', { ...RECAP_SHARE_EVENT })",
+  ])
+  // The view is guarded so it fires once per open.
+  assert.strictEqual(/if \(viewTracked\.current\) return/.test(screen), true)
   assert.strictEqual(screen.indexOf('handleShare') < screen.indexOf("track('share_completed'"), true)
-  // Capture and share happen in the tap handler, never on mount.
-  assert.strictEqual(/useEffect\([^]*captureRef/.test(screen), false)
+  // Capture and share happen in the tap handler, never on mount: no effect body
+  // may touch captureRef or the share APIs.
+  const effects = screen.match(/useEffect\(\(\) => \{[^]*?\n {2}\}, \[[^\]]*\]\)/g) || []
+  assert.strictEqual(effects.length, (screen.match(/useEffect\(/g) || []).length)
+  for (const effect of effects) {
+    for (const banned of ['captureRef', 'Share.share', 'shareAsync']) {
+      assert.strictEqual(effect.includes(banned), false, banned)
+    }
+  }
 })
 
 test('the card and hook never read a selfie, coordinates or another player', () => {

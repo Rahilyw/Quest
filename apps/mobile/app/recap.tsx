@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import {
   ActivityIndicator,
   Platform,
@@ -30,6 +30,7 @@ import { track } from '@/lib/analytics'
 import {
   RECAP_SHARE_EVENT,
   recapKind,
+  recapViewedEvent,
   shareOutcome,
   shouldTrackShare,
   weekRangeLabel,
@@ -54,6 +55,14 @@ export default function RecapScreen() {
   const cardRef = useRef<ViewInstance>(null)
   const [sharing, setSharing] = useState(false)
   const [note, setNote] = useState<string | null>(null)
+  const viewTracked = useRef(false)
+
+  // Once per open of the screen. The week is fixed when the screen mounts.
+  useEffect(() => {
+    if (viewTracked.current) return
+    viewTracked.current = true
+    track('recap_viewed', recapViewedEvent(week))
+  }, [week])
 
   const kind = recapKind(recap, photoReady !== false)
   // The card is final once we know whether the photo can be drawn.
