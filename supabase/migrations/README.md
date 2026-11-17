@@ -1,6 +1,7 @@
 # Migration index and rollout notes
 
-The baseline schema is `20260619010246_initial_schema.sql`; numbered follow-ups are `002`–`040`.
+The baseline schema is `20260619010246_initial_schema.sql`; numbered follow-ups are `002`–`041`.
+**041 is in the checkout only; it has not been applied anywhere.**
 There is no `001_initial_schema.sql`. The Nov 10, 2026 runbook reports the existing Quest project
 has the baseline and migrations through 038 applied; that report was not independently re-queried.
 **039 and 040: Applied to production (`xuviwarpgvxzpouqesrv`) by the owner on Nov 11, 2026 with `npx supabase db push --remote --include-all`. The "Verifying 039" checks below have not been recorded as run.**
@@ -70,6 +71,84 @@ SELECT grantee, column_name FROM information_schema.column_privileges
 -- expect: no anon or authenticated rows
 ```
 
+## Verifying 041 (push draining and Sunday recap)
+
+**Status: in checkout, text-checked only.** `apps/mobile/__tests__/pushOutbox.test.js` checks the
+SQL text, the sender and the mobile route. Nothing in 041 has been executed against a database.
+
+### Setup the owner does once (after applying 041)
+
+The drain cron reads the function URL and secret from Vault. Without them it does nothing and
+returns `not configured`. Use the same secret value as the function's `DROP_PUSH_WEBHOOK_SECRET`.
+
+```sql
+-- SQL editor, as postgres. Replace both placeholders.
+SELECT vault.create_secret('https://<project-ref>.supabase.co/functions/v1/send-push-outbox',
+                           'push_outbox_function_url');
+SELECT vault.create_secret('<same value as DROP_PUSH_WEBHOOK_SECRET>',
+                           'push_outbox_webhook_secret');
+
+-- To rotate later:
+-- SELECT vault.update_secret(id, '<new value>') FROM vault.secrets WHERE name = 'push_outbox_webhook_secret';
+```
+
+`pg_net` must be enabled (041 creates it when the database offers it; check Database →
+Extensions). `pg_cron` was created by 031.
+
+### Checks
+
+```sql
+-- Columns and kinds
+SELECT column_name, data_type, column_default FROM information_schema.columns
+ WHERE table_name = 'push_outbox'
+   AND column_name IN ('attempts', 'last_error', 'claimed_at', 'next_attempt_at');
+-- expect: 4 rows, attempts default 0
+SELECT pg_get_constraintdef(oid) FROM pg_constraint
+ WHERE conrelid = 'public.push_outbox'::regclass AND contype = 'c';
+-- expect: exactly one CHECK, listing weekly_drop, suggestion_live, week_recap, win_back
+
+-- Schedules
+SELECT jobname, schedule, command FROM cron.job
+ WHERE jobname IN ('drain-push-outbox', 'enqueue-week-recap-0100', 'enqueue-week-recap-0200');
+-- expect: */5 * * * *, 0 1 * * 1, 0 2 * * 1
+
+-- Client roles cannot call the outbox RPCs
+SELECT p.proname, has_function_privilege('authenticated', p.oid, 'EXECUTE') AS authed,
+       has_function_privilege('anon', p.oid, 'EXECUTE') AS anon
+  FROM pg_proc p
+ WHERE p.proname IN ('claim_push_outbox', 'finish_push_outbox', 'release_push_outbox',
+                     'invoke_push_outbox_drain', 'enqueue_week_recap');
+-- expect: false / false on every row
+
+-- Drain trigger
+SELECT invoke_push_outbox_drain();
+-- expect: 'idle' with nothing queued; 'not configured: ...' before the Vault secrets exist;
+-- 'requested <id>' when rows are queued. Then:
+SELECT id, status_code, error_msg, created FROM net._http_response ORDER BY created DESC LIMIT 5;
+
+-- Recap guard: outside Sunday 18:00–23:59 Victoria this returns 0 and writes nothing.
+SELECT enqueue_week_recap();
+SELECT * FROM week_recap_sends ORDER BY week_start DESC LIMIT 3;
+
+-- Outbox health
+SELECT kind,
+       count(*) FILTER (WHERE sent_at IS NULL AND attempts < 5)  AS waiting,
+       count(*) FILTER (WHERE claimed_at IS NOT NULL AND sent_at IS NULL) AS claimed,
+       count(*) FILTER (WHERE sent_at IS NULL AND attempts >= 5) AS dead,
+       count(*) FILTER (WHERE sent_at IS NOT NULL AND last_error IS NULL) AS delivered_to_expo,
+       count(*) FILTER (WHERE sent_at IS NOT NULL AND last_error IS NOT NULL) AS skipped
+  FROM push_outbox GROUP BY kind;
+
+-- Dead letters and why
+SELECT id, kind, attempts, last_error, created_at FROM push_outbox
+ WHERE sent_at IS NULL AND attempts >= 5 ORDER BY created_at DESC LIMIT 20;
+```
+
+To retry a dead letter by hand: `UPDATE push_outbox SET attempts = 0, next_attempt_at = NULL,
+claimed_at = NULL WHERE id = '<id>';`
+
+The drain test with more than 100 rows is in `LAUNCH-RUNBOOK.md` Step 0c.
+
 | File | Description |
 |------|-------------|
 | `20260619010246_initial_schema.sql` | Core tables, XP trigger, storage bucket |
@@ -112,6 +191,7 @@ SELECT grantee, column_name FROM information_schema.column_privileges
 | `038_completion_secret_columns.sql` | Drops anon/authenticated table SELECT on `completions`, then grants every column except `redemption_code`, `lat`, `lng`, `gps_accuracy` and `reviewed_by`. Owners read their own code via `own_completion_reward` / `own_reward_codes`. Non-sponsored inserts cannot keep a client-supplied code. Streak week uses `America/Vancouver`. A later column on `completions` needs its own GRANT. Runbook reports applied Nov 10, 2026. |
 | `039_profile_push_token_privacy.sql` | SEC-01. Drops anon/authenticated table SELECT on `profiles`, then grants every column except `push_token`. `own_push_enabled()` gives Settings a yes/no for the caller. Own-row `push_token` UPDATE is unchanged. `select=*` on profiles from a client now fails, so ship the client first. A later column on `profiles` needs its own GRANT. **Applied to production Nov 11, 2026; verification checks not yet recorded.** |
 | `040_week_recap.sql` | Spec 06 §2. `own_week_recap(date)` returns the caller's rank, weekly XP, quest count, derived streak and best own place photo for one `America/Vancouver` week (current or previous only). Authenticated only. Recomputed from live rows; no snapshot table. **Applied to production Nov 11, 2026.** |
+| `041_push_outbox_draining.sql` | OPS-01/F-007 and Spec 06 §2. `push_outbox.attempts`, `last_error`, `claimed_at`, `next_attempt_at`; service-role `claim_push_outbox` (`FOR UPDATE SKIP LOCKED`, reclaims claims older than 10 min), `finish_push_outbox`, `release_push_outbox` (backoff, dead letter at 5 attempts). `kind` adds `week_recap`, `win_back`. `invoke_push_outbox_drain()` on a 5-minute pg_cron calls `send-push-outbox` through `pg_net` only when rows are claimable; URL and secret come from Vault (see "Verifying 041"). `week_recap_sends` + `enqueue_week_recap()` on Monday 01:00 and 02:00 UTC with a Sunday 18:00 Victoria guard. **In checkout only; not applied.** |
 
 ## Column grants: what a new column needs
 

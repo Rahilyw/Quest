@@ -106,34 +106,95 @@ Likes never push (inbox only) by design.
 
 ---
 
-## Step 0c — Weekly drop push (migration 034) 🟠
+## Step 0c — Push outbox: weekly drop and Sunday recap (migrations 034 + 041) 🟠
 
-The SQL job `enqueue_weekly_drop()` writes `push_outbox`; phones get nothing until you deploy
-the function and webhook. The Nov 10 migration report includes migration 034. Do not push it
-again as part of this step. Before enabling delivery, verify the sender's batch-drain behavior
-and delivery preferences, then:
+`enqueue_weekly_drop()` (034, Monday) and `enqueue_week_recap()` (041, Sunday 18:00 Victoria)
+only write `push_outbox`. Phones get nothing until the sender is deployed and the drain cron
+can reach it. The Nov 10 migration report includes 034; do not push it again. **041 is in the
+checkout only (not applied, not deployed, not device-verified).**
+
+What 041 changes: the sender now claims rows in batches of 100 and loops for up to 20 batches
+or about 50 seconds, checks Expo's HTTP status and ticket shape, retries failures with backoff,
+and stops retrying a row after 5 attempts (a dead letter). A pg_cron job calls it every
+5 minutes, through `pg_net`, only while rows are waiting. The old one-shot 100-row limit is gone.
+
+**1. Apply and deploy (owner).**
 
 ```powershell
 cd C:\Users\rahil\Documents\Projects\Quest
-npx supabase secrets set DROP_PUSH_WEBHOOK_SECRET=<long random string>
+npx supabase db push --remote --dry-run    # expect exactly 041
+npx supabase db push --remote
+npx supabase secrets set DROP_PUSH_WEBHOOK_SECRET=<long random string>   # skip if already set
 npx supabase functions deploy send-push-outbox
 ```
 
-In the Supabase dashboard → **Database → Webhooks → Create a new hook**:
+Deploy the function in the same sitting as 041: the new sender calls `claim_push_outbox`,
+which only exists after 041, and the old sender does not know about claims.
 
-- Table: `public.weekly_drop_sends`, Events: **Insert** only
-- Type: **HTTP Request**, Method `POST`,
-  URL `https://<project-ref>.supabase.co/functions/v1/send-push-outbox`
-- HTTP header: `x-webhook-secret` = the same random string
+**2. Vault secrets for the drain cron** (SQL editor; same secret as above):
 
-Cron (created by 034 if `pg_cron` is installed) calls the enqueue at 16:15 and 17:15 UTC
-on Mondays so both PST and PDT land near 09:00 Victoria. An empty Monday does not lock
-the week. A second run the same week inserts nothing.
+```sql
+SELECT vault.create_secret('https://<project-ref>.supabase.co/functions/v1/send-push-outbox',
+                           'push_outbox_function_url');
+SELECT vault.create_secret('<DROP_PUSH_WEBHOOK_SECRET value>', 'push_outbox_webhook_secret');
+SELECT invoke_push_outbox_drain();   -- expect 'idle' when nothing is queued
+```
 
-**Verify:** insert a quest with `active_from` earlier today (Victoria Monday), call
-`select enqueue_weekly_drop();` from the SQL editor, confirm one `weekly_drop_sends` row
-and `push_outbox` rows, then confirm the function log says `pushed`. Do not treat a
-successful enqueue as a delivered notification.
+Check Database → Extensions shows `pg_net` enabled. Then run the checks under
+"Verifying 041" in `supabase/migrations/README.md`.
+
+**3. Optional webhook.** The cron delivers within 5 minutes. If you want the Monday drop to go
+out the moment it is enqueued, keep (or create) the Database Webhook: table
+`public.weekly_drop_sends`, **Insert** only, HTTP `POST` to the function URL, header
+`x-webhook-secret` = the same secret. Both callers can run at once; claims stop double sends.
+
+**Schedules.** 034 enqueues the drop at 16:15 and 17:15 UTC on Mondays (about 09:15
+Victoria in PST and PDT); an empty Monday does not lock the week. 041 enqueues the recap at
+01:00 and 02:00 UTC on Mondays; a local-time guard only lets it run on Sunday at 18:00 or later
+in Victoria, and `week_recap_sends` stops a second send that week. The recap goes to players
+with a push token, the Weekly digest toggle on (`push_drops`), and approved XP that week.
+
+**Verify — drain more than 100 rows.** Use test accounts you own, on a quiet hour.
+
+```sql
+-- 1. Queue 150 rows for one test player who has a real device token and push_drops on.
+--    (Same user 150 times is fine for the drain; dedupe_key keeps them distinct.)
+INSERT INTO push_outbox (user_id, kind, title, body, data, dedupe_key)
+SELECT '<test-user-uuid>', 'weekly_drop', 'Quest!', 'Drain test ' || g,
+       jsonb_build_object('type', 'weekly_drop', 'test', true),
+       'drain_test:' || g
+  FROM generate_series(1, 150) g;
+
+-- 2. Trigger once instead of waiting for the cron.
+SELECT invoke_push_outbox_drain();   -- expect 'requested <id>'
+```
+
+Then, within a minute:
+
+```sql
+SELECT count(*) FILTER (WHERE sent_at IS NOT NULL) AS done,
+       count(*) FILTER (WHERE sent_at IS NULL)     AS waiting,
+       max(attempts) AS max_attempts
+  FROM push_outbox WHERE dedupe_key LIKE 'drain_test:%';
+-- expect: done = 150, waiting = 0, max_attempts = 0
+```
+
+The function log (Edge Functions → `send-push-outbox` → Logs) should show one line with
+`"batches":2`, `"pushed":150` (or `skipped` if the token is missing or the toggle is off)
+and `"stop":"drained"`. Expo may rate-limit 150 pushes to one device; rows that fail come back
+with `attempts = 1` and a `last_error`, and the next cron run retries them. Clean up:
+`DELETE FROM push_outbox WHERE dedupe_key LIKE 'drain_test:%';`
+
+**Verify — failure path.** Temporarily set the Vault URL secret to a wrong path
+(`.../functions/v1/send-push-outbox-nope`), queue one row, run `SELECT invoke_push_outbox_drain();`,
+and confirm `net._http_response` shows a 404 and the row is still waiting with `attempts = 0`.
+Put the secret back. A dead letter shows up as `sent_at IS NULL AND attempts >= 5`.
+
+**Verify — recap push.** On a Sunday after 18:00 Victoria (or wait for the first scheduled
+run), with a test account that finished a quest that week: confirm one `week_recap_sends` row,
+a `week_recap` outbox row for that player, the phone shows "Your week in Victoria is in.", and
+tapping it opens the recap screen. Do not treat a successful enqueue, or an `ok` Expo ticket,
+as a delivered notification: check the phone.
 
 ---
 
