@@ -12,6 +12,13 @@ function handleNotificationTap(data: NotificationData, router: ImperativeRouter)
     router.push('/(tabs)/quests')
     return
   }
+  if (data?.type === 'week_recap') {
+    // Sunday recap push (041). The screen picks the week itself: on Sunday it
+    // shows the week in progress, which is the one the push is about.
+    track('notification_opened', { type: 'week_recap', source: 'push' })
+    router.push('/recap')
+    return
+  }
   if (data?.type === 'suggestion_live') {
     track('notification_opened', { type: 'suggestion_live', source: 'push' })
     const questId = typeof data.quest_id === 'string' ? data.quest_id : null
