@@ -2,8 +2,7 @@
 
 import { supabaseAdmin } from '@/lib/supabase'
 import { sendExpoPush } from '@/lib/expo-push'
-import { getAdminAllowlist, isAdminEmail } from '@/lib/admin-auth'
-import { createServerClient } from '@/lib/supabase-server'
+import { requireAdmin } from '@/lib/require-admin'
 
 export interface ModerationReport {
   id: string
@@ -32,15 +31,6 @@ export interface ModerationItem {
   totalCompletions: number
 }
 
-async function getAdminEmail(): Promise<string> {
-  const supabase = await createServerClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!isAdminEmail(user?.email)) {
-    throw new Error('Unauthorized')
-  }
-  return user?.email ?? getAdminAllowlist()[0] ?? 'admin'
-}
-
 function resolveQuestTitle(
   quests: { title: string } | { title: string }[] | null | undefined
 ): string {
@@ -50,6 +40,8 @@ function resolveQuestTitle(
 }
 
 export async function getModerationQueue(): Promise<ModerationItem[]> {
+  await requireAdmin()
+
   const { data: completions } = await supabaseAdmin
     .from('completions')
     .select(
@@ -160,7 +152,7 @@ export async function getModerationQueue(): Promise<ModerationItem[]> {
 }
 
 export async function dismissReports(completionId: string): Promise<void> {
-  const adminEmail = await getAdminEmail()
+  const adminEmail = await requireAdmin()
 
   const { data: completion } = await supabaseAdmin
     .from('completions')
@@ -200,7 +192,7 @@ async function notifyRemoval(userId: string, questTitle: string, completionId: s
 }
 
 export async function removeCompletionModeration(completionId: string): Promise<void> {
-  const adminEmail = await getAdminEmail()
+  const adminEmail = await requireAdmin()
 
   const { data: completion } = await supabaseAdmin
     .from('completions')
@@ -231,7 +223,7 @@ export async function removeCompletionModeration(completionId: string): Promise<
 }
 
 export async function removeAndAllowRetry(completionId: string): Promise<void> {
-  const adminEmail = await getAdminEmail()
+  const adminEmail = await requireAdmin()
 
   const { data: completion } = await supabaseAdmin
     .from('completions')
@@ -266,6 +258,8 @@ export async function removeAndAllowRetry(completionId: string): Promise<void> {
 }
 
 export async function getFlaggedCount(): Promise<number> {
+  await requireAdmin()
+
   const { count } = await supabaseAdmin
     .from('completions')
     .select('*', { count: 'exact', head: true })
@@ -297,6 +291,8 @@ function one<T>(value: T | T[] | null | undefined): T | null {
 }
 
 export async function getCommentModerationQueue(): Promise<CommentModerationItem[]> {
+  await requireAdmin()
+
   const { data: comments } = await supabaseAdmin
     .from('completion_comments')
     .select(
@@ -370,7 +366,7 @@ export async function getCommentModerationQueue(): Promise<CommentModerationItem
 }
 
 export async function dismissCommentReports(commentId: string): Promise<void> {
-  const adminEmail = await getAdminEmail()
+  const adminEmail = await requireAdmin()
 
   // Status change fires sync_comment_report_counts → unhides the comment.
   await supabaseAdmin
@@ -386,7 +382,7 @@ export async function dismissCommentReports(commentId: string): Promise<void> {
 }
 
 export async function removeCommentModeration(commentId: string): Promise<void> {
-  const adminEmail = await getAdminEmail()
+  const adminEmail = await requireAdmin()
 
   // Soft-remove (keeps replies + audit trail). removed_at must land before the
   // reports close so the count trigger keeps the comment hidden.
@@ -403,6 +399,8 @@ export async function removeCommentModeration(commentId: string): Promise<void> 
 }
 
 export async function getFlaggedCommentCount(): Promise<number> {
+  await requireAdmin()
+
   const { count } = await supabaseAdmin
     .from('completion_comments')
     .select('*', { count: 'exact', head: true })

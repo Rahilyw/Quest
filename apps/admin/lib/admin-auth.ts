@@ -12,15 +12,18 @@ export function isAdminEmail(email: string | undefined): boolean {
   const allowlist = getAdminAllowlist()
 
   if (allowlist.length === 0) {
-    if (process.env.NODE_ENV === 'production') {
-      return false
+    // An empty allowlist denies everyone, in every environment. The only
+    // escape hatch is an explicit local opt-in, which production ignores.
+    if (
+      process.env.ADMIN_DEV_ALLOW_ALL === '1' &&
+      process.env.NODE_ENV !== 'production'
+    ) {
+      console.warn(
+        '[admin-auth] ADMIN_ALLOWED_EMAILS is empty and ADMIN_DEV_ALLOW_ALL=1. Allowing all emails (local dev only).'
+      )
+      return true
     }
-    // Dev fallback: warn and allow so local iteration isn't blocked.
-    // Set ADMIN_ALLOWED_EMAILS before deploying.
-    console.warn(
-      '[admin-auth] ADMIN_ALLOWED_EMAILS is not set. Allowing all emails in development.'
-    )
-    return true
+    return false
   }
 
   return allowlist.includes(email.toLowerCase())

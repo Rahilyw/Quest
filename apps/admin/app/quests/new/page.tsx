@@ -57,10 +57,19 @@ export default function NewQuestPage() {
       }
     }
 
-    setSubmitting(true)
-
     const form = e.currentTarget
     const fd = new FormData(form)
+
+    if (isSponsored) {
+      const sponsorName = String(fd.get('sponsor_name') ?? '').trim()
+      const sponsorReward = String(fd.get('sponsor_reward') ?? '').trim()
+      if (!sponsorName || !sponsorReward) {
+        setError('Sponsor name and reward are required for sponsored quests.')
+        return
+      }
+    }
+
+    setSubmitting(true)
     fd.set('category', category)
     fd.set('is_sponsored', String(isSponsored))
     fd.set('geofence_type', geofenceType)
@@ -184,8 +193,8 @@ export default function NewQuestPage() {
                 <input id="sponsor_name" name="sponsor_name" className="admin-input" placeholder="Habit Coffee" required={isSponsored} />
               </div>
               <div className="admin-field">
-                <label className="admin-label" htmlFor="sponsor_reward">Sponsor reward <span style={{ color: theme.textMuted, fontWeight: 400 }}>(optional)</span></label>
-                <input id="sponsor_reward" name="sponsor_reward" className="admin-input" placeholder="Free double shot upgrade" />
+                <label className="admin-label" htmlFor="sponsor_reward">Sponsor reward <span style={{ color: '#ef4444' }}>*</span></label>
+                <input id="sponsor_reward" name="sponsor_reward" className="admin-input" placeholder="Free double shot upgrade" required={isSponsored} />
               </div>
             </div>
           )}
