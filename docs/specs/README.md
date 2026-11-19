@@ -12,7 +12,7 @@ The product specifications for Quest!'s verification, safety, analytics, content
 | [06](06-growth-engagement.md) | **Growth & Engagement** | Starter quest, recap, XP events, offline queue and duo loop | Starter quest implemented (037). Sunday recap implemented (040 applied Nov 11, not device-tested; no reminder push). Other features planned |
 | [07](07-merchant-redemption.md) | **Merchant Redemption** | No-login merchant validation and redemption reporting | Implemented in checkout (036); live counter flow unverified |
 
-**Next build plan:** [NEXT-BUILD-PLAN-2026-11.md](../design/NEXT-BUILD-PLAN-2026-11.md) (Nov 17, 2026).
+**Next build plan:** [NEXT-BUILD-PLAN-2026-11-19.md](../design/NEXT-BUILD-PLAN-2026-11-19.md) (Phases 3–6, Nov 19, 2026), following [NEXT-BUILD-PLAN-2026-11.md](../design/NEXT-BUILD-PLAN-2026-11.md) (Nov 17).
 Migrations through 040 are reported applied to production (039 and 040 by the owner on Nov 11);
 the 039 verification queries are not yet recorded and the recap is not device-tested. The plan
 puts pilot launch hardening first, then Spec 06 §5 (offline queue), §3 (XP events) and §1 (duo).

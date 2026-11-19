@@ -1,7 +1,7 @@
 # Quest! — Product Roadmap
 
 **Last reconciled:** November 17, 2026
-**Current product priority:** pilot launch first. Follow the [Nov 17 build plan](docs/design/NEXT-BUILD-PLAN-2026-11.md): truth and CI hygiene, launch-hardening code (push draining, recap push, admin auth, submission integrity), the owner launch checklist, then Spec 06 §5 offline queue, §3 XP events and §1 duo quests. Chains stay deferred until 35 live quests.
+**Current product priority:** pilot launch first. Follow the [Nov 17 build plan](docs/design/NEXT-BUILD-PLAN-2026-11.md): truth and CI hygiene, launch-hardening code (push draining, recap push, admin auth, submission integrity), the owner launch checklist, then Spec 06 §5 offline queue, §3 XP events and §1 duo quests. Phases 0–1 are merged (PR #15); Phases 3–6 are detailed in the [Nov 19 build plan](docs/design/NEXT-BUILD-PLAN-2026-11-19.md). Chains stay deferred until 35 live quests.
 
 This section is the current status for the checkout. It is not a deployment certification.
 For detailed findings and exact local checks, see the [Nov 11 audit](docs/design/CODEBASE-AUDIT-2026-11-11.md).

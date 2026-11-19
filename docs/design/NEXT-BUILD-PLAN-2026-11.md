@@ -154,6 +154,9 @@ These steps follow `LAUNCH-RUNBOOK.md`. Claude prepares commands and copy only.
 7. **Step 6:** delete the retired functions and turn on leaked-password protection.
 8. **Content:** place photos and cutouts for the roughly 25 quests, plus `action_phrase` copy. Do these before inviting the R1 closed cohort of 10–20 locals.
 
+> **Superseded Nov 19, 2026:** Phases 3–6 below are replaced by the detailed
+> [Nov 19 build plan](NEXT-BUILD-PLAN-2026-11-19.md). Kept as history.
+
 ## Phase 3 — Offline submission queue (Spec 06 §5) (2–3 days)
 
 This goes ahead of XP events, which reverses spec §6's order. A failed upload at the summit costs the pilot's one first impression; XP events need an audience before they matter.

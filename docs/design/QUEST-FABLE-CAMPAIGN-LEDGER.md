@@ -57,7 +57,9 @@ first; chains stay deferred (35 live quests); the plan carries an owner-only lau
   or executed, the function is not deployed, and nothing has been device-tested.
 - Next concrete action: owner checklist in plan Phase 2. That means applying 041 and 042,
   setting the Vault values for the drain cron, deploying both push functions with their
-  webhooks, and running the "Verifying 039/041/042" queries. Then plan Phase 3 (offline queue).
+  webhooks, and running the "Verifying 039/041/042" queries. Code work continues in parallel from
+  [NEXT-BUILD-PLAN-2026-11-19.md](NEXT-BUILD-PLAN-2026-11-19.md): Lane A (Phase 3 offline queue,
+  mobile only) and Lane B (Phase 4a XP events: migration 043 + admin), then 4b, then Phase 5 duo.
 
 The sections below preserve the Nov 10 campaign record and may contain facts that were true
 only for that session; use the continuation above and linked current docs for present status.
