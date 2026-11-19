@@ -2,6 +2,8 @@ import Link from 'next/link'
 import { dropDayWindow, formatDropLabel } from '@quest/geofence'
 import { supabaseAdmin } from '@/lib/supabase'
 import { getFlaggedCommentCount, getFlaggedCount } from '@/app/moderation/actions'
+import { getActiveBoosts, type XpEventRow } from '@/app/xp-events/actions'
+import { formatMultiplier, formatVictoria } from '@/lib/xpEventPresets'
 import { theme } from '@/lib/theme'
 
 export const revalidate = 60
@@ -9,6 +11,10 @@ export const revalidate = 60
 export default async function Dashboard() {
   const [flaggedPosts, flaggedComments] = await Promise.all([getFlaggedCount(), getFlaggedCommentCount()])
   const flaggedCount = flaggedPosts + flaggedComments
+
+  // null = couldn't read xp_events (043 not applied yet).
+  const boosts: XpEventRow[] | null = await getActiveBoosts().catch(() => null)
+  const topBoost = boosts?.[0] ?? null
 
   const [
     { count: totalUsers },
@@ -78,6 +84,35 @@ export default async function Dashboard() {
               : ` scheduled for that morning.`}
         </p>
       </div>
+
+      <Link href="/xp-events" style={{ textDecoration: 'none', color: 'inherit', display: 'block', maxWidth: 520, marginBottom: 24 }}>
+        <div className="admin-card">
+          <div style={{ fontSize: 13, fontWeight: 700, color: theme.textMuted }}>Active boost</div>
+          {boosts == null ? (
+            <p style={{ margin: '8px 0 0', color: theme.textMuted, fontSize: 14 }}>
+              Unavailable. XP events need migration 043.
+            </p>
+          ) : topBoost == null ? (
+            <>
+              <div style={{ fontSize: 28, fontWeight: 800, marginTop: 6 }}>None</div>
+              <p style={{ margin: '8px 0 0', color: theme.textMuted, fontSize: 14 }}>
+                Quests pay their normal XP. Start a double-XP weekend from XP events.
+              </p>
+            </>
+          ) : (
+            <>
+              <div style={{ fontSize: 28, fontWeight: 800, marginTop: 6 }}>
+                {formatMultiplier(topBoost.multiplier)} {topBoost.label ?? 'XP event'}
+              </div>
+              <p style={{ margin: '8px 0 0', color: theme.textMuted, fontSize: 14 }}>
+                {topBoost.quest_id ? topBoost.quest_title ?? 'One quest' : 'Every quest'} · ends{' '}
+                {formatVictoria(topBoost.ends_at)} Victoria
+                {boosts.length > 1 ? ` · ${boosts.length - 1} more running` : ''}
+              </p>
+            </>
+          )}
+        </div>
+      </Link>
 
       <Link href="/quests/new" className="admin-btn admin-btn-primary" style={{ textDecoration: 'none' }}>
         + Create New Quest

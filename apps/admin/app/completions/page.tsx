@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import { getRecentCompletions, removeCompletion, type Completion } from './actions'
 import { theme } from '@/lib/theme'
+import { XP_REASON_LABELS } from '@/lib/xpEventPresets'
 
 export default function CompletionsLog() {
   const [completions, setCompletions] = useState<Completion[]>([])
@@ -90,7 +91,10 @@ export default function CompletionsLog() {
                 <div style={{ color: theme.textMuted, marginBottom: 4 }}>by @{c.profiles?.username}</div>
                 <div style={{ color: theme.textDim, fontSize: 13, marginBottom: 4 }}>
                   {new Date(c.completed_at).toLocaleString()} ·{' '}
-                  <span style={{ color: theme.primary, fontWeight: 700 }}>{c.quests?.xp_reward} XP</span>
+                  <span style={{ color: theme.primary, fontWeight: 700 }}>{c.xp_awarded} XP</span>
+                  {c.xp_reason ? (
+                    <span style={{ color: theme.textMuted, marginLeft: 6 }}>({XP_REASON_LABELS[c.xp_reason] ?? c.xp_reason})</span>
+                  ) : null}
                   {isRemoved && (
                     <span style={{ color: theme.danger, fontWeight: 700, marginLeft: 8 }}>REMOVED</span>
                   )}
