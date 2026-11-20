@@ -91,6 +91,20 @@ Supersedes the "Next code" line above. A read-only check of the repo produced
 - Wave 1 is free: S (stickers / 044) and R (release readiness) can start on their own branches.
 - Owner track unchanged: verify 039, apply 041 → 042 → 043; merge PR #15 when ready (O6).
 
+### Continuation — November 20, 2026, big build plan
+
+[CURSOR-BIG-BUILD-2026-11-20.md](CURSOR-BIG-BUILD-2026-11-20.md) turns the remaining cards into one
+Cursor run on the integration branch `cursor/big-build`. The run order is R, Q, S, V, C, E4, P, F,
+E1, E2, E5, then D on its own branch, held. It adds four cards:
+
+- Q: a Deno check of the edge functions in CI;
+- V: the per-migration verify SQL files and an owner run sheet;
+- P: the admin `/pilot` dashboard;
+- F: in-app feedback through Sentry.
+
+No new migrations beyond 044 and 045. Progress is logged in `docs/design/BIG-BUILD-LOG.md`, which
+the run creates. The Cursor rule now allows merging card branches into `cursor/big-build` only.
+
 The sections below preserve the Nov 10 campaign record and may contain facts that were true
 only for that session; use the continuation above and linked current docs for present status.
 

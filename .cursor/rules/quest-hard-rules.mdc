@@ -8,7 +8,7 @@ alwaysApply: true
 Current plan: `docs/design/ULTRA-PLAN-2026-11-20.md`. Task cards: `docs/design/CURSOR-HANDOFF-2026-11-20.md`.
 
 - **No hosted services.** Never run `supabase db push`, Supabase MCP/plugin SQL, edge function deploys, Vercel deploys, or EAS build/submit/update. The owner does these.
-- **Git.** Never push to `main`, force-push, merge or close PRs. Work on your own `cursor/<card>-<name>` branch.
+- **Git.** Never push to `main`, force-push, merge or close PRs. Work on your own `cursor/<card>-<name>` branch. Big-build exception (`docs/design/CURSOR-BIG-BUILD-2026-11-20.md`): you may `git merge --no-ff` your own card branches into `cursor/big-build` and push that branch. Never merge into `main` or the base branch.
 - **Migrations are forward-only.** Never edit or rename 002–043. Reserved: 044 stickers, 045 duo quests. Applied in production: through 040 only.
 - New `completions`/`profiles` columns need an explicit `GRANT SELECT (col)` to anon/authenticated (038/039 removed table SELECT).
 - SECURITY DEFINER functions: `SET search_path` and `REVOKE` from PUBLIC/anon/authenticated unless clients call them.

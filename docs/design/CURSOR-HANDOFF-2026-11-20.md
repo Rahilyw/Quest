@@ -4,6 +4,11 @@ The master plan is [ULTRA-PLAN-2026-11-20.md](ULTRA-PLAN-2026-11-20.md). Cards C
 specified in detail in [NEXT-BUILD-PLAN-2026-11-19.md](NEXT-BUILD-PLAN-2026-11-19.md). This file
 replaces [AGENT-HANDOFF-2026-11-19.md](AGENT-HANDOFF-2026-11-19.md).
 
+> **One-run option:** [CURSOR-BIG-BUILD-2026-11-20.md](CURSOR-BIG-BUILD-2026-11-20.md) runs
+> every card below in order on the integration branch `cursor/big-build`, plus four new cards:
+> Q (CI hardening), V (owner verification pack), P (admin pilot dashboard) and F (in-app
+> feedback). Use that or this file, not both at once.
+
 ## How to use this in Cursor
 
 1. Open a new **Agent** chat, one per card. If you run cards in parallel, use a separate
@@ -28,6 +33,10 @@ replaces [AGENT-HANDOFF-2026-11-19.md](AGENT-HANDOFF-2026-11-19.md).
 | E2: Skeletons | 3 | Blocked | C merged (can run beside E1, see file split) |
 | E5: Accessibility pass | 3 | Blocked | E1 and E2 merged; run it alone |
 | D: Duo quests (migration 045) | 4 | Blocked | C merged and TestFlight build #1 cut |
+| Q: CI hardening (big build only) | 1 | Free | H is pushed |
+| V: Owner verification pack (big build only) | 2 | Blocked | S merged |
+| P: Admin pilot dashboard (big build only) | 2 | Blocked | S merged |
+| F: In-app feedback (big build only) | 2 | Blocked | C merged |
 
 Done earlier: Phase 3 offline queue (card A, Nov 19) and Phase 4a XP server and admin (card B,
 Nov 19). Old card E3 is now part of C; old card E6 is now part of S.
