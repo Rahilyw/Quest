@@ -1,5 +1,7 @@
 # Quest! Launch Runbook — Your Remaining Steps
 
+Owner checklist (O1–O12): [docs/design/OWNER-RUNSHEET.md](docs/design/OWNER-RUNSHEET.md).
+
 **Last updated:** November 11, 2026
 
 This runbook records hosted/credential-dependent launch steps. It does not mean all engineering
