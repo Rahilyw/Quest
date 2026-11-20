@@ -9,3 +9,6 @@ Base: `cursor/cutouts-this-week-quests` @ `7b587ae`. Started 2026-11-20.
 | 3 | S | `cursor/s-stickers` | `9ce395e` | 270 passed (+14 sticker) | 50 + redemption | ok | ok | ok (/stickers) | 126 | Migration **044** (not applied). Grant/revoke via AFTER triggers on verified status + 043 path. Sprite/Cutout deleted. SQL not executed. |
 | 4 | V | `cursor/v-verify` | `4c7d6c2` | 270 passed | 50 + redemption | ok | ok | n/a | 126 | `supabase/verify/{039,041-044}.sql` + OWNER-RUNSHEET. 042 derived (no README block). SQL not executed. |
 | 5 | C | `cursor/c-xp-mobile` | `c63bad1` | 278 passed | 50 + redemption | ok | ok | n/a | 126 | Also touched submit screen + queue banner/hook for xp_awarded flush (needed for #6). SQL not executed. |
+| 6 | E4 | `cursor/e4-selfie` | `2c2d473` | 282 (+4 ownSelfie) | 50 + redemption | ok | n/a | n/a | 126 | Own selfie via ownSelfiePath guard. |
+| 7 | P | `cursor/p-pilot-admin` | `18556b4` | 282 | 50 + redemption | ok | ok | ok (/pilot) | 126 | Soft-fallback for missing 043/044. SQL not executed. |
+| 8 | F | `cursor/f-feedback` | `82b4c28` | 290 (+8 feedback) | 50 + redemption | ok | ok | n/a | 126 | package.json conflict with E4 test script resolved by combining both entries. |
