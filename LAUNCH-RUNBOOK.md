@@ -377,6 +377,13 @@ The admin app denies **all** logins until `ADMIN_ALLOWED_EMAILS` is set.
      the proof is removed with a one-line notice.
   8. Queue three proofs for three quests while offline. Expect a fourth for a different quest to
      show "couldn't be saved for later", and a new capture of a queued quest to replace its card.
+- **Stickers (card S, migration 044).** Needs 044 applied. On a device build:
+  1. In admin, upload a sticker for a quest (alt text required). Confirm it shows on quest detail.
+  2. Verify that quest. Expect the Verified screen to lead with a badge or XP medal, then the
+     sticker slides into a drawer slot. Nothing says verified before the server accepts.
+  3. On You, open the sticker drawer, place the sticker on your page (drag or tap-then-tap).
+  4. With `feed_public` on, another player sees your board on your public page. With a block
+     either way, they do not. A quest without a sticker shows no sticker anywhere.
 
 ---
 

@@ -1,89 +1,148 @@
 'use client'
 
-import { useRef, useState } from 'react'
-import { setQuestCutout } from '@/app/quests/actions'
+import { useId, useRef, useState } from 'react'
+import { setQuestSticker } from '@/app/quests/actions'
+import { prepareStickerPhoto, STICKER_ACCEPT } from '@/lib/sticker-client'
 import { theme } from '@/lib/theme'
+import StickerPreview from '@/components/StickerPreview'
 
-const CATEGORY_SWATCHES = Object.entries(theme.categories).map(([key, c]) => ({ key, label: c.label, color: c.color }))
-
+/**
+ * The quest's sticker (BRAND.md §6). The admin uploads a real photo of the
+ * quest's object; the server cuts it out, adds the white die-cut edge and the
+ * shadow, and saves it on the quest. Alt text is required.
+ */
 export default function QuestCutoutUploader({
   questId,
   category,
+  questTitle,
   initialUrl,
+  initialAlt,
   onChange,
 }: {
   questId: string
   category: string
+  questTitle?: string
   initialUrl: string | null | undefined
+  initialAlt?: string | null
   onChange?: (url: string | null) => void
 }) {
+  const id = useId()
   const input = useRef<HTMLInputElement>(null)
   const [url, setUrl] = useState<string | null>(initialUrl ?? null)
+  const [alt, setAlt] = useState(initialAlt ?? '')
+  const [file, setFile] = useState<File | null>(null)
   const [busy, setBusy] = useState(false)
-  const [message, setMessage] = useState<string | null>(null)
+  const [message, setMessage] = useState<{ tone: 'ok' | 'error'; text: string } | null>(null)
 
-  async function apply(file: File | null) {
+  async function submit(remove = false) {
     setBusy(true)
     setMessage(null)
-    const result = await setQuestCutout(questId, file)
-    setBusy(false)
-    if (input.current) input.current.value = ''
-    if (!result.ok) {
-      setMessage(result.error)
-      return
+    try {
+      const fd = new FormData()
+      fd.set('questId', questId)
+      if (remove) {
+        fd.set('remove', '1')
+      } else {
+        fd.set('alt', alt)
+        if (file) fd.set('photo', await prepareStickerPhoto(file))
+      }
+      const result = await setQuestSticker(fd)
+      if (!result.ok) {
+        setMessage({ tone: 'error', text: result.error })
+        return
+      }
+      setUrl(result.cutout_url)
+      setFile(null)
+      if (input.current) input.current.value = ''
+      onChange?.(result.cutout_url)
+      const base = remove
+        ? 'Sticker removed. The quest shows no sticker until you add one.'
+        : file
+          ? 'Sticker saved. Players who verify this quest get it in their drawer.'
+          : 'Alt text saved.'
+      setMessage({ tone: 'ok', text: [base, ...result.warnings].join(' ') })
+    } catch (err) {
+      setMessage({ tone: 'error', text: err instanceof Error ? err.message : 'Upload failed.' })
+    } finally {
+      setBusy(false)
     }
-    setUrl(result.cutout_url)
-    onChange?.(result.cutout_url)
-    setMessage(result.cutout_url ? 'Cutout saved.' : 'Cutout removed. The category default shows instead.')
   }
+
+  const altHint = questTitle ? `e.g. "Soft-serve cone, ${questTitle} quest"` : 'e.g. "Soft-serve cone, Beacon Drive-In quest"'
+  const canSave = !busy && alt.trim().length >= 3 && (file !== null || (url !== null && alt !== (initialAlt ?? '')))
 
   return (
     <div>
-      <label style={{ display: 'block', fontWeight: 600, marginBottom: 6 }}>Cutout</label>
-      <p style={{ opacity: 0.7, fontSize: 13, margin: '0 0 8px' }}>
-        Transparent WebP from <code>scripts/make-cutout.js</code>. Saves immediately.
+      <label className="admin-label" htmlFor={`${id}-photo`}>
+        Sticker
+      </label>
+      <p style={{ color: theme.textMuted, fontSize: 13, margin: '0 0 10px', maxWidth: 520 }}>
+        Upload a real photo of the quest&apos;s object, taken at the place, on a plain backdrop (or a
+        transparent PNG). We cut it out and add the white edge. No stock photos, drawings, AI images
+        or brand logos.
       </p>
-      <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 8 }}>
-        {CATEGORY_SWATCHES.map((c) => (
-          <div
-            key={c.key}
-            style={{
-              width: 96,
-              height: 96,
-              borderRadius: 10,
-              background: c.color,
-              display: 'grid',
-              placeItems: 'center',
-              outline: c.key === category ? '2px solid currentColor' : 'none',
-              outlineOffset: 2,
-            }}
-            title={c.label}
+
+      <StickerPreview url={url} alt={alt || 'Sticker preview'} category={category} />
+
+      <div style={{ display: 'grid', gap: 10, marginTop: 12, maxWidth: 520 }}>
+        <input
+          id={`${id}-photo`}
+          ref={input}
+          type="file"
+          accept={STICKER_ACCEPT}
+          disabled={busy}
+          onChange={(e) => {
+            setFile(e.target.files?.[0] ?? null)
+            setMessage(null)
+          }}
+        />
+        <div>
+          <label className="admin-label" htmlFor={`${id}-alt`}>
+            Alt text (required)
+          </label>
+          <input
+            id={`${id}-alt`}
+            className="admin-input"
+            value={alt}
+            maxLength={140}
+            placeholder={altHint}
+            onChange={(e) => setAlt(e.target.value)}
+            disabled={busy}
+          />
+        </div>
+        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+          <button
+            type="button"
+            className="admin-btn admin-btn-primary"
+            disabled={!canSave}
+            onClick={() => void submit(false)}
           >
-            {url ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img src={url} alt={`${c.label} preview`} style={{ maxWidth: '80%', maxHeight: '80%' }} />
-            ) : (
-              <span style={{ fontSize: 11, color: theme.text }}>No cutout</span>
-            )}
-          </div>
-        ))}
+            {busy ? 'Making sticker…' : file ? (url ? 'Replace sticker' : 'Make sticker') : 'Save alt text'}
+          </button>
+          {url ? (
+            <button
+              type="button"
+              className="admin-btn admin-btn-ghost"
+              disabled={busy}
+              onClick={() => {
+                if (window.confirm('Remove this quest’s sticker? It stops showing everywhere in the app, including on players’ pages.')) {
+                  void submit(true)
+                }
+              }}
+            >
+              Remove
+            </button>
+          ) : null}
+        </div>
       </div>
-      <input
-        ref={input}
-        type="file"
-        accept="image/webp"
-        disabled={busy}
-        onChange={(e) => {
-          const f = e.target.files?.[0]
-          if (f) void apply(f)
-        }}
-      />
-      {url ? (
-        <button type="button" disabled={busy} onClick={() => void apply(null)} style={{ marginLeft: 8 }}>
-          Remove
-        </button>
+      {message ? (
+        <p
+          role={message.tone === 'error' ? 'alert' : 'status'}
+          style={{ fontSize: 13, marginTop: 8, color: message.tone === 'error' ? theme.danger : theme.text }}
+        >
+          {message.text}
+        </p>
       ) : null}
-      {message ? <p role="status" style={{ fontSize: 13, marginTop: 6 }}>{message}</p> : null}
     </div>
   )
 }

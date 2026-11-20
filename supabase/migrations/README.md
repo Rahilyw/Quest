@@ -1,8 +1,8 @@
 # Migration index and rollout notes
 
-The baseline schema is `20260619010246_initial_schema.sql`; numbered follow-ups are `002`–`043`.
-**041, 042 and 043 are in the checkout only; none has been applied anywhere. Apply them in order
-041 → 042 → 043, running each file's "Verifying" block before the next.**
+The baseline schema is `20260619010246_initial_schema.sql`; numbered follow-ups are `002`–`044`.
+**041–044 are in the checkout only; none has been applied anywhere. Apply them in order
+041 → 042 → 043 → 044, running each file's "Verifying" block before the next.**
 There is no `001_initial_schema.sql`. The Nov 10, 2026 runbook reports the existing Quest project
 has the baseline and migrations through 038 applied; that report was not independently re-queried.
 **039 and 040: Applied to production (`xuviwarpgvxzpouqesrv`) by the owner on Nov 11, 2026 with `npx supabase db push --remote --include-all`. The "Verifying 039" checks below have not been recorded as run.**
@@ -302,6 +302,80 @@ SELECT count(*) FILTER (WHERE consumed_at IS NULL AND ends_at > now()) AS open_w
   FROM xp_events WHERE kind = 'win_back';
 ```
 
+## Verifying 044 (stickers)
+
+**Status: in checkout, text-checked only.** `apps/mobile/__tests__/stickerBoard.test.js`
+checks the SQL text (numbered 044, no `normalize_completion_on_insert` redefinition, grants,
+definer hygiene) and the board rules. Nothing in 044 has been executed against a database.
+**Requires 043 applied.**
+
+### Structure, backfill and grants
+
+```sql
+-- Quests with a cutout have a matching quest sticker
+SELECT count(*) FROM quests q
+ WHERE q.cutout_url IS NOT NULL
+   AND NOT EXISTS (SELECT 1 FROM stickers s WHERE s.quest_id = q.id AND s.unlock_rule = 'quest');
+-- expect 0
+
+-- cutout_alt is readable (explicit column grant)
+SELECT has_column_privilege('authenticated', 'quests', 'cutout_alt', 'SELECT') AS alt_authed,
+       has_column_privilege('anon',          'quests', 'cutout_alt', 'SELECT') AS alt_anon;
+-- expect: true / true
+
+-- Stickers and drawers are readable; placement writes are owner-only columns
+SELECT has_table_privilege('authenticated', 'stickers', 'SELECT') AS stickers_read,
+       has_table_privilege('authenticated', 'user_stickers', 'SELECT') AS drawer_read,
+       has_table_privilege('authenticated', 'sticker_placements', 'INSERT') AS place_insert;
+-- expect: true / true / true (column-level INSERT still restricts which columns)
+
+-- Definer helpers are not client-callable; can_view_sticker_page is authenticated-only
+SELECT p.oid::regprocedure,
+       has_function_privilege('authenticated', p.oid, 'EXECUTE') AS authed,
+       has_function_privilege('anon', p.oid, 'EXECUTE') AS anon
+  FROM pg_proc p
+ WHERE p.proname IN (
+   'apply_completion_rewards', 'revoke_completion_rewards',
+   'sync_quest_sticker', 'grant_new_sticker_to_qualified', 'grant_badge_stickers',
+   'enforce_sticker_placement_limit', 'can_view_sticker_page'
+ );
+-- expect: apply/revoke/sync/grant_*/enforce false/false;
+--         can_view_sticker_page(uuid) true/false
+
+-- 044 must not redefine normalize_completion_on_insert (043 owns XP award storage)
+SELECT pg_get_functiondef(p.oid) LIKE '%xp_awarded%' AS still_stores_award
+  FROM pg_proc p WHERE p.proname = 'normalize_completion_on_insert';
+-- expect: true (043 body still in place)
+```
+
+### Behaviour (run in a transaction and roll back)
+
+```sql
+-- 1. Verify -> sticker granted (through apply_completion_rewards)
+BEGIN;
+INSERT INTO completions (user_id, quest_id, photo_url, lat, lng, gps_accuracy)
+SELECT '<test-player>', q.id, 'verify', q.lat, q.lng, 5
+  FROM quests q WHERE q.cutout_url IS NOT NULL LIMIT 1
+RETURNING id, status, xp_awarded;
+SELECT us.* FROM user_stickers us
+  JOIN stickers s ON s.id = us.sticker_id
+ WHERE us.user_id = '<test-player>' AND s.unlock_rule = 'quest';
+-- expect: one row for that quest's sticker
+ROLLBACK;
+
+-- 2. Remove -> sticker revoked (through revoke_completion_rewards)
+-- Use a real approved completion you own, then:
+-- UPDATE completions SET status = 'removed' WHERE id = '<completion-id>';
+-- SELECT count(*) FROM user_stickers us JOIN stickers s ON s.id = us.sticker_id
+--  WHERE us.user_id = '<player>' AND s.quest_id = '<quest>';  -- expect 0
+-- (placements for that sticker cascade away)
+
+-- 3. Placement RLS: owner writes only; public pages honour feed_public and blocks
+-- As player A: INSERT into sticker_placements for A's sticker -> ok
+-- As player B: INSERT for A's sticker_id/user_id -> fail
+-- As B viewing A with feed_public=false -> SELECT placements empty
+-- As B viewing A with a block either way -> SELECT placements empty
+```
 
 | File | Description |
 |------|-------------|
@@ -348,6 +422,7 @@ SELECT count(*) FILTER (WHERE consumed_at IS NULL AND ends_at > now()) AS open_w
 | `041_push_outbox_draining.sql` | OPS-01/F-007 and Spec 06 §2. `push_outbox.attempts`, `last_error`, `claimed_at`, `next_attempt_at`; service-role `claim_push_outbox` (`FOR UPDATE SKIP LOCKED`, reclaims claims older than 10 min), `finish_push_outbox`, `release_push_outbox` (backoff, dead letter at 5 attempts). `kind` adds `week_recap`, `win_back`. `invoke_push_outbox_drain()` on a 5-minute pg_cron calls `send-push-outbox` through `pg_net` only when rows are claimable; URL and secret come from Vault (see "Verifying 041"). `week_recap_sends` + `enqueue_week_recap()` on Monday 01:00 and 02:00 UTC with a Sunday 18:00 Victoria guard. **In checkout only; not applied.** |
 | `042_proof_photo_owner_policies.sql` | Plan Phase 1d. UPDATE and DELETE policies on `proof-photos` for the caller's own folder, only for objects none of their completions reference. Lets the submit screen upsert to its fixed per-attempt path and delete a failed attempt's photo (both were RLS no-ops before). **Not applied.** |
 | `043_xp_events.sql` | Spec 06 §3, plan Phase 4a. **Requires 041.** `completions.xp_awarded` (backfilled to `xp_reward`, then NOT NULL) and `xp_reason`, both column-granted. `xp_events` (multiplier / win_back rows; RLS on, no client policies). `normalize_completion_on_insert` keeps 038's logic and stores the award: highest of global/quest event and personal win-back (consumed), first-finisher ×1.5 under an advisory lock, capped at ×3. `apply_completion_rewards(uuid)` pays the stored award (old `(uuid, uuid)` dropped); revoke, `leaderboard`, `own_week_recap`, `enqueue_week_recap` sum `coalesce(xp_awarded, xp_reward)`. `active_xp_boosts()` and `own_completion_reward` (+`xp_awarded`, `xp_reason`) for players. `enqueue_win_back()` + `win_back_sends` on 00:00 and 01:00 UTC with a 17:00 Victoria guard. See "Verifying 043". **In checkout only; not applied.** |
+| `044_stickers.sql` | Card S / BRAND.md §6–§7. **Requires 043.** `quests.cutout_alt` (column-granted); `stickers`, `user_stickers`, `sticker_placements`; sync from `quests.cutout_url`; grant/revoke hooked into 043's `apply_completion_rewards` / `revoke_completion_rewards` (does not redefine `normalize_completion_on_insert` or change `xp_awarded`); badge/season/manual library stickers; placement RLS (owner writes, public pages honour `feed_public` and blocks); 60-sticker board cap. See "Verifying 044". **In checkout only; not applied.** |
 
 ## Column grants: what a new column needs
 

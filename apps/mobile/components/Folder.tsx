@@ -1,5 +1,5 @@
 import { Image, Pressable, StyleSheet, View } from 'react-native'
-import { Cutout } from '@/components/Cutout'
+import { Sticker } from '@/components/Sticker'
 import { Micro, Name, Small } from '@/components/ui/Text'
 import { COLOR, RADIUS, getCategory, type CategoryKey } from '@/lib/theme'
 
@@ -64,13 +64,7 @@ export function Folder({
         ) : null}
       </View>
       <View style={styles.cutout} pointerEvents="none">
-        <Cutout
-          uri={cutoutUri}
-          category={category}
-          questTitle={cutoutTitle}
-          role="folder"
-          rotation={rotation}
-        />
+        <Sticker uri={cutoutUri} size="folder" tilt={rotation} />
       </View>
     </Pressable>
   )
