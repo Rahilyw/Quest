@@ -23,8 +23,9 @@ echo "db-local: workdir $WORK"
 
 mkdir -p "$WORK/supabase"
 cp "$TEMPLATE" "$WORK/supabase/config.toml"
-# No migrations/ directory on purpose: supabase start must not auto-apply by filename order.
-cp "$SEED" "$WORK/supabase/seed.sql"
+# No migrations/ directory and no seed.sql on purpose: supabase start must not
+# auto-apply filename-sorted migrations or seed into an empty schema.
+# Seed is applied below, after baseline + 002..044.
 
 cd "$WORK"
 echo "db-local: starting local stack (no migrations auto-applied)…"
