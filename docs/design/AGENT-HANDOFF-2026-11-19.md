@@ -1,5 +1,8 @@
 # Agent handoff: Quest! build phases 3–6
 
+> **Superseded Nov 20, 2026** by [CURSOR-HANDOFF-2026-11-20.md](CURSOR-HANDOFF-2026-11-20.md).
+> Migration numbers changed: stickers are 044 and duo quests are 045. Kept as history.
+
 Paste the shared brief and **one** task card into a coding agent. Each card is self-contained.
 The full specification is in [`docs/design/NEXT-BUILD-PLAN-2026-11-19.md`](NEXT-BUILD-PLAN-2026-11-19.md).
 The agent must read the section for its card before writing code.

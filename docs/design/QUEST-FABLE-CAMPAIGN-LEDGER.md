@@ -64,6 +64,25 @@ first; chains stay deferred (35 live quests); the plan carries an owner-only lau
   tests, both `tsc`, admin `next build`). Migrations 041, 042 and 043 are written but not applied; apply them in
   that order. Nothing in Phases 3–4a is device-tested. Next code: Phase 4b (card C), then Phase 5.
 
+### Continuation — November 20, 2026, ultra plan
+
+Supersedes the "Next code" line above. A read-only check of the repo produced
+[ULTRA-PLAN-2026-11-20.md](ULTRA-PLAN-2026-11-20.md) and the Cursor task cards in
+[CURSOR-HANDOFF-2026-11-20.md](CURSOR-HANDOFF-2026-11-20.md). The project rule
+`.cursor/rules/quest-hard-rules.mdc` is always on.
+
+- **U-01 (P0):** PR #16 (stickers) adds `041_stickers.sql`, which collides with
+  `041_push_outbox_draining.sql`. Stickers are renumbered to **044** and duo quests to **045**.
+- PR #16 conflicts with the current base and overlaps card C's files. It is ported as card S, with
+  sprite removal (old E6) folded in, before card C. Old E3 is folded into C.
+- The local branch is 8 commits ahead of `origin`, so PR #15's green CI is for a stale head. 10
+  admin files are uncommitted (in-flight polish). Card H commits them and pushes.
+- `expo-updates` is missing and Android requests an unused `RECORD_AUDIO` permission. Card R fixes
+  both before the first TestFlight build.
+- Next: card H, then S and R in parallel, then C and E4. The owner track (O1–O12 in the ultra
+  plan) runs alongside: verify 039, then apply 041 → 042 → 043. No code was changed in this
+  session; only docs and the Cursor rule were written.
+
 The sections below preserve the Nov 10 campaign record and may contain facts that were true
 only for that session; use the continuation above and linked current docs for present status.
 
