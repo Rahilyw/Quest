@@ -1,6 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import {
-  ActivityIndicator,
   RefreshControl,
   ScrollView,
   StyleSheet,
@@ -13,6 +12,7 @@ import { useAuth } from '@/hooks/useAuth'
 import { AppHeader } from '@/components/AppHeader'
 import { BadgeTile } from '@/components/badges/BadgeTile'
 import { BadgeShowcase } from '@/components/badges/BadgeShowcase'
+import { SkeletonBadgeGrid } from '@/components/ui/SkeletonFolder'
 import { COLORS, FONT_BRAND, FONT_DISPLAY, RADIUS, SPACING, TAB_BAR_CLEARANCE } from '@/lib/constants'
 import { COLOR, TYPE, withAlpha } from '@/lib/theme'
 import {
@@ -143,7 +143,7 @@ export default function BadgesScreen() {
         </View>
 
         {loading ? (
-          <ActivityIndicator color={COLORS.primary} style={{ marginTop: 48 }} />
+          <SkeletonBadgeGrid style={{ marginTop: SPACING.xxl }} />
         ) : (
           <>
             {/* Legendary night band */}

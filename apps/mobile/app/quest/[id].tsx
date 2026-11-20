@@ -17,6 +17,7 @@ import { endsThisSunday, formatDropLabel, isNewThisWeek, isQuestActive } from '@
 import { Sticker } from '@/components/Sticker'
 import { PhotoViewer } from '@/components/PhotoViewer'
 import { Pillow, PILLOW_SIZES } from '@/components/Pillow'
+import { SkeletonFolder } from '@/components/ui/SkeletonFolder'
 import { Body, BodyStrong, Heading, Micro, Small } from '@/components/ui/Text'
 import { useGeofenceCheck } from '@/hooks/useGeofenceCheck'
 import { useQuest } from '@/hooks/useQuests'
@@ -207,13 +208,7 @@ export default function QuestDetail() {
             </Pressable>
           </View>
         </View>
-        <View style={styles.skeleton}>
-          <View style={[styles.bone, styles.boneTitle]} />
-          <View style={[styles.bone, styles.boneMeta]} />
-          <View style={[styles.bone, styles.boneLine]} />
-          <View style={[styles.bone, styles.boneLine]} />
-          <View style={[styles.bone, styles.boneShort]} />
-        </View>
+        <SkeletonFolder style={styles.skeleton} lines={3} />
       </View>
     )
   }
@@ -572,17 +567,7 @@ const styles = StyleSheet.create({
   skeleton: {
     paddingHorizontal: SPACE.s4,
     paddingTop: SPACE.s5,
-    gap: SPACE.s3,
   },
-  bone: {
-    height: 14,
-    borderRadius: RADIUS.pill,
-    backgroundColor: COLOR.paperDeep,
-  },
-  boneTitle: { height: 24, width: '62%' },
-  boneMeta: { width: '40%', marginBottom: SPACE.s3 },
-  boneLine: { width: '100%' },
-  boneShort: { width: '70%' },
   hero: {
     backgroundColor: COLOR.paperDeep,
     overflow: 'hidden',

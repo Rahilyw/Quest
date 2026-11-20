@@ -6,7 +6,6 @@ import {
   FlatList,
   Image,
   TouchableOpacity,
-  ActivityIndicator,
   Alert,
   Modal,
   Pressable,
@@ -21,6 +20,7 @@ import { EmptyState } from '@/components/EmptyState'
 import { OwnProfileCompletionRow } from '@/components/OwnProfileCompletionRow'
 import { RewardsRow } from '@/components/RewardsRow'
 import { StickerPage } from '@/components/stickers/StickerPage'
+import { SkeletonProfile } from '@/components/ui/SkeletonFolder'
 import { resolveBadgeSpec } from '@/lib/badgeFromDb'
 import type { BadgeSpec } from '@/lib/badgeCatalog'
 import type { Badge } from '@/lib/types'
@@ -168,8 +168,8 @@ export default function PublicProfile() {
 
   if (loading) {
     return (
-      <View style={[styles.centerScreen, { paddingTop: insets.top }]}>
-        <ActivityIndicator size="large" color={COLORS.primary} />
+      <View style={[styles.centerScreen, { paddingTop: insets.top + SPACING.xxl }]}>
+        <SkeletonProfile />
       </View>
     )
   }
