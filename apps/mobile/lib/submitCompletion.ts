@@ -34,6 +34,9 @@ export interface SubmitCompletionInput {
 export interface VerifiedCompletion {
   id: string
   completed_at: string
+  /** Server award when 043 is applied; omit/null when the column is missing. */
+  xp_awarded?: number | null
+  xp_reason?: string | null
 }
 
 interface ResultBase {
@@ -45,6 +48,9 @@ export type SubmitCompletionResult =
   | (ResultBase & {
       kind: 'verified'
       completion: VerifiedCompletion
+      /** Same as completion.xp_awarded; null when 043 is not applied yet. */
+      xpAwarded: number | null
+      xpReason: string | null
       redemptionCode: string | null
       newBadgeIds: string[]
     })
@@ -60,6 +66,24 @@ export type SubmitCompletionResult =
   | (ResultBase & { kind: 'outside_zone' })
   | (ResultBase & { kind: 'rejected' })
   | (ResultBase & { kind: 'network'; stage: 'upload' | 'insert' })
+
+function isMissingXpColumn(error: { message?: string; code?: string } | null): boolean {
+  const msg = (error?.message ?? '').toLowerCase()
+  return msg.includes('xp_awarded') || msg.includes('xp_reason')
+}
+
+function readXpFields(row: Record<string, unknown> | null | undefined): {
+  xp_awarded: number | null
+  xp_reason: string | null
+} {
+  if (!row) return { xp_awarded: null, xp_reason: null }
+  const raw = row.xp_awarded
+  const n = typeof raw === 'number' ? raw : Number(raw)
+  const xp_awarded = Number.isFinite(n) ? n : null
+  const reason = row.xp_reason
+  const xp_reason = typeof reason === 'string' && reason.length > 0 ? reason : null
+  return { xp_awarded, xp_reason }
+}
 
 export type SubmitCompletionKind = SubmitCompletionResult['kind']
 
@@ -114,23 +138,35 @@ export async function submitCompletion(input: SubmitCompletionInput): Promise<Su
     }
   }
 
+  const insertRow = {
+    user_id: userId,
+    quest_id: questId,
+    photo_url: publicUrl,
+    selfie_url: selfiePath,
+    lat: attempt.lat,
+    lng: attempt.lng,
+    gps_accuracy: attempt.accuracy,
+    // The server sets completed_at to now() regardless (F-003).
+    completed_at: new Date().toISOString(),
+  }
+
   let completion: VerifiedCompletion | null = null
   try {
-    const { data, error } = await supabase
+    // Prefer the 043 columns; if they are missing, retry without them so
+    // pre-043 environments still verify.
+    let { data, error } = await supabase
       .from('completions')
-      .insert({
-        user_id: userId,
-        quest_id: questId,
-        photo_url: publicUrl,
-        selfie_url: selfiePath,
-        lat: attempt.lat,
-        lng: attempt.lng,
-        gps_accuracy: attempt.accuracy,
-        // The server sets completed_at to now() regardless (F-003).
-        completed_at: new Date().toISOString(),
-      })
-      .select('id, completed_at')
+      .insert(insertRow)
+      .select('id, completed_at, xp_awarded, xp_reason')
       .single()
+
+    if (error && isMissingXpColumn(error)) {
+      ;({ data, error } = await supabase
+        .from('completions')
+        .insert(insertRow)
+        .select('id, completed_at')
+        .single())
+    }
 
     if (error) {
       const kind = classifyInsertError(error)
@@ -141,20 +177,37 @@ export async function submitCompletion(input: SubmitCompletionInput): Promise<Su
         // A retry whose first insert landed also ends here, and that row uses
         // this attempt's photo. Only delete when the existing completion is
         // confirmed to be a different attempt.
-        const { data: existing } = await supabase
+        let existingQuery = await supabase
           .from('completions')
-          .select('id, completed_at, photo_url')
+          .select('id, completed_at, photo_url, xp_awarded, xp_reason')
           .eq('user_id', userId)
           .eq('quest_id', questId)
           .maybeSingle()
+        if (existingQuery.error && isMissingXpColumn(existingQuery.error)) {
+          existingQuery = await supabase
+            .from('completions')
+            .select('id, completed_at, photo_url')
+            .eq('user_id', userId)
+            .eq('quest_id', questId)
+            .maybeSingle()
+        }
+        const existing = existingQuery.data
         if (existing && !photoUrlMatchesPath(existing.photo_url, placePath)) {
           await removeProofQuietly('proof-photos', placePath)
           await removeProofQuietly('proof-selfies', selfiePath)
           return { kind: 'duplicate', ownCompletion: null, uploadedPlacePath: null }
         }
+        const xp = readXpFields(existing as Record<string, unknown> | null)
         return {
           kind: 'duplicate',
-          ownCompletion: existing ? { id: existing.id, completed_at: existing.completed_at } : null,
+          ownCompletion: existing
+            ? {
+                id: existing.id,
+                completed_at: existing.completed_at,
+                xp_awarded: xp.xp_awarded,
+                xp_reason: xp.xp_reason,
+              }
+            : null,
           uploadedPlacePath,
         }
       }
@@ -170,7 +223,15 @@ export async function submitCompletion(input: SubmitCompletionInput): Promise<Su
       // the caller deletes it when the player gives up on the capture.
       return { kind, uploadedPlacePath }
     }
+    const xp = readXpFields(data as Record<string, unknown> | null)
     completion = data
+      ? {
+          id: data.id,
+          completed_at: data.completed_at,
+          xp_awarded: xp.xp_awarded,
+          xp_reason: xp.xp_reason,
+        }
+      : null
   } catch {
     // No server answer: the row may or may not exist.
     return { kind: 'network', stage: 'insert', uploadedPlacePath }
@@ -181,15 +242,23 @@ export async function submitCompletion(input: SubmitCompletionInput): Promise<Su
   // The row exists from here on. Reward reads are best effort.
   let redemptionCode: string | null = null
   let newBadgeIds: string[] = []
+  let xpAwarded = completion.xp_awarded ?? null
+  let xpReason = completion.xp_reason ?? null
   try {
-    if (isSponsored) {
-      const { data: reward } = await supabase.rpc('own_completion_reward', {
-        p_completion_id: completion.id,
-      })
-      if (reward && typeof reward === 'object' && !Array.isArray(reward)) {
-        const code = (reward as { redemption_code?: unknown }).redemption_code
+    // Always ask for the reward payload: redemption when sponsored, and XP
+    // fields when the insert select lacked them (or 043 filled them only here).
+    const { data: reward } = await supabase.rpc('own_completion_reward', {
+      p_completion_id: completion.id,
+    })
+    if (reward && typeof reward === 'object' && !Array.isArray(reward)) {
+      const row = reward as Record<string, unknown>
+      if (isSponsored) {
+        const code = row.redemption_code
         redemptionCode = typeof code === 'string' ? code : null
       }
+      const fromRpc = readXpFields(row)
+      if (xpAwarded == null && fromRpc.xp_awarded != null) xpAwarded = fromRpc.xp_awarded
+      if (xpReason == null && fromRpc.xp_reason != null) xpReason = fromRpc.xp_reason
     }
 
     // Badge unlocks run in the insert's transaction, so their earned_at equals
@@ -206,5 +275,14 @@ export async function submitCompletion(input: SubmitCompletionInput): Promise<Su
     // The completion stands; the celebration just shows less.
   }
 
-  return { kind: 'verified', completion, redemptionCode, newBadgeIds, uploadedPlacePath }
+  completion = { ...completion, xp_awarded: xpAwarded, xp_reason: xpReason }
+  return {
+    kind: 'verified',
+    completion,
+    xpAwarded,
+    xpReason,
+    redemptionCode,
+    newBadgeIds,
+    uploadedPlacePath,
+  }
 }
