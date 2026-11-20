@@ -28,22 +28,39 @@ sanitize() {
 import re, sys
 src, dst = sys.argv[1], sys.argv[2]
 text = open(src, encoding="utf-8").read()
-# Drop any line whose SQL string literal is a human placeholder like '<test-player-1>'.
+# Human paste-and-edit tokens like '<test-player-1>' / '<old-quest-id>'.
 placeholder = re.compile(r"'<[^']+>'")
+begin_re = re.compile(r"(?i)^\s*begin\s*;")
+end_re = re.compile(r"(?i)^\s*(rollback|commit)\s*;")
+
+lines = text.splitlines(True)
 out = []
-skipping_txn = False
-for line in text.splitlines(True):
-    if placeholder.search(line):
-        # Drop placeholder-bearing lines; keep BEGIN/ROLLBACK balance by
-        # skipping until ROLLBACK if we are inside a tainted block.
-        skipping_txn = True
+i = 0
+while i < len(lines):
+    if begin_re.match(lines[i]):
+        # Collect the whole transaction (nested BEGIN counts).
+        block = [lines[i]]
+        depth = 1
+        i += 1
+        while i < len(lines) and depth > 0:
+            if begin_re.match(lines[i]):
+                depth += 1
+            elif end_re.match(lines[i]):
+                depth -= 1
+            block.append(lines[i])
+            i += 1
+        # Drop the entire block if any statement inside uses a placeholder.
+        # Line-based stripping left broken multi-line INSERTs and orphan ROLLBACKs.
+        if not placeholder.search("".join(block)):
+            out.extend(block)
         continue
-    if skipping_txn:
-        if re.match(r"(?i)^\s*rollback\s*;", line):
-            out.append(line)
-            skipping_txn = False
+    # Outside a transaction: drop any line that still carries a placeholder.
+    if placeholder.search(lines[i]):
+        i += 1
         continue
-    out.append(line)
+    out.append(lines[i])
+    i += 1
+
 open(dst, "w", encoding="utf-8").write("".join(out))
 PY
 }
