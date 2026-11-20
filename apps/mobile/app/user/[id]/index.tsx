@@ -18,6 +18,7 @@ import { Ionicons } from '@expo/vector-icons'
 import { Avatar } from '@/components/Avatar'
 import { FollowButton } from '@/components/FollowButton'
 import { EmptyState } from '@/components/EmptyState'
+import { OwnProfileCompletionRow } from '@/components/OwnProfileCompletionRow'
 import { RewardsRow } from '@/components/RewardsRow'
 import { StickerPage } from '@/components/stickers/StickerPage'
 import { resolveBadgeSpec } from '@/lib/badgeFromDb'
@@ -44,6 +45,8 @@ interface ProfileHeader {
 interface GridPost {
   id: string
   photo_url: string
+  /** Present only when the viewer is the owner; never signed for others. */
+  selfie_url?: string | null
 }
 
 const GRID_GAP = 2
@@ -82,9 +85,12 @@ export default function PublicProfile() {
         .select('id, username, level, avatar_url, feed_public, last_week_rank')
         .eq('id', userId)
         .maybeSingle(),
+      // selfie_url is selected for typing; OwnProfileCompletionRow (and
+      // useSignedSelfie) only mount for the owner, so others never request a
+      // signed URL (card E4 / D6).
       supabase
         .from('completions')
-        .select('id, photo_url', { count: 'exact' })
+        .select('id, photo_url, selfie_url', { count: 'exact' })
         .eq('user_id', userId)
         .eq('status', 'approved')
         .eq('hidden_pending_review', false)
@@ -317,19 +323,28 @@ export default function PublicProfile() {
         ListHeaderComponent={header}
         columnWrapperStyle={{ gap: GRID_GAP }}
         contentContainerStyle={{ gap: GRID_GAP, paddingBottom: insets.bottom + SPACING.xxl }}
-        renderItem={({ item }) => (
-          <TouchableOpacity
-            onPress={() => router.push(`/completion/${item.id}`)}
-            activeOpacity={0.85}
-            accessibilityRole="button"
-            accessibilityLabel="View quest completion"
-          >
-            <Image
-              source={{ uri: sizedImageUrl(item.photo_url, { width: 400, height: 400 }) }}
-              style={{ width: cellSize, height: cellSize, backgroundColor: COLORS.bgWarm }}
+        renderItem={({ item }) =>
+          isSelf ? (
+            <OwnProfileCompletionRow
+              photoUrl={item.photo_url}
+              selfieUrl={item.selfie_url}
+              size={cellSize}
+              onPress={() => router.push(`/completion/${item.id}`)}
             />
-          </TouchableOpacity>
-        )}
+          ) : (
+            <TouchableOpacity
+              onPress={() => router.push(`/completion/${item.id}`)}
+              activeOpacity={0.85}
+              accessibilityRole="button"
+              accessibilityLabel="View quest completion"
+            >
+              <Image
+                source={{ uri: sizedImageUrl(item.photo_url, { width: 400, height: 400 }) }}
+                style={{ width: cellSize, height: cellSize, backgroundColor: COLORS.bgWarm }}
+              />
+            </TouchableOpacity>
+          )
+        }
         showsVerticalScrollIndicator={false}
       />
 

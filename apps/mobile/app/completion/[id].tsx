@@ -15,9 +15,12 @@ import { Ionicons } from '@expo/vector-icons'
 import { Avatar } from '@/components/Avatar'
 import { EmptyState } from '@/components/EmptyState'
 import { CommentsSheet } from '@/components/CommentsSheet'
+import { Pillow, PILLOW_SIZES } from '@/components/Pillow'
 import { ShareStoryModal } from '@/components/ShareStoryModal'
 import { useAuth } from '@/hooks/useAuth'
 import { formatTimeAgo } from '@/hooks/useActivityFeed'
+import { ownSelfiePath } from '@/lib/ownSelfiePath'
+import { useSignedSelfie } from '@/lib/selfieUrl'
 import { supabase } from '@/lib/supabase'
 import { sizedImageUrl } from '@/lib/sizedImageUrl'
 import { paramAsString } from '@/lib/routeParams'
@@ -29,6 +32,7 @@ interface CompletionDetail {
   id: string
   user_id: string
   photo_url: string
+  selfie_url: string | null
   completed_at: string
   user: { username: string; level: number; avatar_url: string | null }
   quest: { title: string; xp_reward: number; category?: string | null; cutout_url?: string | null }
@@ -54,6 +58,8 @@ export default function CompletionScreen() {
   const [shareOpen, setShareOpen] = useState(false)
 
   const isOwn = detail != null && viewerId === detail.user_id
+  // Owner-only: non-owners pass null so createSignedUrl is never requested (D6).
+  const selfie = useSignedSelfie(ownSelfiePath(isOwn, detail?.selfie_url))
 
   const load = useCallback(async () => {
     if (!completionId) return
@@ -62,7 +68,7 @@ export default function CompletionScreen() {
       supabase
         .from('completions')
         .select(
-          'id, user_id, photo_url, completed_at, profile:profiles(username, level, avatar_url), quest:quests(title, xp_reward, category, cutout_url), likes:completion_likes(count), comments:completion_comments(count)'
+          'id, user_id, photo_url, selfie_url, completed_at, profile:profiles(username, level, avatar_url), quest:quests(title, xp_reward, category, cutout_url), likes:completion_likes(count), comments:completion_comments(count)'
         )
         .eq('id', completionId)
         .maybeSingle(),
@@ -80,6 +86,7 @@ export default function CompletionScreen() {
       id: string
       user_id: string
       photo_url: string
+      selfie_url: string | null
       completed_at: string
       profile: { username: string; level: number; avatar_url: string | null } | null
       quest: { title: string; xp_reward: number; category?: string | null; cutout_url?: string | null } | null
@@ -98,6 +105,7 @@ export default function CompletionScreen() {
       id: row.id,
       user_id: row.user_id,
       photo_url: row.photo_url,
+      selfie_url: row.selfie_url ?? null,
       completed_at: row.completed_at,
       user: row.profile,
       quest: row.quest,
@@ -211,12 +219,28 @@ export default function CompletionScreen() {
           <Text style={styles.xp}>+{detail.quest.xp_reward} XP</Text>
         </TouchableOpacity>
 
-        <Image
-          source={{ uri: sizedImageUrl(detail.photo_url, { width: 1000, height: 1000 }) }}
-          style={styles.photo}
-          resizeMode="cover"
-          accessibilityLabel={`Proof photo for ${detail.quest.title}`}
-        />
+        <View style={styles.photoWrap}>
+          <Image
+            source={{ uri: sizedImageUrl(detail.photo_url, { width: 1000, height: 1000 }) }}
+            style={styles.photo}
+            resizeMode="cover"
+            accessibilityLabel={
+              selfie
+                ? `Proof photo for ${detail.quest.title}, with your selfie`
+                : `Proof photo for ${detail.quest.title}`
+            }
+          />
+          {selfie ? (
+            <View style={styles.selfie} pointerEvents="none">
+              <Pillow
+                uri={selfie}
+                {...PILLOW_SIZES.row}
+                edge="white"
+                accessibilityLabel="Your selfie"
+              />
+            </View>
+          ) : null}
+        </View>
 
         <View style={styles.body}>
           <Text style={styles.questTitle}>✓ {detail.quest.title}</Text>
@@ -333,7 +357,13 @@ const styles = StyleSheet.create({
   userName: { color: COLORS.textPrimary, fontSize: 14, fontWeight: '800' },
   userMeta: { color: COLORS.textMuted, fontSize: 11, marginTop: 1 },
   xp: { color: COLORS.success, fontSize: 13, fontWeight: '900' },
-  photo: { width: '100%', aspectRatio: 1 },
+  photoWrap: { width: '100%', aspectRatio: 1, position: 'relative' },
+  photo: { width: '100%', height: '100%' },
+  selfie: {
+    position: 'absolute',
+    top: SPACING.md,
+    left: SPACING.md,
+  },
   body: { padding: SPACING.lg, paddingTop: SPACING.md },
   questTitle: { color: COLORS.primary, fontSize: 14, fontWeight: '800' },
   actionRow: { flexDirection: 'row', alignItems: 'center', marginTop: SPACING.sm },
