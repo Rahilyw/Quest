@@ -25,6 +25,7 @@ import { Sparkle } from '@/components/scraps'
 import { Body, Micro, Sentence, Small } from '@/components/ui/Text'
 import { phraseFor } from '@/lib/thisWeek'
 import { COLOR, FONT, getCategory, RADIUS, SPACE, SPONSORED } from '@/lib/theme'
+import { xpReasonLine } from '@/lib/xpCopy'
 
 export type CelebrationVariant = 'success' | 'alreadyDone'
 
@@ -37,7 +38,13 @@ interface Props {
   actionPhrase?: string | null
   photoUri?: string | null
   selfieUri?: string | null
+  /**
+   * XP to show. Pass `submitCompletion`'s `xpAwarded` when present; fall back
+   * to `quest.xp_reward` only when 043 is not applied yet.
+   */
   xpReward: number
+  /** Server `xp_reason` when a boost applied (`weekend`, `win_back`, …). */
+  xpReason?: string | null
   totalXp?: number
   level?: number
   levelUp?: boolean
@@ -77,6 +84,7 @@ export default function CompletionCelebration({
   photoUri,
   selfieUri,
   xpReward,
+  xpReason = null,
   level,
   levelUp = false,
   streakCount = 0,
@@ -90,6 +98,7 @@ export default function CompletionCelebration({
   const cat = getCategory(category)
   const background = already ? COLOR.paper : questTitle && category ? cat.color : COLOR.paper
   const ink = already ? COLOR.ink : cat.onColor
+  const reasonLine = xpReasonLine(xpReason)
   const [reduceMotion, setReduceMotion] = useState(false)
   const [shownXp, setShownXp] = useState(0)
   const [when] = useState(() => verifiedClock(new Date()))
@@ -201,9 +210,12 @@ export default function CompletionCelebration({
                 )}
               </Animated.View>
             </View>
-            <Small color={ink} accessibilityLiveRegion="polite">
+            <Small color={ink} accessibilityLiveRegion="polite" tabular>
               {earnedBadge ? `New badge: ${earnedBadge.name}` : `${xpReward} XP for ${questTitle}`}
             </Small>
+            {reasonLine ? (
+              <Small color={ink}>{reasonLine}</Small>
+            ) : null}
             <Sentence color={ink} style={styles.line} accessibilityRole="header">
               {hasSticker ? `You ${phrase}. Its sticker is in your drawer.` : `You ${phrase}.`}
             </Sentence>

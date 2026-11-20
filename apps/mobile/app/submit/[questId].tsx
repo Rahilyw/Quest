@@ -13,7 +13,7 @@ import { useAuth } from '@/hooks/useAuth'
 import { useGeofenceCheck } from '@/hooks/useGeofenceCheck'
 import { useLocation } from '@/hooks/useLocation'
 import { useQuest } from '@/hooks/useQuests'
-import { track, type SubmissionBlockReason } from '@/lib/analytics'
+import { track, trackCompletionVerified, type SubmissionBlockReason } from '@/lib/analytics'
 import { didLevelUp } from '@/lib/celebration'
 import { resolveBadgeSpec } from '@/lib/badgeFromDb'
 import type { BadgeSpec } from '@/lib/badgeCatalog'
@@ -21,6 +21,7 @@ import type { Badge } from '@/lib/types'
 import { paramAsString } from '@/lib/routeParams'
 import { captureAttempt, type CapturedAttempt } from '@/lib/submissionAttempt'
 import { removeProofQuietly, submitCompletion } from '@/lib/submitCompletion'
+import { resolveXpAwarded, xpMultiplier } from '@/lib/xpCopy'
 import { useSubmissionQueue } from '@/hooks/useSubmissionQueue'
 import { supabase } from '@/lib/supabase'
 import { COLOR, FONT, RADIUS, SPACE } from '@/lib/theme'
@@ -30,6 +31,7 @@ import { ZoneMap } from '@/components/ZoneMap'
 interface CelebrationState {
   variant: CelebrationVariant
   xpReward: number
+  xpReason: string | null
   totalXp: number
   level: number
   levelUp: boolean
@@ -278,7 +280,8 @@ export default function Submit() {
           setAlreadyCompleted(true)
           openCelebration({
             variant: 'alreadyDone',
-            xpReward: quest.xp_reward,
+            xpReward: resolveXpAwarded(result.ownCompletion?.xp_awarded, quest.xp_reward),
+            xpReason: result.ownCompletion?.xp_reason ?? null,
             totalXp: profile.total_xp,
             level: profile.level,
             levelUp: false,
@@ -322,11 +325,19 @@ export default function Submit() {
         .eq('id', userId)
         .single()
 
-      const newXp = freshProfile?.total_xp ?? previousXp + quest.xp_reward
+      const awardedXp = resolveXpAwarded(result.xpAwarded, quest.xp_reward)
+      const awardedReason = result.xpReason
+      const newXp = freshProfile?.total_xp ?? previousXp + awardedXp
       const newLevel = freshProfile?.level ?? profile.level
       const newStreak = freshProfile?.current_streak ?? profile.current_streak
 
-      track('completion_verified', { quest_id: questId, xp: quest.xp_reward, instant: true })
+      trackCompletionVerified({
+        quest_id: questId,
+        xp: awardedXp,
+        xp_multiplier: xpMultiplier(awardedXp, quest.xp_reward),
+        xp_reason: awardedReason,
+        instant: true,
+      })
       if (newStreak > previousStreak) track('streak_extended', { length: newStreak })
       else if (newStreak < previousStreak) track('streak_broken', { length: previousStreak })
 
@@ -344,7 +355,8 @@ export default function Submit() {
       setAlreadyCompleted(true)
       openCelebration({
         variant: 'success',
-        xpReward: quest.xp_reward,
+        xpReward: awardedXp,
+        xpReason: awardedReason,
         totalXp: newXp,
         level: newLevel,
         levelUp: didLevelUp(previousXp, newXp),
@@ -528,6 +540,7 @@ export default function Submit() {
               openCelebration({
                 variant: 'alreadyDone',
                 xpReward: quest?.xp_reward ?? 0,
+                xpReason: null,
                 totalXp: profile?.total_xp ?? 0,
                 level: profile?.level ?? 1,
                 levelUp: false,
@@ -657,6 +670,7 @@ export default function Submit() {
         photoUri={placePhoto}
         selfieUri={selfiePhoto}
         xpReward={celebration?.xpReward ?? quest?.xp_reward ?? 0}
+        xpReason={celebration?.xpReason ?? null}
         totalXp={celebration?.totalXp}
         level={celebration?.level}
         levelUp={celebration?.levelUp}
@@ -677,7 +691,7 @@ export default function Submit() {
             questTitle: quest.title,
             username: profile.username,
             level: celebration?.level ?? profile.level,
-            xpReward: quest.xp_reward,
+            xpReward: celebration?.xpReward ?? quest.xp_reward,
             completedAt: new Date().toISOString(),
             category: quest.category,
             cutoutUrl: quest.cutout_url,

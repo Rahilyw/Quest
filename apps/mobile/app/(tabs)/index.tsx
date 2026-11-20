@@ -3,6 +3,7 @@ import { Ionicons } from '@expo/vector-icons'
 import { useEffect, useRef } from 'react'
 import { useRouter } from 'expo-router'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
+import Animated, { FadeIn, useReducedMotion } from 'react-native-reanimated'
 import { Avatar } from '@/components/Avatar'
 import { Sticker } from '@/components/Sticker'
 import { PenRing } from '@/components/scraps'
@@ -12,6 +13,7 @@ import { useBlockedUsers } from '@/hooks/useBlockedUsers'
 import { useThisWeek } from '@/hooks/useThisWeek'
 import { useUnreadNotificationCount } from '@/hooks/useNotifications'
 import { useUserCompletions } from '@/hooks/useUserCompletions'
+import { useXpBoosts } from '@/hooks/useXpBoosts'
 import { daysLeftLabel } from '@/lib/copy'
 import { getDaysLeftInWeek, getISOWeek, TAB_BAR_CLEARANCE } from '@/lib/constants'
 import { track } from '@/lib/analytics'
@@ -45,6 +47,8 @@ export default function ThisWeekScreen() {
   )
   const date = victoriaDate()
   const name = greetingName(profile?.username)
+  const { banner: xpBanner, refresh: refreshBoosts } = useXpBoosts(!!profile?.id)
+  const reduceMotion = useReducedMotion()
   const seenDrop = useRef(false)
   useEffect(() => {
     if (week.loading || week.error || seenDrop.current) return
@@ -67,7 +71,10 @@ export default function ThisWeekScreen() {
         refreshControl={
           <RefreshControl
             refreshing={week.refreshing}
-            onRefresh={week.refresh}
+            onRefresh={() => {
+              week.refresh()
+              void refreshBoosts()
+            }}
             tintColor={COLOR.white}
             colors={[COLOR.white]}
           />
@@ -117,6 +124,17 @@ export default function ThisWeekScreen() {
             Nothing new this week. The next drop is Monday.
           </Small>
         )}
+
+        {xpBanner ? (
+          <Animated.View
+            entering={reduceMotion ? undefined : FadeIn.duration(200)}
+            style={styles.xpBanner}
+            accessibilityRole="text"
+            accessibilityLiveRegion="polite"
+          >
+            <Body color={COLOR.ink}>{xpBanner.text}</Body>
+          </Animated.View>
+        ) : null}
 
         {!week.loading && !week.error && week.starterQuest ? (
           <Pressable
@@ -304,6 +322,13 @@ const styles = StyleSheet.create({
   dropNote: {
     marginTop: SPACE.s1,
     marginBottom: SPACE.s5,
+  },
+  xpBanner: {
+    backgroundColor: COLOR.paper,
+    borderRadius: RADIUS.card,
+    paddingHorizontal: SPACE.s4,
+    paddingVertical: SPACE.s3,
+    marginBottom: SPACE.s4,
   },
   starterCard: {
     minHeight: 144,
