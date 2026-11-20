@@ -3,7 +3,13 @@
 Durable state for the Nov 2026 audit-and-implementation campaign. One current status per item.
 Updated at every phase boundary. Historical notes are labelled as history.
 
-## Current continuation (Nov 20, 2026) — card E5 accessibility
+## Current continuation (Nov 20, 2026) — card D duo quests
+
+Card D on `cursor/d-duo`: migration `045_duo_quests.sql` (parties, PARTY_REQUIRED, duo bonus,
+Recruiter / recruits, duo_bonus notifications), party lobby + QR, admin party size / Duo filter,
+analytics and Node tests. Status: locally tested. SQL not executed (owner applies 045).
+
+## Prior continuation (Nov 20, 2026) — card E5 accessibility
 
 Card E5 on `cursor/e5-a11y`: 48pt targets, Pressable labels/roles, sticker alts, 130% text caps,
 reduce-motion on tab/badge press, colour+icon/count signals (zone, chips, queue, XP banner).

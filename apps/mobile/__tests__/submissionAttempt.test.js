@@ -62,6 +62,10 @@ test('insert errors: rate limit (23514) is not mistaken for the geofence', () =>
   assert.strictEqual(classifyInsertError({ code: '23514', message: 'RATE_LIMITED', hint: 'RATE_LIMITED' }), 'rate_limited')
   assert.strictEqual(classifyInsertError({ code: 'P0001', message: 'x', hint: 'RATE_LIMITED' }), 'rate_limited')
   assert.strictEqual(
+    classifyInsertError({ code: '23514', message: 'PARTY_REQUIRED', hint: 'PARTY_REQUIRED' }),
+    'party_required',
+  )
+  assert.strictEqual(
     classifyInsertError({ code: '23514', message: 'GEOFENCE_VIOLATION', hint: 'Submission coordinates are outside the quest geofence.' }),
     'outside_zone',
   )

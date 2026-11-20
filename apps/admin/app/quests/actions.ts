@@ -47,6 +47,8 @@ export interface Quest {
   cover_image_url: string | null
   cutout_url?: string | null
   cutout_alt?: string | null
+  /** 1 = solo, 2 = duo (migration 045). */
+  min_party_size?: number
   status: string
   created_at: string
   active_from?: string | null
@@ -291,6 +293,8 @@ export async function createQuest(formData: FormData): Promise<{ ok: true; quest
       }
     }
     const xp_reward = parseInt(String(formData.get('xp_reward') ?? '100'), 10)
+    const min_party_size_raw = parseInt(String(formData.get('min_party_size') ?? '1'), 10)
+    const min_party_size = min_party_size_raw === 2 ? 2 : 1
     const is_sponsored = formData.get('is_sponsored') === 'true'
     const sponsor_name = String(formData.get('sponsor_name') ?? '').trim()
     const sponsor_reward = String(formData.get('sponsor_reward') ?? '').trim()
@@ -352,6 +356,7 @@ export async function createQuest(formData: FormData): Promise<{ ok: true; quest
         geofence_type,
         city_id: geofence_type === 'city' ? city_id : null,
         xp_reward,
+        min_party_size,
         is_sponsored,
         sponsor_name: is_sponsored ? sponsor_name : null,
         sponsor_reward: is_sponsored ? sponsor_reward : null,
@@ -474,6 +479,7 @@ export interface UpdateQuestInput {
   /** Stringified GeoJSON Polygon; required when geofence_type is 'polygon'. */
   boundary_geojson: string | null
   xp_reward: number
+  min_party_size?: number
   is_sponsored: boolean
   sponsor_name: string | null
   sponsor_reward: string | null
@@ -505,6 +511,7 @@ export async function updateQuest(
       city_id,
       boundary_geojson,
       xp_reward,
+      min_party_size: min_party_size_input,
       is_sponsored,
       sponsor_name,
       sponsor_reward,
@@ -513,6 +520,7 @@ export async function updateQuest(
       active_from,
       active_until,
     } = input
+    const min_party_size = min_party_size_input === 2 ? 2 : 1
 
     if (!title.trim() || !description.trim()) {
       return { ok: false, error: 'Title and description are required.' }
@@ -578,6 +586,7 @@ export async function updateQuest(
         // quests_boundary_type_check constraint stays satisfied.
         ...(geofence_type !== 'polygon' ? { boundary: null } : {}),
         xp_reward,
+        min_party_size,
         is_sponsored,
         sponsor_name: is_sponsored ? (sponsor_name?.trim() ?? null) : null,
         sponsor_reward: is_sponsored ? (sponsor_reward?.trim() ?? null) : null,

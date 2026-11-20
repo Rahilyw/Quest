@@ -36,6 +36,13 @@ function handleNotificationTap(data: NotificationData, router: ImperativeRouter)
     router.push((route ?? '/notifications') as never)
     return
   }
+  if (data?.type === 'duo_bonus' || data?.notification_type === 'duo_bonus') {
+    track('notification_opened', { type: 'duo_bonus', source: 'push' })
+    const completionId =
+      typeof data.completion_id === 'string' ? data.completion_id : null
+    router.push((completionId ? `/completion/${completionId}` : '/notifications') as never)
+    return
+  }
   if (data?.type === 'removal' || data?.completion_id || data?.type === 'approval') {
     router.push('/(tabs)/profile')
   }

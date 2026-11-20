@@ -146,6 +146,22 @@ export default function ThisWeekScreen() {
           </Animated.View>
         ) : null}
 
+        <Pressable
+          onPress={() => router.push('/party/join')}
+          accessibilityRole="button"
+          accessibilityLabel="Have a code? Join a duo party"
+          style={({ pressed }) => [styles.dropLink, pressed && styles.dropPressed]}
+        >
+          <Ionicons
+            name="key-outline"
+            size={16}
+            color={COLOR.white}
+            accessibilityElementsHidden
+            importantForAccessibility="no"
+          />
+          <Small color={COLOR.white}>Have a code?</Small>
+        </Pressable>
+
         {!week.loading && !week.error && week.starterQuest ? (
           <Pressable
             onPress={() => router.push(`/quest/${week.starterQuest!.id}?source=starter`)}

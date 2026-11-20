@@ -31,6 +31,7 @@ interface EditFormState {
   boundary_ring: number[][] | null
   multi_areas: MultiArea[]
   xp_reward: string
+  min_party_size: string
   is_sponsored: boolean
   sponsor_name: string
   sponsor_reward: string
@@ -63,6 +64,7 @@ function questToFormState(q: Quest): EditFormState {
     boundary_ring: q.boundary_geojson?.coordinates?.[0] ?? null,
     multi_areas: questGeofencesToMultiAreas(q),
     xp_reward: String(q.xp_reward),
+    min_party_size: String(q.min_party_size === 2 ? 2 : 1),
     is_sponsored: q.is_sponsored,
     sponsor_name: q.sponsor_name ?? '',
     sponsor_reward: q.sponsor_reward ?? '',
@@ -112,6 +114,7 @@ function EditForm({ quest, onSave, onCancel }: { quest: Quest; onSave: (updated:
       const lng = parseFloat(form.lng)
       const radius_meters = parseInt(form.radius_meters, 10)
       const xp_reward = parseInt(form.xp_reward, 10)
+      const min_party_size = form.min_party_size === '2' ? 2 : 1
 
       const result = await updateQuest(
         {
@@ -129,6 +132,7 @@ function EditForm({ quest, onSave, onCancel }: { quest: Quest; onSave: (updated:
               ? JSON.stringify({ type: 'Polygon', coordinates: [form.boundary_ring] })
               : null,
           xp_reward,
+          min_party_size,
           is_sponsored: form.is_sponsored,
           sponsor_name: form.is_sponsored ? form.sponsor_name || null : null,
           sponsor_reward: form.is_sponsored ? form.sponsor_reward || null : null,
@@ -267,6 +271,19 @@ function EditForm({ quest, onSave, onCancel }: { quest: Quest; onSave: (updated:
           />
         </div>
 
+        <div className="admin-field" style={{ marginTop: 16 }}>
+          <label className="admin-label" htmlFor={`edit-party-${quest.id}`}>Party size</label>
+          <select
+            id={`edit-party-${quest.id}`}
+            className="admin-input"
+            value={form.min_party_size}
+            onChange={(e) => set('min_party_size', e.target.value)}
+          >
+            <option value="1">Solo (1)</option>
+            <option value="2">Duo (2)</option>
+          </select>
+        </div>
+
         <QuestScheduleFields
           activeFrom={form.active_from}
           activeUntil={form.active_until}
@@ -341,6 +358,7 @@ export default function QuestsPage() {
   const [editingId, setEditingId] = useState<string | null>(null)
   const [starterBusyId, setStarterBusyId] = useState<string | null>(null)
   const [actionError, setActionError] = useState<string | null>(null)
+  const [duoOnly, setDuoOnly] = useState(false)
 
   useEffect(() => {
     getQuests().then((data) => {
@@ -393,6 +411,18 @@ export default function QuestsPage() {
         </Link>
       </div>
 
+      <div style={{ marginBottom: 16 }}>
+        <label style={{ display: 'inline-flex', alignItems: 'center', gap: 8, cursor: 'pointer' }}>
+          <input
+            type="checkbox"
+            checked={duoOnly}
+            onChange={(e) => setDuoOnly(e.target.checked)}
+            style={{ width: 16, height: 16, accentColor: theme.primary }}
+          />
+          <span style={{ fontSize: 14, fontWeight: 600 }}>Duo only</span>
+        </label>
+      </div>
+
       {loading ? (
         <p style={{ color: theme.textMuted }}>Loading quests…</p>
       ) : quests.length === 0 ? (
@@ -408,7 +438,7 @@ export default function QuestsPage() {
           <p role="alert" style={{ color: theme.danger, marginBottom: 16 }}>{actionError}</p>
         ) : null}
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 16 }}>
-          {quests.map((q) => {
+          {quests.filter((q) => !duoOnly || (q.min_party_size ?? 1) >= 2).map((q) => {
             const cat = theme.categories[q.category]
             const isEditing = editingId === q.id
             return (
@@ -460,6 +490,9 @@ export default function QuestsPage() {
                       {q.category}
                     </span>
                     <span style={{ fontSize: 10, fontWeight: 800, color: theme.primary }}>+{q.xp_reward} XP</span>
+                    {(q.min_party_size ?? 1) >= 2 && (
+                      <span style={{ fontSize: 10, fontWeight: 700, color: theme.primaryLight }}>Duo</span>
+                    )}
                     {q.is_sponsored && (
                       <span style={{ fontSize: 10, fontWeight: 700, color: theme.highlight }}>Sponsored</span>
                     )}

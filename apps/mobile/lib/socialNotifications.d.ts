@@ -1,4 +1,4 @@
-export type SocialNotificationType = 'like' | 'comment' | 'reply' | 'follow'
+export type SocialNotificationType = 'like' | 'comment' | 'reply' | 'follow' | 'duo_bonus'
 
 export function notificationText(type: SocialNotificationType): string
 export function notificationRoute(

@@ -66,6 +66,8 @@ export interface Quest {
   /** Set when the quest was published from a player suggestion. */
   suggested_by?: string | null
   suggester_username?: string | null
+  /** 1 = solo, 2 = duo (migration 045). Missing means solo when 045 is not applied. */
+  min_party_size?: number | null
 }
 
 export interface QuestWithBadges extends Quest {

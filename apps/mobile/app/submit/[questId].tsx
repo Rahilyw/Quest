@@ -13,7 +13,13 @@ import { useAuth } from '@/hooks/useAuth'
 import { useGeofenceCheck } from '@/hooks/useGeofenceCheck'
 import { useLocation } from '@/hooks/useLocation'
 import { useQuest } from '@/hooks/useQuests'
-import { track, trackCompletionVerified, type SubmissionBlockReason } from '@/lib/analytics'
+import {
+  track,
+  trackCompletionVerified,
+  trackDuoCompleted,
+  type SubmissionBlockReason,
+} from '@/lib/analytics'
+import { partyErrorCopy } from '@/lib/party'
 import { didLevelUp } from '@/lib/celebration'
 import { resolveBadgeSpec } from '@/lib/badgeFromDb'
 import type { BadgeSpec } from '@/lib/badgeCatalog'
@@ -42,6 +48,7 @@ interface CelebrationState {
   newBadgeIds: string[]
   /** First newly earned badge, for the Verified reward lead. */
   earnedBadge: BadgeSpec | null
+  duoUsernames?: [string, string] | null
 }
 
 // 'queued': no signal, so the capture was saved to send later (plan Phase 3).
@@ -297,6 +304,11 @@ export default function Submit() {
           setFailMessage('You’re submitting quests too quickly. Give it a few minutes, then try again.')
           setStep('failed')
           return
+        case 'party_required':
+          trackSubmissionBlocked('party_required')
+          setFailMessage(partyErrorCopy('PARTY_REQUIRED'))
+          setStep('failed')
+          return
         case 'outside_zone':
           // Final for this capture: the player has to shoot again.
           trackSubmissionBlocked('outside_zone')
@@ -352,6 +364,22 @@ export default function Submit() {
         if (badge) earnedBadge = resolveBadgeSpec(badge)
       }
 
+      let duoUsernames: [string, string] | null = null
+      if (awardedReason === 'duo' && profile.username) {
+        const { data: partyPayload } = await supabase.rpc('own_party', { p_quest_id: questId })
+        const members =
+          partyPayload &&
+          typeof partyPayload === 'object' &&
+          Array.isArray((partyPayload as { members?: unknown }).members)
+            ? ((partyPayload as { members: { username?: string; user_id?: string }[] }).members)
+            : []
+        const partner = members.find((m) => m.user_id && m.user_id !== userId)
+        if (partner?.username) {
+          duoUsernames = [profile.username, partner.username]
+          trackDuoCompleted({ quest_id: questId, referral: false })
+        }
+      }
+
       setAlreadyCompleted(true)
       openCelebration({
         variant: 'success',
@@ -365,6 +393,7 @@ export default function Submit() {
         sponsorReward: quest.is_sponsored ? quest.sponsor_reward : null,
         newBadgeIds: result.newBadgeIds,
         earnedBadge,
+        duoUsernames,
       })
     } catch {
       setFailMessage('That didn’t go through. Check your signal and try again.')
@@ -678,6 +707,7 @@ export default function Submit() {
         redemptionCode={celebration?.redemptionCode}
         sponsorReward={celebration?.sponsorReward}
         earnedBadge={celebration?.earnedBadge ?? null}
+        duoUsernames={celebration?.duoUsernames ?? null}
         onDone={handleCelebrationDone}
         onShare={placePhoto && profile && quest ? () => setShareOpen(true) : undefined}
       />

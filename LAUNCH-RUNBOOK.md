@@ -386,6 +386,15 @@ The admin app denies **all** logins until `ADMIN_ALLOWED_EMAILS` is set.
   3. On You, open the sticker drawer, place the sticker on your page (drag or tap-then-tap).
   4. With `feed_public` on, another player sees your board on your public page. With a block
      either way, they do not. A quest without a sticker shows no sticker anywhere.
+- **Duo quests (card D, migration 045).** Needs 045 applied. Two phones:
+  1. Admin: set a quest party size to Duo. On phone A, open that quest → Start with a friend →
+     see the big code and QR.
+  2. Phone B: This week → Have a code? (or scan the QR / open `quest://party/CODE`) → join.
+     Lobby shows "@… is in" and Go to the camera enables.
+  3. Both submit inside the geofence while the party is open. Both see the duo bonus; celebration
+     shows both usernames when the bonus lands.
+  4. Solo submit on a duo quest (no party, or alone in a party) is refused with friendly copy.
+     Nothing says verified before the server accepts.
 
 ---
 

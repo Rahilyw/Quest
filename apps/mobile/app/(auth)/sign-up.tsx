@@ -82,6 +82,9 @@ export default function SignUp() {
     return (
       <AuthScreen title="You’re in" lead="Your account is ready. Sign in and pick your first quest.">
         <PrimaryButton label="Sign in" onPress={toSignIn} />
+        <Body tone="soft">
+          Joining a friend? After you sign in, tap Have a code? on This week.
+        </Body>
         <Body tone="soft">If we emailed you a confirmation link, open it first.</Body>
       </AuthScreen>
     )
