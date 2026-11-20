@@ -5,7 +5,6 @@ import {
   StyleSheet,
   FlatList,
   TouchableOpacity,
-  ActivityIndicator,
 } from 'react-native'
 import { useRouter } from 'expo-router'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
@@ -13,10 +12,11 @@ import { Ionicons } from '@expo/vector-icons'
 import { Avatar } from '@/components/Avatar'
 import { FollowButton } from '@/components/FollowButton'
 import { EmptyState } from '@/components/EmptyState'
+import { SkeletonRowList } from '@/components/ui/SkeletonRow'
 import { useAuth } from '@/hooks/useAuth'
 import { supabase } from '@/lib/supabase'
 import { track } from '@/lib/analytics'
-import { COLORS, SPACING, RADIUS } from '@/lib/constants'
+import { COLORS, SPACING } from '@/lib/constants'
 import { TYPE } from '@/lib/theme'
 
 export type FollowListMode = 'followers' | 'following'
@@ -128,7 +128,9 @@ export function FollowList({ userId, mode }: Props) {
       </View>
 
       {loading ? (
-        <ActivityIndicator color={COLORS.primary} style={styles.loader} />
+        <View style={styles.loader}>
+          <SkeletonRowList count={6} avatarSize={44} padHorizontal={SPACING.xl} />
+        </View>
       ) : users.length === 0 ? (
         <EmptyState
           title={mode === 'followers' ? 'No followers yet' : 'Not following anyone yet'}
@@ -189,7 +191,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   title: { color: COLORS.textPrimary, fontSize: TYPE.name.fontSize, fontWeight: '900' },
-  loader: { marginTop: SPACING.xxl * 2 },
+  loader: { marginTop: SPACING.lg },
   row: {
     flexDirection: 'row',
     alignItems: 'center',

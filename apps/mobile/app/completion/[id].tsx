@@ -6,7 +6,6 @@ import {
   ScrollView,
   Image,
   TouchableOpacity,
-  ActivityIndicator,
   Alert,
 } from 'react-native'
 import { useLocalSearchParams, useRouter } from 'expo-router'
@@ -17,6 +16,7 @@ import { EmptyState } from '@/components/EmptyState'
 import { CommentsSheet } from '@/components/CommentsSheet'
 import { Pillow, PILLOW_SIZES } from '@/components/Pillow'
 import { ShareStoryModal } from '@/components/ShareStoryModal'
+import { SkeletonMediaCard } from '@/components/ui/SkeletonFolder'
 import { useAuth } from '@/hooks/useAuth'
 import { formatTimeAgo } from '@/hooks/useActivityFeed'
 import { ownSelfiePath } from '@/lib/ownSelfiePath'
@@ -160,8 +160,8 @@ export default function CompletionScreen() {
 
   if (loading) {
     return (
-      <View style={[styles.centerScreen, { paddingTop: insets.top }]}>
-        <ActivityIndicator size="large" color={COLORS.primary} />
+      <View style={[styles.container, { paddingTop: insets.top + SPACING.sm }]}>
+        <SkeletonMediaCard />
       </View>
     )
   }

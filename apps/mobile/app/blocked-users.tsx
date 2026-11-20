@@ -5,13 +5,13 @@ import {
   StyleSheet,
   FlatList,
   TouchableOpacity,
-  ActivityIndicator,
   Alert,
 } from 'react-native'
 import { useRouter } from 'expo-router'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { Avatar } from '@/components/Avatar'
 import { EmptyState } from '@/components/EmptyState'
+import { SkeletonRowList } from '@/components/ui/SkeletonRow'
 import { useAuth } from '@/hooks/useAuth'
 import { useBlockedUsers } from '@/hooks/useBlockedUsers'
 import { supabase } from '@/lib/supabase'
@@ -77,7 +77,9 @@ export default function BlockedUsersScreen() {
       <Text style={[styles.screenTitle, { paddingTop: insets.top + 18 }]}>Blocked accounts</Text>
 
       {loading ? (
-        <ActivityIndicator color={COLORS.primary} style={{ marginTop: insets.top + 120 }} />
+        <View style={{ marginTop: insets.top + 64 }}>
+          <SkeletonRowList count={4} avatarSize={40} padHorizontal={SPACING.md} />
+        </View>
       ) : (
         <FlatList
           data={rows}
