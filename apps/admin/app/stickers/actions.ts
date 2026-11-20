@@ -26,7 +26,7 @@ export interface StickerRow {
 export interface StickerLibrary {
   stickers: StickerRow[]
   badges: { id: string; name: string }[]
-  /** Set when migration 041 has not been applied to this database. */
+  /** Set when migration 044 has not been applied to this database. */
   missingMigration: boolean
 }
 

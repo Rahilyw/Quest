@@ -316,7 +316,7 @@ export default function StickersPage() {
       </p>
       {library?.missingMigration ? (
         <p role="alert" className="admin-card" style={{ color: theme.danger }}>
-          This database has no sticker tables yet. Migration 041 needs applying (with the founder) before the
+          This database has no sticker tables yet. Migration 044 needs applying (with the founder) before the
           library works.
         </p>
       ) : null}

@@ -15,6 +15,7 @@ function Sidebar() {
     { href: '/suggestions', label: 'Suggestions' },
     { href: '/xp-events', label: 'XP Events' },
     { href: '/badges', label: 'Badges' },
+    { href: '/stickers', label: 'Stickers' },
     { href: '/users', label: 'Users' },
     { href: '/sponsors', label: 'Sponsors' },
   ]
