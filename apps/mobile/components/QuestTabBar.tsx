@@ -6,6 +6,7 @@ import Animated, { useAnimatedStyle, useSharedValue, withTiming } from 'react-na
 import type { BottomTabBarProps } from 'expo-router/tabs'
 import { Avatar } from '@/components/Avatar'
 import { useAuth } from '@/hooks/useAuth'
+import { useSubmissionQueue } from '@/hooks/useSubmissionQueue'
 import { COLOR, RADIUS, SHADOW } from '@/lib/theme'
 
 const PILL_TABS: { name: string; label: string; icon: keyof typeof Ionicons.glyphMap }[] = [
@@ -24,7 +25,11 @@ const YOU_ROUTE = 'profile'
 export function QuestTabBar({ state, emitter, navigateToTab }: BottomTabBarProps) {
   const insets = useSafeAreaInsets()
   const { profile } = useAuth()
+  const { items: queued } = useSubmissionQueue()
   const focusedName = state.routes[state.index]?.name
+  const waiting = queued.length
+  const youLabel =
+    waiting === 0 ? 'You' : `You, ${waiting} ${waiting === 1 ? 'proof' : 'proofs'} waiting to send`
 
   const go = useCallback(
     (name: string) => {
@@ -56,13 +61,14 @@ export function QuestTabBar({ state, emitter, navigateToTab }: BottomTabBarProps
         ))}
       </View>
       <TabButton
-        label="You"
+        label={youLabel}
         focused={focusedName === YOU_ROUTE}
         onPress={() => go(YOU_ROUTE)}
         avatar={{
           username: profile?.username ?? 'You',
           uri: profile?.avatar_url,
         }}
+        dot={waiting > 0}
       />
     </View>
   )
@@ -74,12 +80,15 @@ function TabButton({
   focused,
   onPress,
   avatar,
+  dot,
 }: {
   label: string
   icon?: keyof typeof Ionicons.glyphMap
   focused: boolean
   onPress: () => void
   avatar?: { username: string; uri?: string | null }
+  /** Something needs attention (queued proofs). The label says what. */
+  dot?: boolean
 }) {
   const scale = useSharedValue(1)
   const animated = useAnimatedStyle(() => ({ transform: [{ scale: scale.value }] }))
@@ -102,6 +111,7 @@ function TabButton({
         {avatar ? (
           <View style={[styles.avatarRing, focused && styles.avatarRingOn]}>
             <Avatar username={avatar.username} uri={avatar.uri} size={44} />
+            {dot ? <View style={styles.dot} pointerEvents="none" /> : null}
           </View>
         ) : (
           <View style={[styles.iconBtn, focused && styles.iconBtnOn]}>
@@ -155,5 +165,16 @@ const styles = StyleSheet.create({
   },
   avatarRingOn: {
     borderColor: COLOR.ink,
+  },
+  dot: {
+    position: 'absolute',
+    top: -2,
+    right: -2,
+    width: 14,
+    height: 14,
+    borderRadius: RADIUS.pill,
+    backgroundColor: COLOR.ink,
+    borderWidth: 2,
+    borderColor: COLOR.white,
   },
 })

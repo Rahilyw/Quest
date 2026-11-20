@@ -5,6 +5,8 @@ import { ErrorBoundary } from '@/components/ErrorBoundary'
 import { AnalyticsProvider } from '@/components/AnalyticsProvider'
 import { FontProvider } from '@/components/FontProvider'
 import { AuthProvider, useAuth } from '@/hooks/useAuth'
+import { SubmissionQueueProvider } from '@/hooks/useSubmissionQueue'
+import { SubmissionQueueBanner } from '@/components/SubmissionQueueBanner'
 import { registerForPushNotifications } from '@/lib/notifications'
 import { hasCompletedOnboarding } from '@/lib/onboarding'
 import { subscribeToAuthDeepLinks } from '@/lib/auth-linking'
@@ -95,6 +97,7 @@ function RootLayoutNav() {
         <Stack.Screen name="suggest-quest" options={{ presentation: 'card', headerShown: false }} />
         <Stack.Screen name="recap" options={{ presentation: 'card', headerShown: false }} />
       </Stack>
+      <SubmissionQueueBanner />
     </ErrorBoundary>
   )
 }
@@ -105,7 +108,9 @@ export default function RootLayout() {
       <SafeAreaProvider>
         <AnalyticsProvider>
           <AuthProvider>
-            <RootLayoutNav />
+            <SubmissionQueueProvider>
+              <RootLayoutNav />
+            </SubmissionQueueProvider>
           </AuthProvider>
         </AnalyticsProvider>
       </SafeAreaProvider>

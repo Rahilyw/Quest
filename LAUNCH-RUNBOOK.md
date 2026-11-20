@@ -318,6 +318,22 @@ The admin app denies **all** logins until `ADMIN_ALLOWED_EMAILS` is set.
   drop the files in at the same paths — nothing else to change.
 - **Sponsored quest E2E:** complete one sponsored quest on a device and confirm the
   redemption code appears in the celebration.
+- **Offline submission queue (Spec 06 §5, plan Phase 3).** Needs migration 042 applied
+  (storage upsert and delete policies). On a device build:
+  1. Stand inside a quest zone, turn on airplane mode, take the photo (and selfie). Expect
+     "Saved. We'll send it when you're back online." and Done. Nothing says verified.
+  2. Check that You shows a dot and a "Waiting to send" card with the time taken. VoiceOver or
+     TalkBack reads the You tab as "You, 1 proof waiting to send".
+  3. Force-quit the app, turn airplane mode off, reopen. Within a few seconds a banner reads
+     "Sent: <quest>." "See it" opens the completion, the dot clears, and XP and Rankings update.
+  4. Queue a proof, then tap Send now while still offline. The card stays and says Sending…
+     then returns. Turn signal on and tap Send now: it sends.
+  5. Queue a proof, then Discard it. The card disappears and nothing is sent.
+  6. Queue a proof, then sign out. Sign in again (same or other account): nothing is queued.
+  7. To check expiry without waiting three days, set the phone clock 73 hours ahead and reopen:
+     the proof is removed with a one-line notice.
+  8. Queue three proofs for three quests while offline. Expect a fourth for a different quest to
+     show "couldn't be saved for later", and a new capture of a queued quest to replace its card.
 
 ---
 

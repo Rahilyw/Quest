@@ -37,6 +37,9 @@ export type AnalyticsEvent =
   | 'weekly_drop_seen'
   | 'suggestion_submitted'
   | 'recap_viewed'
+  | 'proof_queued'
+  | 'proof_queue_sent'
+  | 'proof_queue_dropped'
 
 export type QuestSource =
   | 'explore'

@@ -46,6 +46,8 @@ Phase 6 polish: small slices between the above, never touching
 
 ## Phase 3 — Offline submission queue (Spec 06 §5) — Lane A, about 3 days
 
+**Status (Nov 19): in checkout and locally tested on `claude/objective-easley-4d2899`; not device-tested.** The runbook Step 5 checklist covers device testing. Deviations from this section are recorded in the Spec 06 §5 implementation note.
+
 **Goal.** A player who captures proof with no signal keeps it, and it gets sent later, without anyone pretending it was verified.
 
 **Builds on.** `lib/submissionAttempt.js` already fixes the attempt id, the storage path (`placePhotoPath`) and the captured coordinates per capture. `classifyInsertError` already separates `network` from server answers. No migration is needed; 042 must be applied for the deterministic upsert path.

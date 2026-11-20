@@ -18,6 +18,7 @@ import { didLevelUp } from '@/lib/celebration'
 import { paramAsString } from '@/lib/routeParams'
 import { captureAttempt, type CapturedAttempt } from '@/lib/submissionAttempt'
 import { removeProofQuietly, submitCompletion } from '@/lib/submitCompletion'
+import { useSubmissionQueue } from '@/hooks/useSubmissionQueue'
 import { supabase } from '@/lib/supabase'
 import { COLOR, FONT, RADIUS, SPACE } from '@/lib/theme'
 import { outsideZoneCopy } from '@/lib/zoneStatus'
@@ -36,7 +37,8 @@ interface CelebrationState {
   newBadgeIds: string[]
 }
 
-type Step = 'place' | 'selfie' | 'upload' | 'failed'
+// 'queued': no signal, so the capture was saved to send later (plan Phase 3).
+type Step = 'place' | 'selfie' | 'upload' | 'failed' | 'queued'
 
 export default function Submit() {
   const params = useLocalSearchParams<{ questId: string | string[] }>()
@@ -53,6 +55,7 @@ export default function Submit() {
     getSubmissionCoords,
   } = useLocation()
   const { quest, loading: questLoading } = useQuest(questId)
+  const { enqueueCapture } = useSubmissionQueue()
   const [camPermission, requestCamPermission] = useCameraPermissions()
 
   const cameraRef = useRef<CameraView>(null)
@@ -241,14 +244,31 @@ export default function Submit() {
       insertRejected.current = result.kind === 'rate_limited' || result.kind === 'rejected'
 
       switch (result.kind) {
-        case 'network':
+        case 'network': {
+          // No server answer: keep the capture and send it when the signal is back.
+          // It is not verified until the server accepts it.
+          const { accepted } = await enqueueCapture({
+            questId,
+            questTitle: quest.title,
+            xpReward: quest.xp_reward,
+            isSponsored: quest.is_sponsored,
+            attempt: captured,
+            placeUri: placePhoto,
+            selfieUri: selfiePhoto,
+            placeUploaded: !!result.uploadedPlacePath,
+          })
+          if (accepted) {
+            setStep('queued')
+            return
+          }
           setFailMessage(
             result.stage === 'upload'
-              ? 'That photo didn’t upload. Your shot is saved here: try again when you have signal.'
-              : 'That didn’t go through. Check your signal and try again.',
+              ? 'That photo didn’t upload, and it couldn’t be saved for later. Try again when you have signal.'
+              : 'That didn’t go through, and it couldn’t be saved for later. Check your signal and try again.',
           )
           setStep('failed')
           return
+        }
         case 'duplicate':
           setAlreadyCompleted(true)
           openCelebration({
@@ -334,6 +354,7 @@ export default function Submit() {
     requiresLocation,
     capturedInZone,
     refreshProfile,
+    enqueueCapture,
   ])
 
   useEffect(() => {
@@ -517,6 +538,23 @@ export default function Submit() {
             accessibilityLabel="Allow camera"
           >
             <Body style={styles.btnLabel}>Allow camera</Body>
+          </Pressable>
+        </View>
+      ) : step === 'queued' ? (
+        <View style={styles.message}>
+          <Body color={COLOR.white} style={styles.messageText} accessibilityLiveRegion="polite">
+            Saved. We’ll send it when you’re back online.
+          </Body>
+          <Small color={COLOR.inkFaint} style={styles.messageText}>
+            It counts once it arrives. You’ll find it on You until then.
+          </Small>
+          <Pressable
+            onPress={() => router.back()}
+            style={styles.whiteBtn}
+            accessibilityRole="button"
+            accessibilityLabel="Done"
+          >
+            <Body style={styles.btnLabel}>Done</Body>
           </Pressable>
         </View>
       ) : step === 'failed' ? (
