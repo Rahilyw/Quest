@@ -4,3 +4,4 @@ Base: `cursor/cutouts-this-week-quests` @ `7b587ae`. Started 2026-11-20.
 
 | # | Card | Branch | Merge commit | Mobile tests | Geofence tests | tsc mobile | tsc admin | next build | Tokens | Notes |
 |---|---|---|---|---|---|---|---|---|---|---|
+| 1 | R | `cursor/r-release` | `f9501d9` | 256 passed | 50 + redemption | ok | ok | ok | 126 | `eas.json` already had `autoIncrement` + channels. `expo config` still lists RECORD_AUDIO from a plugin; `blockedPermissions` strips it at build. |
