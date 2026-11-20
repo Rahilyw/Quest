@@ -1,10 +1,14 @@
 # Quest! (repo: Quest / formerly "Kuest")
 
+> **Evidence snapshot updated 2026-11-11.** This is a story/evidence bank, not a current launch
+> checklist. Operational claims are sourced from repo docs and have not been independently
+> re-queried unless explicitly marked `[CODE]` or `[GIT]`.
+>
 > **Agent rules for this file**
 > 1. Never invent metrics, users, team size, ownership, or technologies. Only use what is in Section 9 as *verified* or that the owner has confirmed.
 > 2. Items marked **[CONFIRM]** are unverified. Do not put them in a resume or cover letter until the owner confirms.
 > 3. Tag convention: **[CODE]** = verified in source this session, **[DOC]** = stated in repo docs only, **[GIT]** = from git history, **[OWNER]** = confirmed by Rahil (none yet).
-> 4. Source of this file: README.md, ARCHITECTURE.md, PRODUCT.md, ROADMAP.md, git history, and direct reads of migrations 013, 015, 017, 026, 030, 031, the CI workflow, the submit screen, the admin moderation actions, and a live run of both test suites. Written 2026-11-08.
+> 4. Original source snapshot was written 2026-11-08. Selected status, version and test-count facts were refreshed 2026-11-11; remaining evidence entries retain their own dates and should be rechecked before reuse.
 
 ---
 
@@ -17,9 +21,9 @@
   - Admin operator: a single founder/operator running the pilot through a web dashboard. [DOC]
   - Secondary stakeholder: local businesses that sponsor quests (sponsored quests issue redemption codes). [CODE: 017]
 - **Motivation:** [CONFIRM — repo docs describe the product rationale, not why Rahil personally chose to build it. Ask the owner.]
-- **Current status (as of 2026-11-07 per ROADMAP):** "Store-ready code." The remaining launch blockers are operational (Apple submit credentials, PostHog/Sentry keys, applying migration 031, deploying one edge function), not engineering. The admin dashboard is deployed on Vercel. The mobile app is **not** confirmed to be live in any app store. [DOC] No real-user numbers exist in the repo.
-- **Timeline [GIT]:** about 105 commits on main (counts vary by 1-3 depending on branch), first 2026-06-17, latest 2026-11-07 (about 5 months, with bursts in June, early July, early Aug, Oct 1, and Nov 7).
-- **Scale of codebase:** about 4,000 lines of SQL across 32 migration files [CODE: `wc -l`]; roughly 23k lines of TS/JS across mobile, admin, and the shared package, excluding `node_modules` [CODE, approximate].
+- **Current status (as documented Nov 11):** the repo contains substantial implemented code and migrations through 038. The launch runbook reports those migrations applied, but this has not been independently verified in this evidence bank. A P1 profile `push_token` exposure and fresh-install migration ordering issue remain open; Sunday recap is the next product feature. Admin deployment and store release claims remain documentary, not independently checked here. No real-user numbers exist in the repo.
+- **Timeline [GIT]:** about 105 commits on main in the Nov 8 snapshot; current branch history advances through 2026-11-11. Recount before quoting a commit total.
+- **Scale of codebase:** the Nov 11 checkout contains 38 migration SQL files (timestamped initial schema plus numbered 002–038). Prior line-count estimates are historical; recount before quoting source-line totals.
 
 ## 2. My Contributions
 
@@ -41,7 +45,7 @@
 - **Languages:** TypeScript (mobile, admin), JavaScript (shared geofence package, tests, scripts), SQL/PLpgSQL (migrations). [CODE]
 - **Frameworks:**
   - Mobile: Expo 54, React Native 0.81, Expo Router 6, React 19 types. [DOC]
-  - Admin: Next.js (README table says 14.2; ROADMAP and git say upgraded to Next 15.5.28 + React 19 on 2026-11-02). Current version: **[CONFIRM from `apps/admin/package.json`]**.
+  - Admin: Next.js 15.5.28 + React 19.1.0 (`apps/admin/package.json`, checked 2026-11-11).
 - **Libraries / SDKs:** supabase-js, `@supabase/ssr`, expo-camera/location/notifications/image-picker, react-native-maps, react-native-reanimated, PostHog (`posthog-react-native`), Sentry, Expo push. [DOC]
 - **APIs and integrations:** Supabase Auth/Postgres/Storage/Edge Functions; Expo Push API (`apps/admin/lib/expo-push.ts`); Database Webhook to the `send-social-push` edge function (written, **not deployed**); PostHog and Sentry (SDKs wired, **production keys not set**). [DOC]
 - **Database and storage:** Postgres with PostGIS and pg_cron; Row Level Security; buckets `proof-photos`, `avatars`, `quest-covers`. [CODE: 013, 031; DOC for buckets]
@@ -126,7 +130,7 @@
 
 - **Test approach:** dependency-free Node test scripts (no Jest) run in CI: geofence package tests and mobile logic tests (XP/level thresholds, celebration/level-up derivation, leaderboard logic, moderation logic, copy rules). [CODE]
 - **Actual results (run 2026-11-08):** geofence suite **50 passed, 0 failed**; mobile logic suite **159 passed, 0 failed**. [CODE]
-  - README still says 44 and 105; ROADMAP says 44 and 139. **Use 50 and 159.**
+  - README and ROADMAP were reconciled on 2026-11-11 to current test counts and commands.
 - **CI (GitHub Actions) [CODE]:** geofence tests, logic tests, `tsc --noEmit` for mobile and admin, and `npm audit --omit=dev --audit-level=critical`.
 - **Not tested [DOC]:** no automated tests for SQL triggers/RLS were found in the repo (**[CONFIRM]** whether they were tested manually or through Supabase). End-to-end sponsored-quest flow unverified on a device. No UI/E2E tests found.
 - **Evaluation / metrics:** none. No user, retention, or performance numbers exist in the repo. The success metrics in PRODUCT.md (week-2 return, sponsor renewal, time-to-first-XP) are **targets, not results**.
@@ -200,9 +204,9 @@
 - *(none yet — fill in from the questions below)*
 
 **Discrepancies found in the repo's own docs (do not copy these into applications)**
-- Test counts: README 105/44, ROADMAP 139/44; actual 159/50.
+- Test counts: historical README/ROADMAP counts were stale; current local run was 159 mobile logic assertions, 9 quest-window cases and 50 geofence assertions (plus redemption tests).
 - Migration numbering in README (e.g., "016 instant verification", "017 reports") is stale; actual files are 017 and 018.
-- README says Next.js 15 in one place and 14.2 in the tech table.
+- The README Next.js version conflict was corrected on 2026-11-11.
 - Seed size: README "~29", ROADMAP "20 + 5 sponsored", PRODUCT "~28". Verify before quoting.
 - Analytics: ROADMAP "~16 events"; code lists 29.
 - History contains "Merge agent work" commits; "Kuest" was the original project name (renamed 2026-06-20).

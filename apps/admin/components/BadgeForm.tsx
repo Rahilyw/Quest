@@ -393,7 +393,7 @@ export function BadgeForm({ badge, iconUrl, onSubmit, submitLabel, error, submit
             marginBottom: 16,
             padding: '12px 16px',
             borderRadius: 10,
-            background: 'rgba(239,68,68,0.12)',
+            background: 'rgba(189,69,58,0.10)',
             color: theme.danger,
             fontSize: 14,
           }}

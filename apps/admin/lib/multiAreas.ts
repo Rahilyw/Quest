@@ -1,4 +1,4 @@
-import { closeRing, polygonCentroid, validatePolygonRing } from '@quest/geofence'
+import { closeRing, validatePolygonRing } from '@quest/geofence'
 
 export type MultiAreaShape = 'circle' | 'polygon'
 
@@ -18,23 +18,6 @@ export function newClientId(): string {
   return typeof crypto !== 'undefined' && crypto.randomUUID
     ? crypto.randomUUID()
     : `area-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`
-}
-
-export function areasCentroid(areas: MultiArea[]): { lat: number; lng: number } | null {
-  const points: { lat: number; lng: number }[] = []
-  for (const a of areas) {
-    if (a.shape === 'circle' && a.lat != null && a.lng != null) {
-      points.push({ lat: a.lat, lng: a.lng })
-    } else if (a.shape === 'polygon' && a.boundaryRing) {
-      const c = polygonCentroid(a.boundaryRing)
-      if (c) points.push(c)
-    }
-  }
-  if (points.length === 0) return null
-  return {
-    lat: points.reduce((s, p) => s + p.lat, 0) / points.length,
-    lng: points.reduce((s, p) => s + p.lng, 0) / points.length,
-  }
 }
 
 /** Payload for replace_quest_geofences RPC */

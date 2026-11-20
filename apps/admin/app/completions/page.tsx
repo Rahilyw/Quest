@@ -2,7 +2,9 @@
 
 import { useEffect, useState } from 'react'
 import { getRecentCompletions, removeCompletion, type Completion } from './actions'
+import { formatVictoriaDateTime } from '@/lib/format'
 import { theme } from '@/lib/theme'
+import { XP_REASON_LABELS } from '@/lib/xpEventPresets'
 
 export default function CompletionsLog() {
   const [completions, setCompletions] = useState<Completion[]>([])
@@ -39,7 +41,13 @@ export default function CompletionsLog() {
     }
   }
 
-  if (loading) return <p style={{ color: theme.textMuted }}>Loading…</p>
+  if (loading) {
+    return (
+      <p style={{ color: theme.textMuted }} role="status" aria-live="polite">
+        Loading…
+      </p>
+    )
+  }
 
   return (
     <div>
@@ -54,7 +62,7 @@ export default function CompletionsLog() {
         </div>
       )}
 
-      <div style={{ display: 'grid', gap: 16 }}>
+      <div className="admin-stack">
         {completions.map((c) => {
           const isRemoved = c.status === 'removed'
           const isProcessing = processing.has(c.id)
@@ -70,27 +78,26 @@ export default function CompletionsLog() {
                 opacity: isRemoved ? 0.55 : 1,
               }}
             >
-              <a href={c.photo_url} target="_blank" rel="noreferrer">
+              <a href={c.photo_url} target="_blank" rel="noreferrer" aria-label={`Open proof photo for ${c.quests?.title ?? 'this quest'}`}>
                 <img
                   src={c.photo_url}
-                  alt="proof"
-                  style={{
-                    width: 120,
-                    height: 120,
-                    objectFit: 'cover',
-                    borderRadius: 12,
-                    border: `1px solid ${theme.border}`,
-                  }}
+                  alt=""
+                  width={120}
+                  height={120}
+                  className="admin-proof"
                 />
               </a>
-              <div style={{ flex: 1 }}>
+              <div className="admin-grow">
                 <div style={{ fontWeight: 800, fontSize: 16, marginBottom: 4 }}>
                   {c.quests?.title ?? 'Unknown quest'}
                 </div>
                 <div style={{ color: theme.textMuted, marginBottom: 4 }}>by @{c.profiles?.username}</div>
                 <div style={{ color: theme.textDim, fontSize: 13, marginBottom: 4 }}>
-                  {new Date(c.completed_at).toLocaleString()} ·{' '}
-                  <span style={{ color: theme.primary, fontWeight: 700 }}>{c.quests?.xp_reward} XP</span>
+                  {formatVictoriaDateTime(c.completed_at)} ·{' '}
+                  <span style={{ color: theme.primary, fontWeight: 700 }}>{c.xp_awarded} XP</span>
+                  {c.xp_reason ? (
+                    <span style={{ color: theme.textMuted, marginLeft: 6 }}>({XP_REASON_LABELS[c.xp_reason] ?? c.xp_reason})</span>
+                  ) : null}
                   {isRemoved && (
                     <span style={{ color: theme.danger, fontWeight: 700, marginLeft: 8 }}>REMOVED</span>
                   )}
@@ -115,7 +122,7 @@ export default function CompletionsLog() {
                     type="button"
                     onClick={() => handleRemove(c.id)}
                     className="admin-btn"
-                    style={{ background: theme.danger, color: '#fff', opacity: isProcessing ? 0.5 : 1 }}
+                    style={{ background: theme.danger, color: theme.onPrimary, opacity: isProcessing ? 0.5 : 1 }}
                     disabled={isProcessing}
                   >
                     {isProcessing ? '…' : 'Remove'}

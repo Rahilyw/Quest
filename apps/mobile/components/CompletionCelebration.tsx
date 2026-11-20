@@ -1,7 +1,24 @@
-import { useEffect, useRef } from 'react'
-import { Modal, View, Text, TouchableOpacity, Animated, StyleSheet, Easing } from 'react-native'
-import { COLORS } from '@/lib/constants'
-import { xpLabel } from '@/lib/copy'
+import { useEffect, useState } from 'react'
+import {
+  AccessibilityInfo,
+  Modal,
+  Pressable,
+  StyleSheet,
+  View,
+  Vibration,
+} from 'react-native'
+import Animated, {
+  Easing,
+  useAnimatedStyle,
+  useSharedValue,
+  withTiming,
+} from 'react-native-reanimated'
+import { Cutout } from '@/components/Cutout'
+import { Pillow } from '@/components/Pillow'
+import { Sparkle } from '@/components/scraps'
+import { Body, Micro, Sentence, Small } from '@/components/ui/Text'
+import { phraseFor } from '@/lib/thisWeek'
+import { COLOR, FONT, getCategory, RADIUS, SPACE, SPONSORED } from '@/lib/theme'
 
 export type CelebrationVariant = 'success' | 'alreadyDone'
 
@@ -9,6 +26,11 @@ interface Props {
   visible: boolean
   variant?: CelebrationVariant
   questTitle: string
+  category?: string
+  cutoutUrl?: string | null
+  actionPhrase?: string | null
+  photoUri?: string | null
+  selfieUri?: string | null
   xpReward: number
   totalXp?: number
   level?: number
@@ -17,68 +39,31 @@ interface Props {
   redemptionCode?: string | null
   sponsorReward?: string | null
   onDone: () => void
-  /** When provided, shows a "Share your quest" CTA (success variant only). */
   onShare?: () => void
 }
 
-const CONFETTI = ['🎉', '⭐', '✨', '🏅', '🎊', '💫']
+const LAND = { duration: 420, easing: Easing.bezier(0.22, 1, 0.36, 1) }
 
-function ConfettiPiece({ index, active }: { index: number; active: boolean }) {
-  const progress = useRef(new Animated.Value(0)).current
-  const left = 8 + (index * 14) % 84
-
-  useEffect(() => {
-    if (!active) {
-      progress.setValue(0)
-      return
-    }
-    progress.setValue(0)
-    Animated.timing(progress, {
-      toValue: 1,
-      duration: 1400 + (index % 4) * 200,
-      delay: index * 80,
-      easing: Easing.out(Easing.quad),
-      useNativeDriver: true,
-    }).start()
-  }, [active, index, progress])
-
-  const translateY = progress.interpolate({
-    inputRange: [0, 1],
-    outputRange: [-20, 220],
+function verifiedClock(date: Date): string {
+  return new Intl.DateTimeFormat('en-US', {
+    timeZone: 'America/Vancouver',
+    hour: 'numeric',
+    minute: '2-digit',
   })
-
-  const opacity = progress.interpolate({
-    inputRange: [0, 0.15, 0.85, 1],
-    outputRange: [0, 1, 1, 0],
-  })
-
-  const rotate = progress.interpolate({
-    inputRange: [0, 1],
-    outputRange: ['0deg', `${(index % 2 === 0 ? 1 : -1) * 180}deg`],
-  })
-
-  return (
-    <Animated.Text
-      style={[
-        styles.confetti,
-        {
-          left: `${left}%`,
-          opacity,
-          transform: [{ translateY }, { rotate }],
-        },
-      ]}
-    >
-      {CONFETTI[index % CONFETTI.length]}
-    </Animated.Text>
-  )
+    .format(date)
+    .toLowerCase()
 }
 
 export default function CompletionCelebration({
   visible,
   variant = 'success',
   questTitle,
+  category = 'fitness',
+  cutoutUrl,
+  actionPhrase,
+  photoUri,
+  selfieUri,
   xpReward,
-  totalXp,
   level,
   levelUp = false,
   streakCount = 0,
@@ -87,274 +72,279 @@ export default function CompletionCelebration({
   onDone,
   onShare,
 }: Props) {
-  const scaleAnim = useRef(new Animated.Value(0)).current
-  const pulseAnim = useRef(new Animated.Value(1)).current
-  const isAlreadyDone = variant === 'alreadyDone'
+  const already = variant === 'alreadyDone'
+  const cat = getCategory(category)
+  const background = already ? COLOR.paper : questTitle && category ? cat.color : COLOR.paper
+  const ink = already ? COLOR.ink : cat.onColor
+  const [reduceMotion, setReduceMotion] = useState(false)
+  const [shownXp, setShownXp] = useState(0)
+  const [when] = useState(() => verifiedClock(new Date()))
+
+  const scale = useSharedValue(1)
+  const rotate = useSharedValue(0)
+  const fade = useSharedValue(1)
 
   useEffect(() => {
-    if (!visible) {
-      scaleAnim.setValue(0)
-      pulseAnim.setValue(1)
+    let alive = true
+    AccessibilityInfo.isReduceMotionEnabled().then((on) => {
+      if (alive) setReduceMotion(on)
+    })
+    const sub = AccessibilityInfo.addEventListener('reduceMotionChanged', setReduceMotion)
+    return () => {
+      alive = false
+      sub.remove()
+    }
+  }, [])
+
+  useEffect(() => {
+    if (!visible || already) {
+      setShownXp(0)
+      return
+    }
+    if (reduceMotion) {
+      scale.value = 1
+      rotate.value = 0
+      fade.value = 0
+      fade.value = withTiming(1, { duration: 150 })
+      setShownXp(xpReward)
       return
     }
 
-    scaleAnim.setValue(0)
-    Animated.spring(scaleAnim, {
-      toValue: 1,
-      useNativeDriver: true,
-      damping: 10,
-      stiffness: 160,
-    }).start()
+    scale.value = 1.3
+    rotate.value = -12
+    fade.value = 1
+    scale.value = withTiming(1, LAND)
+    rotate.value = withTiming(0, LAND)
 
-    const pulse = Animated.loop(
-      Animated.sequence([
-        Animated.timing(pulseAnim, {
-          toValue: 1.08,
-          duration: 600,
-          easing: Easing.inOut(Easing.ease),
-          useNativeDriver: true,
-        }),
-        Animated.timing(pulseAnim, {
-          toValue: 1,
-          duration: 600,
-          easing: Easing.inOut(Easing.ease),
-          useNativeDriver: true,
-        }),
-      ])
-    )
-    pulse.start()
-    return () => pulse.stop()
-  }, [visible, scaleAnim, pulseAnim])
+    const start = Date.now()
+    let frame = 0
+    const tick = () => {
+      const t = Math.min(1, (Date.now() - start) / 420)
+      const eased = 1 - (1 - t) ** 5
+      setShownXp(Math.round(xpReward * eased))
+      if (t < 1) frame = requestAnimationFrame(tick)
+    }
+    frame = requestAnimationFrame(tick)
+    const haptic = setTimeout(() => Vibration.vibrate(15), 420)
+    return () => {
+      cancelAnimationFrame(frame)
+      clearTimeout(haptic)
+    }
+  }, [visible, already, reduceMotion, xpReward, scale, rotate, fade])
+
+  const cutoutStyle = useAnimatedStyle(() => ({
+    opacity: fade.value,
+    transform: [{ scale: scale.value }, { rotate: `${rotate.value}deg` }],
+  }))
+
+  const phrase = phraseFor({ title: questTitle, action_phrase: actionPhrase })
 
   return (
-    <Modal transparent animationType="fade" visible={visible} onRequestClose={onDone}>
-      <View style={styles.backdrop}>
-        {!isAlreadyDone &&
-          CONFETTI.map((_, i) => <ConfettiPiece key={i} index={i} active={visible} />)}
-
-        <Animated.View style={[styles.card, { transform: [{ scale: scaleAnim }] }]}>
-          <Animated.View
-            style={[
-              styles.checkCircle,
-              isAlreadyDone && styles.doneCircle,
-              { transform: [{ scale: pulseAnim }] },
-            ]}
-          >
-            <Text style={[styles.checkMark, isAlreadyDone && styles.doneMark]}>
-              {isAlreadyDone ? '🏅' : '✓'}
-            </Text>
-          </Animated.View>
-
-          <Text style={styles.title}>
-            {isAlreadyDone ? 'Already Completed!' : levelUp ? 'Level Up!' : 'Quest Complete!'}
-          </Text>
-          <Text style={styles.subtitle}>{questTitle}</Text>
-
-          {!isAlreadyDone && (
-            <>
-              <View style={styles.xpPill}>
-                <Text style={styles.xpText}>{`+${xpReward} XP`}</Text>
+    <Modal visible={visible} animationType="fade" onRequestClose={onDone} statusBarTranslucent>
+      <View style={[styles.screen, { backgroundColor: background }]}>
+        {already ? (
+          <View style={styles.center}>
+            <Sentence>You already finished this quest.</Sentence>
+            <Body tone="soft">The proof is on your profile.</Body>
+          </View>
+        ) : (
+          <View style={styles.center}>
+            <Small color={ink}>{`Verified on ${questTitle}, ${when}`}</Small>
+            <View style={styles.cutoutWrap}>
+              {!reduceMotion ? (
+                <>
+                  <View style={[styles.spark, styles.sparkA]}>
+                    <Twinkle delay={0} color={ink} />
+                  </View>
+                  <View style={[styles.spark, styles.sparkB]}>
+                    <Twinkle delay={300} color={ink} />
+                  </View>
+                  <View style={[styles.spark, styles.sparkC]}>
+                    <Twinkle delay={600} color={ink} />
+                  </View>
+                </>
+              ) : null}
+              <Animated.View style={cutoutStyle}>
+                <Cutout
+                  uri={cutoutUrl}
+                  category={category}
+                  questTitle={questTitle}
+                  role="celebration"
+                  style={{ width: 180 }}
+                />
+              </Animated.View>
+            </View>
+            <Sentence color={ink} style={styles.line} accessibilityRole="header">
+              {`You ${phrase}. ${cat.label} is in your collection.`}
+            </Sentence>
+            <View style={styles.pills}>
+              <View style={styles.pill} accessible accessibilityLabel={`${xpReward} XP earned`}>
+                <Micro color={COLOR.white} tabular>{`+${shownXp} XP`}</Micro>
               </View>
-
-              {totalXp != null && (
-                <Text style={styles.totalXpText}>
-                  {xpLabel(totalXp)} total{level != null ? `, level ${level}` : ''}
-                </Text>
-              )}
-
-              {streakCount > 0 && (
-                <View style={styles.streakPill}>
-                  <Text style={styles.streakText}>🔥 Week {streakCount} streak!</Text>
+              {streakCount > 0 ? (
+                <View style={styles.pill}>
+                  <Micro color={COLOR.white} tabular>{`${streakCount} week streak`}</Micro>
                 </View>
-              )}
-
-              {redemptionCode ? (
-                <View style={styles.codeCard}>
-                  <Text style={styles.codeLabel}>Show this at the counter</Text>
-                  <Text style={styles.codeValue}>{redemptionCode}</Text>
-                  {sponsorReward ? (
-                    <Text style={styles.codeReward}>{sponsorReward}</Text>
-                  ) : null}
+              ) : null}
+              {levelUp && level != null ? (
+                <View style={styles.pill}>
+                  <Micro color={COLOR.white}>{`Level ${level}`}</Micro>
                 </View>
-              ) : (
-                <Text style={styles.infoText}>
-                  Your proof is live on the city feed. Keep exploring!
-                </Text>
-              )}
-            </>
-          )}
+              ) : null}
+            </View>
+            {photoUri ? (
+              <View style={styles.proof}>
+                <Pillow uri={photoUri} width={120} height={136} edge="white" accessibilityLabel="Your proof photo" />
+                {selfieUri ? (
+                  <View style={styles.selfie}>
+                    <Pillow uri={selfieUri} width={48} height={54} edge="white" accessibilityLabel="Your selfie" />
+                  </View>
+                ) : null}
+              </View>
+            ) : null}
+            <Small color={ink} style={styles.privacy}>
+              Your photos are on the City feed. Only you can see exactly where you were standing.
+            </Small>
+            {redemptionCode ? (
+              <View style={styles.code}>
+                <Small tone="soft">Show this at the counter</Small>
+                <Body style={styles.codeValue}>{redemptionCode}</Body>
+                {sponsorReward ? <Small color={SPONSORED.deep}>{sponsorReward}</Small> : null}
+              </View>
+            ) : null}
+          </View>
+        )}
 
-          {isAlreadyDone && (
-            <Text style={styles.infoText}>
-              You already finished this quest. Check your profile for the proof and any rewards.
-            </Text>
-          )}
-
-          {!isAlreadyDone && onShare ? (
-            <TouchableOpacity style={styles.shareBtn} onPress={onShare} activeOpacity={0.85}>
-              <Text style={styles.shareBtnText}>Share your quest 📣</Text>
-            </TouchableOpacity>
+        <View style={styles.actions}>
+          {!already && onShare ? (
+            <Pressable
+              onPress={onShare}
+              accessibilityRole="button"
+              accessibilityLabel="Share"
+              style={({ pressed }) => [styles.share, pressed && styles.pressed]}
+            >
+              <Body color={COLOR.white} style={styles.actionLabel}>Share</Body>
+            </Pressable>
           ) : null}
-
-          <TouchableOpacity
-            style={[styles.doneBtn, !isAlreadyDone && onShare ? styles.doneBtnTight : null]}
+          <Pressable
             onPress={onDone}
-            activeOpacity={0.85}
+            accessibilityRole="button"
+            accessibilityLabel="Done"
+            style={({ pressed }) => [styles.done, pressed && styles.pressed]}
           >
-            <Text style={styles.doneBtnText}>
-              {isAlreadyDone ? 'View Profile' : 'Keep Exploring'}
-            </Text>
-          </TouchableOpacity>
-        </Animated.View>
+            <Body style={styles.actionLabel}>Done</Body>
+          </Pressable>
+        </View>
       </View>
     </Modal>
   )
 }
 
+function Twinkle({ delay, color }: { delay: number; color: string }) {
+  const opacity = useSharedValue(0)
+  useEffect(() => {
+    const timers: ReturnType<typeof setTimeout>[] = []
+    for (let i = 0; i < 3; i++) {
+      const at = delay + i * 700
+      timers.push(setTimeout(() => {
+        opacity.value = withTiming(1, { duration: 180 })
+      }, at))
+      timers.push(setTimeout(() => {
+        opacity.value = withTiming(0.15, { duration: 320 })
+      }, at + 220))
+    }
+    return () => timers.forEach(clearTimeout)
+  }, [delay, opacity])
+  const style = useAnimatedStyle(() => ({ opacity: opacity.value }))
+  return (
+    <Animated.View style={style}>
+      <Sparkle size={22} color={color} />
+    </Animated.View>
+  )
+}
+
 const styles = StyleSheet.create({
-  backdrop: {
+  screen: {
     flex: 1,
-    backgroundColor: 'rgba(15,23,42,0.88)',
+    paddingHorizontal: SPACE.s4,
+    paddingTop: SPACE.s8,
+    paddingBottom: SPACE.s6,
+    justifyContent: 'space-between',
+  },
+  center: {
+    flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    paddingHorizontal: 32,
-    overflow: 'hidden',
+    gap: SPACE.s3,
   },
-  confetti: {
+  cutoutWrap: {
+    width: 220,
+    height: 200,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  spark: { position: 'absolute' },
+  sparkA: { top: 12, left: 24 },
+  sparkB: { top: 4, right: 28 },
+  sparkC: { bottom: 36, right: 16 },
+  line: { textAlign: 'center' },
+  pills: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'center',
+    gap: SPACE.s2,
+  },
+  pill: {
+    backgroundColor: COLOR.ink,
+    borderRadius: RADIUS.pill,
+    paddingHorizontal: SPACE.s3,
+    paddingVertical: SPACE.s2,
+    minHeight: 28,
+    justifyContent: 'center',
+  },
+  proof: {
+    marginTop: SPACE.s2,
+  },
+  selfie: {
     position: 'absolute',
-    top: '18%',
-    fontSize: 22,
+    top: -6,
+    left: -8,
   },
-  card: {
-    backgroundColor: COLORS.surface,
-    borderRadius: 24,
-    padding: 32,
-    alignItems: 'center',
-    width: '100%',
-  },
-  checkCircle: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    backgroundColor: COLORS.success,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  doneCircle: {
-    backgroundColor: COLORS.primarySoft,
-  },
-  checkMark: {
-    fontSize: 36,
-    color: COLORS.surface,
-    fontWeight: '800',
-  },
-  doneMark: {
-    fontSize: 32,
-  },
-  title: {
-    fontSize: 22,
-    fontWeight: '800',
-    color: COLORS.textPrimary,
-    marginTop: 20,
+  privacy: {
     textAlign: 'center',
+    maxWidth: 280,
   },
-  subtitle: {
-    color: COLORS.textMuted,
-    fontSize: 15,
-    textAlign: 'center',
-    marginTop: 6,
-  },
-  xpPill: {
-    marginTop: 16,
-    backgroundColor: COLORS.successSoft,
-    borderRadius: 999,
-    paddingVertical: 8,
-    paddingHorizontal: 20,
-  },
-  xpText: {
-    color: COLORS.success,
-    fontWeight: '700',
-    fontSize: 14,
-  },
-  totalXpText: {
-    color: COLORS.textMuted,
-    fontSize: 13,
-    fontWeight: '600',
-    marginTop: 8,
-  },
-  streakPill: {
-    marginTop: 8,
-    backgroundColor: COLORS.warningSoft,
-    borderRadius: 999,
-    paddingVertical: 8,
-    paddingHorizontal: 20,
-  },
-  streakText: {
-    color: COLORS.warning,
-    fontWeight: '700',
-    fontSize: 14,
-  },
-  codeCard: {
-    marginTop: 16,
-    backgroundColor: COLORS.accentSoft,
-    borderRadius: 16,
-    padding: 16,
-    width: '100%',
+  code: {
+    backgroundColor: COLOR.white,
+    borderRadius: RADIUS.card,
+    padding: SPACE.s3,
     alignItems: 'center',
-    borderWidth: 1,
-    borderColor: COLORS.accent + '33',
-  },
-  codeLabel: {
-    color: COLORS.textMuted,
-    fontSize: 12,
-    fontWeight: '600',
-    marginBottom: 6,
+    gap: SPACE.s1,
   },
   codeValue: {
-    color: COLORS.accentText,
-    fontSize: 28,
-    fontWeight: '900',
-    letterSpacing: 4,
+    fontFamily: FONT.black,
   },
-  codeReward: {
-    color: COLORS.textPrimary,
-    fontSize: 13,
-    fontWeight: '600',
-    marginTop: 8,
-    textAlign: 'center',
+  actions: {
+    gap: SPACE.s2,
   },
-  infoText: {
-    color: COLORS.textMuted,
-    fontSize: 13,
-    textAlign: 'center',
-    marginTop: 12,
-    lineHeight: 20,
-  },
-  shareBtn: {
-    marginTop: 24,
-    backgroundColor: COLORS.highlight,
-    borderRadius: 999,
-    paddingVertical: 14,
-    width: '100%',
+  share: {
+    backgroundColor: COLOR.ink,
+    borderRadius: RADIUS.pill,
+    minHeight: 48,
     alignItems: 'center',
+    justifyContent: 'center',
   },
-  shareBtnText: {
-    color: COLORS.surface,
-    fontWeight: '800',
-    fontSize: 16,
-  },
-  doneBtnTight: { marginTop: 12 },
-  doneBtn: {
-    marginTop: 24,
-    backgroundColor: COLORS.accent,
-    borderRadius: 999,
-    paddingVertical: 14,
-    width: '100%',
+  done: {
+    backgroundColor: COLOR.white,
+    borderRadius: RADIUS.pill,
+    minHeight: 48,
     alignItems: 'center',
+    justifyContent: 'center',
   },
-  doneBtnText: {
-    color: COLORS.surface,
-    fontWeight: '700',
-    fontSize: 16,
+  pressed: {
+    transform: [{ scale: 0.97 }],
+  },
+  actionLabel: {
+    fontFamily: FONT.black,
   },
 })

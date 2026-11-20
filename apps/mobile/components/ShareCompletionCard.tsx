@@ -1,10 +1,16 @@
-import { View, Text, Image, StyleSheet } from 'react-native'
+import { View, StyleSheet } from 'react-native'
 import { BrandText } from '@/components/BrandText'
-import { COLORS, CITY, FONT_DISPLAY, getLevelTitle } from '@/lib/constants'
+import { Cutout } from '@/components/Cutout'
+import { Pillow } from '@/components/Pillow'
+import { Body, Heading, Small } from '@/components/ui/Text'
+import { getLevelTitle } from '@/lib/constants'
+import { COLOR, RADIUS, getCategory } from '@/lib/theme'
 
 /**
- * Strava-style 9:16 story card, rendered at 360×640 and captured at 3× for
- * Instagram stories. Pure view — the parent wraps it for view-shot capture.
+ * 9:16 story card (BRAND.md §7), rendered at 360×640 and captured at 3× for
+ * Instagram stories. The quest's category colour is the whole background, the
+ * proof photo is a pillow, and the quest's cutout overlaps its corner.
+ * Pure view: the parent wraps it for view-shot capture.
  */
 export const SHARE_CARD_WIDTH = 360
 export const SHARE_CARD_HEIGHT = 640
@@ -17,9 +23,17 @@ export interface ShareCompletionData {
   level: number
   xpReward: number
   completedAt: string
+  /** Quest category key. Drives the background colour. Falls back to Fitness. */
+  category?: string | null
+  /** `quests.cutout_url`; a category-colour placeholder shows when absent. */
+  cutoutUrl?: string | null
 }
 
+const PHOTO_W = 276
+const PHOTO_H = 316
+
 export function ShareCompletionCard({ data }: { data: ShareCompletionData }) {
+  const cat = getCategory(data.category)
   const dateStr = new Date(data.completedAt).toLocaleDateString(undefined, {
     month: 'short',
     day: 'numeric',
@@ -27,161 +41,81 @@ export function ShareCompletionCard({ data }: { data: ShareCompletionData }) {
   })
 
   return (
-    <View style={styles.card}>
-      <Image source={{ uri: data.photoUri }} style={styles.photo} resizeMode="cover" />
-
-      {/* Top brand strip */}
+    <View style={[styles.card, { backgroundColor: cat.color }]}>
       <View style={styles.topRow}>
-        <View style={styles.brandChip}>
-          <BrandText size="inline" color={COLORS.primary}>
-            QUEST!
-          </BrandText>
-        </View>
-        <View style={styles.cityPill}>
-          <Text style={styles.cityPillText}>{CITY.name}</Text>
-        </View>
+        <BrandText size="inline" color={cat.onColor}>
+          Quest!
+        </BrandText>
+        <Small color={cat.onColor}>Victoria, BC</Small>
       </View>
 
-      {/* Bottom stat panel */}
-      <View style={styles.panel}>
-        <View style={styles.panelAccent} />
-        <Text style={styles.completeLabel}>Quest complete</Text>
-        <Text style={styles.questTitle} numberOfLines={2}>
+      <View style={styles.stage}>
+        <Pillow
+          uri={data.photoUri}
+          width={PHOTO_W}
+          height={PHOTO_H}
+          edge="white"
+          style={styles.photo}
+        />
+        <Cutout
+          uri={data.cutoutUrl}
+          category={data.category ?? 'fitness'}
+          questTitle={data.questTitle}
+          role="breakout"
+          rotation={6}
+          style={styles.cutout}
+        />
+      </View>
+
+      <View style={styles.copy}>
+        <Small color={cat.onColor}>Quest complete</Small>
+        <Heading color={cat.onColor} numberOfLines={2}>
           {data.questTitle}
-        </Text>
-
-        <View style={styles.statsRow}>
-          <View style={styles.stat}>
-            <Text style={styles.statValue}>+{data.xpReward}</Text>
-            <Text style={styles.statLabel}>XP earned</Text>
+        </Heading>
+        <View style={styles.row}>
+          <View style={styles.xpPill}>
+            <Body color={COLOR.white} tabular style={styles.xpText}>
+              +{data.xpReward} XP
+            </Body>
           </View>
-          <View style={styles.statDivider} />
-          <View style={styles.stat}>
-            <Text style={styles.statValue}>Level {data.level}</Text>
-            <Text style={styles.statLabel}>{getLevelTitle(data.level)}</Text>
-          </View>
-          <View style={styles.statDivider} />
-          <View style={styles.stat}>
-            <Text style={styles.statValueSmall}>{dateStr}</Text>
-            <Text style={styles.statLabel}>Victoria, BC</Text>
-          </View>
+          <Small color={cat.onColor} numberOfLines={1} style={styles.who}>
+            @{data.username}, level {data.level} {getLevelTitle(data.level)}
+          </Small>
         </View>
-
-        <View style={styles.footerRow}>
-          <Text style={styles.username}>@{data.username}</Text>
-          <Text style={styles.tagline}>Real quests. Real city. ✦</Text>
-        </View>
+        <Small color={cat.onColor}>{dateStr}</Small>
       </View>
     </View>
   )
 }
 
-const PANEL_HEIGHT = 232
-
 const styles = StyleSheet.create({
   card: {
     width: SHARE_CARD_WIDTH,
     height: SHARE_CARD_HEIGHT,
-    backgroundColor: COLORS.navy,
     overflow: 'hidden',
-  },
-  photo: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    height: SHARE_CARD_HEIGHT - PANEL_HEIGHT + 24,
+    paddingHorizontal: 22,
+    paddingTop: 22,
   },
   topRow: {
-    position: 'absolute',
-    top: 18,
-    left: 18,
-    right: 18,
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
   },
-  brandChip: {
-    backgroundColor: COLORS.bg,
-    borderRadius: 999,
+  stage: {
+    marginTop: 24,
+    height: PHOTO_H + 24,
+    alignItems: 'center',
+  },
+  photo: { transform: [{ rotate: '-3deg' }] },
+  cutout: { position: 'absolute', right: -6, bottom: -4 },
+  copy: { marginTop: 22, gap: 8 },
+  row: { flexDirection: 'row', alignItems: 'center', gap: 10 },
+  xpPill: {
+    backgroundColor: COLOR.ink,
+    borderRadius: RADIUS.pill,
     paddingHorizontal: 14,
     paddingVertical: 6,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.25,
-    shadowRadius: 6,
-    elevation: 4,
   },
-  cityPill: {
-    backgroundColor: COLORS.highlight,
-    borderRadius: 999,
-    paddingHorizontal: 12,
-    paddingVertical: 7,
-  },
-  cityPillText: { color: '#FFFFFF', fontSize: 11, fontWeight: '900', letterSpacing: 0.6 },
-  panel: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
-    height: PANEL_HEIGHT,
-    backgroundColor: COLORS.navy,
-    borderTopLeftRadius: 28,
-    borderTopRightRadius: 28,
-    paddingHorizontal: 22,
-    paddingTop: 18,
-  },
-  panelAccent: {
-    position: 'absolute',
-    top: 0,
-    left: 22,
-    width: 56,
-    height: 5,
-    borderRadius: 3,
-    backgroundColor: COLORS.sunshine,
-    marginTop: 10,
-  },
-  completeLabel: {
-    color: COLORS.sunshine,
-    fontSize: 11,
-    fontWeight: '900',
-    letterSpacing: 2.2,
-    marginTop: 12,
-  },
-  questTitle: {
-    color: '#FFFFFF',
-    fontFamily: FONT_DISPLAY,
-    fontSize: 26,
-    lineHeight: 31,
-    marginTop: 6,
-  },
-  statsRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginTop: 16,
-  },
-  stat: { flex: 1 },
-  statDivider: {
-    width: 1,
-    height: 34,
-    backgroundColor: 'rgba(255,255,255,0.18)',
-    marginHorizontal: 14,
-  },
-  statValue: { color: COLORS.sunshine, fontSize: 22, fontWeight: '900' },
-  statValueSmall: { color: '#FFFFFF', fontSize: 15, fontWeight: '800', marginTop: 4 },
-  statLabel: {
-    color: 'rgba(255,255,255,0.55)',
-    fontSize: 9,
-    fontWeight: '800',
-    letterSpacing: 1.1,
-    marginTop: 3,
-  },
-  footerRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginTop: 18,
-  },
-  username: { color: COLORS.primaryLight, fontSize: 14, fontWeight: '800' },
-  tagline: { color: 'rgba(255,255,255,0.45)', fontSize: 11, fontWeight: '700' },
+  xpText: { fontWeight: '800' },
+  who: { flexShrink: 1 },
 })

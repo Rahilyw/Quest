@@ -1,10 +1,14 @@
-import type { Metadata } from 'next'
+import type { Metadata, Viewport } from 'next'
 import { AppShell } from './app-shell'
 import './globals.css'
 
 export const metadata: Metadata = {
   title: 'Quest! Admin',
   description: 'Quest! operations dashboard — Victoria, BC',
+}
+
+export const viewport: Viewport = {
+  themeColor: '#f6f2ec',
 }
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

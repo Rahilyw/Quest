@@ -2,9 +2,13 @@
 
 import Link from 'next/link'
 import { useEffect, useState } from 'react'
-import { getQuests, toggleQuestStatus, updateQuest, type Quest } from './actions'
+import { windowSummary } from '@quest/geofence'
+import { getQuests, setStarterQuest, toggleQuestStatus, updateQuest, type Quest } from './actions'
 import { theme, VICTORIA_DEFAULT } from '@/lib/theme'
+import { QuestScheduleFields } from '@/components/QuestScheduleFields'
+import { normalizeSchedule, vancouverInputToIso, vancouverInputValue } from '@/lib/schedule'
 import GeofenceEditor, { type GeofenceType } from '@/components/GeofenceEditor'
+import QuestCutoutUploader from '@/components/QuestCutoutUploader'
 import QuestCoverPicker, { type CoverPickerValue } from '@/components/QuestCoverPicker'
 import {
   areasToRpcPayload,
@@ -30,6 +34,8 @@ interface EditFormState {
   is_sponsored: boolean
   sponsor_name: string
   sponsor_reward: string
+  active_from: string
+  active_until: string
 }
 
 function questGeofencesToMultiAreas(q: Quest): MultiArea[] {
@@ -60,6 +66,8 @@ function questToFormState(q: Quest): EditFormState {
     is_sponsored: q.is_sponsored,
     sponsor_name: q.sponsor_name ?? '',
     sponsor_reward: q.sponsor_reward ?? '',
+    active_from: vancouverInputValue(q.active_from),
+    active_until: vancouverInputValue(q.active_until),
   }
 }
 
@@ -87,6 +95,14 @@ function EditForm({ quest, onSave, onCancel }: { quest: Quest; onSave: (updated:
         setError(multiErr)
         return
       }
+    }
+    const schedule = normalizeSchedule(
+      vancouverInputToIso(form.active_from),
+      vancouverInputToIso(form.active_until),
+    )
+    if ('error' in schedule) {
+      setError(schedule.error)
+      return
     }
 
     setSubmitting(true)
@@ -119,6 +135,8 @@ function EditForm({ quest, onSave, onCancel }: { quest: Quest; onSave: (updated:
           remove_cover: cover.remove && !cover.file,
           multi_areas:
             form.geofence_type === 'multi' ? areasToRpcPayload(form.multi_areas) : null,
+          active_from: schedule.active_from,
+          active_until: schedule.active_until,
         },
         cover.file
       )
@@ -139,8 +157,8 @@ function EditForm({ quest, onSave, onCancel }: { quest: Quest; onSave: (updated:
   return (
     <form onSubmit={handleSave} style={{ padding: '0 16px 20px' }}>
       <div style={{ borderTop: `1px solid ${theme.border}`, paddingTop: 16 }}>
-        <p style={{ margin: '0 0 14px', fontWeight: 800, fontSize: 12, color: theme.textMuted, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-          Edit Quest
+        <p style={{ margin: '0 0 14px', fontWeight: 800, fontSize: 14, color: theme.textMuted }}>
+          Edit quest
         </p>
 
         <div className="admin-field">
@@ -148,6 +166,14 @@ function EditForm({ quest, onSave, onCancel }: { quest: Quest; onSave: (updated:
             currentUrl={quest.cover_image_url}
             compact
             onChange={setCover}
+          />
+        </div>
+
+        <div className="admin-field">
+          <QuestCutoutUploader
+            questId={quest.id}
+            category={form.category}
+            initialUrl={quest.cutout_url}
           />
         </div>
 
@@ -188,9 +214,9 @@ function EditForm({ quest, onSave, onCancel }: { quest: Quest; onSave: (updated:
                   type="button"
                   onClick={() => set('category', key)}
                   style={{
-                    border: active ? `2px solid ${cat.color}` : `1px solid ${theme.border}`,
-                    background: active ? cat.soft : 'transparent',
-                    color: active ? cat.color : theme.textMuted,
+                    border: active ? `2px solid ${cat.deep}` : `1px solid ${theme.border}`,
+                    background: active ? cat.color : 'transparent',
+                    color: active ? cat.onColor : theme.textMuted,
                     borderRadius: 999,
                     padding: '6px 12px',
                     fontWeight: 700,
@@ -199,7 +225,7 @@ function EditForm({ quest, onSave, onCancel }: { quest: Quest; onSave: (updated:
                     fontFamily: 'inherit',
                   }}
                 >
-                  {cat.icon} {cat.label}
+                  {cat.label}
                 </button>
               )
             })}
@@ -238,6 +264,15 @@ function EditForm({ quest, onSave, onCancel }: { quest: Quest; onSave: (updated:
             required
           />
         </div>
+
+        <QuestScheduleFields
+          activeFrom={form.active_from}
+          activeUntil={form.active_until}
+          onChange={(next) => {
+            set('active_from', next.activeFrom)
+            set('active_until', next.activeUntil)
+          }}
+        />
 
         {/* Sponsor toggle */}
         <div className="admin-field">
@@ -280,7 +315,7 @@ function EditForm({ quest, onSave, onCancel }: { quest: Quest; onSave: (updated:
         )}
 
         {error && (
-          <div style={{ background: 'rgba(239,68,68,0.15)', border: '1px solid rgba(239,68,68,0.4)', borderRadius: 10, padding: 12, marginBottom: 12, color: '#fca5a5', fontSize: 13 }}>
+          <div style={{ background: theme.dangerSoft, border: `1px solid ${theme.dangerBorder}`, borderRadius: 10, padding: 12, marginBottom: 12, color: theme.danger, fontSize: 13 }}>
             {error}
           </div>
         )}
@@ -302,6 +337,8 @@ export default function QuestsPage() {
   const [quests, setQuests] = useState<Quest[]>([])
   const [loading, setLoading] = useState(true)
   const [editingId, setEditingId] = useState<string | null>(null)
+  const [starterBusyId, setStarterBusyId] = useState<string | null>(null)
+  const [actionError, setActionError] = useState<string | null>(null)
 
   useEffect(() => {
     getQuests().then((data) => {
@@ -310,9 +347,31 @@ export default function QuestsPage() {
     })
   }, [])
 
-  async function handleToggle(id: string, status: string) {
-    const next = await toggleQuestStatus(id, status)
-    setQuests((prev) => prev.map((q) => (q.id === id ? { ...q, status: next } : q)))
+  async function handleToggle(id: string) {
+    setActionError(null)
+    try {
+      const next = await toggleQuestStatus(id)
+      setQuests((prev) => prev.map((q) => (q.id === id ? { ...q, status: next } : q)))
+    } catch (error) {
+      setActionError(error instanceof Error ? error.message : 'Could not update this quest.')
+    }
+  }
+
+  async function handleSetStarter(id: string) {
+    setActionError(null)
+    setStarterBusyId(id)
+    try {
+      const result = await setStarterQuest(id)
+      if (!result.ok) {
+        setActionError(result.error)
+        return
+      }
+      setQuests((prev) => prev.map((q) => ({ ...q, is_starter: q.id === id })))
+    } catch (error) {
+      setActionError(error instanceof Error ? error.message : 'Could not set the first quest.')
+    } finally {
+      setStarterBusyId(null)
+    }
   }
 
   function handleEditSave(updated: Quest) {
@@ -342,6 +401,10 @@ export default function QuestsPage() {
           </Link>
         </div>
       ) : (
+        <>
+        {actionError ? (
+          <p role="alert" style={{ color: theme.danger, marginBottom: 16 }}>{actionError}</p>
+        ) : null}
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 16 }}>
           {quests.map((q) => {
             const cat = theme.categories[q.category]
@@ -359,7 +422,7 @@ export default function QuestsPage() {
                 >
                   {!q.cover_image_url && (
                     <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 40 }}>
-                      {cat?.icon ?? '📍'}
+                      
                     </div>
                   )}
                   <div
@@ -367,13 +430,13 @@ export default function QuestsPage() {
                       position: 'absolute',
                       top: 10,
                       right: 10,
-                      background: q.status === 'active' ? 'rgba(34,197,94,0.9)' : 'rgba(100,116,139,0.9)',
-                      color: '#fff',
-                      fontSize: 10,
-                      fontWeight: 800,
+                      background: q.status === 'active' ? theme.success : theme.textMuted,
+                      color: theme.onPrimary,
+                      fontSize: 12,
+                      fontWeight: 700,
                       padding: '4px 10px',
                       borderRadius: 999,
-                      textTransform: 'uppercase',
+                      textTransform: 'capitalize',
                     }}
                   >
                     {q.status}
@@ -383,40 +446,46 @@ export default function QuestsPage() {
                   <div style={{ display: 'flex', gap: 8, marginBottom: 8, flexWrap: 'wrap' }}>
                     <span
                       style={{
-                        fontSize: 10,
+                        fontSize: 12,
                         fontWeight: 700,
-                        color: cat?.color ?? theme.primary,
-                        background: cat?.soft ?? theme.primarySoft,
+                        color: cat?.onColor ?? theme.text,
+                        background: cat?.color ?? theme.primarySoft,
                         padding: '3px 8px',
                         borderRadius: 999,
                         textTransform: 'capitalize',
                       }}
                     >
-                      {cat?.icon} {q.category}
+                      {q.category}
                     </span>
                     <span style={{ fontSize: 10, fontWeight: 800, color: theme.primary }}>+{q.xp_reward} XP</span>
                     {q.is_sponsored && (
-                      <span style={{ fontSize: 10, fontWeight: 700, color: theme.highlight }}>⭐ Sponsored</span>
+                      <span style={{ fontSize: 10, fontWeight: 700, color: theme.highlight }}>Sponsored</span>
+                    )}
+                    {q.is_starter && (
+                      <span style={{ fontSize: 10, fontWeight: 700, color: theme.success }}>First quest</span>
                     )}
                     {(q.geofence_type ?? 'circle') === 'none' && (
-                      <span style={{ fontSize: 10, fontWeight: 700, color: theme.textMuted }}>📍 Anywhere</span>
+                      <span style={{ fontSize: 10, fontWeight: 700, color: theme.textMuted }}>Anywhere</span>
                     )}
                     {(q.geofence_type ?? 'circle') === 'city' && (
-                      <span style={{ fontSize: 10, fontWeight: 700, color: theme.primaryLight }}>🌆 City-wide</span>
+                      <span style={{ fontSize: 10, fontWeight: 700, color: theme.primaryLight }}>City-wide</span>
                     )}
                     {(q.geofence_type ?? 'circle') === 'circle' && (
-                      <span style={{ fontSize: 10, fontWeight: 700, color: theme.primaryLight }}>📍 {q.radius_meters}m</span>
+                      <span style={{ fontSize: 10, fontWeight: 700, color: theme.primaryLight }}>{q.radius_meters}m</span>
                     )}
                     {(q.geofence_type ?? 'circle') === 'polygon' && (
-                      <span style={{ fontSize: 10, fontWeight: 700, color: theme.primaryLight }}>✏️ Custom zone</span>
+                      <span style={{ fontSize: 10, fontWeight: 700, color: theme.primaryLight }}>Custom zone</span>
                     )}
                     {(q.geofence_type ?? 'circle') === 'multi' && (
                       <span style={{ fontSize: 10, fontWeight: 700, color: theme.primaryLight }}>
-                        📌 {q.quest_geofences?.length ?? 0} areas
+                        {q.quest_geofences?.length ?? 0} areas
                       </span>
                     )}
                   </div>
                   <h3 style={{ margin: '0 0 6px', fontSize: 16, fontWeight: 800, lineHeight: 1.3 }}>{q.title}</h3>
+                  <p style={{ margin: '0 0 6px', fontSize: 12, fontWeight: 700, color: theme.textMuted }}>
+                    {windowSummary(q, new Date()).label}
+                  </p>
                   {q.is_sponsored && q.sponsor_name && (
                     <p style={{ margin: '0 0 6px', fontSize: 11, color: theme.highlight, fontWeight: 600 }}>
                       Sponsored by {q.sponsor_name}
@@ -437,7 +506,7 @@ export default function QuestsPage() {
                       )}
                     </div>
                   )}
-                  <div style={{ display: 'flex', gap: 8, marginTop: 14 }}>
+                  <div style={{ display: 'flex', gap: 8, marginTop: 14, flexWrap: 'wrap' }}>
                     <button
                       type="button"
                       onClick={() => setEditingId(isEditing ? null : q.id)}
@@ -448,11 +517,20 @@ export default function QuestsPage() {
                     </button>
                     <button
                       type="button"
-                      onClick={() => handleToggle(q.id, q.status)}
+                      onClick={() => handleToggle(q.id)}
                       className="admin-btn admin-btn-ghost"
                       style={{ flex: 1, fontSize: 12 }}
                     >
                       {q.status === 'active' ? 'Deactivate' : 'Activate'}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleSetStarter(q.id)}
+                      className="admin-btn admin-btn-ghost"
+                      style={{ flex: 1, fontSize: 12 }}
+                      disabled={q.is_starter || q.status !== 'active' || starterBusyId === q.id}
+                    >
+                      {q.is_starter ? 'First quest' : starterBusyId === q.id ? 'Saving…' : 'Set as first quest'}
                     </button>
                   </div>
                 </div>
@@ -468,6 +546,7 @@ export default function QuestsPage() {
             )
           })}
         </div>
+        </>
       )}
     </div>
   )

@@ -110,7 +110,7 @@ export default function QuestCoverPicker({ currentUrl = null, onChange, compact 
     <div>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 8, gap: 12 }}>
         <div>
-          <p style={{ margin: 0, fontWeight: 800, fontSize: compact ? 12 : 16, color: compact ? theme.textMuted : theme.text, textTransform: compact ? 'uppercase' : undefined, letterSpacing: compact ? '0.05em' : undefined }}>
+          <p style={{ margin: 0, fontWeight: 800, fontSize: compact ? 14 : 16, color: compact ? theme.textMuted : theme.text }}>
             Cover photo
           </p>
           <p style={{ margin: '4px 0 0', color: theme.textMuted, fontSize: 12 }}>

@@ -1,8 +1,10 @@
 # Spec 07 — Merchant Redemption Validation
 
-**Status:** Draft
+**Status:** Implemented in the checkout (migration 036). The Nov 10 launch runbook reports it applied. A live counter redemption has not been verified in this audit.
+
+**Implementation note:** `redeemed_at` and the 8-character code already existed (migration 017). `036` adds `sponsors`, a 10-lookups-per-minute budget, and service-role-only `lookup_redemption` / `mark_redemption`. Marking is idempotent: a second tap returns the original time. Players cannot set `redeemed_at`. The public page is `/redeem/[merchantKey]` and skips admin auth even when another account is signed in. Create the link from Sponsors. The player’s You tab shows the code, “Show this screen at the counter”, and “Redeemed” after a refetch.
 **Depends on:** Spec 02 (codes are now assigned at verification time, in-DB)
-**Problem:** sponsor renewal rate is the revenue metric, but a redemption code today is just text on a profile screen. Café staff can't verify a code, and there's no redemption count to bring to a renewal conversation. This closes the loop — and is worth more than the CSV export currently on the roadmap.
+**Original problem statement:** before this feature, a redemption code was just text on a profile screen. This implementation provides a merchant validation flow and sponsor redemption reporting; live counter use still needs verification.
 
 ## 1. What the merchant gets
 

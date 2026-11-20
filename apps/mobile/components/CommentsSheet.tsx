@@ -1,11 +1,9 @@
 import { useState } from 'react'
 import {
   View,
-  Text,
   StyleSheet,
   Modal,
   Pressable,
-  TouchableOpacity,
   TextInput,
   FlatList,
   KeyboardAvoidingView,
@@ -17,10 +15,11 @@ import { useRouter } from 'expo-router'
 import { Ionicons } from '@expo/vector-icons'
 import { Avatar } from '@/components/Avatar'
 import { ReportPostSheet } from '@/components/ReportPostSheet'
-import { COLORS, SPACING, RADIUS } from '@/lib/constants'
+import { Body, Heading, Name, Small } from '@/components/ui/Text'
 import { useComments, type CommentNode } from '@/hooks/useComments'
 import { formatTimeAgo } from '@/hooks/useActivityFeed'
 import { COMMENT_REPORT_REASONS, type CommentReportReason } from '@/lib/moderation'
+import { COLOR, RADIUS, SPACE, TYPE } from '@/lib/theme'
 
 interface Props {
   visible: boolean
@@ -35,7 +34,7 @@ export function CommentsSheet({ visible, completionId, currentUserId, onClose, o
   const router = useRouter()
   const { comments, totalCount, loading, error, posting, addComment, deleteComment, reportComment } = useComments(
     visible ? completionId : undefined,
-    currentUserId
+    currentUserId,
   )
   const [draft, setDraft] = useState('')
   const [replyTo, setReplyTo] = useState<CommentNode | null>(null)
@@ -86,50 +85,54 @@ export function CommentsSheet({ visible, completionId, currentUserId, onClose, o
     const isOwn = currentUserId != null && comment.user_id === currentUserId
     return (
       <View key={comment.id} style={[styles.commentRow, isReply && styles.replyRow]}>
-        <TouchableOpacity
+        <Pressable
           onPress={() => openProfile(comment.user_id)}
           accessibilityRole="button"
           accessibilityLabel={`View ${comment.user.username}'s profile`}
         >
-          <Avatar username={comment.user.username} uri={comment.user.avatar_url} size={isReply ? 28 : 34} />
-        </TouchableOpacity>
+          <Avatar username={comment.user.username} uri={comment.user.avatar_url} size={isReply ? 28 : 36} />
+        </Pressable>
         <View style={styles.commentBody}>
           <View style={styles.commentMeta}>
-            <TouchableOpacity onPress={() => openProfile(comment.user_id)}>
-              <Text style={styles.commentName}>@{comment.user.username}</Text>
-            </TouchableOpacity>
-            <Text style={styles.commentTime}>{formatTimeAgo(comment.created_at)}</Text>
+            <Pressable onPress={() => openProfile(comment.user_id)} accessibilityRole="button">
+              <Name numberOfLines={1}>{comment.user.username}</Name>
+            </Pressable>
+            <Small tone="faint">{formatTimeAgo(comment.created_at)}</Small>
           </View>
-          <Text style={styles.commentText}>{comment.body}</Text>
+          <Body>{comment.body}</Body>
           {isOwn && comment.hidden ? (
-            <Text style={styles.hiddenNote}>Hidden from others while under review</Text>
+            <Small tone="soft">Hidden from others while under review</Small>
           ) : null}
           <View style={styles.commentActions}>
             {!isReply && currentUserId ? (
-              <TouchableOpacity
+              <Pressable
                 onPress={() => setReplyTo(comment)}
-                hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                accessibilityRole="button"
+                accessibilityLabel="Reply"
+                style={styles.action}
               >
-                <Text style={styles.commentActionText}>Reply</Text>
-              </TouchableOpacity>
+                <Small tone="soft">Reply</Small>
+              </Pressable>
             ) : null}
             {currentUserId && !isOwn ? (
-              <TouchableOpacity
+              <Pressable
                 onPress={() => setReporting(comment)}
-                hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
                 accessibilityRole="button"
                 accessibilityLabel={`Report comment by ${comment.user.username}`}
+                style={styles.action}
               >
-                <Text style={styles.commentActionText}>Report</Text>
-              </TouchableOpacity>
+                <Small tone="soft">Report</Small>
+              </Pressable>
             ) : null}
             {isOwn ? (
-              <TouchableOpacity
+              <Pressable
                 onPress={() => confirmDelete(comment)}
-                hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                accessibilityRole="button"
+                accessibilityLabel="Delete comment"
+                style={styles.action}
               >
-                <Text style={styles.commentDeleteText}>Delete</Text>
-              </TouchableOpacity>
+                <Small>Delete</Small>
+              </Pressable>
             ) : null}
           </View>
         </View>
@@ -147,18 +150,17 @@ export function CommentsSheet({ visible, completionId, currentUserId, onClose, o
       >
         <View style={styles.sheet}>
           <View style={styles.grabber} />
-          <Text style={styles.title}>Comments</Text>
+          <Heading style={styles.title}>Comments</Heading>
 
           {loading ? (
-            <ActivityIndicator color={COLORS.primary} style={styles.centerFill} />
-          ) : error ? (
-            <Text style={styles.errorText}>{error}</Text>
-          ) : comments.length === 0 ? (
-            <View style={styles.empty}>
-              <Text style={styles.emptyEmoji}>💬</Text>
-              <Text style={styles.emptyTitle}>No comments yet</Text>
-              <Text style={styles.emptyBody}>Be the first to hype this quest.</Text>
+            <View style={styles.centerFill}>
+              <View style={styles.skeleton} />
+              <View style={styles.skeleton} />
             </View>
+          ) : error ? (
+            <Body tone="soft" style={styles.centerNote}>{error}</Body>
+          ) : comments.length === 0 ? (
+            <Body tone="soft" style={styles.centerNote}>No comments yet. Say what you saw.</Body>
           ) : (
             <FlatList
               data={comments}
@@ -178,30 +180,30 @@ export function CommentsSheet({ visible, completionId, currentUserId, onClose, o
             <View style={styles.composerWrap}>
               {replyTo ? (
                 <View style={styles.replyBanner}>
-                  <Text style={styles.replyBannerText} numberOfLines={1}>
-                    Replying to @{replyTo.user.username}
-                  </Text>
-                  <TouchableOpacity
+                  <Small numberOfLines={1} style={styles.replyBannerText}>
+                    {`Replying to ${replyTo.user.username}`}
+                  </Small>
+                  <Pressable
                     onPress={() => setReplyTo(null)}
-                    hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
                     accessibilityRole="button"
                     accessibilityLabel="Cancel reply"
+                    style={styles.action}
                   >
-                    <Ionicons name="close" size={16} color={COLORS.textMuted} />
-                  </TouchableOpacity>
+                    <Ionicons name="close" size={18} color={COLOR.ink} />
+                  </Pressable>
                 </View>
               ) : null}
               <View style={styles.composer}>
                 <TextInput
                   style={styles.input}
                   placeholder={replyTo ? 'Write a reply…' : 'Add a comment…'}
-                  placeholderTextColor={COLORS.textMuted}
+                  placeholderTextColor={COLOR.inkFaint}
                   value={draft}
                   onChangeText={setDraft}
                   maxLength={500}
                   multiline
                 />
-                <TouchableOpacity
+                <Pressable
                   style={[styles.sendBtn, (!draft.trim() || posting) && styles.sendBtnDisabled]}
                   onPress={submit}
                   disabled={!draft.trim() || posting}
@@ -209,11 +211,15 @@ export function CommentsSheet({ visible, completionId, currentUserId, onClose, o
                   accessibilityLabel="Post comment"
                 >
                   {posting ? (
-                    <ActivityIndicator size="small" color="#FFFFFF" />
+                    <ActivityIndicator size="small" color={COLOR.white} />
                   ) : (
-                    <Ionicons name="arrow-up" size={18} color="#FFFFFF" />
+                    <Ionicons
+                      name="arrow-up"
+                      size={18}
+                      color={!draft.trim() ? COLOR.inkFaint : COLOR.white}
+                    />
                   )}
-                </TouchableOpacity>
+                </Pressable>
               </View>
             </View>
           ) : null}
@@ -233,103 +239,61 @@ export function CommentsSheet({ visible, completionId, currentUserId, onClose, o
 }
 
 const styles = StyleSheet.create({
-  backdrop: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(15,23,42,0.35)',
-  },
+  backdrop: { ...StyleSheet.absoluteFill, backgroundColor: COLOR.scrim },
   sheetWrap: { flex: 1, justifyContent: 'flex-end' },
   sheet: {
-    backgroundColor: COLORS.surface,
-    borderTopLeftRadius: RADIUS.xxl,
-    borderTopRightRadius: RADIUS.xxl,
+    backgroundColor: COLOR.paper,
+    borderTopLeftRadius: RADIUS.sheet,
+    borderTopRightRadius: RADIUS.sheet,
     maxHeight: '78%',
     minHeight: '55%',
-    paddingBottom: SPACING.xl,
+    paddingBottom: SPACE.s5,
   },
   grabber: {
-    width: 42,
-    height: 5,
-    borderRadius: 3,
-    backgroundColor: COLORS.border,
+    width: 40,
+    height: 4,
+    borderRadius: RADIUS.pill,
+    backgroundColor: COLOR.paperDeep,
     alignSelf: 'center',
-    marginTop: SPACING.sm,
+    marginTop: SPACE.s3,
   },
-  title: {
-    color: COLORS.textPrimary,
-    fontSize: 15,
-    fontWeight: '900',
-    textAlign: 'center',
-    paddingVertical: SPACING.md,
-    borderBottomWidth: 1,
-    borderBottomColor: COLORS.border,
-  },
-  centerFill: { marginVertical: SPACING.xxl * 2 },
-  errorText: {
-    color: COLORS.danger,
-    fontSize: 13,
-    fontWeight: '600',
-    textAlign: 'center',
-    marginVertical: SPACING.xxl,
-  },
-  empty: { alignItems: 'center', paddingVertical: SPACING.xxl * 2 },
-  emptyEmoji: { fontSize: 32, marginBottom: SPACING.sm },
-  emptyTitle: { color: COLORS.textPrimary, fontSize: 15, fontWeight: '800' },
-  emptyBody: { color: COLORS.textMuted, fontSize: 13, marginTop: 4 },
-  list: { paddingHorizontal: SPACING.lg },
-  commentRow: {
-    flexDirection: 'row',
-    gap: SPACING.md,
-    paddingVertical: SPACING.md,
-  },
-  replyRow: {
-    marginLeft: SPACING.xl + SPACING.lg,
-  },
-  commentBody: { flex: 1, minWidth: 0 },
-  commentMeta: { flexDirection: 'row', alignItems: 'center', gap: SPACING.sm },
-  commentName: { color: COLORS.textPrimary, fontSize: 13, fontWeight: '800' },
-  commentTime: { color: COLORS.textMuted, fontSize: 11 },
-  commentText: { color: COLORS.textPrimary, fontSize: 14, lineHeight: 20, marginTop: 2 },
-  commentActions: { flexDirection: 'row', gap: SPACING.lg, marginTop: 4 },
-  commentActionText: { color: COLORS.textMuted, fontSize: 12, fontWeight: '700' },
-  hiddenNote: { color: COLORS.warning, fontSize: 11, fontWeight: '700', marginTop: 2 },
-  commentDeleteText: { color: COLORS.danger, fontSize: 12, fontWeight: '700' },
+  title: { textAlign: 'center', paddingVertical: SPACE.s3 },
+  centerFill: { padding: SPACE.s4, gap: SPACE.s3 },
+  skeleton: { height: 64, borderRadius: RADIUS.card, backgroundColor: COLOR.paperDeep },
+  centerNote: { textAlign: 'center', marginVertical: SPACE.s7, paddingHorizontal: SPACE.s5 },
+  list: { paddingHorizontal: SPACE.s4 },
+  commentRow: { flexDirection: 'row', gap: SPACE.s3, paddingVertical: SPACE.s2 },
+  replyRow: { marginLeft: SPACE.s7 },
+  commentBody: { flex: 1, minWidth: 0, gap: 2 },
+  commentMeta: { flexDirection: 'row', alignItems: 'center', gap: SPACE.s2 },
+  commentActions: { flexDirection: 'row', gap: SPACE.s2 },
+  action: { minHeight: 48, justifyContent: 'center', paddingRight: SPACE.s2 },
   composerWrap: {
     borderTopWidth: 1,
-    borderTopColor: COLORS.border,
-    paddingHorizontal: SPACING.lg,
-    paddingTop: SPACING.md,
+    borderTopColor: COLOR.rule,
+    paddingHorizontal: SPACE.s4,
+    paddingTop: SPACE.s3,
   },
-  replyBanner: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    backgroundColor: COLORS.primarySoft,
-    borderRadius: RADIUS.md,
-    paddingHorizontal: SPACING.md,
-    paddingVertical: 6,
-    marginBottom: SPACING.sm,
-  },
-  replyBannerText: { color: COLORS.accentText, fontSize: 12, fontWeight: '700', flex: 1 },
-  composer: { flexDirection: 'row', alignItems: 'flex-end', gap: SPACING.sm },
+  replyBanner: { flexDirection: 'row', alignItems: 'center', marginBottom: SPACE.s2 },
+  replyBannerText: { flex: 1 },
+  composer: { flexDirection: 'row', alignItems: 'flex-end', gap: SPACE.s2 },
   input: {
     flex: 1,
-    backgroundColor: COLORS.bg,
-    borderRadius: RADIUS.lg,
-    borderWidth: 1,
-    borderColor: COLORS.border,
-    paddingHorizontal: SPACING.md,
-    paddingVertical: SPACING.sm + 2,
-    color: COLORS.textPrimary,
-    fontSize: 14,
+    ...TYPE.body,
+    color: COLOR.ink,
+    backgroundColor: COLOR.white,
+    borderRadius: RADIUS.control,
+    paddingHorizontal: SPACE.s3,
+    paddingVertical: SPACE.s3,
     maxHeight: 96,
   },
   sendBtn: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: COLORS.primary,
+    width: 48,
+    height: 48,
+    borderRadius: RADIUS.pill,
+    backgroundColor: COLOR.ink,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  sendBtnDisabled: { opacity: 0.4 },
+  sendBtnDisabled: { backgroundColor: COLOR.disabledFill },
 })

@@ -1,51 +1,91 @@
 # Quest! Launch Runbook — Your Remaining Steps
 
-**Last updated:** November 7, 2026
+**Last updated:** November 11, 2026
 
-Everything code-side is done and committed. The steps below are the ones that need
-**your accounts** (Apple, PostHog, Sentry, Vercel) or **your approval** (production DB).
-Work top to bottom; each step says what it unblocks.
-
----
-
-## Step 0 — Database migrations ✅ through 030, then 031 🟠
-
-**Status (Nov 7, 2026):** 001 to 030 are live, including 023 (account deletion) and 030
-(definer-function lockdown). **031** (audit fixes, rank snapshot cron, Pacific-time
-leaderboard week) is written and dry-run tested but not applied yet.
-
-The Supabase CLI now targets the local stack by default, so always pass `--remote`:
-
-```powershell
-npx supabase db push --remote --include-all --dry-run
-npx supabase db push --remote --include-all
-```
-
-The original Step 0 notes follow for reference.
-
-Account deletion (App Store requirement) exists in code but the RPC isn't on the
-remote database until you push it:
-
-```powershell
-cd C:\Users\rahil\Documents\Projects\Quest
-npx supabase db push --remote --include-all
-```
-
-Confirm the prompt lists the migrations you expect and answer `Y`.
-
-**Verify:** in the Supabase dashboard → SQL Editor, run
-`select proname from pg_proc where proname = 'delete_own_account';` — one row expected.
+This runbook records hosted/credential-dependent launch steps. It does not mean all engineering
+work is complete: the Nov 11 code audit found a profile `push_token` exposure (SEC-01) and a
+clean-install migration ordering hazard. The fix for the first is written as migration 039 and
+is **not applied** (Step 0a). See
+[the audit](docs/design/CODEBASE-AUDIT-2026-11-11.md) and
+[roadmap](ROADMAP.md). Steps below that need **your accounts** (Apple, PostHog, Sentry, Vercel)
+or hosted-project access remain owner tasks. Work top to bottom; each step says what it unblocks.
 
 ---
 
-## Step 0b — Social layer: migrations 027–029 + social push (10 min) 🟠
+## Step 0 — Database migrations ✅ through 038
 
-Likes / comments / follows (027), comment reports (028) and rate limits + the
-Activity inbox (029) need the same `npx supabase db push` as Step 0 — confirm the
-prompt lists 027, 028 and 029.
+**Status (Nov 10, 2026):** `migration list --remote` shows **002–038** and
+`20260619010246` on production project Quest (`xuviwarpgvxzpouqesrv`). An earlier
+history row, `20261109032058`, was the same cutouts SQL as **032** under a timestamp.
+That row was marked reverted, then **032** was applied under its real version.
 
-The inbox works as soon as 029 is applied. **Push** for comments, replies and new
-followers needs the edge function plus a webhook:
+**038** is live. Anon and authenticated have no table-level SELECT on `completions`.
+Column SELECT covers the public columns only. `redemption_code`, `lat`, `lng`,
+`gps_accuracy`, and `reviewed_by` are not granted. Owners read a sponsor code through
+`own_completion_reward` / `own_reward_codes`.
+
+A dev build older than this working tree fails quest submission until it is updated.
+The insert returns `id`, then asks for the code. There is no TestFlight/store binary
+yet, so this is a dev-build cutoff.
+
+Weekly-drop rows are written by **034**. No phone receives them until
+`send-push-outbox` is deployed.
+
+The sender processes at most 100 pending outbox rows per invocation and returns a remaining
+hint; confirm the webhook or a scheduled drain invokes it again until caught up before relying
+on delivery to a large audience.
+
+The Supabase CLI targets the local stack by default, so always pass `--remote`.
+
+Do not push again. The Nov 7 instruction to apply `delete_own_account` is already done; that function has been on production since migration 023, and 032 extended it to delete proof selfies.
+
+---
+
+## Step 0a — Apply 039 and 040 (15 min) 🟡 applied, checks pending
+
+Applied to production (`xuviwarpgvxzpouqesrv`) by the owner on Nov 11, 2026 with `npx supabase db push --remote --include-all`. Steps 1–3 are done.
+The CLI needed `--include-all` because the remote history records the timestamped baseline after
+the numbered files. Steps 4–6 (the 039 checks, Settings toggle, recap on device) are not recorded
+as done.
+
+- **039** stops anyone with the anon key from reading `profiles.push_token` (SEC-01). Until it
+  is applied the production database still exposes every player's Expo push token.
+- **040** adds `own_week_recap`, which the Sunday recap screen calls. Without it the recap
+  screen shows its "couldn't load" state.
+
+Order:
+
+1. Put every test phone on a build from this checkout **first**. After 039, a build that
+   still sends `select=*` on `profiles` cannot load its profile and looks signed out.
+2. Dry-run and read the list. It should name exactly 039 and 040:
+
+   ```powershell
+   cd C:\Users\rahil\Documents\Projects\Quest
+   npx supabase db push --remote --dry-run
+   ```
+
+3. If the list is right, apply:
+
+   ```powershell
+   npx supabase db push --remote
+   ```
+
+4. Run the checks under "Verifying 039" in
+   [`supabase/migrations/README.md`](supabase/migrations/README.md). The repository tests only
+   read the SQL text; these queries are the real proof.
+5. Open Settings on a phone: "Quest alerts" should show the real state and toggle both ways.
+6. Open Rankings → the recap row. Check a week with quests, a week without, and Share.
+
+Neither file's SQL has been executed anywhere. If the push fails, stop and read the error; do
+not edit an applied migration.
+
+---
+
+## Step 0b — Social push delivery (10 min) 🟠
+
+The Nov 10 migration report includes 027–029, which provide likes, comments, follows, comment
+reports, rate limits and the Activity inbox. Do not push those migrations again. **Push** for
+comments, replies and new followers needs the Edge Function and webhook:
 
 ```powershell
 cd C:\Users\rahil\Documents\Projects\Quest
@@ -63,6 +103,127 @@ Then in the Supabase dashboard → **Database → Webhooks → Create a new hook
 **Verify:** follow a test account from another device — the followed phone gets
 "New follower", and Edge Functions → `send-social-push` → Logs shows `pushed: true`.
 Likes never push (inbox only) by design.
+
+---
+
+## Step 0c — Push outbox: weekly drop and Sunday recap (migrations 034 + 041) 🟠
+
+`enqueue_weekly_drop()` (034, Monday) and `enqueue_week_recap()` (041, Sunday 18:00 Victoria)
+only write `push_outbox`. Phones get nothing until the sender is deployed and the drain cron
+can reach it. The Nov 10 migration report includes 034; do not push it again. **041 is in the
+checkout only (not applied, not deployed, not device-verified).**
+
+What 041 changes: the sender now claims rows in batches of 100 and loops for up to 20 batches
+or about 50 seconds, checks Expo's HTTP status and ticket shape, retries failures with backoff,
+and stops retrying a row after 5 attempts (a dead letter). A pg_cron job calls it every
+5 minutes, through `pg_net`, only while rows are waiting. The old one-shot 100-row limit is gone.
+
+**1. Apply and deploy (owner).**
+
+```powershell
+cd C:\Users\rahil\Documents\Projects\Quest
+npx supabase db push --remote --dry-run    # expect exactly 041
+npx supabase db push --remote
+npx supabase secrets set DROP_PUSH_WEBHOOK_SECRET=<long random string>   # skip if already set
+npx supabase functions deploy send-push-outbox
+```
+
+Deploy the function in the same sitting as 041: the new sender calls `claim_push_outbox`,
+which only exists after 041, and the old sender does not know about claims.
+
+**2. Vault secrets for the drain cron** (SQL editor; same secret as above):
+
+```sql
+SELECT vault.create_secret('https://<project-ref>.supabase.co/functions/v1/send-push-outbox',
+                           'push_outbox_function_url');
+SELECT vault.create_secret('<DROP_PUSH_WEBHOOK_SECRET value>', 'push_outbox_webhook_secret');
+SELECT invoke_push_outbox_drain();   -- expect 'idle' when nothing is queued
+```
+
+Check Database → Extensions shows `pg_net` enabled. Then run the checks under
+"Verifying 041" in `supabase/migrations/README.md`.
+
+**3. Optional webhook.** The cron delivers within 5 minutes. If you want the Monday drop to go
+out the moment it is enqueued, keep (or create) the Database Webhook: table
+`public.weekly_drop_sends`, **Insert** only, HTTP `POST` to the function URL, header
+`x-webhook-secret` = the same secret. Both callers can run at once; claims stop double sends.
+
+**Schedules.** 034 enqueues the drop at 16:15 and 17:15 UTC on Mondays (about 09:15
+Victoria in PST and PDT); an empty Monday does not lock the week. 041 enqueues the recap at
+01:00 and 02:00 UTC on Mondays; a local-time guard only lets it run on Sunday at 18:00 or later
+in Victoria, and `week_recap_sends` stops a second send that week. The recap goes to players
+with a push token, the Weekly digest toggle on (`push_drops`), and approved XP that week.
+
+**Verify — drain more than 100 rows.** Use test accounts you own, on a quiet hour.
+
+```sql
+-- 1. Queue 150 rows for one test player who has a real device token and push_drops on.
+--    (Same user 150 times is fine for the drain; dedupe_key keeps them distinct.)
+INSERT INTO push_outbox (user_id, kind, title, body, data, dedupe_key)
+SELECT '<test-user-uuid>', 'weekly_drop', 'Quest!', 'Drain test ' || g,
+       jsonb_build_object('type', 'weekly_drop', 'test', true),
+       'drain_test:' || g
+  FROM generate_series(1, 150) g;
+
+-- 2. Trigger once instead of waiting for the cron.
+SELECT invoke_push_outbox_drain();   -- expect 'requested <id>'
+```
+
+Then, within a minute:
+
+```sql
+SELECT count(*) FILTER (WHERE sent_at IS NOT NULL) AS done,
+       count(*) FILTER (WHERE sent_at IS NULL)     AS waiting,
+       max(attempts) AS max_attempts
+  FROM push_outbox WHERE dedupe_key LIKE 'drain_test:%';
+-- expect: done = 150, waiting = 0, max_attempts = 0
+```
+
+The function log (Edge Functions → `send-push-outbox` → Logs) should show one line with
+`"batches":2`, `"pushed":150` (or `skipped` if the token is missing or the toggle is off)
+and `"stop":"drained"`. Expo may rate-limit 150 pushes to one device; rows that fail come back
+with `attempts = 1` and a `last_error`, and the next cron run retries them. Clean up:
+`DELETE FROM push_outbox WHERE dedupe_key LIKE 'drain_test:%';`
+
+**Verify — failure path.** Temporarily set the Vault URL secret to a wrong path
+(`.../functions/v1/send-push-outbox-nope`), queue one row, run `SELECT invoke_push_outbox_drain();`,
+and confirm `net._http_response` shows a 404 and the row is still waiting with `attempts = 0`.
+Put the secret back. A dead letter shows up as `sent_at IS NULL AND attempts >= 5`.
+
+**Verify — recap push.** On a Sunday after 18:00 Victoria (or wait for the first scheduled
+run), with a test account that finished a quest that week: confirm one `week_recap_sends` row,
+a `week_recap` outbox row for that player, the phone shows "Your week in Victoria is in.", and
+tapping it opens the recap screen. Do not treat a successful enqueue, or an `ok` Expo ticket,
+as a delivered notification: check the phone.
+
+---
+
+## Step 0d — XP economy events (migration 043) 🟠
+
+**043 is in the checkout only (not applied, not device-verified).** It stores the XP each
+completion paid (`completions.xp_awarded`), adds admin double-XP events (`/xp-events` in the
+admin), a first-finisher bonus, and a daily win-back push. See plan Phase 4a in
+`docs/design/NEXT-BUILD-PLAN-2026-11-19.md`.
+
+**Apply order is fixed: 041 → 042 → 043.** 043 redefines `enqueue_week_recap()` from 041 and
+writes `win_back` push rows that only 041's CHECK allows. Run each file's "Verifying" block in
+`supabase/migrations/README.md` before pushing the next one.
+
+```powershell
+cd C:\Users\rahil\Documents\Projects\Quest
+npx supabase db push --remote --dry-run    # after 041 and 042 are applied and verified: expect exactly 043
+npx supabase db push --remote
+```
+
+Then run "Verifying 043" in `supabase/migrations/README.md`. Deploy the admin build that has
+`/xp-events` only after 043 is applied: its completions and moderation pages select
+`xp_awarded`, which does not exist before 043.
+
+**Schedules.** `enqueue_win_back()` runs at 00:00 and 01:00 UTC daily; a local-time guard only
+lets it run at 17:00 or later in Victoria, and `win_back_sends` stops a second run that day. It
+targets players whose last approved completion is 10–60 days old, with a push token, the Weekly
+digest toggle on, and no win-back in the last 30 days. Each gets a 7-day ×2 bonus on their next
+quest and the push "Victoria misses you. Double XP on your next quest this week."
 
 ---
 
@@ -152,6 +313,10 @@ Project `kuest-admin` (root directory `apps/admin`). All seven variables from
 | `SUPABASE_JWKS_URL` | Auth JWKS endpoint |
 | `SUPABASE_SECRET_KEY` | Server-only. Switch it to **Sensitive** in Vercel (still Encrypted) |
 | `ADMIN_ALLOWED_EMAILS` | Comma-separated admin emails |
+| `ADMIN_DEV_ALLOW_ALL` | **Do not set on Vercel.** Local-only: `1` lets any email in when the allowlist is empty; ignored in production |
+
+An empty `ADMIN_ALLOWED_EMAILS` denies every login in every environment unless
+`ADMIN_DEV_ALLOW_ALL=1` is set locally (outside production).
 
 Original instructions, kept for reference (variable names corrected above):
 
@@ -182,14 +347,30 @@ The admin app denies **all** logins until `ADMIN_ALLOWED_EMAILS` is set.
   drop the files in at the same paths — nothing else to change.
 - **Sponsored quest E2E:** complete one sponsored quest on a device and confirm the
   redemption code appears in the celebration.
+- **Offline submission queue (Spec 06 §5, plan Phase 3).** Needs migration 042 applied
+  (storage upsert and delete policies). On a device build:
+  1. Stand inside a quest zone, turn on airplane mode, take the photo (and selfie). Expect
+     "Saved. We'll send it when you're back online." and Done. Nothing says verified.
+  2. Check that You shows a dot and a "Waiting to send" card with the time taken. VoiceOver or
+     TalkBack reads the You tab as "You, 1 proof waiting to send".
+  3. Force-quit the app, turn airplane mode off, reopen. Within a few seconds a banner reads
+     "Sent: <quest>." "See it" opens the completion, the dot clears, and XP and Rankings update.
+  4. Queue a proof, then tap Send now while still offline. The card stays and says Sending…
+     then returns. Turn signal on and tap Send now: it sends.
+  5. Queue a proof, then Discard it. The card disappears and nothing is sent.
+  6. Queue a proof, then sign out. Sign in again (same or other account): nothing is queued.
+  7. To check expiry without waiting three days, set the phone clock 73 hours ahead and reopen:
+     the proof is removed with a one-line notice.
+  8. Queue three proofs for three quests while offline. Expect a fourth for a different quest to
+     show "couldn't be saved for later", and a new capture of a queued quest to replace its card.
 
 ---
 
 ## Step 6 — Clean-up from the Nov 2026 audit 🟡
 
 - **Delete retired edge functions** still deployed: `award-xp` and
-  `generate-redemption-code` (retired by migration 017), and `snapshot-ranks` once 031 is
-  applied. All require the service-role secret, so they aren't publicly callable, but they're
+  `generate-redemption-code` (retired by migration 017), and `snapshot-ranks` (031 is
+  applied). All require the service-role secret, so they aren't publicly callable, but they're
   dead code. `npx supabase functions delete <name>`.
 - **Enable leaked-password protection:** Supabase → Authentication → Settings.
 - **`send-social-push` is not deployed** and no notifications webhook exists (Step 0b), so
@@ -202,8 +383,10 @@ The admin app denies **all** logins until `ADMIN_ALLOWED_EMAILS` is set.
 
 ## Done when
 
-- [x] Migrations 023 and 027 to 030 applied
-- [ ] Migration 031 applied (`npx supabase db push --remote --include-all`)
+- [x] Migrations 023 and 027 to 038 applied (confirmed Nov 10, 2026)
+- [x] Migrations 039 and 040 applied (Nov 11, 2026, `db push --remote --include-all`)
+- [ ] 039 checks run (Step 0a, step 4)
+- [ ] Recap screen and share checked on an iPhone and an Android phone
 - [ ] `send-social-push` deployed + notifications webhook created
 - [ ] TestFlight build installed on your phone
 - [ ] PostHog shows live events + 4 dashboards exist

@@ -28,12 +28,14 @@ export default function BadgesPage() {
           </p>
         </div>
         <Link href="/badges/new" className="admin-btn admin-btn-primary" style={{ textDecoration: 'none' }}>
-          ＋ New Badge
+          New badge
         </Link>
       </div>
 
       {loading ? (
-        <p style={{ color: theme.textMuted }}>Loading badges…</p>
+        <p style={{ color: theme.textMuted }} role="status" aria-live="polite">
+          Loading badges…
+        </p>
       ) : (
         <div className="admin-card" style={{ padding: 0, overflow: 'hidden' }}>
           <table style={{ width: '100%', borderCollapse: 'collapse' }}>
@@ -73,7 +75,7 @@ export default function BadgesPage() {
                         >
                           {b.icon_url ? (
                             // eslint-disable-next-line @next/next/no-img-element
-                            <img src={b.icon_url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                            <img src={b.icon_url} alt="" width={44} height={44} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                           ) : (
                             b.icon
                           )}

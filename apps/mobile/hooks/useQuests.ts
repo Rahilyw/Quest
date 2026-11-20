@@ -1,7 +1,11 @@
 import { useEffect, useState } from 'react'
+import { includeInScope } from '@quest/geofence'
 import { supabase } from '@/lib/supabase'
 import { paramAsString } from '@/lib/routeParams'
 import type { Badge, Quest, QuestCategory, QuestWithBadges } from '@/lib/types'
+
+/** `live` is discovery. `archive` keeps ended quests for a player's own shelf and still hides future drops. */
+export type QuestListScope = 'live' | 'archive'
 
 type QuestBadgeRow = { badge_id: string; badge: Badge | null }
 
@@ -11,14 +15,14 @@ function mapQuestBadges(rows: QuestBadgeRow[] | null | undefined): Badge[] {
     .filter((badge): badge is Badge => badge != null)
 }
 
-export function useQuests(category?: QuestCategory) {
+export function useQuests(category?: QuestCategory, scope: QuestListScope = 'live') {
   const [quests, setQuests] = useState<Quest[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
     fetchQuests()
-  }, [category])
+  }, [category, scope])
 
   async function fetchQuests() {
     setLoading(true)
@@ -30,10 +34,12 @@ export function useQuests(category?: QuestCategory) {
 
     if (category) query = query.eq('category', category)
 
-    const { data, error } = await query
-    if (error) setError(error.message)
+    const { data, error: queryError } = await query
+    if (queryError) setError(queryError.message)
     else {
-      const rows = (data ?? []) as Quest[]
+      setError(null)
+      const now = new Date()
+      const rows = ((data ?? []) as Quest[]).filter((quest) => includeInScope(quest, scope, now))
       for (const q of rows) {
         if (q.quest_geofences) {
           q.quest_geofences.sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0))
@@ -67,22 +73,33 @@ export function useQuest(id: string | string[] | undefined) {
       )
       .eq('id', questId)
       .single()
-      .then(({ data, error }) => {
+      .then(async ({ data, error }) => {
         if (error || !data) {
           setQuest(null)
-        } else {
-          const { quest_badges, quest_geofences, ...rest } = data as Quest & {
-            quest_badges?: QuestBadgeRow[]
-          }
-          const areas = [...(quest_geofences ?? [])].sort(
-            (a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0)
-          )
-          setQuest({
-            ...rest,
-            quest_geofences: areas,
-            badges: mapQuestBadges(quest_badges),
-          })
+          setLoading(false)
+          return
         }
+        const { quest_badges, quest_geofences, ...rest } = data as Quest & {
+          quest_badges?: QuestBadgeRow[]
+        }
+        const areas = [...(quest_geofences ?? [])].sort(
+          (a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0)
+        )
+        let suggester_username: string | null = null
+        if (rest.suggested_by) {
+          const { data: suggester } = await supabase
+            .from('profiles')
+            .select('username')
+            .eq('id', rest.suggested_by)
+            .maybeSingle()
+          suggester_username = suggester?.username ?? null
+        }
+        setQuest({
+          ...rest,
+          quest_geofences: areas,
+          badges: mapQuestBadges(quest_badges),
+          suggester_username,
+        })
         setLoading(false)
       })
   }, [questId])

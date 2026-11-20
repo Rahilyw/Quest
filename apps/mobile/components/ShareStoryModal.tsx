@@ -9,6 +9,7 @@ import {
   Alert,
   Share,
   useWindowDimensions,
+  type ViewInstance,
 } from 'react-native'
 import { captureRef } from 'react-native-view-shot'
 import * as Sharing from 'expo-sharing'
@@ -19,7 +20,8 @@ import {
   SHARE_CARD_HEIGHT,
   type ShareCompletionData,
 } from '@/components/ShareCompletionCard'
-import { COLORS, SPACING, RADIUS } from '@/lib/constants'
+import { BodyStrong, Small } from '@/components/ui/Text'
+import { COLOR, RADIUS, SPACE } from '@/lib/theme'
 import { track } from '@/lib/analytics'
 
 interface Props {
@@ -34,11 +36,11 @@ interface Props {
  * (Instagram / Facebook / Messages — whatever the device offers).
  */
 export function ShareStoryModal({ visible, data, onClose }: Props) {
-  const cardRef = useRef<View>(null)
+  const cardRef = useRef<ViewInstance>(null)
   const [sharing, setSharing] = useState(false)
   const { width, height } = useWindowDimensions()
 
-  const scale = Math.min((width - SPACING.xl * 2) / SHARE_CARD_WIDTH, (height * 0.62) / SHARE_CARD_HEIGHT)
+  const scale = Math.min((width - SPACE.s5 * 2) / SHARE_CARD_WIDTH, (height * 0.62) / SHARE_CARD_HEIGHT)
 
   async function handleShare() {
     if (!data || sharing) return
@@ -58,7 +60,7 @@ export function ShareStoryModal({ visible, data, onClose }: Props) {
           dialogTitle: 'Share your quest',
         })
       } else {
-        await Share.share({ url: uri, message: 'Quest complete! 🧭' })
+        await Share.share({ url: uri, message: 'Quest complete.' })
       }
       track('share_completed', { surface: 'completion' })
     } catch {
@@ -80,7 +82,7 @@ export function ShareStoryModal({ visible, data, onClose }: Props) {
           accessibilityLabel="Close share preview"
           hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
         >
-          <Ionicons name="close" size={22} color="#FFFFFF" />
+          <Ionicons name="close" size={22} color={COLOR.white} />
         </TouchableOpacity>
 
         {/* Scaled preview (display only) */}
@@ -88,7 +90,7 @@ export function ShareStoryModal({ visible, data, onClose }: Props) {
           style={{
             width: SHARE_CARD_WIDTH * scale,
             height: SHARE_CARD_HEIGHT * scale,
-            borderRadius: RADIUS.xl,
+            borderRadius: RADIUS.card,
             overflow: 'hidden',
           }}
         >
@@ -127,15 +129,15 @@ export function ShareStoryModal({ visible, data, onClose }: Props) {
           accessibilityLabel="Share to your story"
         >
           {sharing ? (
-            <ActivityIndicator color="#FFFFFF" />
+            <ActivityIndicator color={COLOR.ink} />
           ) : (
             <>
-              <Ionicons name="share-outline" size={19} color="#FFFFFF" />
-              <Text style={styles.shareBtnText}>Share your quest</Text>
+              <Ionicons name="share-outline" size={19} color={COLOR.ink} />
+              <BodyStrong>Share your quest</BodyStrong>
             </>
           )}
         </TouchableOpacity>
-        <Text style={styles.hint}>Opens your share sheet: Instagram, Messages and more</Text>
+        <Small color={COLOR.inkFaint} style={styles.hint}>Opens your share sheet: Instagram, Messages and more.</Small>
       </View>
     </Modal>
   )
@@ -144,10 +146,10 @@ export function ShareStoryModal({ visible, data, onClose }: Props) {
 const styles = StyleSheet.create({
   backdrop: {
     flex: 1,
-    backgroundColor: 'rgba(10,16,28,0.94)',
+    backgroundColor: COLOR.ink,
     alignItems: 'center',
     justifyContent: 'center',
-    padding: SPACING.xl,
+    padding: SPACE.s5,
   },
   captureHost: {
     position: 'absolute',
@@ -157,11 +159,11 @@ const styles = StyleSheet.create({
   closeBtn: {
     position: 'absolute',
     top: 56,
-    right: 24,
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: 'rgba(255,255,255,0.14)',
+    right: SPACE.s4,
+    width: 48,
+    height: 48,
+    borderRadius: RADIUS.pill,
+    backgroundColor: COLOR.inkPressed,
     alignItems: 'center',
     justifyContent: 'center',
     zIndex: 2,
@@ -169,19 +171,12 @@ const styles = StyleSheet.create({
   shareBtn: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: SPACING.sm,
-    backgroundColor: COLORS.highlight,
+    gap: SPACE.s2,
+    backgroundColor: COLOR.paper,
     borderRadius: RADIUS.pill,
-    paddingVertical: 14,
-    paddingHorizontal: SPACING.xxl + 8,
-    marginTop: SPACING.xl,
-    minHeight: 48,
-    shadowColor: COLORS.highlight,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.4,
-    shadowRadius: 12,
-    elevation: 6,
+    paddingHorizontal: SPACE.s7,
+    marginTop: SPACE.s5,
+    minHeight: 52,
   },
-  shareBtnText: { color: '#FFFFFF', fontSize: 16, fontWeight: '900' },
-  hint: { color: 'rgba(255,255,255,0.5)', fontSize: 12, marginTop: SPACING.md },
+  hint: { marginTop: SPACE.s3 },
 })

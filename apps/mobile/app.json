@@ -18,11 +18,6 @@
         "projectId": "31903b75-d817-4713-9211-a0cd8a167921"
       }
     },
-    "splash": {
-      "image": "./assets/splash.png",
-      "resizeMode": "contain",
-      "backgroundColor": "#0D1B3E"
-    },
     "ios": {
       "supportsTablet": false,
       "bundleIdentifier": "com.quest.app",
@@ -36,7 +31,7 @@
       "package": "com.quest.app",
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
-        "backgroundColor": "#4364F7"
+        "backgroundColor": "#FFCE1F"
       },
       "permissions": [
         "android.permission.ACCESS_FINE_LOCATION",
@@ -47,6 +42,14 @@
     },
     "plugins": [
       "expo-router",
+      [
+        "expo-splash-screen",
+        {
+          "image": "./assets/splash.png",
+          "resizeMode": "contain",
+          "backgroundColor": "#F6F2EC"
+        }
+      ],
       "expo-location",
       [
         "expo-image-picker",
@@ -64,7 +67,7 @@
         "expo-notifications",
         {
           "icon": "./assets/adaptive-icon.png",
-          "color": "#4364F7"
+          "color": "#FFCE1F"
         }
       ],
       "expo-localization"

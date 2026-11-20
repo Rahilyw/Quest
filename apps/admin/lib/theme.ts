@@ -1,34 +1,43 @@
-/** Quest! Admin — Harbour Electric (dark ops desk variant) */
+/**
+ * Quest! Admin: the Cutouts direction (docs/design/BRAND.md), on paper.
+ * Values mirror apps/mobile/lib/theme.ts so category colours match the app.
+ * Admin stays dense and quiet: ink buttons, category colour only as small chips.
+ */
 export const theme = {
-  bg: '#0D1B3E',
-  bgElevated: '#1a2d6d',
-  surface: '#1E293B',
-  surfaceHover: '#243047',
-  border: 'rgba(67, 100, 247, 0.15)',
-  borderStrong: 'rgba(255, 255, 255, 0.08)',
+  bg: '#F6F2EC',
+  bgElevated: '#FFFDFA',
+  surface: '#FFFDFA',
+  surfaceHover: '#ECE7E0',
+  border: 'rgba(28, 25, 21, 0.10)',
+  borderStrong: 'rgba(28, 25, 21, 0.20)',
 
-  text: '#F1F5F9',
-  textMuted: '#94A3B8',
-  textDim: '#64748B',
+  text: '#1C1915',
+  textMuted: '#6B665E',
+  textDim: '#6B665E',
 
-  primary: '#4364F7',
-  primaryLight: '#6B8EFF',
-  primarySoft: 'rgba(67, 100, 247, 0.15)',
+  /** Ink is the one action colour. */
+  primary: '#1C1915',
+  primaryLight: '#34302A',
+  primarySoft: 'rgba(28, 25, 21, 0.07)',
+  onPrimary: '#FFFDFA',
 
-  highlight: '#FF6B35',
-  success: '#22C55E',
-  warning: '#F59E0B',
-  danger: '#EF4444',
+  /** Sponsored. */
+  highlight: '#C77818',
+  success: '#298F4E',
+  warning: '#C77818',
+  danger: '#BD453A',
+  dangerSoft: 'rgba(189, 69, 58, 0.10)',
+  dangerBorder: 'rgba(189, 69, 58, 0.35)',
 
-  radius: { sm: 8, md: 12, lg: 16, xl: 20, pill: 9999 },
+  radius: { sm: 8, md: 12, lg: 16, xl: 22, pill: 9999 },
 
   categories: {
-    fitness: { color: '#22C55E', soft: 'rgba(34,197,94,0.15)', label: 'Fitness', icon: '🏃' },
-    social: { color: '#A855F7', soft: 'rgba(168,85,247,0.15)', label: 'Social', icon: '🤝' },
-    food: { color: '#F97316', soft: 'rgba(249,115,22,0.15)', label: 'Food', icon: '🍽️' },
-    community: { color: '#3B82F6', soft: 'rgba(59,130,246,0.15)', label: 'Community', icon: '🏘️' },
-    nature: { color: '#06B6D4', soft: 'rgba(6,182,212,0.15)', label: 'Nature', icon: '🌿' },
-  } as Record<string, { color: string; soft: string; label: string; icon: string }>,
+    fitness: { color: '#FFCE1F', deep: '#C7A118', onColor: '#1C1915', soft: 'rgba(255,206,31,0.25)', label: 'Fitness' },
+    social: { color: '#C6B2F0', deep: '#9A8BBB', onColor: '#1C1915', soft: 'rgba(198,178,240,0.30)', label: 'Social' },
+    food: { color: '#F2584A', deep: '#BD453A', onColor: '#1C1915', soft: 'rgba(242,88,74,0.20)', label: 'Food' },
+    community: { color: '#2F6BF0', deep: '#2553BB', onColor: '#FFFDFA', soft: 'rgba(47,107,240,0.18)', label: 'Community' },
+    nature: { color: '#34B864', deep: '#298F4E', onColor: '#1C1915', soft: 'rgba(52,184,100,0.22)', label: 'Nature' },
+  } as Record<string, { color: string; deep: string; onColor: string; soft: string; label: string }>,
 } as const
 
 export const VICTORIA_DEFAULT = { lat: 48.4284, lng: -123.3656 }

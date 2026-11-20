@@ -1,10 +1,10 @@
 # Spec 03 — Reports & Moderation
 
-**Status:** ✅ Implemented (July 2026) — migration `017_completion_reports.sql`
-**Depends on:** Spec 02 (`removed` status + `revoke_completion_rewards`) — shipped together (migration `016`)
-**Ship rule:** must release together with Spec 02 — auto-approval without a report mechanism fails both content safety and Apple App Store Guideline 1.2 (UGC apps require reporting, blocking, and moderation). ✅ Honoured.
+**Status:** Implemented in the checkout — reports/feed privacy are in migration 018; comment reports are in 028. Hosted state is in the launch runbook.
+**Depends on:** Spec 02 (`removed` status + reward revocation) — shipped together (migration 018, after 016–017)
+**Ship rule:** release together with instant verification. Auto-approval requires reporting, blocking, and moderation. ✅ Implemented together.
 
-> **Implementation notes:** shipped with the feed privacy opt-out as `profiles.feed_public` (Settings toggle) enforced in the 017 feed RLS policy, report rate-limit trigger (10/24 h) and own-post guard in-DB, `get_completion_geofence_evidence()` for the admin GPS check, block-user via `blocked_users` + `useBlockedUsers` (client-side feed filter), report UI in `ReportPostSheet.tsx`, moderation actions (`dismissReports` / `removeCompletionModeration` / `removeAndAllowRetry` / `getFlaggedCount`) in `apps/admin/app/moderation/`, and owner removal push via `apps/admin/lib/expo-push.ts`.
+> **Implementation notes:** shipped with the feed privacy opt-out as `profiles.feed_public` (Settings toggle) enforced by the migration 018 feed policy and later privacy/social policies; report rate limits and own-post guard run in the database; `get_completion_geofence_evidence()` supplies admin GPS evidence; blocking uses `blocked_users` + `useBlockedUsers`; moderation actions live in `apps/admin/app/moderation/`; removal push is implemented in `apps/admin/lib/expo-push.ts`.
 
 ## Summary
 
@@ -12,7 +12,7 @@ Every quest post in the social feed gets a **Report** action. Reports flag the c
 
 This is the safety net that makes instant verification viable: pre-approval review is replaced by community-triggered post-review.
 
-## 1. Data model (migration `017_completion_reports.sql`)
+## 1. Data model (migration `018_completion_reports.sql`)
 
 ```sql
 CREATE TYPE report_reason AS ENUM (
@@ -55,7 +55,7 @@ Maintained by an `AFTER INSERT/UPDATE` trigger on `completion_reports`:
 - when distinct open reporters ≥ **`AUTO_HIDE_THRESHOLD = 3`** → `hidden_pending_review = true` (post disappears from the feed until an admin rules);
 - when reports are dismissed → counter drops, `hidden_pending_review = false`.
 
-**Feed visibility:** update the migration-008 feed policy (or the `useActivityFeed` query) so the public feed excludes `hidden_pending_review = true` and `status = 'removed'` rows. The owner still sees their own completion (with a "under review" marker) — silent-but-visible-to-self avoids tipping off bad actors mid-review while not vanishing honest users' history.
+**Implemented behavior:** migration 018 and later social/privacy migrations govern feed visibility. The owner retains access to their own completion; public visibility also considers review status, feed privacy and blocks.
 
 ## 2. Mobile UX (`apps/mobile`)
 

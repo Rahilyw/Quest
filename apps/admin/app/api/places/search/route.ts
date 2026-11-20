@@ -1,9 +1,25 @@
 import { NextRequest, NextResponse } from 'next/server'
 
+import { isAdminEmail } from '@/lib/admin-auth'
+import { createServerClient } from '@/lib/supabase-server'
+
 /** Victoria, BC viewbox: left,top,right,bottom (lng/lat) for Nominatim */
 const VICTORIA_VIEWBOX = '-123.45,48.52,-123.28,48.38'
 
 export async function GET(req: NextRequest) {
+  // Route handlers are public endpoints; don't rely on middleware alone
+  // before proxying to Nominatim on the admin's behalf.
+  const supabase = await createServerClient()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+  if (!user) {
+    return NextResponse.json({ error: 'Unauthorized', results: [] }, { status: 401 })
+  }
+  if (!isAdminEmail(user.email)) {
+    return NextResponse.json({ error: 'Forbidden', results: [] }, { status: 403 })
+  }
+
   const q = (req.nextUrl.searchParams.get('q') ?? '').trim()
   if (q.length < 2) {
     return NextResponse.json({ results: [] })

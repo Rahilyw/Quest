@@ -1,8 +1,8 @@
 # Spec 06 — Growth & Engagement (duo quests, recap card, XP events, first-quest onboarding)
 
-**Status:** Draft
+**Status:** Partial. The starter quest (section 4) is implemented in migration 037. The Sunday recap (section 2) is implemented with migration 040 (applied to production Nov 11, 2026); it is not device-tested and has no reminder push. XP events, offline queue and duo quests remain unimplemented.
 **Depends on:** Spec 02 (instant verification), Spec 04 (to measure any of it)
-**Problem:** the roadmap has zero acquisition features, and the mission — real-world *connection* — is currently entirely single-player. In a city of ~90k, word-of-mouth is the whole distribution strategy.
+**Original problem statement:** the roadmap lacked acquisition features and the product's real-world connection mission called for social growth and retention loops. The starter quest is now implemented; the remaining proposals below are still future work.
 
 ## 1. Duo quests + referral loop
 
@@ -49,6 +49,65 @@ The organic marketing engine. End of week, generate a share image — rank, week
 - **Privacy:** the card uses only the user's own data + their own photo; sharing is explicit.
 - **Measure:** `share_completed {surface: 'recap'}` (Spec 04). This supersedes roadmap 3.5 (share-a-quest) — share-your-week is the stronger unit.
 
+### Implementation note (Nov 11, 2026)
+
+**State:** locally tested (Node tests, `tsc`). Migration 040 was applied to production by the
+owner on Nov 11, 2026. Nothing has run on a phone.
+
+**Where:** `supabase/migrations/040_week_recap.sql`, `apps/mobile/app/recap.tsx`,
+`components/RecapShareCard.tsx`, `hooks/useWeekRecap.ts`, `lib/recapWeek.js`, and a row on
+Rankings that opens the screen. Tests: `apps/mobile/__tests__/recap.test.js`.
+
+**Which week.** A week is Monday 00:00 to the next Monday 00:00 in `America/Vancouver`, the
+leaderboard's week.
+
+| Day in Victoria | Recap shows | Label |
+|---|---|---|
+| Sunday | The current week, in progress | "Still open. It settles tonight at midnight." |
+| Monday to Saturday | The week that ended last Sunday night | "Final." |
+
+So on Monday the recap is the week that just closed, not an empty new one, and it stays
+shareable through Saturday. The phone works out the Monday date with the tz database
+(`partsInZone` in `@quest/geofence`); the server turns that date into the two instants, so a
+week with a clock change is 167 or 169 hours. The server accepts the current week and the one
+before it and refuses anything else.
+
+**Rank and XP for that week.** The `leaderboard` view only knows the current week, and
+`profiles.last_week_rank` is one number with no XP, so neither can serve a past week. A phone
+also cannot rank players itself: row security hides other players' private completions, and
+their data should not be on the device. `own_week_recap(date)` recomputes the week on the server
+with the leaderboard's own rule (approved completions by `reviewed_at`, summing
+`quests.xp_reward`; ties broken by `user_id` as in `snapshot_last_week_ranks`) and returns only
+the caller's row: rank, weekly XP, quest count, how many players had XP, streak, and one photo.
+
+**Limits of recomputing from live rows.** There is no weekly snapshot table. A completion
+removed by moderation since that week no longer counts; a quest whose XP was edited counts at
+the new value; deleted accounts are gone. The number can therefore differ from what Rankings
+showed on the Sunday. A snapshot table would fix that and is not built.
+
+**Streak.** Only the current streak is stored. For the two weeks allowed it is derived from
+`last_completion_week`: equal to the recap week means the stored streak; equal to the following
+week means stored minus one. Otherwise it is unknown and the card leaves it out.
+
+**Photo.** The caller's own approved, not-hidden place photo from that week: most liked, then
+highest XP, then latest. Never `selfie_url`, never coordinates. If there is none, or it will not
+load, the card is paper and ink with numbers only. The quest title of that photo is shown, as on
+the per-completion card.
+
+**Sharing.** The card is drawn and captured on the phone with `react-native-view-shot`. Nothing
+is captured or sent until the player taps "Share your week". iOS uses `Share.share`, which
+reports a dismissed sheet; that is not counted. Android share intents report nothing back, so an
+opened sheet is counted. No success message is shown on either platform. Capture and share-sheet
+failures say that nothing was shared. The per-completion flow (`ShareStoryModal`,
+`ShareCompletionCard`) is unchanged.
+
+**Not built: the Sunday-evening push.** `send-push-outbox` is not deployed and sends at most 100
+recipients per invocation with nothing calling it again. A recap reminder waits on that
+hardening (audit OPS-01). There is no notification feature in this slice.
+
+**Not verified:** the SQL, the card layout on real screens, the iOS file share path, Android
+share, VoiceOver/TalkBack, and large text.
+
 ## 3. XP economy events
 
 Cheap, high-leverage retention levers, run from a single table:
@@ -76,6 +135,12 @@ The no-geofence starter quest ("Write a Journal Entry About Your City") is the p
 - With Spec 02, verification is instant → every new player can earn XP within 5 minutes of installing.
 - Target metric (Spec 04): median time-to-first-XP < 24h, aspiration < 5 min.
 
+**Implementation note (reconciled Nov 11, 2026):** The starter quest is implemented in migration 037.
+It designates the seeded anywhere journal quest, lets admins move the designation to another
+live quest, and surfaces it on This week until a player records their first completion.
+The Nov 10 launch runbook reports migration 037 applied. The remaining Spec 06 features are
+still unimplemented; see the roadmap for current ordering.
+
 ## 5. Offline submission queue
 
 People submit from breakwaters and summits with one bar of signal; a failed upload at the moment of triumph is a brutal first impression.
@@ -84,8 +149,30 @@ People submit from breakwaters and summits with one bar of signal; a failed uplo
 - Foreground retry with backoff; badge on the profile tab while anything is queued; the queued `capturedAt`/coords are what get submitted (the player was there when it counted).
 - Geofence is validated server-side against the *captured* coordinates; the rate-limit and mock-location checks still apply on flush.
 
+### Implementation note (Nov 19, 2026)
+
+**State:** in checkout and locally tested (`tsc`; 17 queue tests in `__tests__/submissionQueue.test.js`).
+Not device-tested. It needs migration 042, which adds the storage upsert and delete policies, on the server.
+
+**Where:**
+- `lib/submitCompletion.ts`: the one pipeline, shared by the camera and the queue.
+- `lib/submissionQueue.js`: the rules.
+- `lib/submissionQueueStore.ts`: AsyncStorage, plus photos in `documentDirectory/queue/<userId>/`.
+- `hooks/useSubmissionQueue.tsx`: a provider in the root layout.
+- `components/SubmissionQueueBanner.tsx`, `components/WaitingToSend.tsx`, and the You-tab dot in `QuestTabBar`.
+
+**Differences from the text above:**
+- **When a capture queues:** only when there is no server answer (`network`). A rate limit stays on the camera screen as before, and a geofence or other rejection is final.
+- **Size and age limits:** at most 3 proofs, one per quest, each removed after 72 hours. A fourth proof for a different quest is refused, not swapped for an older one.
+- **Retry timing:** retries back off 30 s → 2 min → 10 min → 30 min → hourly, and run when the app returns to the foreground or from a timer while it is open.
+- **Whose time counts:** `completed_at` is still the server's time when the proof arrives, not `capturedAt` (F-003). A proof flushed after Sunday midnight counts toward the new week. The geofence is checked against the captured coordinates.
+- **After a background send:** a one-line banner appears ("Sent: <quest>.") with a link to the completion; the celebration is not replayed.
+- **Clean-up:** the queue is purged on sign-out and on account deletion.
+
 ## 6. Sequencing & non-goals
 
-Order: 4 (starter quest, ~a day) → 2 (recap card) → 3 (XP events) → 5 (offline queue) → 1 (duo quests — biggest lift, biggest payoff).
+Original order: 4 (starter quest, ~a day) → 2 (recap card) → 3 (XP events) → 5 (offline queue) → 1 (duo quests — biggest lift, biggest payoff).
+
+**Revised Nov 17, 2026** ([build plan](../design/NEXT-BUILD-PLAN-2026-11.md)): 5 (offline queue) moves ahead of 3 (XP events). A failed upload at the summit costs the pilot its one first impression; XP events need an audience first. A queued completion is not verified until the server inserts it, and `completed_at` stays server time, so a queue flushed after Sunday midnight counts toward the new week.
 
 Non-goals: cash/discount referral incentives, contact-book import, DMs or friend graphs (deliberately deferred — a small community fragments), parties larger than 2 (revisit after duo data).

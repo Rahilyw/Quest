@@ -5,3 +5,9 @@
 # x-webhook-secret header instead of a user JWT.
 [functions.send-social-push]
 verify_jwt = false
+
+# Drains push_outbox. pg_cron (041, through pg_net) and the optional
+# weekly_drop_sends webhook both authenticate with x-webhook-secret
+# (DROP_PUSH_WEBHOOK_SECRET). Not deployed by the migration.
+[functions.send-push-outbox]
+verify_jwt = false

@@ -23,8 +23,3 @@ export function resolveBadgeSpec(b: Badge): BadgeSpec {
     hasBuiltInArt: Boolean(CATALOG_BY_NAME[b.name] || BADGE_ART[b.art_key || '']),
   }
 }
-
-export function sortBadgeSpecs(specs: BadgeSpec[], dbBadges: Badge[]): BadgeSpec[] {
-  const order = new Map(dbBadges.map((b, i) => [b.name, b.sort_order ?? i]))
-  return [...specs].sort((a, b) => (order.get(a.name) ?? 999) - (order.get(b.name) ?? 999))
-}

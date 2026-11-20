@@ -651,7 +651,6 @@ export default function MultiAreaEditor({ areas, onAreasChange, onRepresentative
                       style={{
                         fontWeight: 700,
                         color: a.shape === 'circle' ? theme.primaryLight : theme.highlight,
-                        textTransform: 'uppercase',
                       }}
                     >
                       {a.shape === 'circle' ? 'Circle' : 'Zone'}

@@ -4,7 +4,7 @@ Step-by-step path for a new developer to produce the first runnable EAS build.
 
 ## Prerequisites
 
-- Node.js 20+ and npm
+- Node.js 22.13+ (required by Expo SDK 58; odd-numbered releases are not supported) and npm
 - Expo account ([expo.dev](https://expo.dev))
 - Apple Developer account (iOS) and/or Google Play Console (Android) for store builds
 - Supabase project URL and anon key (from the Quest! Supabase dashboard)

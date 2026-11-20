@@ -1,7 +1,7 @@
 import { Component, type ErrorInfo, type ReactNode } from 'react'
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native'
-import { COLORS, SPACING, RADIUS } from '@/lib/constants'
-import { BrandInline } from '@/components/BrandText'
+import { Pressable, StyleSheet, View } from 'react-native'
+import { Body, BodyStrong, Heading, Small } from '@/components/ui/Text'
+import { COLOR, RADIUS, SPACE } from '@/lib/theme'
 import { captureException } from '@/lib/sentry'
 
 interface Props {
@@ -33,18 +33,23 @@ export class ErrorBoundary extends Component<Props, State> {
     if (this.state.hasError) {
       return (
         <View style={styles.container}>
-          <Text style={styles.title}>Something went wrong</Text>
-          <Text style={styles.message}>
-            <BrandInline /> hit a snag. Tap below to try again. If it keeps happening, restart the app.
-          </Text>
-          {__DEV__ && this.state.error && (
-            <Text style={styles.devError} numberOfLines={4}>
+          <Heading>That screen broke</Heading>
+          <Body tone="soft">
+            Nothing you did. Try again, and if it keeps happening, close the app and reopen it.
+          </Body>
+          {__DEV__ && this.state.error ? (
+            <Small tone="soft" numberOfLines={4}>
               {this.state.error.message}
-            </Text>
-          )}
-          <TouchableOpacity style={styles.button} onPress={this.handleRetry} activeOpacity={0.85}>
-            <Text style={styles.buttonText}>Try Again</Text>
-          </TouchableOpacity>
+            </Small>
+          ) : null}
+          <Pressable
+            onPress={this.handleRetry}
+            accessibilityRole="button"
+            accessibilityLabel="Try again"
+            style={({ pressed }) => [styles.button, pressed && styles.buttonPressed]}
+          >
+            <BodyStrong color={COLOR.white}>Try again</BodyStrong>
+          </Pressable>
         </View>
       )
     }
@@ -56,41 +61,20 @@ export class ErrorBoundary extends Component<Props, State> {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: COLORS.bg,
-    padding: SPACING.xxl,
+    backgroundColor: COLOR.paper,
+    paddingHorizontal: SPACE.s5,
     justifyContent: 'center',
-    alignItems: 'center',
-  },
-  title: {
-    fontSize: 22,
-    fontWeight: '700',
-    color: COLORS.textPrimary,
-    marginBottom: SPACING.sm,
-    textAlign: 'center',
-  },
-  message: {
-    fontSize: 15,
-    color: COLORS.textMuted,
-    textAlign: 'center',
-    lineHeight: 22,
-    marginBottom: SPACING.xl,
-  },
-  devError: {
-    fontSize: 12,
-    color: COLORS.textMuted,
-    textAlign: 'center',
-    marginBottom: SPACING.lg,
-    fontFamily: 'monospace',
+    alignItems: 'flex-start',
+    gap: SPACE.s3,
   },
   button: {
-    backgroundColor: COLORS.accent,
-    borderRadius: RADIUS.md,
-    paddingVertical: 14,
-    paddingHorizontal: SPACING.xxl,
+    marginTop: SPACE.s2,
+    minHeight: 48,
+    paddingHorizontal: SPACE.s5,
+    borderRadius: RADIUS.pill,
+    backgroundColor: COLOR.ink,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
-  buttonText: {
-    color: '#FFFFFF',
-    fontSize: 16,
-    fontWeight: '700',
-  },
+  buttonPressed: { backgroundColor: COLOR.inkPressed, transform: [{ scale: 0.97 }] },
 })
