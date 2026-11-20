@@ -19,7 +19,7 @@ replaces [AGENT-HANDOFF-2026-11-19.md](AGENT-HANDOFF-2026-11-19.md).
 
 | Card | Wave | Status on Nov 20, 2026 | Can start when |
 |---|---|---|---|
-| H: Land admin polish, push | 0 | Free | Now |
+| H: Land admin polish, push | 0 | Done (pushed; CI green on `5364735`) | — |
 | S: Stickers reconcile (migration 044) + sprite removal | 1 | Free | H is pushed |
 | R: Release readiness | 1 | Free | H is pushed (can run beside S) |
 | C: XP events mobile (+ "Photos from here" time) | 2 | Blocked | S merged |

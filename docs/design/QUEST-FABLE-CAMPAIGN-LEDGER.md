@@ -83,6 +83,14 @@ Supersedes the "Next code" line above. A read-only check of the repo produced
   plan) runs alongside: verify 039, then apply 041 → 042 → 043. No code was changed in this
   session; only docs and the Cursor rule were written.
 
+### Continuation — November 20, 2026, card H
+
+- Card H landed the in-flight admin polish on `cursor/cutouts-this-week-quests` at `5364735`
+  (Victoria dates, removal confirms, aria-live loading). Completions and moderation still show
+  `xp_awarded`. Local checks and CI on that head are green. No SQL was written or executed.
+- Wave 1 is free: S (stickers / 044) and R (release readiness) can start on their own branches.
+- Owner track unchanged: verify 039, apply 041 → 042 → 043; merge PR #15 when ready (O6).
+
 The sections below preserve the Nov 10 campaign record and may contain facts that were true
 only for that session; use the continuation above and linked current docs for present status.
 
