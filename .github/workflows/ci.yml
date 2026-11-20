@@ -30,16 +30,15 @@ jobs:
         run: npm test --workspace mobile --ignore-scripts
 
   token-report:
-    name: token report (informational)
+    name: token report (strict)
     runs-on: ubuntu-latest
-    continue-on-error: true
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
           node-version: '20'
       - name: Raw token count
-        run: node apps/mobile/scripts/check-tokens.js
+        run: node apps/mobile/scripts/check-tokens.js --strict
 
   typescript-check-mobile:
     name: typescript-check (mobile)

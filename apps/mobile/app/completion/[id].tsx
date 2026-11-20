@@ -27,6 +27,7 @@ import { paramAsString } from '@/lib/routeParams'
 import { track } from '@/lib/analytics'
 import { socialRateLimitMessage } from '@/lib/socialNotifications'
 import { COLORS, SPACING, RADIUS } from '@/lib/constants'
+import { TYPE } from '@/lib/theme'
 
 interface CompletionDetail {
   id: string
@@ -320,7 +321,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   backLink: { marginTop: SPACING.md, minHeight: 44, justifyContent: 'center' },
-  backLinkText: { color: COLORS.primary, fontSize: 14, fontWeight: '700' },
+  backLinkText: { color: COLORS.primary, fontSize: TYPE.small.fontSize, fontWeight: '700' },
   topBar: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -335,7 +336,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  topBarTitle: { color: COLORS.textPrimary, fontSize: 16, fontWeight: '900' },
+  topBarTitle: { color: COLORS.textPrimary, fontSize: TYPE.name.fontSize, fontWeight: '900' },
   card: {
     backgroundColor: COLORS.surface,
     borderRadius: RADIUS.xxl,
@@ -354,9 +355,9 @@ const styles = StyleSheet.create({
     padding: SPACING.lg,
   },
   userInfo: { flex: 1, minWidth: 0 },
-  userName: { color: COLORS.textPrimary, fontSize: 14, fontWeight: '800' },
-  userMeta: { color: COLORS.textMuted, fontSize: 11, marginTop: 1 },
-  xp: { color: COLORS.success, fontSize: 13, fontWeight: '900' },
+  userName: { color: COLORS.textPrimary, fontSize: TYPE.small.fontSize, fontWeight: '800' },
+  userMeta: { color: COLORS.textMuted, fontSize: TYPE.micro.fontSize, marginTop: 1 },
+  xp: { color: COLORS.success, fontSize: TYPE.small.fontSize, fontWeight: '900' },
   photoWrap: { width: '100%', aspectRatio: 1, position: 'relative' },
   photo: { width: '100%', height: '100%' },
   selfie: {
@@ -365,7 +366,7 @@ const styles = StyleSheet.create({
     left: SPACING.md,
   },
   body: { padding: SPACING.lg, paddingTop: SPACING.md },
-  questTitle: { color: COLORS.primary, fontSize: 14, fontWeight: '800' },
+  questTitle: { color: COLORS.primary, fontSize: TYPE.small.fontSize, fontWeight: '800' },
   actionRow: { flexDirection: 'row', alignItems: 'center', marginTop: SPACING.sm },
   actionBtn: {
     flexDirection: 'row',
@@ -376,5 +377,5 @@ const styles = StyleSheet.create({
     paddingHorizontal: SPACING.sm,
     justifyContent: 'center',
   },
-  actionCount: { color: COLORS.textPrimary, fontSize: 13, fontWeight: '800' },
+  actionCount: { color: COLORS.textPrimary, fontSize: TYPE.small.fontSize, fontWeight: '800' },
 })

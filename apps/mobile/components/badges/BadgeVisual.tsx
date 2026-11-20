@@ -1,5 +1,6 @@
 import { Image, Text, View } from 'react-native'
 import { FONT_DISPLAY } from '@/lib/constants'
+import { COLOR, withAlpha } from '@/lib/theme'
 import type { BadgeSpec } from '@/lib/badgeCatalog'
 import { BADGE_ART } from './art'
 
@@ -22,9 +23,9 @@ export function MysterySeal({ size }: { size: number }) {
         width: size,
         height: size,
         borderRadius: size / 2,
-        backgroundColor: '#1A2B4A',
+        backgroundColor: COLOR.ink,
         borderWidth: 1.5,
-        borderColor: 'rgba(251,191,36,0.4)',
+        borderColor: withAlpha(COLOR.white, 0.4),
         borderStyle: 'dashed',
         alignItems: 'center',
         justifyContent: 'center',
@@ -34,7 +35,7 @@ export function MysterySeal({ size }: { size: number }) {
         style={{
           fontFamily: FONT_DISPLAY,
           fontSize: size * 0.42,
-          color: 'rgba(251,191,36,0.85)',
+          color: withAlpha(COLOR.white, 0.85),
           lineHeight: size * 0.52,
         }}
       >
@@ -70,7 +71,7 @@ export function BadgeVisual({ spec, size, earned }: Props) {
             width: size,
             height: size,
             borderRadius: shape === 'round' ? size / 2 : size * 0.14,
-            backgroundColor: 'rgba(26,43,74,0.62)',
+            backgroundColor: withAlpha(COLOR.ink, 0.62),
           }}
         />
       </View>

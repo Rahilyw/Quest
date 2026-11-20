@@ -2,6 +2,7 @@ import { View, Text, TouchableOpacity, StyleSheet } from 'react-native'
 import { Ionicons } from '@expo/vector-icons'
 import { BrandText } from '@/components/BrandText'
 import { CITY, COLORS, SPACING, RADIUS } from '@/lib/constants'
+import { COLOR, TYPE } from '@/lib/theme'
 import { formatBadgeCount } from '@/lib/socialNotifications'
 
 interface Props {
@@ -89,8 +90,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: SPACING.sm,
     paddingVertical: 2,
   },
-  cityText: { color: '#FFFFFF', fontSize: 10, fontWeight: '700' },
-  subtitle: { color: COLORS.textMuted, fontSize: 12, marginTop: 2 },
+  cityText: { color: COLOR.white, fontSize: TYPE.micro.fontSize, fontWeight: '700' },
+  subtitle: { color: COLORS.textMuted, fontSize: TYPE.micro.fontSize, marginTop: 2 },
   bellWrap: { position: 'relative', padding: SPACING.xs },
   bellDot: {
     position: 'absolute',
@@ -104,11 +105,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  bellCount: { color: '#FFFFFF', fontSize: 9, fontWeight: '700' },
+  bellCount: { color: COLOR.white, fontSize: TYPE.micro.fontSize, fontWeight: '700' },
   centerTitle: {
-    fontSize: 14,
+    fontSize: TYPE.small.fontSize,
     fontWeight: '900',
-    color: '#FFFFFF',
+    color: COLOR.white,
     letterSpacing: 2,
   },
   menuPlaceholder: { width: 32, alignItems: 'flex-end' },

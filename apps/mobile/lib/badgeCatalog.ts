@@ -1,4 +1,5 @@
 import { COLORS } from '@/lib/constants'
+import { CATEGORY, COLOR, withAlpha } from '@/lib/theme'
 
 /**
  * Client-side badge catalog — source of truth for badge art, rarity, and copy.
@@ -39,25 +40,25 @@ export const RARITY_META: Record<
     label: 'Legendary',
     tagline: 'Whispered about',
     color: COLORS.sunshine,
-    soft: 'rgba(251,191,36,0.16)',
+    soft: withAlpha(CATEGORY.fitness.color, 0.16),
   },
   epic: {
     label: 'Epic',
     tagline: 'The long hauls',
     color: COLORS.highlight,
-    soft: 'rgba(255,107,53,0.14)',
+    soft: withAlpha(CATEGORY.food.color, 0.14),
   },
   rare: {
     label: 'Rare',
     tagline: 'Prove your lane',
     color: COLORS.primary,
-    soft: 'rgba(14,165,233,0.13)',
+    soft: withAlpha(CATEGORY.community.color, 0.13),
   },
   common: {
     label: 'Common',
     tagline: 'Everyone starts somewhere',
     color: COLORS.textMuted,
-    soft: 'rgba(92,122,153,0.12)',
+    soft: withAlpha(COLOR.inkSoft, 0.12),
   },
 }
 

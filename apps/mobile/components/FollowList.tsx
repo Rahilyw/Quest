@@ -17,6 +17,7 @@ import { useAuth } from '@/hooks/useAuth'
 import { supabase } from '@/lib/supabase'
 import { track } from '@/lib/analytics'
 import { COLORS, SPACING, RADIUS } from '@/lib/constants'
+import { TYPE } from '@/lib/theme'
 
 export type FollowListMode = 'followers' | 'following'
 
@@ -187,7 +188,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  title: { color: COLORS.textPrimary, fontSize: 16, fontWeight: '900' },
+  title: { color: COLORS.textPrimary, fontSize: TYPE.name.fontSize, fontWeight: '900' },
   loader: { marginTop: SPACING.xxl * 2 },
   row: {
     flexDirection: 'row',
@@ -198,6 +199,6 @@ const styles = StyleSheet.create({
   },
   rowUser: { flexDirection: 'row', alignItems: 'center', gap: SPACING.md, flex: 1 },
   rowInfo: { minWidth: 0 },
-  rowName: { color: COLORS.textPrimary, fontSize: 14, fontWeight: '800' },
-  rowLevel: { color: COLORS.textMuted, fontSize: 11, fontWeight: '700', marginTop: 1 },
+  rowName: { color: COLORS.textPrimary, fontSize: TYPE.small.fontSize, fontWeight: '800' },
+  rowLevel: { color: COLORS.textMuted, fontSize: TYPE.micro.fontSize, fontWeight: '700', marginTop: 1 },
 })

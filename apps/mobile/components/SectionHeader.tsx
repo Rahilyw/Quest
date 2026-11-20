@@ -1,5 +1,6 @@
 import { View, Text, StyleSheet, ViewStyle } from 'react-native'
 import { COLORS, SPACING } from '@/lib/constants'
+import { TYPE } from '@/lib/theme'
 
 interface SectionHeaderProps {
   title: string
@@ -24,6 +25,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: SPACING.xl,
     paddingVertical: SPACING.sm,
   },
-  title: { color: COLORS.textPrimary, fontSize: 18, fontWeight: '700' },
-  trailing: { color: COLORS.textMuted, fontSize: 13, fontWeight: '600' },
+  title: { color: COLORS.textPrimary, fontSize: TYPE.heading.fontSize, fontWeight: '700' },
+  trailing: { color: COLORS.textMuted, fontSize: TYPE.small.fontSize, fontWeight: '600' },
 })

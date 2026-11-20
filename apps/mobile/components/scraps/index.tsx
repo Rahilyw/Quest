@@ -18,7 +18,7 @@
 import React from 'react'
 import { View, Text, StyleSheet, type ViewStyle, type TextStyle } from 'react-native'
 import Svg, { Path, Rect, Polygon, Line, G } from 'react-native-svg'
-import { COLOR, FONT, TYPE } from '@/lib/theme'
+import { CATEGORY, COLOR, FONT, TYPE, withAlpha } from '@/lib/theme'
 
 // ---------------------------------------------------------------------------
 // Shared accessibility helpers
@@ -46,7 +46,7 @@ export interface PenRingProps {
  * A rough hand-drawn circle. The bezier wobbles slightly so it reads as a
  * real pen mark rather than a computed shape.
  */
-export function PenRing({ width, height, color = '#F2584A' }: PenRingProps) {
+export function PenRing({ width, height, color = CATEGORY.food.color }: PenRingProps) {
   const cx = width / 2
   const cy = height / 2
   const rx = width * 0.44
@@ -92,7 +92,7 @@ export interface PenArrowProps {
  * A hand-drawn arrow pointing right (or left). The shaft has a slight
  * upward bow and the arrowhead has two strokes rather than a filled triangle.
  */
-export function PenArrow({ width, height, color = '#2F6BF0', direction = 'right' }: PenArrowProps) {
+export function PenArrow({ width, height, color = CATEGORY.community.color, direction = 'right' }: PenArrowProps) {
   const cx = width / 2
   const cy = height / 2
 
@@ -232,8 +232,8 @@ export interface TapeProps {
  * Per BRAND.md §6b: "a translucent butter-yellow strip with faint stripes".
  */
 export function Tape({ width = 80, height = 20, angle = 0 }: TapeProps) {
-  // Stripe spacing and angle
-  const stripeColor = 'rgba(200,170,60,0.3)'
+  // Stripe spacing and angle (butter-yellow tape; BRAND.md §6b)
+  const stripeColor = withAlpha(CATEGORY.fitness.deep, 0.3)
   const stripeWidth = 2
   const stripeGap = 8
   const stripeAngle = 45 // degrees, from horizontal
@@ -266,7 +266,7 @@ export function Tape({ width = 80, height = 20, angle = 0 }: TapeProps) {
         width,
         height,
         transform: [{ rotate: `${angle}deg` }],
-        backgroundColor: 'rgba(255,230,100,0.55)',
+        backgroundColor: withAlpha(CATEGORY.fitness.color, 0.55),
         overflow: 'hidden',
         borderRadius: 1,
       }}

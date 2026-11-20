@@ -32,6 +32,7 @@ import { sizedImageUrl } from '@/lib/sizedImageUrl'
 import { paramAsString } from '@/lib/routeParams'
 import { track } from '@/lib/analytics'
 import { COLORS, SPACING, RADIUS, CITY, getLevelTitle } from '@/lib/constants'
+import { COLOR, TYPE, withAlpha } from '@/lib/theme'
 
 interface ProfileHeader {
   id: string
@@ -384,7 +385,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   backLink: { marginTop: SPACING.md, minHeight: 44, justifyContent: 'center' },
-  backLinkText: { color: COLORS.primary, fontSize: 14, fontWeight: '700' },
+  backLinkText: { color: COLORS.primary, fontSize: TYPE.small.fontSize, fontWeight: '700' },
   topBar: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -398,7 +399,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  menuBackdrop: { flex: 1, backgroundColor: 'rgba(15,23,42,0.35)', justifyContent: 'flex-end' },
+  menuBackdrop: { flex: 1, backgroundColor: withAlpha(COLOR.ink, 0.35), justifyContent: 'flex-end' },
   menuSheet: {
     backgroundColor: COLORS.surface,
     borderTopLeftRadius: RADIUS.xxl,
@@ -407,10 +408,10 @@ const styles = StyleSheet.create({
     paddingHorizontal: SPACING.xl,
   },
   menuItem: { minHeight: 52, justifyContent: 'center' },
-  menuItemText: { color: COLORS.textPrimary, fontSize: 16, fontWeight: '600' },
-  menuItemDanger: { color: COLORS.danger, fontSize: 16, fontWeight: '700' },
-  menuItemCancel: { color: COLORS.textMuted, fontSize: 16, fontWeight: '600' },
-  topBarName: { color: COLORS.textPrimary, fontSize: 16, fontWeight: '900' },
+  menuItemText: { color: COLORS.textPrimary, fontSize: TYPE.body.fontSize, fontWeight: '600' },
+  menuItemDanger: { color: COLORS.danger, fontSize: TYPE.body.fontSize, fontWeight: '700' },
+  menuItemCancel: { color: COLORS.textMuted, fontSize: TYPE.body.fontSize, fontWeight: '600' },
+  topBarName: { color: COLORS.textPrimary, fontSize: TYPE.name.fontSize, fontWeight: '900' },
   heroRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -430,14 +431,14 @@ const styles = StyleSheet.create({
     borderWidth: 2,
     borderColor: COLORS.bg,
   },
-  levelChipText: { color: '#FFFFFF', fontSize: 10, fontWeight: '900', letterSpacing: 0.5 },
+  levelChipText: { color: COLOR.white, fontSize: TYPE.micro.fontSize, fontWeight: '900', letterSpacing: 0.5 },
   countsRow: { flex: 1, flexDirection: 'row', justifyContent: 'space-around' },
   countCell: { alignItems: 'center', minWidth: 64, minHeight: 44, justifyContent: 'center' },
-  countValue: { color: COLORS.textPrimary, fontSize: 18, fontWeight: '900' },
-  countLabel: { color: COLORS.textMuted, fontSize: 11, fontWeight: '700', marginTop: 1 },
+  countValue: { color: COLORS.textPrimary, fontSize: TYPE.heading.fontSize, fontWeight: '900' },
+  countLabel: { color: COLORS.textMuted, fontSize: TYPE.micro.fontSize, fontWeight: '700', marginTop: 1 },
   metaBlock: { paddingHorizontal: SPACING.xl, marginTop: SPACING.lg },
-  levelTitle: { color: COLORS.navy, fontSize: 14, fontWeight: '900', letterSpacing: 1 },
-  metaCity: { color: COLORS.textMuted, fontSize: 12, fontWeight: '600', marginTop: 2 },
+  levelTitle: { color: COLORS.navy, fontSize: TYPE.small.fontSize, fontWeight: '900', letterSpacing: 1 },
+  metaCity: { color: COLORS.textMuted, fontSize: TYPE.micro.fontSize, fontWeight: '600', marginTop: 2 },
   actionRow: {
     paddingHorizontal: SPACING.xl,
     marginTop: SPACING.md,
@@ -452,5 +453,5 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     minHeight: 38,
   },
-  editBtnText: { color: COLORS.textPrimary, fontSize: 13, fontWeight: '800' },
+  editBtnText: { color: COLORS.textPrimary, fontSize: TYPE.small.fontSize, fontWeight: '800' },
 })

@@ -48,6 +48,13 @@ export const CATEGORY: Record<CategoryKey, CategoryToken> = {
 
 export const SPONSORED = { label: 'Sponsored', color: '#FF9A1F', deep: '#C77818', onColor: COLOR.ink } as const
 
+/** Podium metals (BRAND.md §6c). Gradients live in medal artwork only. */
+export const MEDAL = {
+  gold: { color: '#F6B93B', light: '#FFE9A8', dark: '#B97709' },
+  silver: { color: '#B9C6D3', light: '#EDF2F7', dark: '#8195A8' },
+  bronze: { color: '#C97B3D', light: '#F2B27C', dark: '#7C3F16' },
+} as const
+
 export const CATEGORY_KEYS = Object.keys(CATEGORY) as CategoryKey[]
 
 /** A `#RRGGBB` token plus an alpha 0..1, as 8-digit hex (map fills, tints). */

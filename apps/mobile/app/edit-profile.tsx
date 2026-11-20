@@ -17,6 +17,7 @@ import { supabase } from '@/lib/supabase'
 import { Avatar } from '@/components/Avatar'
 import { SectionHeader } from '@/components/SectionHeader'
 import { COLORS, SPACING, RADIUS } from '@/lib/constants'
+import { COLOR, TYPE, withAlpha } from '@/lib/theme'
 import { ensureMediaLibraryPermission } from '@/lib/permissions'
 import { PILOT_CITIES } from '@/lib/onboarding'
 
@@ -210,7 +211,7 @@ export default function EditProfile() {
           accessibilityState={{ disabled: saving }}
         >
           {saving ? (
-            <ActivityIndicator color="#FFFFFF" />
+            <ActivityIndicator color={COLOR.white} />
           ) : (
             <Text style={styles.saveBtnText}>Save Changes</Text>
           )}
@@ -224,21 +225,21 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: COLORS.bg },
   back: { position: 'absolute', zIndex: 10 },
   backPill: {
-    backgroundColor: 'rgba(255,255,255,0.9)',
+    backgroundColor: withAlpha(COLOR.white, 0.9),
     borderRadius: 999,
     width: 36,
     height: 36,
     alignItems: 'center',
     justifyContent: 'center',
-    shadowColor: '#0F172A',
+    shadowColor: COLOR.ink,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.08,
     shadowRadius: 6,
     elevation: 3,
   },
-  backText: { fontSize: 20, fontWeight: '700', lineHeight: 28 },
+  backText: { fontSize: TYPE.heading.fontSize, fontWeight: '700', lineHeight: 28 },
   screenTitle: {
-    fontSize: 22,
+    fontSize: TYPE.heading.fontSize,
     fontWeight: '700',
     color: COLORS.textPrimary,
     textAlign: 'center',
@@ -267,7 +268,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  avatarEditText: { fontSize: 14 },
+  avatarEditText: { fontSize: TYPE.small.fontSize },
   sectionCard: {
     backgroundColor: COLORS.surface,
     borderRadius: RADIUS.md,
@@ -279,7 +280,7 @@ const styles = StyleSheet.create({
   field: { padding: SPACING.lg },
   fieldLabel: {
     color: COLORS.textPrimary,
-    fontSize: 14,
+    fontSize: TYPE.small.fontSize,
     fontWeight: '600',
     marginBottom: SPACING.sm,
   },
@@ -288,13 +289,13 @@ const styles = StyleSheet.create({
     color: COLORS.textPrimary,
     borderRadius: RADIUS.sm,
     padding: SPACING.md,
-    fontSize: 16,
+    fontSize: TYPE.body.fontSize,
     borderWidth: 1,
     borderColor: COLORS.border,
   },
   fieldHint: {
     color: COLORS.textMuted,
-    fontSize: 12,
+    fontSize: TYPE.micro.fontSize,
     marginTop: SPACING.xs,
   },
   cityRow: {
@@ -307,9 +308,9 @@ const styles = StyleSheet.create({
     borderTopColor: COLORS.border,
   },
   cityRowSelected: { backgroundColor: COLORS.accentSoft },
-  cityLabel: { color: COLORS.textPrimary, fontSize: 15, fontWeight: '500' },
+  cityLabel: { color: COLORS.textPrimary, fontSize: TYPE.body.fontSize, fontWeight: '500' },
   cityLabelSelected: { color: COLORS.accentText, fontWeight: '700' },
-  cityCheck: { color: COLORS.accent, fontWeight: '800', fontSize: 16 },
+  cityCheck: { color: COLORS.accent, fontWeight: '800', fontSize: TYPE.body.fontSize },
   saveBtn: {
     backgroundColor: COLORS.accent,
     borderRadius: RADIUS.md,
@@ -318,5 +319,5 @@ const styles = StyleSheet.create({
     marginTop: SPACING.sm,
   },
   saveBtnDisabled: { opacity: 0.7 },
-  saveBtnText: { color: '#FFFFFF', fontWeight: '700', fontSize: 16 },
+  saveBtnText: { color: COLOR.white, fontWeight: '700', fontSize: TYPE.body.fontSize },
 })
