@@ -3,9 +3,9 @@ import { Ionicons } from '@expo/vector-icons'
 import { useEffect, useRef } from 'react'
 import { useRouter } from 'expo-router'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
+import Animated, { FadeIn, useReducedMotion } from 'react-native-reanimated'
 import { Avatar } from '@/components/Avatar'
-import { Cutout } from '@/components/Cutout'
-import { Sprite } from '@/components/Sprite'
+import { Sticker, questStickerAlt } from '@/components/Sticker'
 import { PenRing } from '@/components/scraps'
 import { Body, Heading, Sentence, Small, Title } from '@/components/ui/Text'
 import { useAuth } from '@/hooks/useAuth'
@@ -13,6 +13,7 @@ import { useBlockedUsers } from '@/hooks/useBlockedUsers'
 import { useThisWeek } from '@/hooks/useThisWeek'
 import { useUnreadNotificationCount } from '@/hooks/useNotifications'
 import { useUserCompletions } from '@/hooks/useUserCompletions'
+import { useXpBoosts } from '@/hooks/useXpBoosts'
 import { daysLeftLabel } from '@/lib/copy'
 import { getDaysLeftInWeek, getISOWeek, TAB_BAR_CLEARANCE } from '@/lib/constants'
 import { track } from '@/lib/analytics'
@@ -46,6 +47,8 @@ export default function ThisWeekScreen() {
   )
   const date = victoriaDate()
   const name = greetingName(profile?.username)
+  const { banner: xpBanner, refresh: refreshBoosts } = useXpBoosts(!!profile?.id)
+  const reduceMotion = useReducedMotion()
   const seenDrop = useRef(false)
   useEffect(() => {
     if (week.loading || week.error || seenDrop.current) return
@@ -68,7 +71,10 @@ export default function ThisWeekScreen() {
         refreshControl={
           <RefreshControl
             refreshing={week.refreshing}
-            onRefresh={week.refresh}
+            onRefresh={() => {
+              week.refresh()
+              void refreshBoosts()
+            }}
             tintColor={COLOR.white}
             colors={[COLOR.white]}
           />
@@ -119,6 +125,27 @@ export default function ThisWeekScreen() {
           </Small>
         )}
 
+        {xpBanner ? (
+          <Animated.View
+            entering={reduceMotion ? undefined : FadeIn.duration(200)}
+            style={styles.xpBanner}
+            accessibilityRole="text"
+            accessibilityLiveRegion="polite"
+            accessibilityLabel={xpBanner.text}
+          >
+            <Ionicons
+              name="flash-outline"
+              size={18}
+              color={COLOR.ink}
+              accessibilityElementsHidden
+              importantForAccessibility="no"
+            />
+            <Body color={COLOR.ink} style={styles.xpBannerText}>
+              {xpBanner.text}
+            </Body>
+          </Animated.View>
+        ) : null}
+
         {!week.loading && !week.error && week.starterQuest ? (
           <Pressable
             onPress={() => router.push(`/quest/${week.starterQuest!.id}?source=starter`)}
@@ -143,12 +170,12 @@ export default function ThisWeekScreen() {
                 You can do this anywhere. Start here.
               </Small>
             </View>
-            <Cutout
+            <Sticker
               uri={week.starterQuest.cutout_url}
-              category={week.starterQuest.category}
-              questTitle={week.starterQuest.title}
-              role="row"
-              style={styles.starterCutout}
+              size="folder"
+              tilt={6}
+              style={styles.starterSticker}
+              alt={questStickerAlt(week.starterQuest)}
             />
           </Pressable>
         ) : null}
@@ -174,14 +201,6 @@ export default function ThisWeekScreen() {
               return (
                 <Sentence key={item.quest.id} color={COLOR.inkFaint}>
                   {joiner}
-                  {item.quest.cutout_url ? (
-                    <Cutout
-                      uri={item.quest.cutout_url}
-                      category={item.quest.category}
-                      questTitle={item.quest.title}
-                      role="inline"
-                    />
-                  ) : null}
                   <Sentence
                     color={COLOR.white}
                     style={styles.phrase}
@@ -192,6 +211,13 @@ export default function ThisWeekScreen() {
                   >
                     {item.phrase}
                   </Sentence>
+                  {item.quest.cutout_url ? (
+                    <>
+                      {' '}
+                      {/* Decorative: the phrase before it is the accessible button. */}
+                      <Sticker uri={item.quest.cutout_url} size="inline" tilt={index % 2 === 0 ? -6 : 5} />
+                    </>
+                  ) : null}
                 </Sentence>
               )
             })}
@@ -215,10 +241,6 @@ export default function ThisWeekScreen() {
         ) : null}
 
         <View style={styles.sheet}>
-          <View style={styles.seal} pointerEvents="none">
-            <Sprite name="seal" size={72} />
-          </View>
-
           {week.standing?.rank ? (
             <View style={styles.standingRow}>
               <Body>You’re </Body>
@@ -259,12 +281,7 @@ export default function ThisWeekScreen() {
                     {`\u2026${note.phrase}`}
                   </Small>
                 </View>
-                <Cutout
-                  uri={note.cutoutUrl}
-                  category={note.category}
-                  questTitle={note.phrase}
-                  role="row"
-                />
+                <Sticker uri={note.cutoutUrl} size="row" />
               </View>
             ))
           )}
@@ -322,6 +339,19 @@ const styles = StyleSheet.create({
     marginTop: SPACE.s1,
     marginBottom: SPACE.s5,
   },
+  xpBanner: {
+    backgroundColor: COLOR.paper,
+    borderRadius: RADIUS.card,
+    paddingHorizontal: SPACE.s4,
+    paddingVertical: SPACE.s3,
+    marginBottom: SPACE.s4,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: SPACE.s2,
+  },
+  xpBannerText: {
+    flex: 1,
+  },
   starterCard: {
     minHeight: 144,
     borderRadius: RADIUS.card,
@@ -338,7 +368,7 @@ const styles = StyleSheet.create({
   starterTitle: {
     marginVertical: SPACE.s1,
   },
-  starterCutout: {
+  starterSticker: {
     width: 86,
     marginLeft: SPACE.s2,
   },
@@ -374,11 +404,6 @@ const styles = StyleSheet.create({
     padding: SPACE.s4,
     paddingTop: SPACE.s6,
     gap: SPACE.s2,
-  },
-  seal: {
-    position: 'absolute',
-    top: -36,
-    right: SPACE.s5,
   },
   standingRow: {
     flexDirection: 'row',

@@ -18,8 +18,20 @@ const TONE: Record<Tone, string> = {
   inverse: COLOR.white,
 }
 
-/** Large roles stop growing past this system text-size multiplier so layouts hold. */
-const MAX_SCALE: Partial<Record<TypeRole, number>> = { title: 1.3, sentence: 1.3, heading: 1.4 }
+/**
+ * Large roles stop growing past this system text-size multiplier so layouts hold
+ * at ~130% Dynamic Type. Body roles allow a little more before clipping.
+ */
+const MAX_SCALE: Partial<Record<TypeRole, number>> = {
+  title: 1.3,
+  sentence: 1.3,
+  heading: 1.4,
+  body: 1.35,
+  bodyStrong: 1.35,
+  name: 1.35,
+  small: 1.35,
+  micro: 1.35,
+}
 
 export interface QuestTextProps extends TextProps {
   tone?: Tone

@@ -4,6 +4,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { SectionHeader } from '@/components/SectionHeader'
 import { BrandInline } from '@/components/BrandText'
 import { COLORS, SPACING, RADIUS } from '@/lib/constants'
+import { COLOR, TYPE, withAlpha } from '@/lib/theme'
 
 const LAST_UPDATED = 'July 4, 2026'
 
@@ -34,6 +35,8 @@ export default function TermsOfService() {
         style={[styles.back, { top: insets.top + 12, left: SPACING.lg }]}
         onPress={() => router.back()}
         activeOpacity={0.8}
+        accessibilityRole="button"
+        accessibilityLabel="Go back"
       >
         <View style={styles.backPill}>
           <Text style={[styles.backText, { color: COLORS.accent }]}>←</Text>
@@ -118,21 +121,21 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: COLORS.bg },
   back: { position: 'absolute', zIndex: 10 },
   backPill: {
-    backgroundColor: 'rgba(255,255,255,0.9)',
+    backgroundColor: withAlpha(COLOR.white, 0.9),
     borderRadius: 999,
-    width: 36,
-    height: 36,
+    width: 48,
+    height: 48,
     alignItems: 'center',
     justifyContent: 'center',
-    shadowColor: '#0F172A',
+    shadowColor: COLOR.ink,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.08,
     shadowRadius: 6,
     elevation: 3,
   },
-  backText: { fontSize: 20, fontWeight: '700', lineHeight: 28 },
+  backText: { fontSize: TYPE.heading.fontSize, fontWeight: '700', lineHeight: 28 },
   screenTitle: {
-    fontSize: 22,
+    fontSize: TYPE.heading.fontSize,
     fontWeight: '700',
     color: COLORS.textPrimary,
     textAlign: 'center',
@@ -145,7 +148,7 @@ const styles = StyleSheet.create({
   scrollContent: { padding: SPACING.md, paddingBottom: 80 },
   updated: {
     color: COLORS.textMuted,
-    fontSize: 13,
+    fontSize: TYPE.small.fontSize,
     fontWeight: '600',
     marginBottom: SPACING.md,
     paddingHorizontal: SPACING.xs,
@@ -160,13 +163,13 @@ const styles = StyleSheet.create({
   },
   paragraph: {
     color: COLORS.textMuted,
-    fontSize: 15,
+    fontSize: TYPE.body.fontSize,
     lineHeight: 22,
     marginBottom: SPACING.sm,
   },
   bullet: {
     color: COLORS.textMuted,
-    fontSize: 15,
+    fontSize: TYPE.body.fontSize,
     lineHeight: 22,
     marginBottom: SPACING.sm,
     paddingLeft: SPACING.xs,

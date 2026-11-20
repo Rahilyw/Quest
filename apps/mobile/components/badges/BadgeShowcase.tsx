@@ -19,6 +19,7 @@ import Animated, {
   withTiming,
 } from 'react-native-reanimated'
 import { COLORS, FONT_DISPLAY, RADIUS, SPACING } from '@/lib/constants'
+import { COLOR, TYPE, withAlpha } from '@/lib/theme'
 import { RARITY_META, type BadgeSpec } from '@/lib/badgeCatalog'
 import { BadgeVisual } from './BadgeVisual'
 import { BADGE_ART } from './art'
@@ -115,7 +116,7 @@ function Showpiece({ spec, earned }: { spec: BadgeSpec; earned: boolean }) {
                 top: -ART_SIZE * 0.25,
                 width: ART_SIZE * 0.36,
                 height: ART_SIZE * 1.5,
-                backgroundColor: '#FFFFFF',
+                backgroundColor: COLOR.white,
               },
               shineStyle,
             ]}
@@ -136,7 +137,12 @@ export function BadgeShowcase({ spec, earned, earnedAt, onClose }: Props) {
   return (
     <Modal visible transparent animationType="fade" onRequestClose={onClose}>
       <GestureRoot style={styles.root}>
-        <Pressable style={StyleSheet.absoluteFill} onPress={onClose} accessibilityLabel="Close badge details" />
+        <Pressable
+          style={StyleSheet.absoluteFill}
+          onPress={onClose}
+          accessibilityRole="button"
+          accessibilityLabel="Close badge details"
+        />
 
         <View style={styles.content} pointerEvents="box-none">
           <View style={[styles.rarityPill, { borderColor: meta.color }]}>
@@ -161,7 +167,7 @@ export function BadgeShowcase({ spec, earned, earnedAt, onClose }: Props) {
               <Ionicons
                 name={earned ? 'checkmark-circle' : 'compass-outline'}
                 size={14}
-                color={earned ? COLORS.success : 'rgba(255,255,255,0.6)'}
+                color={earned ? COLORS.success : withAlpha(COLOR.white, 0.6)}
               />
               <Text style={styles.unlockText}>{spec.unlock}</Text>
             </View>
@@ -184,7 +190,7 @@ export function BadgeShowcase({ spec, earned, earnedAt, onClose }: Props) {
           accessibilityRole="button"
           accessibilityLabel="Close"
         >
-          <Ionicons name="close" size={22} color="rgba(255,255,255,0.8)" />
+          <Ionicons name="close" size={22} color={withAlpha(COLOR.white, 0.8)} />
         </Pressable>
       </GestureRoot>
     </Modal>
@@ -194,7 +200,7 @@ export function BadgeShowcase({ spec, earned, earnedAt, onClose }: Props) {
 const styles = StyleSheet.create({
   root: {
     flex: 1,
-    backgroundColor: 'rgba(9,15,32,0.94)',
+    backgroundColor: withAlpha(COLOR.ink, 0.94),
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -211,22 +217,22 @@ const styles = StyleSheet.create({
     marginBottom: SPACING.sm,
   },
   rarityText: {
-    fontSize: 10,
+    fontSize: TYPE.micro.fontSize,
     fontWeight: '900',
     letterSpacing: 2.5,
   },
   name: {
     fontFamily: FONT_DISPLAY,
-    fontSize: 30,
+    fontSize: TYPE.sentence.fontSize,
     lineHeight: 36,
-    color: '#FFFFFF',
+    color: COLOR.white,
     textAlign: 'center',
     marginTop: SPACING.lg,
     maxWidth: 320,
   },
   blurb: {
-    color: 'rgba(226,236,255,0.75)',
-    fontSize: 14,
+    color: withAlpha(COLOR.white, 0.75),
+    fontSize: TYPE.small.fontSize,
     lineHeight: 21,
     textAlign: 'center',
     maxWidth: 280,
@@ -235,36 +241,36 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
-    backgroundColor: 'rgba(255,255,255,0.09)',
+    backgroundColor: withAlpha(COLOR.white, 0.09),
     borderRadius: RADIUS.pill,
     paddingHorizontal: SPACING.md,
     paddingVertical: 6,
   },
   unlockText: {
-    color: 'rgba(255,255,255,0.85)',
-    fontSize: 12,
+    color: withAlpha(COLOR.white, 0.85),
+    fontSize: TYPE.micro.fontSize,
     fontWeight: '700',
   },
   status: {
     marginTop: SPACING.xs,
-    color: 'rgba(251,191,36,0.9)',
-    fontSize: 11,
+    color: withAlpha(COLORS.sunshine, 0.9),
+    fontSize: TYPE.micro.fontSize,
     fontWeight: '800',
     letterSpacing: 1.5,
   },
   dragHint: {
     marginTop: SPACING.lg,
-    color: 'rgba(226,236,255,0.3)',
-    fontSize: 11,
+    color: withAlpha(COLOR.white, 0.3),
+    fontSize: TYPE.micro.fontSize,
   },
   closeBtn: {
     position: 'absolute',
     top: 56,
     right: 24,
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: 'rgba(255,255,255,0.1)',
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: withAlpha(COLOR.white, 0.1),
     alignItems: 'center',
     justifyContent: 'center',
   },

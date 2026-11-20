@@ -6,7 +6,6 @@ import {
   FlatList,
   Image,
   TouchableOpacity,
-  ActivityIndicator,
   Alert,
   Modal,
   Pressable,
@@ -18,6 +17,13 @@ import { Ionicons } from '@expo/vector-icons'
 import { Avatar } from '@/components/Avatar'
 import { FollowButton } from '@/components/FollowButton'
 import { EmptyState } from '@/components/EmptyState'
+import { OwnProfileCompletionRow } from '@/components/OwnProfileCompletionRow'
+import { RewardsRow } from '@/components/RewardsRow'
+import { StickerPage } from '@/components/stickers/StickerPage'
+import { SkeletonProfile } from '@/components/ui/SkeletonFolder'
+import { resolveBadgeSpec } from '@/lib/badgeFromDb'
+import type { BadgeSpec } from '@/lib/badgeCatalog'
+import type { Badge } from '@/lib/types'
 import { useAuth } from '@/hooks/useAuth'
 import { useFollow } from '@/hooks/useFollow'
 import { useBlockedUsers } from '@/hooks/useBlockedUsers'
@@ -26,6 +32,7 @@ import { sizedImageUrl } from '@/lib/sizedImageUrl'
 import { paramAsString } from '@/lib/routeParams'
 import { track } from '@/lib/analytics'
 import { COLORS, SPACING, RADIUS, CITY, getLevelTitle } from '@/lib/constants'
+import { COLOR, TYPE, withAlpha } from '@/lib/theme'
 
 interface ProfileHeader {
   id: string
@@ -33,11 +40,14 @@ interface ProfileHeader {
   level: number
   avatar_url: string | null
   feed_public: boolean
+  last_week_rank: number | null
 }
 
 interface GridPost {
   id: string
   photo_url: string
+  /** Present only when the viewer is the owner; never signed for others. */
+  selfie_url?: string | null
 }
 
 const GRID_GAP = 2
@@ -62,6 +72,7 @@ export default function PublicProfile() {
   const [user, setUser] = useState<ProfileHeader | null>(null)
   const [posts, setPosts] = useState<GridPost[]>([])
   const [postCount, setPostCount] = useState(0)
+  const [badges, setBadges] = useState<{ id: string; spec: BadgeSpec }[]>([])
   const [loading, setLoading] = useState(true)
 
   const cellSize = (width - GRID_GAP * 2) / 3
@@ -69,21 +80,39 @@ export default function PublicProfile() {
   const load = useCallback(async () => {
     if (!userId) return
 
-    const [profileResult, postsResult] = await Promise.all([
+    const [profileResult, postsResult, badgeResult] = await Promise.all([
       supabase
         .from('profiles')
-        .select('id, username, level, avatar_url, feed_public')
+        .select('id, username, level, avatar_url, feed_public, last_week_rank')
         .eq('id', userId)
         .maybeSingle(),
+      // selfie_url is selected for typing; OwnProfileCompletionRow (and
+      // useSignedSelfie) only mount for the owner, so others never request a
+      // signed URL (card E4 / D6).
       supabase
         .from('completions')
-        .select('id, photo_url', { count: 'exact' })
+        .select('id, photo_url, selfie_url', { count: 'exact' })
         .eq('user_id', userId)
         .eq('status', 'approved')
         .eq('hidden_pending_review', false)
         .not('photo_url', 'is', null)
         .order('completed_at', { ascending: false }),
+      // Readable for visible pages once migration 044 is applied; empty before.
+      supabase
+        .from('user_badges')
+        .select('earned_at, badge:badges(*)')
+        .eq('user_id', userId)
+        .order('earned_at', { ascending: false }),
     ])
+    const earned: { id: string; spec: BadgeSpec }[] = []
+    for (const row of badgeResult.data ?? []) {
+      const raw = (row as { badge: Badge | Badge[] | null }).badge
+      const badge = Array.isArray(raw) ? raw[0] : raw
+      if (badge && badge.is_active !== false && !badge.is_secret) {
+        earned.push({ id: badge.id, spec: resolveBadgeSpec(badge) })
+      }
+    }
+    setBadges(earned)
 
     setUser((profileResult.data as ProfileHeader | null) ?? null)
     setPosts((postsResult.data ?? []) as GridPost[])
@@ -139,8 +168,8 @@ export default function PublicProfile() {
 
   if (loading) {
     return (
-      <View style={[styles.centerScreen, { paddingTop: insets.top }]}>
-        <ActivityIndicator size="large" color={COLORS.primary} />
+      <View style={[styles.centerScreen, { paddingTop: insets.top + SPACING.xxl }]}>
+        <SkeletonProfile />
       </View>
     )
   }
@@ -149,7 +178,12 @@ export default function PublicProfile() {
     return (
       <View style={[styles.centerScreen, { paddingTop: insets.top }]}>
         <EmptyState title="Adventurer not found" subtitle="This profile doesn't exist anymore." />
-        <TouchableOpacity style={styles.backLink} onPress={() => router.back()}>
+        <TouchableOpacity
+          style={styles.backLink}
+          onPress={() => router.back()}
+          accessibilityRole="button"
+          accessibilityLabel="Go back"
+        >
           <Text style={styles.backLinkText}>← Go back</Text>
         </TouchableOpacity>
       </View>
@@ -256,6 +290,13 @@ export default function PublicProfile() {
         ) : null}
       </View>
 
+      {!isBlocked && !isPrivate ? (
+        <View style={styles.page}>
+          <RewardsRow badges={badges} lastWeekRank={user.last_week_rank} />
+          <StickerPage userId={user.id} owner={false} />
+        </View>
+      ) : null}
+
       {isBlocked ? (
         <EmptyState
           title={`You blocked @${user.username}`}
@@ -288,31 +329,55 @@ export default function PublicProfile() {
         ListHeaderComponent={header}
         columnWrapperStyle={{ gap: GRID_GAP }}
         contentContainerStyle={{ gap: GRID_GAP, paddingBottom: insets.bottom + SPACING.xxl }}
-        renderItem={({ item }) => (
-          <TouchableOpacity
-            onPress={() => router.push(`/completion/${item.id}`)}
-            activeOpacity={0.85}
-            accessibilityRole="button"
-            accessibilityLabel="View quest completion"
-          >
-            <Image
-              source={{ uri: sizedImageUrl(item.photo_url, { width: 400, height: 400 }) }}
-              style={{ width: cellSize, height: cellSize, backgroundColor: COLORS.bgWarm }}
+        renderItem={({ item }) =>
+          isSelf ? (
+            <OwnProfileCompletionRow
+              photoUrl={item.photo_url}
+              selfieUrl={item.selfie_url}
+              size={cellSize}
+              onPress={() => router.push(`/completion/${item.id}`)}
             />
-          </TouchableOpacity>
-        )}
+          ) : (
+            <TouchableOpacity
+              onPress={() => router.push(`/completion/${item.id}`)}
+              activeOpacity={0.85}
+              accessibilityRole="button"
+              accessibilityLabel="View quest completion"
+            >
+              <Image
+                source={{ uri: sizedImageUrl(item.photo_url, { width: 400, height: 400 }) }}
+                style={{ width: cellSize, height: cellSize, backgroundColor: COLORS.bgWarm }}
+              />
+            </TouchableOpacity>
+          )
+        }
         showsVerticalScrollIndicator={false}
       />
 
       <Modal transparent visible={menuOpen} animationType="fade" onRequestClose={() => setMenuOpen(false)}>
-        <Pressable style={styles.menuBackdrop} onPress={() => setMenuOpen(false)}>
+        <Pressable
+          style={styles.menuBackdrop}
+          onPress={() => setMenuOpen(false)}
+          accessibilityRole="button"
+          accessibilityLabel="Dismiss menu"
+        >
           <View style={[styles.menuSheet, { paddingBottom: insets.bottom + SPACING.md }]}>
             {isBlocked ? (
-              <TouchableOpacity style={styles.menuItem} onPress={handleUnblock} accessibilityRole="button">
+              <TouchableOpacity
+                style={styles.menuItem}
+                onPress={handleUnblock}
+                accessibilityRole="button"
+                accessibilityLabel={`Unblock ${user.username}`}
+              >
                 <Text style={styles.menuItemText}>Unblock @{user.username}</Text>
               </TouchableOpacity>
             ) : (
-              <TouchableOpacity style={styles.menuItem} onPress={confirmBlock} accessibilityRole="button">
+              <TouchableOpacity
+                style={styles.menuItem}
+                onPress={confirmBlock}
+                accessibilityRole="button"
+                accessibilityLabel={`Block ${user.username}`}
+              >
                 <Text style={styles.menuItemDanger}>Block @{user.username}</Text>
               </TouchableOpacity>
             )}
@@ -320,6 +385,7 @@ export default function PublicProfile() {
               style={styles.menuItem}
               onPress={() => setMenuOpen(false)}
               accessibilityRole="button"
+              accessibilityLabel="Cancel"
             >
               <Text style={styles.menuItemCancel}>Cancel</Text>
             </TouchableOpacity>
@@ -332,14 +398,15 @@ export default function PublicProfile() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: COLORS.bg },
+  page: { gap: SPACING.md, marginBottom: SPACING.md },
   centerScreen: {
     flex: 1,
     backgroundColor: COLORS.bg,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  backLink: { marginTop: SPACING.md, minHeight: 44, justifyContent: 'center' },
-  backLinkText: { color: COLORS.primary, fontSize: 14, fontWeight: '700' },
+  backLink: { marginTop: SPACING.md, minHeight: 48, justifyContent: 'center' },
+  backLinkText: { color: COLORS.primary, fontSize: TYPE.small.fontSize, fontWeight: '700' },
   topBar: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -347,13 +414,13 @@ const styles = StyleSheet.create({
     paddingHorizontal: SPACING.lg,
   },
   backBtn: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
+    width: 48,
+    height: 48,
+    borderRadius: 24,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  menuBackdrop: { flex: 1, backgroundColor: 'rgba(15,23,42,0.35)', justifyContent: 'flex-end' },
+  menuBackdrop: { flex: 1, backgroundColor: withAlpha(COLOR.ink, 0.35), justifyContent: 'flex-end' },
   menuSheet: {
     backgroundColor: COLORS.surface,
     borderTopLeftRadius: RADIUS.xxl,
@@ -362,10 +429,10 @@ const styles = StyleSheet.create({
     paddingHorizontal: SPACING.xl,
   },
   menuItem: { minHeight: 52, justifyContent: 'center' },
-  menuItemText: { color: COLORS.textPrimary, fontSize: 16, fontWeight: '600' },
-  menuItemDanger: { color: COLORS.danger, fontSize: 16, fontWeight: '700' },
-  menuItemCancel: { color: COLORS.textMuted, fontSize: 16, fontWeight: '600' },
-  topBarName: { color: COLORS.textPrimary, fontSize: 16, fontWeight: '900' },
+  menuItemText: { color: COLORS.textPrimary, fontSize: TYPE.body.fontSize, fontWeight: '600' },
+  menuItemDanger: { color: COLORS.danger, fontSize: TYPE.body.fontSize, fontWeight: '700' },
+  menuItemCancel: { color: COLORS.textMuted, fontSize: TYPE.body.fontSize, fontWeight: '600' },
+  topBarName: { color: COLORS.textPrimary, fontSize: TYPE.name.fontSize, fontWeight: '900' },
   heroRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -385,14 +452,14 @@ const styles = StyleSheet.create({
     borderWidth: 2,
     borderColor: COLORS.bg,
   },
-  levelChipText: { color: '#FFFFFF', fontSize: 10, fontWeight: '900', letterSpacing: 0.5 },
+  levelChipText: { color: COLOR.white, fontSize: TYPE.micro.fontSize, fontWeight: '900', letterSpacing: 0.5 },
   countsRow: { flex: 1, flexDirection: 'row', justifyContent: 'space-around' },
-  countCell: { alignItems: 'center', minWidth: 64, minHeight: 44, justifyContent: 'center' },
-  countValue: { color: COLORS.textPrimary, fontSize: 18, fontWeight: '900' },
-  countLabel: { color: COLORS.textMuted, fontSize: 11, fontWeight: '700', marginTop: 1 },
+  countCell: { alignItems: 'center', minWidth: 64, minHeight: 48, justifyContent: 'center' },
+  countValue: { color: COLORS.textPrimary, fontSize: TYPE.heading.fontSize, fontWeight: '900' },
+  countLabel: { color: COLORS.textMuted, fontSize: TYPE.micro.fontSize, fontWeight: '700', marginTop: 1 },
   metaBlock: { paddingHorizontal: SPACING.xl, marginTop: SPACING.lg },
-  levelTitle: { color: COLORS.navy, fontSize: 14, fontWeight: '900', letterSpacing: 1 },
-  metaCity: { color: COLORS.textMuted, fontSize: 12, fontWeight: '600', marginTop: 2 },
+  levelTitle: { color: COLORS.navy, fontSize: TYPE.small.fontSize, fontWeight: '900', letterSpacing: 1 },
+  metaCity: { color: COLORS.textMuted, fontSize: TYPE.micro.fontSize, fontWeight: '600', marginTop: 2 },
   actionRow: {
     paddingHorizontal: SPACING.xl,
     marginTop: SPACING.md,
@@ -405,7 +472,7 @@ const styles = StyleSheet.create({
     borderColor: COLORS.border,
     paddingVertical: SPACING.sm + 2,
     alignItems: 'center',
-    minHeight: 38,
+    minHeight: 48,
   },
-  editBtnText: { color: COLORS.textPrimary, fontSize: 13, fontWeight: '800' },
+  editBtnText: { color: COLORS.textPrimary, fontSize: TYPE.small.fontSize, fontWeight: '800' },
 })

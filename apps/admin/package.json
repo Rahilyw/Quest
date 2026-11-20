@@ -4,7 +4,8 @@
   "scripts": {
     "dev": "next dev -p 3000",
     "build": "next build",
-    "start": "next start -p 3000"
+    "start": "next start -p 3000",
+    "test": "node __tests__/pilotFallback.test.js"
   },
   "dependencies": {
     "@quest/geofence": "1.0.0",
@@ -16,7 +17,8 @@
     "react-dom": "19.1.0",
     "react-easy-crop": "^6.2.2",
     "react-leaflet": "^5.0.0",
-    "server-only": "^0.0.1"
+    "server-only": "^0.0.1",
+    "sharp": "^0.33.5"
   },
   "devDependencies": {
     "@types/leaflet": "^1.9.12",

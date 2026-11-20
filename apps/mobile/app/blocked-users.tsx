@@ -5,18 +5,19 @@ import {
   StyleSheet,
   FlatList,
   TouchableOpacity,
-  ActivityIndicator,
   Alert,
 } from 'react-native'
 import { useRouter } from 'expo-router'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { Avatar } from '@/components/Avatar'
 import { EmptyState } from '@/components/EmptyState'
+import { SkeletonRowList } from '@/components/ui/SkeletonRow'
 import { useAuth } from '@/hooks/useAuth'
 import { useBlockedUsers } from '@/hooks/useBlockedUsers'
 import { supabase } from '@/lib/supabase'
 import { track } from '@/lib/analytics'
 import { COLORS, SPACING, RADIUS } from '@/lib/constants'
+import { COLOR, TYPE, withAlpha } from '@/lib/theme'
 
 interface BlockedRow {
   blocked_id: string
@@ -76,7 +77,9 @@ export default function BlockedUsersScreen() {
       <Text style={[styles.screenTitle, { paddingTop: insets.top + 18 }]}>Blocked accounts</Text>
 
       {loading ? (
-        <ActivityIndicator color={COLORS.primary} style={{ marginTop: insets.top + 120 }} />
+        <View style={{ marginTop: insets.top + 64 }}>
+          <SkeletonRowList count={4} avatarSize={40} padHorizontal={SPACING.md} />
+        </View>
       ) : (
         <FlatList
           data={rows}
@@ -118,21 +121,21 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: COLORS.bg },
   back: { position: 'absolute', zIndex: 10 },
   backPill: {
-    backgroundColor: 'rgba(255,255,255,0.9)',
+    backgroundColor: withAlpha(COLOR.white, 0.9),
     borderRadius: 999,
-    width: 36,
-    height: 36,
+    width: 48,
+    height: 48,
     alignItems: 'center',
     justifyContent: 'center',
-    shadowColor: '#0F172A',
+    shadowColor: COLOR.ink,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.08,
     shadowRadius: 6,
     elevation: 3,
   },
-  backText: { fontSize: 20, fontWeight: '700', lineHeight: 28, color: COLORS.accent },
+  backText: { fontSize: TYPE.heading.fontSize, fontWeight: '700', lineHeight: 28, color: COLORS.accent },
   screenTitle: {
-    fontSize: 22,
+    fontSize: TYPE.heading.fontSize,
     fontWeight: '700',
     color: COLORS.textPrimary,
     textAlign: 'center',
@@ -154,16 +157,16 @@ const styles = StyleSheet.create({
     marginBottom: SPACING.sm,
   },
   rowInfo: { flex: 1, minWidth: 0 },
-  username: { color: COLORS.textPrimary, fontSize: 15, fontWeight: '700' },
-  level: { color: COLORS.textMuted, fontSize: 12, marginTop: 2 },
+  username: { color: COLORS.textPrimary, fontSize: TYPE.body.fontSize, fontWeight: '700' },
+  level: { color: COLORS.textMuted, fontSize: TYPE.micro.fontSize, marginTop: 2 },
   unblockBtn: {
     borderRadius: RADIUS.pill,
     borderWidth: 1.5,
     borderColor: COLORS.border,
     paddingHorizontal: SPACING.lg,
-    minHeight: 36,
+    minHeight: 48,
     justifyContent: 'center',
   },
   unblockBtnBusy: { opacity: 0.5 },
-  unblockText: { color: COLORS.textPrimary, fontSize: 13, fontWeight: '700' },
+  unblockText: { color: COLORS.textPrimary, fontSize: TYPE.small.fontSize, fontWeight: '700' },
 })

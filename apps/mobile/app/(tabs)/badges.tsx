@@ -1,6 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import {
-  ActivityIndicator,
   RefreshControl,
   ScrollView,
   StyleSheet,
@@ -13,7 +12,9 @@ import { useAuth } from '@/hooks/useAuth'
 import { AppHeader } from '@/components/AppHeader'
 import { BadgeTile } from '@/components/badges/BadgeTile'
 import { BadgeShowcase } from '@/components/badges/BadgeShowcase'
+import { SkeletonBadgeGrid } from '@/components/ui/SkeletonFolder'
 import { COLORS, FONT_BRAND, FONT_DISPLAY, RADIUS, SPACING, TAB_BAR_CLEARANCE } from '@/lib/constants'
+import { COLOR, TYPE, withAlpha } from '@/lib/theme'
 import {
   RARITY_META,
   RARITY_ORDER,
@@ -142,7 +143,7 @@ export default function BadgesScreen() {
         </View>
 
         {loading ? (
-          <ActivityIndicator color={COLORS.primary} style={{ marginTop: 48 }} />
+          <SkeletonBadgeGrid style={{ marginTop: SPACING.xxl }} />
         ) : (
           <>
             {/* Legendary night band */}
@@ -157,7 +158,7 @@ export default function BadgesScreen() {
                     width: r * 2,
                     height: r * 2,
                     borderRadius: r,
-                    backgroundColor: 'rgba(226,236,255,0.6)',
+                    backgroundColor: withAlpha(COLOR.white, 0.6),
                   }}
                 />
               ))}
@@ -290,14 +291,14 @@ const styles = StyleSheet.create({
   },
   title: {
     fontFamily: FONT_BRAND,
-    fontSize: 42,
+    fontSize: TYPE.title.fontSize,
     lineHeight: 48,
     color: COLORS.textPrimary,
     textAlign: 'center',
   },
   subtitle: {
     color: COLORS.textMuted,
-    fontSize: 13,
+    fontSize: TYPE.small.fontSize,
     lineHeight: 19,
     marginTop: 2,
     maxWidth: 280,
@@ -318,17 +319,17 @@ const styles = StyleSheet.create({
     borderRadius: 2,
     transform: [{ rotate: '45deg' }],
     borderWidth: 1.5,
-    borderColor: 'rgba(92,122,153,0.45)',
+    borderColor: withAlpha(COLOR.inkSoft, 0.45),
     backgroundColor: 'transparent',
   },
   trailDiamondEarned: {
     backgroundColor: COLORS.sunshine,
-    borderColor: '#D99E06',
+    borderColor: COLORS.gold,
   },
   trailCount: {
     marginTop: SPACING.sm,
     color: COLORS.textPrimary,
-    fontSize: 12,
+    fontSize: TYPE.micro.fontSize,
     fontWeight: '800',
     letterSpacing: 0.5,
     textAlign: 'center',
@@ -336,7 +337,7 @@ const styles = StyleSheet.create({
 
   nightBand: {
     marginHorizontal: SPACING.xl,
-    backgroundColor: '#141F3C',
+    backgroundColor: COLOR.ink,
     borderRadius: RADIUS.xxl,
     paddingHorizontal: SPACING.lg,
     paddingTop: SPACING.lg,
@@ -361,29 +362,29 @@ const styles = StyleSheet.create({
   },
   sectionLabel: {
     fontFamily: FONT_DISPLAY,
-    fontSize: 20,
+    fontSize: TYPE.heading.fontSize,
     lineHeight: 26,
     letterSpacing: 1,
   },
   sectionCount: {
     color: COLORS.textMuted,
-    fontSize: 12,
+    fontSize: TYPE.micro.fontSize,
     fontWeight: '800',
   },
   sectionCountDark: {
-    color: 'rgba(226,236,255,0.55)',
-    fontSize: 12,
+    color: withAlpha(COLOR.white, 0.55),
+    fontSize: TYPE.micro.fontSize,
     fontWeight: '800',
   },
   sectionTagline: {
     color: COLORS.textMuted,
-    fontSize: 11,
+    fontSize: TYPE.micro.fontSize,
     marginTop: 1,
     marginBottom: SPACING.md,
   },
   sectionTaglineDark: {
-    color: 'rgba(226,236,255,0.5)',
-    fontSize: 11,
+    color: withAlpha(COLOR.white, 0.5),
+    fontSize: TYPE.micro.fontSize,
     marginTop: 1,
   },
   grid: {

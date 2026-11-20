@@ -5,7 +5,6 @@ import {
   StyleSheet,
   FlatList,
   TouchableOpacity,
-  ActivityIndicator,
 } from 'react-native'
 import { useRouter } from 'expo-router'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
@@ -13,10 +12,12 @@ import { Ionicons } from '@expo/vector-icons'
 import { Avatar } from '@/components/Avatar'
 import { FollowButton } from '@/components/FollowButton'
 import { EmptyState } from '@/components/EmptyState'
+import { SkeletonRowList } from '@/components/ui/SkeletonRow'
 import { useAuth } from '@/hooks/useAuth'
 import { supabase } from '@/lib/supabase'
 import { track } from '@/lib/analytics'
-import { COLORS, SPACING, RADIUS } from '@/lib/constants'
+import { COLORS, SPACING } from '@/lib/constants'
+import { TYPE } from '@/lib/theme'
 
 export type FollowListMode = 'followers' | 'following'
 
@@ -127,7 +128,9 @@ export function FollowList({ userId, mode }: Props) {
       </View>
 
       {loading ? (
-        <ActivityIndicator color={COLORS.primary} style={styles.loader} />
+        <View style={styles.loader}>
+          <SkeletonRowList count={6} avatarSize={44} padHorizontal={SPACING.xl} />
+        </View>
       ) : users.length === 0 ? (
         <EmptyState
           title={mode === 'followers' ? 'No followers yet' : 'Not following anyone yet'}
@@ -181,14 +184,14 @@ const styles = StyleSheet.create({
     marginBottom: SPACING.sm,
   },
   backBtn: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    width: 48,
+    height: 48,
+    borderRadius: 24,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  title: { color: COLORS.textPrimary, fontSize: 16, fontWeight: '900' },
-  loader: { marginTop: SPACING.xxl * 2 },
+  title: { color: COLORS.textPrimary, fontSize: TYPE.name.fontSize, fontWeight: '900' },
+  loader: { marginTop: SPACING.lg },
   row: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -198,6 +201,6 @@ const styles = StyleSheet.create({
   },
   rowUser: { flexDirection: 'row', alignItems: 'center', gap: SPACING.md, flex: 1 },
   rowInfo: { minWidth: 0 },
-  rowName: { color: COLORS.textPrimary, fontSize: 14, fontWeight: '800' },
-  rowLevel: { color: COLORS.textMuted, fontSize: 11, fontWeight: '700', marginTop: 1 },
+  rowName: { color: COLORS.textPrimary, fontSize: TYPE.small.fontSize, fontWeight: '800' },
+  rowLevel: { color: COLORS.textMuted, fontSize: TYPE.micro.fontSize, fontWeight: '700', marginTop: 1 },
 })

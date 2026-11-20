@@ -1,7 +1,8 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { AppState } from 'react-native'
 import { useAuth } from '@/hooks/useAuth'
-import { track } from '@/lib/analytics'
+import { track, trackCompletionVerified } from '@/lib/analytics'
+import { resolveXpAwarded, xpMultiplier } from '@/lib/xpCopy'
 import { placePhotoPath, type CapturedAttempt } from '@/lib/submissionAttempt'
 import {
   enqueue,
@@ -33,7 +34,7 @@ import { removeProofQuietly, submitCompletion } from '@/lib/submitCompletion'
  */
 
 export type QueueNotice =
-  | { kind: 'sent'; questTitle: string; completionId: string }
+  | { kind: 'sent'; questTitle: string; completionId: string; xpAwarded: number }
   | { kind: 'dropped'; questTitle: string; reason: 'outside_zone' | 'rejected' | 'expired' }
 
 export interface QueueCapture {
@@ -148,10 +149,26 @@ export function SubmissionQueueProvider({ children }: { children: ReactNode }) {
             already_done: completionId == null,
           })
           if (result.kind === 'verified') {
-            track('completion_verified', { quest_id: item.questId, xp: item.xpReward, instant: false, queued: true })
+            const awarded = resolveXpAwarded(result.xpAwarded, item.xpReward)
+            trackCompletionVerified({
+              quest_id: item.questId,
+              xp: awarded,
+              xp_multiplier: xpMultiplier(awarded, item.xpReward),
+              xp_reason: result.xpReason,
+              instant: false,
+              queued: true,
+            })
           }
           // A duplicate from another capture means the quest was already done: nothing new to celebrate.
-          if (completionId) setNotice({ kind: 'sent', questTitle: item.questTitle, completionId })
+          if (completionId) {
+            const awarded =
+              result.kind === 'verified'
+                ? resolveXpAwarded(result.xpAwarded, item.xpReward)
+                : result.kind === 'duplicate'
+                  ? resolveXpAwarded(result.ownCompletion?.xp_awarded, item.xpReward)
+                  : item.xpReward
+            setNotice({ kind: 'sent', questTitle: item.questTitle, completionId, xpAwarded: awarded })
+          }
           void refreshRef.current()
         } else {
           // The server said no for good. The upload, if any, is not used by any completion.

@@ -5,7 +5,7 @@ import { Ionicons } from '@expo/vector-icons'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import MapView, { Marker } from 'react-native-maps'
 import { FeedBubble } from '@/components/FeedBubble'
-import { Sprite } from '@/components/Sprite'
+import { SkeletonBubbleStack } from '@/components/ui/SkeletonBubble'
 import { Body, BodyStrong, Micro, Small, Title } from '@/components/ui/Text'
 import { useActivityFeed, type FeedMode } from '@/hooks/useActivityFeed'
 import { useAuth } from '@/hooks/useAuth'
@@ -150,14 +150,9 @@ export default function FeedScreen() {
         </View>
 
         {loading && posts.length === 0 ? (
-          <View style={styles.skeletons}>
-            {[0, 1, 2].map((slot) => (
-              <View key={slot} style={[styles.skeleton, slot < 2 && styles.skeletonOverlap]} />
-            ))}
-          </View>
+          <SkeletonBubbleStack count={3} />
         ) : posts.length === 0 ? (
           <View style={styles.empty}>
-            <Sprite name={mode === 'following' ? 'gull' : 'seal'} size={88} />
             <Body tone="soft" style={styles.emptyCopy}>
               {mode === 'following'
                 ? 'Follow people from the city feed and their quests land here.'
@@ -262,14 +257,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   modeOn: { backgroundColor: COLOR.ink },
-  skeletons: { paddingTop: SPACE.s2 },
-  skeleton: {
-    height: 108,
-    marginHorizontal: SPACE.s4,
-    borderRadius: RADIUS.bubble,
-    backgroundColor: COLOR.paperDeep,
-  },
-  skeletonOverlap: { marginBottom: -12 },
   empty: { alignItems: 'flex-start', paddingHorizontal: SPACE.s4, gap: SPACE.s3, marginTop: SPACE.s4 },
   emptyCopy: { maxWidth: 320 },
   cta: {

@@ -23,6 +23,7 @@ import {
   recapCardLabel,
 } from '@/components/RecapShareCard'
 import { ScreenHeader } from '@/components/ui/Screen'
+import { Skeleton } from '@/components/ui/Skeleton'
 import { Body, BodyStrong, Small } from '@/components/ui/Text'
 import { useAuth } from '@/hooks/useAuth'
 import { useWeekRecap } from '@/hooks/useWeekRecap'
@@ -132,11 +133,10 @@ export default function RecapScreen() {
             accessibilityRole="progressbar"
             accessibilityLabel="Loading your week"
           >
-            <View
-              style={[
-                styles.skeleton,
-                { width: RECAP_CARD_WIDTH * scale, height: RECAP_CARD_HEIGHT * scale },
-              ]}
+            <Skeleton
+              width={RECAP_CARD_WIDTH * scale}
+              height={RECAP_CARD_HEIGHT * scale}
+              radius={RADIUS.card}
             />
           </View>
         ) : failed || !recap ? (
@@ -153,7 +153,6 @@ export default function RecapScreen() {
           </View>
         ) : kind === 'empty' ? (
           <EmptyState
-            sprite="seal"
             title={week.inProgress ? 'No quests yet this week' : 'No quests that week'}
             subtitle={
               week.inProgress
@@ -255,7 +254,6 @@ const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: COLOR.paper },
   week: { paddingHorizontal: SPACE.s4, marginTop: SPACE.s2, marginBottom: SPACE.s4 },
   loading: { alignItems: 'center' },
-  skeleton: { borderRadius: RADIUS.card, backgroundColor: COLOR.paperDeep },
   message: { paddingHorizontal: SPACE.s4, gap: SPACE.s3, alignItems: 'flex-start' },
   body: { alignItems: 'center', paddingHorizontal: SPACE.s4 },
   captureHost: { position: 'absolute', top: 0, left: -RECAP_CARD_WIDTH * 4 },

@@ -12,7 +12,8 @@ const SENT_VISIBLE_MS = 6000
 
 function noticeCopy(notice: QueueNotice): { line: string; action: string | null } {
   if (notice.kind === 'sent') {
-    return { line: `Sent: ${notice.questTitle}.`, action: 'See it' }
+    const xp = Number.isFinite(notice.xpAwarded) ? notice.xpAwarded : 0
+    return { line: `Sent: ${notice.questTitle}. +${xp} XP`, action: 'See it' }
   }
   if (notice.reason === 'expired') {
     return {

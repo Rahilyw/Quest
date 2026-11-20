@@ -2,10 +2,12 @@ import { Pressable, StyleSheet, Text, View } from 'react-native'
 import { Ionicons } from '@expo/vector-icons'
 import Animated, {
   useAnimatedStyle,
+  useReducedMotion,
   useSharedValue,
   withSpring,
 } from 'react-native-reanimated'
 import { COLORS, RADIUS, SPACING } from '@/lib/constants'
+import { COLOR, TYPE, withAlpha } from '@/lib/theme'
 import { RARITY_META, type BadgeSpec } from '@/lib/badgeCatalog'
 import { BadgeVisual } from './BadgeVisual'
 
@@ -28,6 +30,7 @@ const SPRING = { damping: 14, stiffness: 260, mass: 0.6 }
 
 export function BadgeTile({ spec, earned, artSize, onDark, compact, onOpen }: Props) {
   const press = useSharedValue(0)
+  const reduceMotion = useReducedMotion()
 
   const tilt = useAnimatedStyle(() => ({
     transform: [
@@ -44,10 +47,10 @@ export function BadgeTile({ spec, earned, artSize, onDark, compact, onOpen }: Pr
   return (
     <Pressable
       onPressIn={() => {
-        press.value = withSpring(1, SPRING)
+        if (!reduceMotion) press.value = withSpring(1, SPRING)
       }}
       onPressOut={() => {
-        press.value = withSpring(0, SPRING)
+        if (!reduceMotion) press.value = withSpring(0, SPRING)
       }}
       onPress={() => onOpen(spec)}
       accessibilityRole="button"
@@ -69,7 +72,7 @@ export function BadgeTile({ spec, earned, artSize, onDark, compact, onOpen }: Pr
               <Ionicons
                 name="lock-closed"
                 size={compact ? 9 : 11}
-                color={onDark ? 'rgba(255,255,255,0.85)' : COLORS.textMuted}
+                color={onDark ? withAlpha(COLOR.white, 0.85) : COLORS.textMuted}
               />
             </View>
           )}
@@ -87,7 +90,18 @@ export function BadgeTile({ spec, earned, artSize, onDark, compact, onOpen }: Pr
         </Text>
         {!compact && (
           <View style={styles.rarityRow}>
-            <View style={[styles.rarityDot, { backgroundColor: earned ? meta.color : onDark ? 'rgba(255,255,255,0.35)' : 'rgba(92,122,153,0.4)' }]} />
+            <View
+              style={[
+                styles.rarityDot,
+                {
+                  backgroundColor: earned
+                    ? meta.color
+                    : onDark
+                      ? withAlpha(COLOR.white, 0.35)
+                      : withAlpha(COLOR.inkSoft, 0.4),
+                },
+              ]}
+            />
             <Text style={[styles.rarityLabel, onDark && styles.rarityLabelDark]}>
               {earned ? meta.label : 'Locked'}
             </Text>
@@ -105,7 +119,7 @@ const styles = StyleSheet.create({
     paddingVertical: SPACING.lg,
     paddingHorizontal: SPACING.sm,
     alignItems: 'center',
-    shadowColor: '#1A2B4A',
+    shadowColor: COLOR.ink,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.07,
     shadowRadius: 10,
@@ -115,7 +129,7 @@ const styles = StyleSheet.create({
     paddingVertical: SPACING.md,
   },
   tileDark: {
-    backgroundColor: 'rgba(255,255,255,0.07)',
+    backgroundColor: withAlpha(COLOR.white, 0.07),
     shadowOpacity: 0,
     elevation: 0,
   },
@@ -129,24 +143,24 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     backgroundColor: COLORS.surfaceElevated,
     borderWidth: 1,
-    borderColor: 'rgba(92,122,153,0.25)',
+    borderColor: withAlpha(COLOR.inkSoft, 0.25),
     alignItems: 'center',
     justifyContent: 'center',
   },
   lockChipDark: {
-    backgroundColor: '#22304F',
-    borderColor: 'rgba(255,255,255,0.2)',
+    backgroundColor: COLOR.inkPressed,
+    borderColor: withAlpha(COLOR.white, 0.2),
   },
   name: {
     marginTop: SPACING.md,
     color: COLORS.textPrimary,
-    fontSize: 13,
+    fontSize: TYPE.small.fontSize,
     fontWeight: '800',
     textAlign: 'center',
     lineHeight: 16,
   },
-  nameCompact: { fontSize: 11, lineHeight: 14, marginTop: SPACING.sm },
-  nameDark: { color: '#F4F8FF' },
+  nameCompact: { fontSize: TYPE.micro.fontSize, lineHeight: 14, marginTop: SPACING.sm },
+  nameDark: { color: COLOR.white },
   nameLocked: { color: COLORS.textMuted },
   rarityRow: {
     flexDirection: 'row',
@@ -156,10 +170,10 @@ const styles = StyleSheet.create({
   },
   rarityDot: { width: 5, height: 5, borderRadius: 3 },
   rarityLabel: {
-    fontSize: 8.5,
+    fontSize: TYPE.micro.fontSize,
     fontWeight: '800',
     letterSpacing: 1,
     color: COLORS.textMuted,
   },
-  rarityLabelDark: { color: 'rgba(244,248,255,0.55)' },
+  rarityLabelDark: { color: withAlpha(COLOR.white, 0.55) },
 })

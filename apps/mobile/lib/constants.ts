@@ -4,7 +4,7 @@ import {
   getXpToNextLevel,
   getMinXpForLevel,
 } from './xpLevels'
-import { CATEGORY, COLOR, FONT, SPONSORED } from './theme'
+import { CATEGORY, COLOR, FONT, MEDAL, SPONSORED, withAlpha } from './theme'
 import { levelTitle } from './copy'
 
 export { XP_LEVELS, getLevelFromXp, getXpToNextLevel, getMinXpForLevel }
@@ -61,16 +61,16 @@ export const COLORS = {
   danger: CATEGORY.food.deep,
   sponsor: SPONSORED.color,
 
-  warningSoft: '#FBEBD3',
-  successSoft: '#E1F1E6',
+  warningSoft: withAlpha(SPONSORED.color, 0.22),
+  successSoft: withAlpha(CATEGORY.nature.color, 0.2),
 
   /** Leaderboard medal tints (Rankings is redesigned in Phase 4). */
-  gold: CATEGORY.fitness.color,
-  goldSoft: '#FFF2C2',
-  silver: COLOR.inkFaint,
-  silverSoft: COLOR.paperDeep,
-  bronze: SPONSORED.deep,
-  bronzeSoft: '#FBE3C7',
+  gold: MEDAL.gold.color,
+  goldSoft: MEDAL.gold.light,
+  silver: MEDAL.silver.color,
+  silverSoft: MEDAL.silver.light,
+  bronze: MEDAL.bronze.color,
+  bronzeSoft: MEDAL.bronze.light,
 } as const
 
 export const SPACING = { xs: 4, sm: 8, md: 12, lg: 16, xl: 20, xxl: 24 } as const

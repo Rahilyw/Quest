@@ -49,6 +49,8 @@ export interface Quest {
   quest_geofences?: QuestGeofenceLocation[] | null
   /** WebP cutout asset with pre-baked shadow (migration 032). */
   cutout_url?: string | null
+  /** Alt text for the quest sticker (migration 044). */
+  cutout_alt?: string | null
   /** Short verb phrase shown on the card, e.g. "Take a photo at..." */
   action_phrase?: string | null
   /** Approximate walking/travel distance for this quest in metres. */

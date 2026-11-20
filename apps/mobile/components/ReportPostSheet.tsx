@@ -65,7 +65,12 @@ export function ReportPostSheet<R extends string = ReportReason>({
   return (
     <Modal transparent animationType="slide" visible={visible} onRequestClose={handleClose}>
       <KeyboardAvoidingView style={styles.overlay} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-        <Pressable style={styles.backdrop} onPress={handleClose} accessibilityLabel="Close report" />
+        <Pressable
+          style={styles.backdrop}
+          onPress={handleClose}
+          accessibilityRole="button"
+          accessibilityLabel="Close report"
+        />
         <View style={styles.sheet}>
           <View style={styles.handle} />
           <Heading>{title}</Heading>
@@ -84,6 +89,7 @@ export function ReportPostSheet<R extends string = ReportReason>({
                   style={styles.reasonRow}
                   onPress={() => pickReason(item.value)}
                   accessibilityRole="button"
+                  accessibilityLabel={item.label}
                 >
                   <Body>{item.label}</Body>
                 </Pressable>
@@ -109,13 +115,23 @@ export function ReportPostSheet<R extends string = ReportReason>({
               >
                 <Small color={COLOR.white}>Submit report</Small>
               </Pressable>
-              <Pressable onPress={() => setStep('reason')} style={styles.backLink} accessibilityRole="button">
+              <Pressable
+                onPress={() => setStep('reason')}
+                style={styles.backLink}
+                accessibilityRole="button"
+                accessibilityLabel="Back to reasons"
+              >
                 <Small>Back</Small>
               </Pressable>
             </View>
           )}
 
-          <Pressable onPress={handleClose} style={styles.cancelBtn} accessibilityRole="button">
+          <Pressable
+            onPress={handleClose}
+            style={styles.cancelBtn}
+            accessibilityRole="button"
+            accessibilityLabel="Cancel"
+          >
             <Small tone="soft">Cancel</Small>
           </Pressable>
         </View>

@@ -3,13 +3,11 @@
 Durable state for the Nov 2026 audit-and-implementation campaign. One current status per item.
 Updated at every phase boundary. Historical notes are labelled as history.
 
-## Current continuation (Nov 11, 2026)
+## Current continuation (Nov 20, 2026) — card E5 accessibility
 
-This continuation supersedes the session-specific Nov 10 baseline, conflict register and
-"next concrete action" below where they disagree. Current checkout: `cursor/cutouts-this-week-quests`
-at `9221463`; worktree was clean before the documentation reconciliation. Local tests passed:
-50 geofence assertions plus redemption tests, 159 mobile logic assertions, 9 quest-window
-cases, and TypeScript checks for both apps.
+Card E5 on `cursor/e5-a11y`: 48pt targets, Pressable labels/roles, sticker alts, 130% text caps,
+reduce-motion on tab/badge press, colour+icon/count signals (zone, chips, queue, XP banner).
+Findings in `docs/design/A11Y-PASS-2026-11.md`. Status: locally tested. SQL not executed.
 
 - Documentation reconciliation updated README, PRODUCT, ROADMAP, ARCHITECTURE, launch runbook,
   migration index, specs 01–07/index, UI overhaul plan, seed note and this ledger.
@@ -104,6 +102,36 @@ E1, E2, E5, then D on its own branch, held. It adds four cards:
 
 No new migrations beyond 044 and 045. Progress is logged in `docs/design/BIG-BUILD-LOG.md`, which
 the run creates. The Cursor rule now allows merging card branches into `cursor/big-build` only.
+
+### Continuation — November 20, 2026, build 2 plan
+
+Build 1 had merged R through E2 into `cursor/big-build` (log: [BIG-BUILD-LOG.md](BIG-BUILD-LOG.md)).
+E5 was in progress in the working tree and D had not started. The owner run sheet has nothing
+ticked, so **041–044 have never been executed anywhere**.
+
+### Continuation — November 20, 2026, big build finished
+
+- `cursor/big-build` tip `f215015` (plus Finish docs): cards R, Q, S, V, C, E4, P, F, E1, E2, E5
+  are merged and **locally tested**. Raw tokens **0**. Migration **044** is in checkout, **not applied**.
+- Card D (duo, migration **045**) is on `cursor/d-duo` tip `66ac0b3`, **PR open, held** — not merged
+  into big-build. SQL for 045 was not executed.
+- Owner track still: verify 039; apply 041 → 042 → 043 → 044; then TestFlight #1 from the
+  big-build PR after review. No hosted services were touched by this run.
+
+[CURSOR-BUILD-2-2026-11-20.md](CURSOR-BUILD-2-2026-11-20.md) plans "prove the backend". It starts
+after build 1 finishes and has six cards:
+
+- M1: a throwaway local Supabase stack in GitHub Actions, using the DB-01 clean-install order and
+  running the verify files;
+- M2: pgTAP tests for 038–044;
+- M3: generated database types with a CI drift check;
+- M4: Deno tests for the edge functions;
+- Z: an independent security review;
+- M5: the same proof for 045, on the duo line.
+
+Owner recommendation: hold applying 041–044 to production until M2 is green, so any bug is fixed
+in place. O1, O7 and O8 can go ahead. The Cursor rule now allows in-place fixes to 041–045 only
+while unapplied, and SQL only on the CI local stack.
 
 The sections below preserve the Nov 10 campaign record and may contain facts that were true
 only for that session; use the continuation above and linked current docs for present status.

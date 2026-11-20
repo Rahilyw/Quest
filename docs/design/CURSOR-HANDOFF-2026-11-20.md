@@ -25,18 +25,18 @@ replaces [AGENT-HANDOFF-2026-11-19.md](AGENT-HANDOFF-2026-11-19.md).
 | Card | Wave | Status on Nov 20, 2026 | Can start when |
 |---|---|---|---|
 | H: Land admin polish, push | 0 | Done (pushed; CI green on `5364735`) | — |
-| S: Stickers reconcile (migration 044) + sprite removal | 1 | Free | H is pushed |
-| R: Release readiness | 1 | Free | H is pushed (can run beside S) |
-| C: XP events mobile (+ "Photos from here" time) | 2 | Blocked | S merged |
-| E4: Own selfie in completion views | 2 | Blocked | S merged (can run beside C) |
-| E1: Tokens to 0 + strict CI | 3 | Blocked | C merged |
-| E2: Skeletons | 3 | Blocked | C merged (can run beside E1, see file split) |
-| E5: Accessibility pass | 3 | Blocked | E1 and E2 merged; run it alone |
-| D: Duo quests (migration 045) | 4 | Blocked | C merged and TestFlight build #1 cut |
-| Q: CI hardening (big build only) | 1 | Free | H is pushed |
-| V: Owner verification pack (big build only) | 2 | Blocked | S merged |
-| P: Admin pilot dashboard (big build only) | 2 | Blocked | S merged |
-| F: In-app feedback (big build only) | 2 | Blocked | C merged |
+| S: Stickers reconcile (migration 044) + sprite removal | 1 | Merged into cursor/big-build | H is pushed |
+| R: Release readiness | 1 | Merged into cursor/big-build | H is pushed (can run beside S) |
+| C: XP events mobile (+ "Photos from here" time) | 2 | Merged into cursor/big-build | S merged |
+| E4: Own selfie in completion views | 2 | Merged into cursor/big-build | S merged (can run beside C) |
+| E1: Tokens to 0 + strict CI | 3 | Merged into cursor/big-build | C merged |
+| E2: Skeletons | 3 | Merged into cursor/big-build | C merged (can run beside E1, see file split) |
+| E5: Accessibility pass | 3 | Merged into cursor/big-build | E1 and E2 merged; run it alone |
+| D: Duo quests (migration 045) | 4 | PR open, held | C merged and TestFlight build #1 cut |
+| Q: CI hardening (big build only) | 1 | Merged into cursor/big-build | H is pushed |
+| V: Owner verification pack (big build only) | 2 | Merged into cursor/big-build | S merged |
+| P: Admin pilot dashboard (big build only) | 2 | Merged into cursor/big-build | S merged |
+| F: In-app feedback (big build only) | 2 | Merged into cursor/big-build | C merged |
 
 Done earlier: Phase 3 offline queue (card A, Nov 19) and Phase 4a XP server and admin (card B,
 Nov 19). Old card E3 is now part of C; old card E6 is now part of S.

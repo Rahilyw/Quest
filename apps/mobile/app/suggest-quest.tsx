@@ -193,12 +193,20 @@ export default function SuggestQuestScreen() {
                 onPress={() => setCategory(key as QuestCategory)}
                 accessibilityRole="button"
                 accessibilityState={{ selected }}
-                accessibilityLabel={cat.label}
+                accessibilityLabel={selected ? `${cat.label}, selected` : cat.label}
                 style={[
                   styles.cat,
                   { backgroundColor: selected ? cat.color : COLOR.paperDeep },
+                  selected && styles.catSelected,
                 ]}
               >
+                <Ionicons
+                  name={cat.icon as keyof typeof Ionicons.glyphMap}
+                  size={16}
+                  color={selected ? cat.onColor : COLOR.ink}
+                  accessibilityElementsHidden
+                  importantForAccessibility="no"
+                />
                 <Small color={selected ? cat.onColor : COLOR.ink}>{cat.label}</Small>
               </Pressable>
             )
@@ -335,8 +343,14 @@ const styles = StyleSheet.create({
     minHeight: 48,
     borderRadius: RADIUS.pill,
     paddingHorizontal: SPACE.s4,
+    flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
+    gap: SPACE.s2,
+  },
+  catSelected: {
+    borderWidth: 2,
+    borderColor: COLOR.ink,
   },
   mapWrap: {
     height: 220,

@@ -173,7 +173,9 @@ function EditForm({ quest, onSave, onCancel }: { quest: Quest; onSave: (updated:
           <QuestCutoutUploader
             questId={quest.id}
             category={form.category}
+            questTitle={quest.title}
             initialUrl={quest.cutout_url}
+            initialAlt={quest.cutout_alt}
           />
         </div>
 

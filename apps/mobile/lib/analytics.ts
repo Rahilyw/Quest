@@ -40,6 +40,8 @@ export type AnalyticsEvent =
   | 'proof_queued'
   | 'proof_queue_sent'
   | 'proof_queue_dropped'
+  | 'xp_boost_seen'
+  | 'feedback_sent'
 
 export type QuestSource =
   | 'explore'
@@ -89,6 +91,29 @@ export function isAnalyticsEnabled(): boolean {
 export function track(event: AnalyticsEvent, properties?: PostHogEventProperties): void {
   if (!client || optedOut) return
   client.capture(event, properties)
+}
+
+/** Props for `completion_verified`: xp is the server award when known. No free text. */
+export type CompletionVerifiedProps = {
+  quest_id: string
+  xp: number
+  xp_multiplier?: number
+  xp_reason?: string | null
+  instant?: boolean
+  queued?: boolean
+}
+
+export function trackCompletionVerified(props: CompletionVerifiedProps): void {
+  const { xp_reason, xp_multiplier, ...rest } = props
+  const properties: PostHogEventProperties = { ...rest }
+  if (xp_multiplier != null) properties.xp_multiplier = xp_multiplier
+  if (xp_reason) properties.xp_reason = xp_reason
+  track('completion_verified', properties)
+}
+
+/** Banner / "2x today" impression. `kind` is weekend | quest | win_back only. */
+export function trackXpBoostSeen(kind: 'weekend' | 'quest' | 'win_back'): void {
+  track('xp_boost_seen', { kind })
 }
 
 export function identify(

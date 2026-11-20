@@ -14,15 +14,18 @@ import * as Location from 'expo-location'
 import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { endsThisSunday, formatDropLabel, isNewThisWeek, isQuestActive } from '@quest/geofence'
-import { Cutout } from '@/components/Cutout'
+import { Sticker, questStickerAlt } from '@/components/Sticker'
 import { PhotoViewer } from '@/components/PhotoViewer'
 import { Pillow, PILLOW_SIZES } from '@/components/Pillow'
+import { SkeletonFolder } from '@/components/ui/SkeletonFolder'
 import { Body, BodyStrong, Heading, Micro, Small } from '@/components/ui/Text'
 import { useGeofenceCheck } from '@/hooks/useGeofenceCheck'
 import { useQuest } from '@/hooks/useQuests'
 import { useQuestPhotos, type QuestPhoto } from '@/hooks/useQuestPhotos'
-import { questSourceFromParam, track } from '@/lib/analytics'
+import { useXpBoosts } from '@/hooks/useXpBoosts'
+import { questSourceFromParam, track, trackXpBoostSeen } from '@/lib/analytics'
 import { plural, xpLabel } from '@/lib/copy'
+import { formatRelativeTime } from '@/lib/relativeTime'
 import { BYPASS_GEOFENCE, getQuestCoverImage, TAB_BAR_CLEARANCE } from '@/lib/constants'
 import { ensureLocationPermission } from '@/lib/permissions'
 import { paramAsString } from '@/lib/routeParams'
@@ -67,9 +70,11 @@ export default function QuestDetail() {
   const { height: windowHeight } = useWindowDimensions()
   const { quest, loading } = useQuest(id)
   const { photos, weeklyCount, loading: photosLoading, refetch } = useQuestPhotos(questId, PHOTO_LIMIT)
+  const { questHasBoost, boosts } = useXpBoosts(!!questId)
   const [coords, setCoords] = useState<Coords | null>(null)
   const [permission, setPermission] = useState<Permission>('checking')
   const [viewerIndex, setViewerIndex] = useState<number | null>(null)
+  const boostSeen = useRef(false)
 
   const { insideGeofence, requiresLocation } = useGeofenceCheck(quest, coords, BYPASS_GEOFENCE)
 
@@ -167,6 +172,17 @@ export default function QuestDetail() {
     })
   }, [quest?.id, source])
 
+  useEffect(() => {
+    boostSeen.current = false
+  }, [quest?.id])
+
+  useEffect(() => {
+    if (!quest || !questHasBoost(quest.id) || boostSeen.current) return
+    boostSeen.current = true
+    const questEvent = boosts.events.find((e) => e.quest_id === quest.id)
+    trackXpBoostSeen(questEvent ? 'quest' : 'weekend')
+  }, [quest?.id, boosts, questHasBoost])
+
   const startQuest = useCallback(() => {
     if (!quest || !isQuestActive(quest, new Date())) return
     setViewerIndex(null)
@@ -192,13 +208,7 @@ export default function QuestDetail() {
             </Pressable>
           </View>
         </View>
-        <View style={styles.skeleton}>
-          <View style={[styles.bone, styles.boneTitle]} />
-          <View style={[styles.bone, styles.boneMeta]} />
-          <View style={[styles.bone, styles.boneLine]} />
-          <View style={[styles.bone, styles.boneLine]} />
-          <View style={[styles.bone, styles.boneShort]} />
-        </View>
+        <SkeletonFolder style={styles.skeleton} lines={3} />
       </View>
     )
   }
@@ -224,7 +234,9 @@ export default function QuestDetail() {
   const heroHeight = Math.round(windowHeight * 0.46)
   const coverUri = sizedImageUrl(getQuestCoverImage(quest), { width: 1200, height: 800 })
   const meta = questMeta(quest)
-  const facts = meta ? `${meta}, ${xpLabel(quest.xp_reward)}` : xpLabel(quest.xp_reward)
+  const showBoost = questHasBoost(quest.id)
+  const xpFact = showBoost ? `${xpLabel(quest.xp_reward)}, 2x today` : xpLabel(quest.xp_reward)
+  const facts = meta ? `${meta}, ${xpFact}` : xpFact
   const description = quest.description?.trim()
   const layers = fanLayers(photos)
   const preview = photos.slice(0, 3)
@@ -280,7 +292,14 @@ export default function QuestDetail() {
             >
               <Ionicons name="chevron-back" size={22} color={COLOR.ink} />
             </Pressable>
-            <View style={styles.catPill}>
+            <View style={styles.catPill} accessible accessibilityLabel={category.label}>
+              <Ionicons
+                name={category.icon as keyof typeof Ionicons.glyphMap}
+                size={14}
+                color={COLOR.ink}
+                accessibilityElementsHidden
+                importantForAccessibility="no"
+              />
               <Small>{category.label}</Small>
             </View>
           </View>
@@ -332,13 +351,7 @@ export default function QuestDetail() {
 
         <View style={styles.body}>
           <View pointerEvents="none" style={styles.cutout}>
-            <Cutout
-              uri={quest.cutout_url}
-              category={quest.category}
-              questTitle={quest.title}
-              role="breakout"
-              style={{ width: 112 }}
-            />
+            <Sticker uri={quest.cutout_url} size={112} tilt={-6} alt={questStickerAlt(quest)} />
           </View>
 
           <View style={styles.copy}>
@@ -387,12 +400,14 @@ export default function QuestDetail() {
                 showsHorizontalScrollIndicator={false}
                 contentContainerStyle={styles.photoRow}
               >
-                {preview.map((photo, index) => (
+                {preview.map((photo, index) => {
+                  const when = formatRelativeTime(photo.completed_at)
+                  return (
                   <Pressable
                     key={photo.id}
                     onPress={() => setViewerIndex(index)}
                     accessibilityRole="button"
-                    accessibilityLabel={`${photo.username}, ${plural(photo.like_count, 'like')}`}
+                    accessibilityLabel={`${photo.username}, ${when || plural(photo.like_count, 'like')}`}
                     style={({ pressed }) => [styles.photoCol, pressed && styles.pressed]}
                   >
                     <Pillow
@@ -402,20 +417,27 @@ export default function QuestDetail() {
                     <Small numberOfLines={1} style={styles.photoName}>
                       {photo.username}
                     </Small>
-                    <View style={styles.photoLikes}>
-                      <Ionicons
-                        name="heart-outline"
-                        size={12}
-                        color={COLOR.inkSoft}
-                        accessibilityElementsHidden
-                        importantForAccessibility="no"
-                      />
-                      <Micro tone="soft" tabular>
-                        {photo.like_count}
+                    {when ? (
+                      <Micro tone="soft" tabular style={styles.photoWhen}>
+                        {when}
                       </Micro>
-                    </View>
+                    ) : (
+                      <View style={styles.photoLikes}>
+                        <Ionicons
+                          name="heart-outline"
+                          size={12}
+                          color={COLOR.inkSoft}
+                          accessibilityElementsHidden
+                          importantForAccessibility="no"
+                        />
+                        <Micro tone="soft" tabular>
+                          {photo.like_count}
+                        </Micro>
+                      </View>
+                    )}
                   </Pressable>
-                ))}
+                  )
+                })}
                 <Pressable
                   onPress={startQuest}
                   accessibilityRole="button"
@@ -552,17 +574,7 @@ const styles = StyleSheet.create({
   skeleton: {
     paddingHorizontal: SPACE.s4,
     paddingTop: SPACE.s5,
-    gap: SPACE.s3,
   },
-  bone: {
-    height: 14,
-    borderRadius: RADIUS.pill,
-    backgroundColor: COLOR.paperDeep,
-  },
-  boneTitle: { height: 24, width: '62%' },
-  boneMeta: { width: '40%', marginBottom: SPACE.s3 },
-  boneLine: { width: '100%' },
-  boneShort: { width: '70%' },
   hero: {
     backgroundColor: COLOR.paperDeep,
     overflow: 'hidden',
@@ -590,6 +602,9 @@ const styles = StyleSheet.create({
     borderRadius: RADIUS.pill,
     paddingHorizontal: SPACE.s3,
     paddingVertical: SPACE.s2,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: SPACE.s1,
     ...SHADOW.float,
   },
   stack: {
@@ -678,6 +693,10 @@ const styles = StyleSheet.create({
     gap: SPACE.s1,
   },
   photoName: {
+    alignSelf: 'stretch',
+    textAlign: 'center',
+  },
+  photoWhen: {
     alignSelf: 'stretch',
     textAlign: 'center',
   },

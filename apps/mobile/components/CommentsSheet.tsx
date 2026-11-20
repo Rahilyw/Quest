@@ -15,6 +15,7 @@ import { useRouter } from 'expo-router'
 import { Ionicons } from '@expo/vector-icons'
 import { Avatar } from '@/components/Avatar'
 import { ReportPostSheet } from '@/components/ReportPostSheet'
+import { SkeletonRowList } from '@/components/ui/SkeletonRow'
 import { Body, Heading, Name, Small } from '@/components/ui/Text'
 import { useComments, type CommentNode } from '@/hooks/useComments'
 import { formatTimeAgo } from '@/hooks/useActivityFeed'
@@ -94,7 +95,11 @@ export function CommentsSheet({ visible, completionId, currentUserId, onClose, o
         </Pressable>
         <View style={styles.commentBody}>
           <View style={styles.commentMeta}>
-            <Pressable onPress={() => openProfile(comment.user_id)} accessibilityRole="button">
+            <Pressable
+              onPress={() => openProfile(comment.user_id)}
+              accessibilityRole="button"
+              accessibilityLabel={`View ${comment.user.username}'s profile`}
+            >
               <Name numberOfLines={1}>{comment.user.username}</Name>
             </Pressable>
             <Small tone="faint">{formatTimeAgo(comment.created_at)}</Small>
@@ -142,7 +147,12 @@ export function CommentsSheet({ visible, completionId, currentUserId, onClose, o
 
   return (
     <Modal transparent visible={visible} animationType="slide" onRequestClose={close}>
-      <Pressable style={styles.backdrop} onPress={close} />
+      <Pressable
+        style={styles.backdrop}
+        onPress={close}
+        accessibilityRole="button"
+        accessibilityLabel="Dismiss comments"
+      />
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
         style={styles.sheetWrap}
@@ -154,8 +164,7 @@ export function CommentsSheet({ visible, completionId, currentUserId, onClose, o
 
           {loading ? (
             <View style={styles.centerFill}>
-              <View style={styles.skeleton} />
-              <View style={styles.skeleton} />
+              <SkeletonRowList count={3} avatarSize={36} padHorizontal={0} />
             </View>
           ) : error ? (
             <Body tone="soft" style={styles.centerNote}>{error}</Body>
@@ -258,8 +267,7 @@ const styles = StyleSheet.create({
     marginTop: SPACE.s3,
   },
   title: { textAlign: 'center', paddingVertical: SPACE.s3 },
-  centerFill: { padding: SPACE.s4, gap: SPACE.s3 },
-  skeleton: { height: 64, borderRadius: RADIUS.card, backgroundColor: COLOR.paperDeep },
+  centerFill: { padding: SPACE.s4 },
   centerNote: { textAlign: 'center', marginVertical: SPACE.s7, paddingHorizontal: SPACE.s5 },
   list: { paddingHorizontal: SPACE.s4 },
   commentRow: { flexDirection: 'row', gap: SPACE.s3, paddingVertical: SPACE.s2 },
