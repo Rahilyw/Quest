@@ -4,6 +4,7 @@ import { supabaseAdmin } from '@/lib/supabase'
 import { getFlaggedCommentCount, getFlaggedCount } from '@/app/moderation/actions'
 import { getActiveBoosts, type XpEventRow } from '@/app/xp-events/actions'
 import { formatMultiplier, formatVictoria } from '@/lib/xpEventPresets'
+import { formatCount } from '@/lib/format'
 import { theme } from '@/lib/theme'
 
 export const revalidate = 60
@@ -56,7 +57,9 @@ export default async function Dashboard() {
         {stats.map((s) => {
           const inner = (
             <div className="admin-card" style={{ borderLeft: `4px solid ${s.color}`, padding: 20 }}>
-              <div style={{ fontSize: 36, fontWeight: 800, color: s.color }}>{s.value}</div>
+              <div className="admin-num" style={{ fontSize: 36, fontWeight: 800, color: s.color }}>
+                {formatCount(s.value)}
+              </div>
               <div style={{ color: theme.textMuted, marginTop: 8, fontSize: 13 }}>{s.label}</div>
             </div>
           )
@@ -72,8 +75,8 @@ export default async function Dashboard() {
 
       <div className="admin-card" style={{ marginBottom: 24, maxWidth: 520 }}>
         <div style={{ fontSize: 13, fontWeight: 700, color: theme.textMuted }}>Next Monday drop</div>
-        <div style={{ fontSize: 28, fontWeight: 800, marginTop: 6 }}>
-          {nextDrop.count == null ? '—' : nextDrop.count}
+        <div className="admin-num" style={{ fontSize: 28, fontWeight: 800, marginTop: 6 }}>
+          {nextDrop.count == null ? '—' : formatCount(nextDrop.count)}
         </div>
         <p style={{ margin: '8px 0 0', color: theme.textMuted, fontSize: 14 }}>
           {nextDrop.label}

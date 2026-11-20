@@ -15,6 +15,7 @@ import {
   type BadgeEarner,
   type BadgeWithStats,
 } from '../actions'
+import { formatVictoriaDateTime } from '@/lib/format'
 import { theme } from '@/lib/theme'
 
 export default function EditBadgePage({ params }: { params: Promise<{ id: string }> }) {
@@ -194,7 +195,7 @@ export default function EditBadgePage({ params }: { params: Promise<{ id: string
                 <tr key={e.user_id} style={{ borderBottom: `1px solid ${theme.border}` }}>
                   <td style={{ padding: '10px 0', fontWeight: 600 }}>@{e.username}</td>
                   <td style={{ padding: '10px 0', color: theme.textMuted, fontSize: 13 }}>
-                    {new Date(e.earned_at).toLocaleString()}
+                    {formatVictoriaDateTime(e.earned_at)}
                   </td>
                   <td style={{ padding: '10px 0', textAlign: 'right' }}>
                     <button

@@ -2,18 +2,9 @@
 
 import { useState, type FormEvent } from 'react'
 import { normalizeRedemptionCode } from '@quest/geofence'
+import { formatVictoriaDateTime } from '@/lib/format'
 import { theme } from '@/lib/theme'
 import { lookupRedemption, markRedemption, type RedeemResult } from '../actions'
-
-function whenRedeemed(iso: string) {
-  return new Date(iso).toLocaleString('en-CA', {
-    timeZone: 'America/Vancouver',
-    month: 'short',
-    day: 'numeric',
-    hour: 'numeric',
-    minute: '2-digit',
-  })
-}
 
 export function RedeemForm({ merchantKey, sponsorName }: { merchantKey: string; sponsorName: string }) {
   const [code, setCode] = useState('')
@@ -131,7 +122,7 @@ export function RedeemForm({ merchantKey, sponsorName }: { merchantKey: string; 
                 <div style={{ fontWeight: 700 }}>Level {outcome.level}</div>
               ) : null}
               {outcome.result !== 'valid' ? (
-                <div style={{ color: theme.textMuted }}>{whenRedeemed(outcome.redeemed_at)} Victoria</div>
+                <div style={{ color: theme.textMuted }}>{formatVictoriaDateTime(outcome.redeemed_at)} Victoria</div>
               ) : null}
             </div>
           ) : null}

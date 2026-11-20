@@ -1,5 +1,5 @@
 import { supabaseAdmin } from '@/lib/supabase'
-
+import { formatCount, formatVictoriaDate } from '@/lib/format'
 import { theme } from '@/lib/theme'
 
 export const revalidate = 60
@@ -31,9 +31,9 @@ export default async function UsersPage() {
                 <td style={{ padding: '12px 16px', fontWeight: 600 }}>@{u.username}</td>
                 <td style={{ padding: '12px 16px', color: theme.textMuted }}>{u.city}</td>
                 <td style={{ padding: '12px 16px', color: theme.primary, fontWeight: 700 }}>Lv {u.level}</td>
-                <td style={{ padding: '12px 16px' }}>{u.total_xp.toLocaleString()} XP</td>
+                <td style={{ padding: '12px 16px' }}>{formatCount(u.total_xp)} XP</td>
                 <td style={{ padding: '12px 16px', color: theme.textMuted }}>
-                  {new Date(u.created_at).toLocaleDateString()}
+                  {formatVictoriaDate(u.created_at)}
                 </td>
               </tr>
             ))}

@@ -268,7 +268,7 @@ export default function GeofenceEditor({
             fontWeight: 600,
           }}
         >
-          Loading map...
+          Loading map…
         </div>
       )
     }

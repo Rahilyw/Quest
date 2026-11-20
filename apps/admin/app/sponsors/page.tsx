@@ -1,5 +1,6 @@
 import { redemptionStats } from '@quest/geofence'
 import { supabaseAdmin } from '@/lib/supabase'
+import { formatVictoriaDateTime } from '@/lib/format'
 import { theme } from '@/lib/theme'
 import ExportButton from './ExportButton'
 import { MerchantLink } from './MerchantLink'
@@ -23,16 +24,6 @@ interface SponsoredQuest {
 
 function statsFor(quests: SponsoredQuest[]) {
   return redemptionStats(quests.flatMap((quest) => quest.completions ?? []))
-}
-
-function victoriaTime(iso: string) {
-  return new Date(iso).toLocaleString('en-CA', {
-    timeZone: 'America/Vancouver',
-    month: 'short',
-    day: 'numeric',
-    hour: 'numeric',
-    minute: '2-digit',
-  })
 }
 
 export default async function SponsorsPage() {
@@ -82,7 +73,7 @@ export default async function SponsorsPage() {
               <div style={{ fontWeight: 800, fontSize: 18 }}>{name}</div>
               <div style={{ color: theme.textMuted, marginTop: 4, fontSize: 14 }}>
                 {redemption.issued} codes issued · {redemption.redeemed} redeemed · {redemption.rate}% · last{' '}
-                {redemption.last ? victoriaTime(redemption.last) : 'none yet'}
+                {redemption.last ? formatVictoriaDateTime(redemption.last) : 'none yet'}
               </div>
               {name !== 'Unnamed sponsor' && !sponsorError ? (
                 <div style={{ marginTop: 12, marginBottom: 16 }}>

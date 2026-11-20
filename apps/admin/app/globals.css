@@ -92,7 +92,7 @@ table {
   transform: translateY(-160%);
 }
 
-.skip-link:focus {
+.skip-link:focus-visible {
   transform: none;
 }
 
@@ -313,6 +313,13 @@ label {
 .admin-btn-ghost:hover {
   color: var(--admin-text);
   border-color: rgba(28, 25, 21, 0.25);
+}
+
+input,
+select,
+textarea {
+  background-color: #fffdfa;
+  color: var(--admin-text);
 }
 
 .admin-input,

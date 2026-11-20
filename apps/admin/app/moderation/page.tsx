@@ -12,6 +12,7 @@ import {
   type CommentModerationItem,
   type ModerationItem,
 } from './actions'
+import { formatVictoriaDate, formatVictoriaDateTime } from '@/lib/format'
 import { theme } from '@/lib/theme'
 
 const REASON_LABELS: Record<string, string> = {
@@ -38,6 +39,15 @@ export default function ModerationPage() {
     })
   }, [])
 
+  function confirmRemove(kind: 'post' | 'comment', retry = false) {
+    if (kind === 'comment') return confirm('Remove this comment? It leaves the feed.')
+    return confirm(
+      retry
+        ? 'Remove this post and let the player submit again? XP will be revoked.'
+        : 'Remove this post? XP will be revoked and it leaves the feed.'
+    )
+  }
+
   async function runAction(id: string, action: () => Promise<void>) {
     setProcessing((prev) => new Set(prev).add(id))
     try {
@@ -56,7 +66,13 @@ export default function ModerationPage() {
     }
   }
 
-  if (loading) return <p style={{ color: theme.textMuted }}>Loading…</p>
+  if (loading) {
+    return (
+      <p style={{ color: theme.textMuted }} role="status" aria-live="polite">
+        Loading…
+      </p>
+    )
+  }
 
   return (
     <div>
@@ -74,7 +90,7 @@ export default function ModerationPage() {
         </div>
       )}
 
-      <div style={{ display: 'grid', gap: 16 }}>
+      <div className="admin-stack">
         {items.map((item) => {
           const busy = processing.has(item.id)
           const inside = item.geofenceEvidence?.inside
@@ -82,27 +98,22 @@ export default function ModerationPage() {
 
           return (
             <div key={item.id} className="admin-card" style={{ display: 'flex', gap: 20, alignItems: 'flex-start' }}>
-              <a href={item.photo_url} target="_blank" rel="noreferrer">
-                <img
-                  src={item.photo_url}
-                  alt="proof"
-                  style={{
-                    width: 120,
-                    height: 120,
-                    objectFit: 'cover',
-                    borderRadius: 12,
-                    border: `1px solid ${theme.border}`,
-                  }}
-                />
+              <a
+                href={item.photo_url}
+                target="_blank"
+                rel="noreferrer"
+                aria-label={`Open proof photo for ${item.quests?.title ?? 'this quest'}`}
+              >
+                <img src={item.photo_url} alt="" width={120} height={120} className="admin-proof" />
               </a>
-              <div style={{ flex: 1 }}>
+              <div className="admin-grow">
                 <div style={{ fontWeight: 800, fontSize: 16, marginBottom: 4 }}>
                   {item.quests?.title ?? 'Unknown quest'}
                 </div>
                 <div style={{ color: theme.textMuted, marginBottom: 4 }}>
                   @{item.profiles?.username} · LV {item.profiles?.level} · joined{' '}
                   {item.profiles?.created_at
-                    ? new Date(item.profiles.created_at).toLocaleDateString()
+                    ? formatVictoriaDate(item.profiles.created_at)
                     : '—'}
                 </div>
                 <div style={{ color: theme.textDim, fontSize: 13, marginBottom: 6 }}>
@@ -153,7 +164,10 @@ export default function ModerationPage() {
                   className="admin-btn"
                   style={{ background: theme.danger, color: theme.onPrimary, opacity: busy ? 0.5 : 1 }}
                   disabled={busy}
-                  onClick={() => runAction(item.id, () => removeCompletionModeration(item.id))}
+                  onClick={() => {
+                    if (!confirmRemove('post')) return
+                    void runAction(item.id, () => removeCompletionModeration(item.id))
+                  }}
                 >
                   Remove
                 </button>
@@ -162,7 +176,10 @@ export default function ModerationPage() {
                   className="admin-btn admin-btn-ghost"
                   style={{ opacity: busy ? 0.5 : 1 }}
                   disabled={busy}
-                  onClick={() => runAction(item.id, () => removeAndAllowRetry(item.id))}
+                  onClick={() => {
+                    if (!confirmRemove('post', true)) return
+                    void runAction(item.id, () => removeAndAllowRetry(item.id))
+                  }}
                 >
                   Remove + retry
                 </button>
@@ -180,12 +197,12 @@ export default function ModerationPage() {
         </div>
       )}
 
-      <div style={{ display: 'grid', gap: 16 }}>
+      <div className="admin-stack">
         {commentItems.map((item) => {
           const busy = processing.has(item.id)
           return (
             <div key={item.id} className="admin-card" style={{ display: 'flex', gap: 20, alignItems: 'flex-start' }}>
-              <div style={{ flex: 1 }}>
+              <div className="admin-grow">
                 <div
                   style={{
                     fontSize: 15,
@@ -201,7 +218,7 @@ export default function ModerationPage() {
                 </div>
                 <div style={{ color: theme.textMuted, marginBottom: 4 }}>
                   @{item.author?.username} · LV {item.author?.level} · on “{item.questTitle}” ·{' '}
-                  {new Date(item.created_at).toLocaleString()}
+                  {formatVictoriaDateTime(item.created_at)}
                 </div>
                 <div style={{ color: theme.textDim, fontSize: 13, marginBottom: 6 }}>
                   {item.open_report_count} open report{item.open_report_count === 1 ? '' : 's'}
@@ -237,7 +254,10 @@ export default function ModerationPage() {
                   className="admin-btn"
                   style={{ background: theme.danger, color: theme.onPrimary, opacity: busy ? 0.5 : 1 }}
                   disabled={busy}
-                  onClick={() => runAction(item.id, () => removeCommentModeration(item.id))}
+                  onClick={() => {
+                    if (!confirmRemove('comment')) return
+                    void runAction(item.id, () => removeCommentModeration(item.id))
+                  }}
                 >
                   Remove
                 </button>
