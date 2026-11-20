@@ -3,13 +3,12 @@
 Durable state for the Nov 2026 audit-and-implementation campaign. One current status per item.
 Updated at every phase boundary. Historical notes are labelled as history.
 
-## Current continuation (Nov 11, 2026)
+## Current continuation (Nov 20, 2026) — card S stickers
 
-This continuation supersedes the session-specific Nov 10 baseline, conflict register and
-"next concrete action" below where they disagree. Current checkout: `cursor/cutouts-this-week-quests`
-at `9221463`; worktree was clean before the documentation reconciliation. Local tests passed:
-50 geofence assertions plus redemption tests, 159 mobile logic assertions, 9 quest-window
-cases, and TypeScript checks for both apps.
+Card S on `cursor/s-stickers`: migration `044_stickers.sql` (renumbered from PR #16's 041),
+sticker grant/revoke hooked into 043's `apply_completion_rewards` / `revoke` without redefining
+`normalize_completion_on_insert`, admin sticker library + upload pipeline, mobile drawer/board/
+Verified stamp, Sprite/Cutout removed. SQL not executed. Status: in checkout, locally tested.
 
 - Documentation reconciliation updated README, PRODUCT, ROADMAP, ARCHITECTURE, launch runbook,
   migration index, specs 01–07/index, UI overhaul plan, seed note and this ledger.

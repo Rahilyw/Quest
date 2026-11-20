@@ -15,6 +15,9 @@ import { useLocation } from '@/hooks/useLocation'
 import { useQuest } from '@/hooks/useQuests'
 import { track, type SubmissionBlockReason } from '@/lib/analytics'
 import { didLevelUp } from '@/lib/celebration'
+import { resolveBadgeSpec } from '@/lib/badgeFromDb'
+import type { BadgeSpec } from '@/lib/badgeCatalog'
+import type { Badge } from '@/lib/types'
 import { paramAsString } from '@/lib/routeParams'
 import { captureAttempt, type CapturedAttempt } from '@/lib/submissionAttempt'
 import { removeProofQuietly, submitCompletion } from '@/lib/submitCompletion'
@@ -35,6 +38,8 @@ interface CelebrationState {
   sponsorReward: string | null
   /** Badges this completion unlocked (same transaction as the insert). */
   newBadgeIds: string[]
+  /** First newly earned badge, for the Verified reward lead. */
+  earnedBadge: BadgeSpec | null
 }
 
 // 'queued': no signal, so the capture was saved to send later (plan Phase 3).
@@ -281,6 +286,7 @@ export default function Submit() {
             redemptionCode: null,
             sponsorReward: null,
             newBadgeIds: [],
+            earnedBadge: null,
           })
           return
         case 'rate_limited':
@@ -324,6 +330,17 @@ export default function Submit() {
       if (newStreak > previousStreak) track('streak_extended', { length: newStreak })
       else if (newStreak < previousStreak) track('streak_broken', { length: previousStreak })
 
+      let earnedBadge: BadgeSpec | null = null
+      if (result.newBadgeIds.length > 0) {
+        const { data: badgeRows } = await supabase
+          .from('badges')
+          .select('*')
+          .in('id', result.newBadgeIds)
+          .limit(1)
+        const badge = (badgeRows?.[0] ?? null) as Badge | null
+        if (badge) earnedBadge = resolveBadgeSpec(badge)
+      }
+
       setAlreadyCompleted(true)
       openCelebration({
         variant: 'success',
@@ -335,6 +352,7 @@ export default function Submit() {
         redemptionCode: result.redemptionCode,
         sponsorReward: quest.is_sponsored ? quest.sponsor_reward : null,
         newBadgeIds: result.newBadgeIds,
+        earnedBadge,
       })
     } catch {
       setFailMessage('That didn’t go through. Check your signal and try again.')
@@ -517,6 +535,7 @@ export default function Submit() {
                 redemptionCode: null,
                 sponsorReward: null,
                 newBadgeIds: [],
+                earnedBadge: null,
               })
             }
             style={styles.whiteBtn}
@@ -644,6 +663,7 @@ export default function Submit() {
         streakCount={celebration?.streakCount ?? 0}
         redemptionCode={celebration?.redemptionCode}
         sponsorReward={celebration?.sponsorReward}
+        earnedBadge={celebration?.earnedBadge ?? null}
         onDone={handleCelebrationDone}
         onShare={placePhoto && profile && quest ? () => setShareOpen(true) : undefined}
       />

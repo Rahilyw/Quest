@@ -4,7 +4,7 @@ import { useRouter } from 'expo-router'
 import { Ionicons } from '@expo/vector-icons'
 import { Avatar } from '@/components/Avatar'
 import { CommentsSheet } from '@/components/CommentsSheet'
-import { Cutout } from '@/components/Cutout'
+import { Sticker } from '@/components/Sticker'
 import { PhotoViewer } from '@/components/PhotoViewer'
 import { Pillow, PILLOW_SIZES } from '@/components/Pillow'
 import { ReportPostSheet } from '@/components/ReportPostSheet'
@@ -239,12 +239,7 @@ export function FeedBubble({ post, currentUserId, zIndex, overlap = true, onRepo
           ) : null}
         </View>
       </View>
-      <Cutout
-        uri={post.quest.cutout_url}
-        category={post.quest.category}
-        questTitle={post.quest.title}
-        role="row"
-      />
+      <Sticker uri={post.quest.cutout_url} size="row" />
       <PhotoViewer
         visible={viewerOpen}
         photos={[photo]}
