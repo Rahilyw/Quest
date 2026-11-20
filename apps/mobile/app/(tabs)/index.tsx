@@ -5,7 +5,7 @@ import { useRouter } from 'expo-router'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import Animated, { FadeIn, useReducedMotion } from 'react-native-reanimated'
 import { Avatar } from '@/components/Avatar'
-import { Sticker } from '@/components/Sticker'
+import { Sticker, questStickerAlt } from '@/components/Sticker'
 import { PenRing } from '@/components/scraps'
 import { Body, Heading, Sentence, Small, Title } from '@/components/ui/Text'
 import { useAuth } from '@/hooks/useAuth'
@@ -131,8 +131,18 @@ export default function ThisWeekScreen() {
             style={styles.xpBanner}
             accessibilityRole="text"
             accessibilityLiveRegion="polite"
+            accessibilityLabel={xpBanner.text}
           >
-            <Body color={COLOR.ink}>{xpBanner.text}</Body>
+            <Ionicons
+              name="flash-outline"
+              size={18}
+              color={COLOR.ink}
+              accessibilityElementsHidden
+              importantForAccessibility="no"
+            />
+            <Body color={COLOR.ink} style={styles.xpBannerText}>
+              {xpBanner.text}
+            </Body>
           </Animated.View>
         ) : null}
 
@@ -160,7 +170,13 @@ export default function ThisWeekScreen() {
                 You can do this anywhere. Start here.
               </Small>
             </View>
-            <Sticker uri={week.starterQuest.cutout_url} size="folder" tilt={6} style={styles.starterSticker} />
+            <Sticker
+              uri={week.starterQuest.cutout_url}
+              size="folder"
+              tilt={6}
+              style={styles.starterSticker}
+              alt={questStickerAlt(week.starterQuest)}
+            />
           </Pressable>
         ) : null}
 
@@ -329,6 +345,12 @@ const styles = StyleSheet.create({
     paddingHorizontal: SPACE.s4,
     paddingVertical: SPACE.s3,
     marginBottom: SPACE.s4,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: SPACE.s2,
+  },
+  xpBannerText: {
+    flex: 1,
   },
   starterCard: {
     minHeight: 144,

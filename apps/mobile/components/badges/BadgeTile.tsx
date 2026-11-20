@@ -2,6 +2,7 @@ import { Pressable, StyleSheet, Text, View } from 'react-native'
 import { Ionicons } from '@expo/vector-icons'
 import Animated, {
   useAnimatedStyle,
+  useReducedMotion,
   useSharedValue,
   withSpring,
 } from 'react-native-reanimated'
@@ -29,6 +30,7 @@ const SPRING = { damping: 14, stiffness: 260, mass: 0.6 }
 
 export function BadgeTile({ spec, earned, artSize, onDark, compact, onOpen }: Props) {
   const press = useSharedValue(0)
+  const reduceMotion = useReducedMotion()
 
   const tilt = useAnimatedStyle(() => ({
     transform: [
@@ -45,10 +47,10 @@ export function BadgeTile({ spec, earned, artSize, onDark, compact, onOpen }: Pr
   return (
     <Pressable
       onPressIn={() => {
-        press.value = withSpring(1, SPRING)
+        if (!reduceMotion) press.value = withSpring(1, SPRING)
       }}
       onPressOut={() => {
-        press.value = withSpring(0, SPRING)
+        if (!reduceMotion) press.value = withSpring(0, SPRING)
       }}
       onPress={() => onOpen(spec)}
       accessibilityRole="button"

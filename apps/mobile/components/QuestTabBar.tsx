@@ -1,13 +1,13 @@
 import { useCallback } from 'react'
-import { Pressable, StyleSheet, View } from 'react-native'
+import { Pressable, StyleSheet, Text, View } from 'react-native'
 import { Ionicons } from '@expo/vector-icons'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
-import Animated, { useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated'
+import Animated, { useAnimatedStyle, useReducedMotion, useSharedValue, withTiming } from 'react-native-reanimated'
 import type { BottomTabBarProps } from 'expo-router/tabs'
 import { Avatar } from '@/components/Avatar'
 import { useAuth } from '@/hooks/useAuth'
 import { useSubmissionQueue } from '@/hooks/useSubmissionQueue'
-import { COLOR, RADIUS, SHADOW } from '@/lib/theme'
+import { COLOR, RADIUS, SHADOW, TYPE } from '@/lib/theme'
 
 const PILL_TABS: { name: string; label: string; icon: keyof typeof Ionicons.glyphMap }[] = [
   { name: 'index', label: 'This week', icon: 'calendar-outline' },
@@ -68,7 +68,7 @@ export function QuestTabBar({ state, emitter, navigateToTab }: BottomTabBarProps
           username: profile?.username ?? 'You',
           uri: profile?.avatar_url,
         }}
-        dot={waiting > 0}
+        queueCount={waiting}
       />
     </View>
   )
@@ -80,16 +80,17 @@ function TabButton({
   focused,
   onPress,
   avatar,
-  dot,
+  queueCount = 0,
 }: {
   label: string
   icon?: keyof typeof Ionicons.glyphMap
   focused: boolean
   onPress: () => void
   avatar?: { username: string; uri?: string | null }
-  /** Something needs attention (queued proofs). The label says what. */
-  dot?: boolean
+  /** Count on the You badge; label also announces the queue. */
+  queueCount?: number
 }) {
+  const reduceMotion = useReducedMotion()
   const scale = useSharedValue(1)
   const animated = useAnimatedStyle(() => ({ transform: [{ scale: scale.value }] }))
 
@@ -97,10 +98,10 @@ function TabButton({
     <Pressable
       onPress={onPress}
       onPressIn={() => {
-        scale.value = withTiming(0.97, { duration: 120 })
+        if (!reduceMotion) scale.value = withTiming(0.97, { duration: 120 })
       }}
       onPressOut={() => {
-        scale.value = withTiming(1, { duration: 150 })
+        if (!reduceMotion) scale.value = withTiming(1, { duration: 150 })
       }}
       accessibilityRole="button"
       accessibilityLabel={label}
@@ -111,7 +112,13 @@ function TabButton({
         {avatar ? (
           <View style={[styles.avatarRing, focused && styles.avatarRingOn]}>
             <Avatar username={avatar.username} uri={avatar.uri} size={44} />
-            {dot ? <View style={styles.dot} pointerEvents="none" /> : null}
+            {queueCount > 0 ? (
+              <View style={styles.badge} pointerEvents="none" accessibilityElementsHidden>
+                <Text style={styles.badgeText} allowFontScaling={false}>
+                  {queueCount > 9 ? '9+' : String(queueCount)}
+                </Text>
+              </View>
+            ) : null}
           </View>
         ) : (
           <View style={[styles.iconBtn, focused && styles.iconBtnOn]}>
@@ -166,15 +173,23 @@ const styles = StyleSheet.create({
   avatarRingOn: {
     borderColor: COLOR.ink,
   },
-  dot: {
+  badge: {
     position: 'absolute',
-    top: -2,
-    right: -2,
-    width: 14,
-    height: 14,
+    top: -4,
+    right: -4,
+    minWidth: 20,
+    height: 20,
+    paddingHorizontal: 4,
     borderRadius: RADIUS.pill,
     backgroundColor: COLOR.ink,
     borderWidth: 2,
     borderColor: COLOR.white,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  badgeText: {
+    ...TYPE.micro,
+    color: COLOR.white,
+    lineHeight: 12,
   },
 })

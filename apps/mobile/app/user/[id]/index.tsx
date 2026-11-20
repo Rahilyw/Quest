@@ -178,7 +178,12 @@ export default function PublicProfile() {
     return (
       <View style={[styles.centerScreen, { paddingTop: insets.top }]}>
         <EmptyState title="Adventurer not found" subtitle="This profile doesn't exist anymore." />
-        <TouchableOpacity style={styles.backLink} onPress={() => router.back()}>
+        <TouchableOpacity
+          style={styles.backLink}
+          onPress={() => router.back()}
+          accessibilityRole="button"
+          accessibilityLabel="Go back"
+        >
           <Text style={styles.backLinkText}>← Go back</Text>
         </TouchableOpacity>
       </View>
@@ -350,14 +355,29 @@ export default function PublicProfile() {
       />
 
       <Modal transparent visible={menuOpen} animationType="fade" onRequestClose={() => setMenuOpen(false)}>
-        <Pressable style={styles.menuBackdrop} onPress={() => setMenuOpen(false)}>
+        <Pressable
+          style={styles.menuBackdrop}
+          onPress={() => setMenuOpen(false)}
+          accessibilityRole="button"
+          accessibilityLabel="Dismiss menu"
+        >
           <View style={[styles.menuSheet, { paddingBottom: insets.bottom + SPACING.md }]}>
             {isBlocked ? (
-              <TouchableOpacity style={styles.menuItem} onPress={handleUnblock} accessibilityRole="button">
+              <TouchableOpacity
+                style={styles.menuItem}
+                onPress={handleUnblock}
+                accessibilityRole="button"
+                accessibilityLabel={`Unblock ${user.username}`}
+              >
                 <Text style={styles.menuItemText}>Unblock @{user.username}</Text>
               </TouchableOpacity>
             ) : (
-              <TouchableOpacity style={styles.menuItem} onPress={confirmBlock} accessibilityRole="button">
+              <TouchableOpacity
+                style={styles.menuItem}
+                onPress={confirmBlock}
+                accessibilityRole="button"
+                accessibilityLabel={`Block ${user.username}`}
+              >
                 <Text style={styles.menuItemDanger}>Block @{user.username}</Text>
               </TouchableOpacity>
             )}
@@ -365,6 +385,7 @@ export default function PublicProfile() {
               style={styles.menuItem}
               onPress={() => setMenuOpen(false)}
               accessibilityRole="button"
+              accessibilityLabel="Cancel"
             >
               <Text style={styles.menuItemCancel}>Cancel</Text>
             </TouchableOpacity>
@@ -384,7 +405,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  backLink: { marginTop: SPACING.md, minHeight: 44, justifyContent: 'center' },
+  backLink: { marginTop: SPACING.md, minHeight: 48, justifyContent: 'center' },
   backLinkText: { color: COLORS.primary, fontSize: TYPE.small.fontSize, fontWeight: '700' },
   topBar: {
     flexDirection: 'row',
@@ -393,9 +414,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: SPACING.lg,
   },
   backBtn: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
+    width: 48,
+    height: 48,
+    borderRadius: 24,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -433,7 +454,7 @@ const styles = StyleSheet.create({
   },
   levelChipText: { color: COLOR.white, fontSize: TYPE.micro.fontSize, fontWeight: '900', letterSpacing: 0.5 },
   countsRow: { flex: 1, flexDirection: 'row', justifyContent: 'space-around' },
-  countCell: { alignItems: 'center', minWidth: 64, minHeight: 44, justifyContent: 'center' },
+  countCell: { alignItems: 'center', minWidth: 64, minHeight: 48, justifyContent: 'center' },
   countValue: { color: COLORS.textPrimary, fontSize: TYPE.heading.fontSize, fontWeight: '900' },
   countLabel: { color: COLORS.textMuted, fontSize: TYPE.micro.fontSize, fontWeight: '700', marginTop: 1 },
   metaBlock: { paddingHorizontal: SPACING.xl, marginTop: SPACING.lg },
@@ -451,7 +472,7 @@ const styles = StyleSheet.create({
     borderColor: COLORS.border,
     paddingVertical: SPACING.sm + 2,
     alignItems: 'center',
-    minHeight: 38,
+    minHeight: 48,
   },
   editBtnText: { color: COLORS.textPrimary, fontSize: TYPE.small.fontSize, fontWeight: '800' },
 })

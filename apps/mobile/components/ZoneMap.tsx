@@ -1,7 +1,8 @@
 /**
  * Small map of a quest's real geofence, shown on the camera screen (BRAND.md §7, "The zone").
  * Outlined dashed in the category's deep colour, filled with the category colour at 35%,
- * with the player's dot. Decorative for screen readers: the zone chip carries the status.
+ * with the player's ink dot (white ring). Dashed stroke + fill + player marker mean colour
+ * is never the only signal. Decorative for screen readers: the zone chip carries the status.
  */
 import { useEffect, useMemo, useRef } from 'react'
 import { StyleSheet, View } from 'react-native'

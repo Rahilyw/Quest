@@ -3,12 +3,11 @@
 Durable state for the Nov 2026 audit-and-implementation campaign. One current status per item.
 Updated at every phase boundary. Historical notes are labelled as history.
 
-## Current continuation (Nov 20, 2026) — card S stickers
+## Current continuation (Nov 20, 2026) — card E5 accessibility
 
-Card S on `cursor/s-stickers`: migration `044_stickers.sql` (renumbered from PR #16's 041),
-sticker grant/revoke hooked into 043's `apply_completion_rewards` / `revoke` without redefining
-`normalize_completion_on_insert`, admin sticker library + upload pipeline, mobile drawer/board/
-Verified stamp, Sprite/Cutout removed. SQL not executed. Status: in checkout, locally tested.
+Card E5 on `cursor/e5-a11y`: 48pt targets, Pressable labels/roles, sticker alts, 130% text caps,
+reduce-motion on tab/badge press, colour+icon/count signals (zone, chips, queue, XP banner).
+Findings in `docs/design/A11Y-PASS-2026-11.md`. Status: locally tested. SQL not executed.
 
 - Documentation reconciliation updated README, PRODUCT, ROADMAP, ARCHITECTURE, launch runbook,
   migration index, specs 01–07/index, UI overhaul plan, seed note and this ledger.

@@ -173,7 +173,12 @@ export default function CompletionScreen() {
           title="Completion unavailable"
           subtitle="This post was removed or isn't visible to you."
         />
-        <TouchableOpacity style={styles.backLink} onPress={() => router.back()}>
+        <TouchableOpacity
+          style={styles.backLink}
+          onPress={() => router.back()}
+          accessibilityRole="button"
+          accessibilityLabel="Go back"
+        >
           <Text style={styles.backLinkText}>← Go back</Text>
         </TouchableOpacity>
       </View>
@@ -320,7 +325,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  backLink: { marginTop: SPACING.md, minHeight: 44, justifyContent: 'center' },
+  backLink: { marginTop: SPACING.md, minHeight: 48, justifyContent: 'center' },
   backLinkText: { color: COLORS.primary, fontSize: TYPE.small.fontSize, fontWeight: '700' },
   topBar: {
     flexDirection: 'row',
@@ -330,9 +335,9 @@ const styles = StyleSheet.create({
     marginBottom: SPACING.sm,
   },
   backBtn: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
+    width: 48,
+    height: 48,
+    borderRadius: 24,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -372,8 +377,8 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 5,
-    minWidth: 44,
-    minHeight: 44,
+    minWidth: 48,
+    minHeight: 48,
     paddingHorizontal: SPACING.sm,
     justifyContent: 'center',
   },

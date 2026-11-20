@@ -1,7 +1,8 @@
 import { Image, Pressable, StyleSheet, View } from 'react-native'
-import { Sticker } from '@/components/Sticker'
+import { Ionicons } from '@expo/vector-icons'
+import { Sticker, questStickerAlt } from '@/components/Sticker'
 import { Micro, Name, Small } from '@/components/ui/Text'
-import { COLOR, RADIUS, getCategory, type CategoryKey } from '@/lib/theme'
+import { COLOR, RADIUS, SPACE, getCategory, type CategoryKey } from '@/lib/theme'
 
 /**
  * A category folder: deep back panel, colour front, peeking covers and one cutout.
@@ -53,9 +54,18 @@ export function Folder({
         </View>
       </View>
       <View style={[styles.front, { backgroundColor: cat.color }]}>
-        <Name color={cat.onColor} numberOfLines={1}>
-          {cat.label}
-        </Name>
+        <View style={styles.catHead}>
+          <Ionicons
+            name={cat.icon as keyof typeof Ionicons.glyphMap}
+            size={16}
+            color={cat.onColor}
+            accessibilityElementsHidden
+            importantForAccessibility="no"
+          />
+          <Name color={cat.onColor} numberOfLines={1} style={styles.catLabel}>
+            {cat.label}
+          </Name>
+        </View>
         <Small color={cat.onColor}>{count}</Small>
         {unplayed > 0 ? (
           <View style={styles.badge}>
@@ -64,7 +74,12 @@ export function Folder({
         ) : null}
       </View>
       <View style={styles.cutout} pointerEvents="none">
-        <Sticker uri={cutoutUri} size="folder" tilt={rotation} />
+        <Sticker
+          uri={cutoutUri}
+          size="folder"
+          tilt={rotation}
+          alt={cutoutTitle ? questStickerAlt({ title: cutoutTitle }) : undefined}
+        />
       </View>
     </Pressable>
   )
@@ -121,6 +136,14 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 12,
     justifyContent: 'flex-end',
+  },
+  catHead: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: SPACE.s1 + 2,
+  },
+  catLabel: {
+    flexShrink: 1,
   },
   badge: {
     position: 'absolute',

@@ -95,7 +95,11 @@ export function CommentsSheet({ visible, completionId, currentUserId, onClose, o
         </Pressable>
         <View style={styles.commentBody}>
           <View style={styles.commentMeta}>
-            <Pressable onPress={() => openProfile(comment.user_id)} accessibilityRole="button">
+            <Pressable
+              onPress={() => openProfile(comment.user_id)}
+              accessibilityRole="button"
+              accessibilityLabel={`View ${comment.user.username}'s profile`}
+            >
               <Name numberOfLines={1}>{comment.user.username}</Name>
             </Pressable>
             <Small tone="faint">{formatTimeAgo(comment.created_at)}</Small>
@@ -143,7 +147,12 @@ export function CommentsSheet({ visible, completionId, currentUserId, onClose, o
 
   return (
     <Modal transparent visible={visible} animationType="slide" onRequestClose={close}>
-      <Pressable style={styles.backdrop} onPress={close} />
+      <Pressable
+        style={styles.backdrop}
+        onPress={close}
+        accessibilityRole="button"
+        accessibilityLabel="Dismiss comments"
+      />
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
         style={styles.sheetWrap}
