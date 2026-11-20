@@ -13,3 +13,5 @@ Base: `cursor/cutouts-this-week-quests` @ `7b587ae`. Started 2026-11-20.
 | 7 | P | `cursor/p-pilot-admin` | `18556b4` | 282 | 50 + redemption | ok | ok | ok (/pilot) | 126 | Soft-fallback for missing 043/044. SQL not executed. |
 | 8 | F | `cursor/f-feedback` | `82b4c28` | 290 (+8 feedback) | 50 + redemption | ok | ok | n/a | 126 | package.json conflict with E4 test script resolved by combining both entries. |
 | 9 | E1 | `cursor/e1-tokens` | `8b62447` | 290 passed | 50 + redemption | ok | n/a | n/a | **0** | CI token job strict, no continue-on-error. MEDAL tokens from BRAND §6c. |
+| 10 | E2 | `cursor/e2-skeletons` | `778c89f` | 290 passed | 50 + redemption | ok | n/a | n/a | **0** | Page-load skeletons; in-button Sending spinners kept. |
+
