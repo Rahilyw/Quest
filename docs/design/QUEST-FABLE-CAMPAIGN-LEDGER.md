@@ -109,6 +109,15 @@ Build 1 had merged R through E2 into `cursor/big-build` (log: [BIG-BUILD-LOG.md]
 E5 was in progress in the working tree and D had not started. The owner run sheet has nothing
 ticked, so **041–044 have never been executed anywhere**.
 
+### Continuation — November 20, 2026, big build finished
+
+- `cursor/big-build` tip `f215015` (plus Finish docs): cards R, Q, S, V, C, E4, P, F, E1, E2, E5
+  are merged and **locally tested**. Raw tokens **0**. Migration **044** is in checkout, **not applied**.
+- Card D (duo, migration **045**) is on `cursor/d-duo` tip `66ac0b3`, **PR open, held** — not merged
+  into big-build. SQL for 045 was not executed.
+- Owner track still: verify 039; apply 041 → 042 → 043 → 044; then TestFlight #1 from the
+  big-build PR after review. No hosted services were touched by this run.
+
 [CURSOR-BUILD-2-2026-11-20.md](CURSOR-BUILD-2-2026-11-20.md) plans "prove the backend". It starts
 after build 1 finishes and has six cards:
 

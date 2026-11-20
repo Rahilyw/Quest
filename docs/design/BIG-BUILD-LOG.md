@@ -15,4 +15,5 @@ Base: `cursor/cutouts-this-week-quests` @ `7b587ae`. Started 2026-11-20.
 | 9 | E1 | `cursor/e1-tokens` | `8b62447` | 290 passed | 50 + redemption | ok | n/a | n/a | **0** | CI token job strict, no continue-on-error. MEDAL tokens from BRAND §6c. |
 | 10 | E2 | `cursor/e2-skeletons` | `778c89f` | 290 passed | 50 + redemption | ok | n/a | n/a | **0** | Page-load skeletons; in-button Sending spinners kept. |
 | 11 | E5 | `cursor/e5-a11y` | `c2eb3bd` | 290 passed | 50 + redemption | ok | n/a | n/a | **0** | Findings in A11Y-PASS-2026-11.md. Also brought CURSOR-BUILD-2 doc + hard-rules tweak (agent extras). |
+| 12 | D | `cursor/d-duo` | — (not merged) | party tests pass | 50 + redemption | ok | ok | ok | **0** | Tip `66ac0b3`. Migration **045** not applied. Held for R1. |
 
