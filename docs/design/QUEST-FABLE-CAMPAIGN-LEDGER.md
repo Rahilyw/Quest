@@ -127,6 +127,15 @@ after build 1 finishes and has six cards:
 - M3: generated database types with a CI drift check;
 - M4: Deno tests for the edge functions;
 - Z: an independent security review;
+
+### Continuation — November 20, 2026, build 2 / card M1
+
+- Integration branch `cursor/build-2` cut from `cursor/big-build` @ `e3c8f42` (PR #15 still open to
+  `main`, so base is big-build, not main). Log: [BUILD-2-LOG.md](BUILD-2-LOG.md).
+- Card M1 adds `scripts/db-local/*` and `.github/workflows/db-local.yml`. Clean-install order is
+  the executed CI recipe. **F-005 / DB-01 resolved for local stacks** once that workflow is green;
+  041–044 remain **not applied** on production. No hosted SQL was run. Docker was not running on
+  the agent machine — CI is the evidence.
 - M5: the same proof for 045, on the duo line.
 
 Owner recommendation: hold applying 041–044 to production until M2 is green, so any bug is fixed
