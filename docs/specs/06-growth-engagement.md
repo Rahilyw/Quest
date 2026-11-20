@@ -149,6 +149,26 @@ People submit from breakwaters and summits with one bar of signal; a failed uplo
 - Foreground retry with backoff; badge on the profile tab while anything is queued; the queued `capturedAt`/coords are what get submitted (the player was there when it counted).
 - Geofence is validated server-side against the *captured* coordinates; the rate-limit and mock-location checks still apply on flush.
 
+### Implementation note (Nov 19, 2026)
+
+**State:** in checkout and locally tested (`tsc`; 17 queue tests in `__tests__/submissionQueue.test.js`).
+Not device-tested. It needs migration 042, which adds the storage upsert and delete policies, on the server.
+
+**Where:**
+- `lib/submitCompletion.ts`: the one pipeline, shared by the camera and the queue.
+- `lib/submissionQueue.js`: the rules.
+- `lib/submissionQueueStore.ts`: AsyncStorage, plus photos in `documentDirectory/queue/<userId>/`.
+- `hooks/useSubmissionQueue.tsx`: a provider in the root layout.
+- `components/SubmissionQueueBanner.tsx`, `components/WaitingToSend.tsx`, and the You-tab dot in `QuestTabBar`.
+
+**Differences from the text above:**
+- **When a capture queues:** only when there is no server answer (`network`). A rate limit stays on the camera screen as before, and a geofence or other rejection is final.
+- **Size and age limits:** at most 3 proofs, one per quest, each removed after 72 hours. A fourth proof for a different quest is refused, not swapped for an older one.
+- **Retry timing:** retries back off 30 s → 2 min → 10 min → 30 min → hourly, and run when the app returns to the foreground or from a timer while it is open.
+- **Whose time counts:** `completed_at` is still the server's time when the proof arrives, not `capturedAt` (F-003). A proof flushed after Sunday midnight counts toward the new week. The geofence is checked against the captured coordinates.
+- **After a background send:** a one-line banner appears ("Sent: <quest>.") with a link to the completion; the celebration is not replayed.
+- **Clean-up:** the queue is purged on sign-out and on account deletion.
+
 ## 6. Sequencing & non-goals
 
 Original order: 4 (starter quest, ~a day) → 2 (recap card) → 3 (XP events) → 5 (offline queue) → 1 (duo quests — biggest lift, biggest payoff).

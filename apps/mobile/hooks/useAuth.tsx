@@ -3,6 +3,7 @@ import { Session } from '@supabase/supabase-js'
 import { supabase } from '@/lib/supabase'
 import { identify, resetAnalytics } from '@/lib/analytics'
 import { clearPushToken } from '@/lib/notifications'
+import { purgeQueue } from '@/lib/submissionQueueStore'
 import { ensureUserProfile } from '@/lib/profiles'
 import type { UserProfile } from '@/lib/types'
 
@@ -68,6 +69,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   async function signOut() {
     if (session?.user.id) {
+      // Queued proofs belong to this player only (plan Phase 3).
+      await purgeQueue(session.user.id)
       await clearPushToken(session.user.id)
     }
     resetAnalytics()

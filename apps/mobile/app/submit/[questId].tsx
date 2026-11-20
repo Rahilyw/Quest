@@ -16,17 +16,11 @@ import { useQuest } from '@/hooks/useQuests'
 import { track, type SubmissionBlockReason } from '@/lib/analytics'
 import { didLevelUp } from '@/lib/celebration'
 import { paramAsString } from '@/lib/routeParams'
-import {
-  captureAttempt,
-  classifyInsertError,
-  photoUrlMatchesPath,
-  placePhotoPath,
-  selfiePhotoPath,
-  type CapturedAttempt,
-} from '@/lib/submissionAttempt'
+import { captureAttempt, type CapturedAttempt } from '@/lib/submissionAttempt'
+import { removeProofQuietly, submitCompletion } from '@/lib/submitCompletion'
+import { useSubmissionQueue } from '@/hooks/useSubmissionQueue'
 import { supabase } from '@/lib/supabase'
 import { COLOR, FONT, RADIUS, SPACE } from '@/lib/theme'
-import { readUriAsArrayBuffer } from '@/lib/uploadImage'
 import { outsideZoneCopy } from '@/lib/zoneStatus'
 import { ZoneMap } from '@/components/ZoneMap'
 
@@ -43,17 +37,8 @@ interface CelebrationState {
   newBadgeIds: string[]
 }
 
-type Step = 'place' | 'selfie' | 'upload' | 'failed'
-
-/** Best effort: a failed delete leaves an orphan file, it never blocks the player. */
-async function removeQuietly(bucket: 'proof-photos' | 'proof-selfies', path: string | null) {
-  if (!path) return
-  try {
-    await supabase.storage.from(bucket).remove([path])
-  } catch {
-    // Orphaned file; storage cleanup can catch it later.
-  }
-}
+// 'queued': no signal, so the capture was saved to send later (plan Phase 3).
+type Step = 'place' | 'selfie' | 'upload' | 'failed' | 'queued'
 
 export default function Submit() {
   const params = useLocalSearchParams<{ questId: string | string[] }>()
@@ -70,6 +55,7 @@ export default function Submit() {
     getSubmissionCoords,
   } = useLocation()
   const { quest, loading: questLoading } = useQuest(questId)
+  const { enqueueCapture } = useSubmissionQueue()
   const [camPermission, requestCamPermission] = useCameraPermissions()
 
   const cameraRef = useRef<CameraView>(null)
@@ -241,73 +227,49 @@ export default function Submit() {
     const previousStreak = profile.current_streak
     setSubmitting(true)
 
-    // One path per capture: a retry overwrites (or skips) instead of adding a file.
-    const placePath = placePhotoPath(userId, questId, captured.attemptId)
     try {
-      if (uploadedPlacePath.current !== placePath) {
-        const placeData = await readUriAsArrayBuffer(placePhoto)
-        const { error: placeError } = await supabase.storage
-          .from('proof-photos')
-          .upload(placePath, placeData, { contentType: 'image/jpeg', upsert: true })
-        if (placeError) {
-          setFailMessage('That photo didn’t upload. Your shot is saved here: try again when you have signal.')
+      insertRejected.current = false
+      const result = await submitCompletion({
+        userId,
+        questId,
+        attempt: captured,
+        placeUri: placePhoto,
+        selfieUri: selfiePhoto,
+        isSponsored: quest.is_sponsored,
+        uploadedPlacePath: uploadedPlacePath.current,
+      })
+      uploadedPlacePath.current = result.uploadedPlacePath
+      // Any server answer other than a duplicate means no row points at this
+      // attempt's photo. A network failure leaves that unknown.
+      insertRejected.current = result.kind === 'rate_limited' || result.kind === 'rejected'
+
+      switch (result.kind) {
+        case 'network': {
+          // No server answer: keep the capture and send it when the signal is back.
+          // It is not verified until the server accepts it.
+          const { accepted } = await enqueueCapture({
+            questId,
+            questTitle: quest.title,
+            xpReward: quest.xp_reward,
+            isSponsored: quest.is_sponsored,
+            attempt: captured,
+            placeUri: placePhoto,
+            selfieUri: selfiePhoto,
+            placeUploaded: !!result.uploadedPlacePath,
+          })
+          if (accepted) {
+            setStep('queued')
+            return
+          }
+          setFailMessage(
+            result.stage === 'upload'
+              ? 'That photo didn’t upload, and it couldn’t be saved for later. Try again when you have signal.'
+              : 'That didn’t go through, and it couldn’t be saved for later. Check your signal and try again.',
+          )
           setStep('failed')
           return
         }
-        uploadedPlacePath.current = placePath
-      }
-      const { data: { publicUrl } } = supabase.storage.from('proof-photos').getPublicUrl(placePath)
-
-      let selfiePath: string | null = null
-      if (selfiePhoto) {
-        try {
-          selfiePath = selfiePhotoPath(userId, questId, captured.attemptId)
-          const selfieData = await readUriAsArrayBuffer(selfiePhoto)
-          const { error: selfieError } = await supabase.storage
-            .from('proof-selfies')
-            .upload(selfiePath, selfieData, { contentType: 'image/jpeg', upsert: true })
-          if (selfieError) selfiePath = null
-        } catch {
-          selfiePath = null
-        }
-      }
-
-      insertRejected.current = false
-      const { data: completion, error: insertError } = await supabase
-        .from('completions')
-        .insert({
-          user_id: userId,
-          quest_id: questId,
-          photo_url: publicUrl,
-          selfie_url: selfiePath,
-          lat: captured.lat,
-          lng: captured.lng,
-          gps_accuracy: captured.accuracy,
-          completed_at: new Date().toISOString(),
-        })
-        .select('id, completed_at')
-        .single()
-
-      if (insertError) {
-        const kind = classifyInsertError(insertError)
-        // Any server answer other than a duplicate means no row points at this
-        // attempt's photo. A network failure leaves that unknown.
-        insertRejected.current = kind !== 'network' && kind !== 'duplicate'
-        if (kind === 'duplicate') {
-          // A retry whose first insert landed (response lost) also ends here, and
-          // that row uses this attempt's photo. Only delete when the existing
-          // completion is confirmed to be a different attempt.
-          const { data: existing } = await supabase
-            .from('completions')
-            .select('photo_url')
-            .eq('user_id', userId)
-            .eq('quest_id', questId)
-            .maybeSingle()
-          if (existing && !photoUrlMatchesPath(existing.photo_url, placePath)) {
-            await removeQuietly('proof-photos', placePath)
-            await removeQuietly('proof-selfies', selfiePath)
-            uploadedPlacePath.current = null
-          }
+        case 'duplicate':
           setAlreadyCompleted(true)
           openCelebration({
             variant: 'alreadyDone',
@@ -321,28 +283,23 @@ export default function Submit() {
             newBadgeIds: [],
           })
           return
-        }
-
-        await removeQuietly('proof-selfies', selfiePath)
-        // RATE_LIMITED shares SQLSTATE 23514 with GEOFENCE_VIOLATION, so the
-        // classifier checks it first.
-        if (kind === 'rate_limited') {
+        case 'rate_limited':
           trackSubmissionBlocked('rate_limited')
           setFailMessage('You’re submitting quests too quickly. Give it a few minutes, then try again.')
           setStep('failed')
-        } else if (kind === 'outside_zone') {
-          // Final for this capture: the player has to shoot again, so this
-          // attempt's photo would never be used.
-          await removeQuietly('proof-photos', placePath)
-          uploadedPlacePath.current = null
+          return
+        case 'outside_zone':
+          // Final for this capture: the player has to shoot again.
           trackSubmissionBlocked('outside_zone')
           Alert.alert('Too far away', outsideZoneCopy(quest, captured))
           setStep('place')
-        } else {
+          return
+        case 'rejected':
           setFailMessage('That didn’t go through. Check your signal and try again.')
           setStep('failed')
-        }
-        return
+          return
+        case 'verified':
+          break
       }
 
       track('proof_submitted', {
@@ -367,29 +324,6 @@ export default function Submit() {
       if (newStreak > previousStreak) track('streak_extended', { length: newStreak })
       else if (newStreak < previousStreak) track('streak_broken', { length: previousStreak })
 
-      let redemptionCode: string | null = null
-      if (quest.is_sponsored && completion?.id) {
-        const { data: reward } = await supabase.rpc('own_completion_reward', {
-          p_completion_id: completion.id,
-        })
-        if (reward && typeof reward === 'object' && !Array.isArray(reward)) {
-          const code = (reward as { redemption_code?: unknown }).redemption_code
-          redemptionCode = typeof code === 'string' ? code : null
-        }
-      }
-
-      // Badge unlocks run in the insert's transaction, so their earned_at equals
-      // the server-set completed_at. Anything at or after it is new.
-      let newBadgeIds: string[] = []
-      if (completion?.completed_at) {
-        const { data: earned } = await supabase
-          .from('user_badges')
-          .select('badge_id')
-          .eq('user_id', userId)
-          .gte('earned_at', completion.completed_at)
-        newBadgeIds = (earned ?? []).map((row) => row.badge_id)
-      }
-
       setAlreadyCompleted(true)
       openCelebration({
         variant: 'success',
@@ -398,11 +332,11 @@ export default function Submit() {
         level: newLevel,
         levelUp: didLevelUp(previousXp, newXp),
         streakCount: newStreak,
-        redemptionCode,
+        redemptionCode: result.redemptionCode,
         sponsorReward: quest.is_sponsored ? quest.sponsor_reward : null,
-        newBadgeIds,
+        newBadgeIds: result.newBadgeIds,
       })
-    } catch (err) {
+    } catch {
       setFailMessage('That didn’t go through. Check your signal and try again.')
       setStep('failed')
     } finally {
@@ -420,6 +354,7 @@ export default function Submit() {
     requiresLocation,
     capturedInZone,
     refreshProfile,
+    enqueueCapture,
   ])
 
   useEffect(() => {
@@ -463,7 +398,7 @@ export default function Submit() {
    */
   function abandonAttempt() {
     if (insertRejected.current && uploadedPlacePath.current) {
-      void removeQuietly('proof-photos', uploadedPlacePath.current)
+      void removeProofQuietly('proof-photos', uploadedPlacePath.current)
     }
     uploadedPlacePath.current = null
     insertRejected.current = false
@@ -603,6 +538,23 @@ export default function Submit() {
             accessibilityLabel="Allow camera"
           >
             <Body style={styles.btnLabel}>Allow camera</Body>
+          </Pressable>
+        </View>
+      ) : step === 'queued' ? (
+        <View style={styles.message}>
+          <Body color={COLOR.white} style={styles.messageText} accessibilityLiveRegion="polite">
+            Saved. We’ll send it when you’re back online.
+          </Body>
+          <Small color={COLOR.inkFaint} style={styles.messageText}>
+            It counts once it arrives. You’ll find it on You until then.
+          </Small>
+          <Pressable
+            onPress={() => router.back()}
+            style={styles.whiteBtn}
+            accessibilityRole="button"
+            accessibilityLabel="Done"
+          >
+            <Body style={styles.btnLabel}>Done</Body>
           </Pressable>
         </View>
       ) : step === 'failed' ? (

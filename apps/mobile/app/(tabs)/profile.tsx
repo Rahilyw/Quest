@@ -7,6 +7,7 @@ import { Avatar } from '@/components/Avatar'
 import { BadgeVisual } from '@/components/badges/BadgeVisual'
 import { Cutout } from '@/components/Cutout'
 import { Sprite } from '@/components/Sprite'
+import { WaitingToSend } from '@/components/WaitingToSend'
 import { Body, Heading, Name, Small, Title } from '@/components/ui/Text'
 import { useAuth } from '@/hooks/useAuth'
 import { useFollow } from '@/hooks/useFollow'
@@ -227,6 +228,8 @@ export default function Profile() {
             <Small>Edit profile</Small>
           </Pressable>
         </View>
+
+        <WaitingToSend />
 
         {rewards.length > 0 ? (
           <View style={styles.rewards}>

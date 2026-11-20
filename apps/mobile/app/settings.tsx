@@ -11,6 +11,7 @@ import { LEGAL_URLS } from '@/lib/constants'
 import { supabase } from '@/lib/supabase'
 import { registerForPushNotifications, clearPushToken } from '@/lib/notifications'
 import { track, resetAnalytics } from '@/lib/analytics'
+import { purgeQueue } from '@/lib/submissionQueueStore'
 import { COLOR, RADIUS, SPACE } from '@/lib/theme'
 
 const WEEKLY_DIGEST_KEY = 'pref_weekly_digest'
@@ -133,6 +134,7 @@ export default function Settings() {
       track('account_deleted')
       const { error } = await supabase.rpc('delete_own_account')
       if (error) throw error
+      if (session?.user.id) await purgeQueue(session.user.id)
       resetAnalytics()
       // The auth user no longer exists, so a global sign-out would 403:
       // clear the local session only.
