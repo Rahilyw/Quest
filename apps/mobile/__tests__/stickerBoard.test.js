@@ -155,8 +155,9 @@ test('medal palettes use the category brights, not old Tailwind colours', () => 
   for (const gold of ['#F6B93B', '#FFE9A8', '#B97709']) assert.ok(src.toUpperCase().includes(gold), `gold token ${gold}`)
 })
 
-test('migration 041 locks placements to their owner and follows feed privacy', () => {
-  const sql = read('supabase/migrations/041_stickers.sql')
+test('migration 044 locks placements to their owner and follows feed privacy', () => {
+  const sql = read('supabase/migrations/044_stickers.sql')
+  assert.ok(/Requires 043 applied/.test(sql), 'header requires 043')
   assert.ok(/NOT APPLIED TO PRODUCTION/.test(sql))
   assert.ok(/CHECK \(tilt >= -12 AND tilt <= 12\)/.test(sql))
   assert.ok(/CHECK \(scale >= 0\.6 AND scale <= 1\.6\)/.test(sql))
@@ -164,6 +165,38 @@ test('migration 041 locks placements to their owner and follows feed privacy', (
   assert.ok(/WITH CHECK \(user_id = auth\.uid\(\)\)/.test(sql))
   assert.ok(/p\.feed_public = true/.test(sql) && /is_blocked_pair/.test(sql))
   assert.ok(/GRANT UPDATE \(x, y, tilt, scale, z\) ON sticker_placements TO authenticated/.test(sql))
+  assert.ok(/GRANT SELECT \(cutout_alt\) ON TABLE quests TO anon, authenticated/.test(sql))
+})
+
+test('044 hooks stickers into 043 rewards without redefining normalize', () => {
+  const sql = read('supabase/migrations/044_stickers.sql')
+  assert.ok(!/CREATE OR REPLACE FUNCTION normalize_completion_on_insert/.test(sql), 'must not redefine normalize')
+  assert.ok(/CREATE OR REPLACE FUNCTION apply_completion_rewards\(p_completion_id uuid\)/.test(sql))
+  assert.ok(/INSERT INTO user_stickers/.test(sql) && /FROM stickers s/.test(sql))
+  assert.ok(/CREATE OR REPLACE FUNCTION revoke_completion_rewards\(\)/.test(sql))
+  assert.ok(/DELETE FROM user_stickers/.test(sql))
+  // XP path from 043 preserved: pay/revoke stored award
+  assert.ok(/coalesce\(c\.xp_awarded, q\.xp_reward, 0\)/.test(sql))
+  assert.ok(/coalesce\(NEW\.xp_awarded, q\.xp_reward\)/.test(sql))
+  assert.ok(/REVOKE ALL ON FUNCTION apply_completion_rewards\(uuid\) FROM PUBLIC, anon, authenticated/.test(sql))
+  assert.ok(/REVOKE ALL ON FUNCTION revoke_completion_rewards\(\) FROM PUBLIC, anon, authenticated/.test(sql))
+  for (const name of [
+    'enforce_sticker_placement_limit',
+    'sync_quest_sticker',
+    'grant_new_sticker_to_qualified',
+    'grant_badge_stickers',
+    'can_view_sticker_page',
+  ]) {
+    const fnIdx = sql.indexOf(`FUNCTION ${name}`)
+    assert.ok(fnIdx !== -1, `${name} defined`)
+    const window = sql.slice(fnIdx, fnIdx + 400)
+    assert.ok(/SET search_path = public, extensions, pg_temp/.test(window), `${name} must set search_path`)
+  }
+  assert.ok(/REVOKE EXECUTE ON FUNCTION enforce_sticker_placement_limit\(\)/.test(sql))
+  assert.ok(/REVOKE EXECUTE ON FUNCTION sync_quest_sticker\(\)/.test(sql))
+  assert.ok(/REVOKE EXECUTE ON FUNCTION grant_new_sticker_to_qualified\(\)/.test(sql))
+  assert.ok(/REVOKE EXECUTE ON FUNCTION grant_badge_stickers\(\)/.test(sql))
+  assert.ok(/REVOKE EXECUTE ON FUNCTION can_view_sticker_page\(UUID\) FROM PUBLIC, anon/.test(sql))
 })
 
 console.log(`\n${passed} sticker tests passed`)
