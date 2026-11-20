@@ -1,8 +1,8 @@
 # Migration index and rollout notes
 
-The baseline schema is `20260619010246_initial_schema.sql`; numbered follow-ups are `002`–`044`.
-**041–044 are in the checkout only; none has been applied anywhere. Apply them in order
-041 → 042 → 043 → 044, running each file's "Verifying" block before the next.**
+The baseline schema is `20260619010246_initial_schema.sql`; numbered follow-ups are `002`–`045`.
+**041–045 are in the checkout only; none has been applied anywhere. Apply them in order
+041 → 042 → 043 → 044 → 045, running each file's "Verifying" block before the next.**
 There is no `001_initial_schema.sql`. The Nov 10, 2026 runbook reports the existing Quest project
 has the baseline and migrations through 038 applied; that report was not independently re-queried.
 **039 and 040: Applied to production (`xuviwarpgvxzpouqesrv`) by the owner on Nov 11, 2026 with `npx supabase db push --remote --include-all`. The "Verifying 039" checks below have not been recorded as run.**
@@ -423,6 +423,70 @@ ROLLBACK;
 | `042_proof_photo_owner_policies.sql` | Plan Phase 1d. UPDATE and DELETE policies on `proof-photos` for the caller's own folder, only for objects none of their completions reference. Lets the submit screen upsert to its fixed per-attempt path and delete a failed attempt's photo (both were RLS no-ops before). **Not applied.** |
 | `043_xp_events.sql` | Spec 06 §3, plan Phase 4a. **Requires 041.** `completions.xp_awarded` (backfilled to `xp_reward`, then NOT NULL) and `xp_reason`, both column-granted. `xp_events` (multiplier / win_back rows; RLS on, no client policies). `normalize_completion_on_insert` keeps 038's logic and stores the award: highest of global/quest event and personal win-back (consumed), first-finisher ×1.5 under an advisory lock, capped at ×3. `apply_completion_rewards(uuid)` pays the stored award (old `(uuid, uuid)` dropped); revoke, `leaderboard`, `own_week_recap`, `enqueue_week_recap` sum `coalesce(xp_awarded, xp_reward)`. `active_xp_boosts()` and `own_completion_reward` (+`xp_awarded`, `xp_reason`) for players. `enqueue_win_back()` + `win_back_sends` on 00:00 and 01:00 UTC with a 17:00 Victoria guard. See "Verifying 043". **In checkout only; not applied.** |
 | `044_stickers.sql` | Card S / BRAND.md §6–§7. **Requires 043.** `quests.cutout_alt` (column-granted); `stickers`, `user_stickers`, `sticker_placements`; sync from `quests.cutout_url`; grant/revoke hooked into 043's `apply_completion_rewards` / `revoke_completion_rewards` (does not redefine `normalize_completion_on_insert` or change `xp_awarded`); badge/season/manual library stickers; placement RLS (owner writes, public pages honour `feed_public` and blocks); 60-sticker board cap. See "Verifying 044". **In checkout only; not applied.** |
+| `045_duo_quests.sql` | Spec 06 §1 / card D. **Requires 043 and 044.** `quests.min_party_size` (1\|2, column-granted); `quest_parties` / `quest_party_members` (RLS members-read); RPCs `create_party` / `join_party` / `leave_party` / `own_party` (10/hour); redefines `normalize_completion_on_insert` from 043 keeping all XP award logic, adds `PARTY_REQUIRED` gate and duo bonus on the second member; AFTER INSERT pays the first member and inserts `notifications` kind `duo_bonus`; `evaluate_badge_unlock` gains `recruits` + Recruiter badge seed. See "Verifying 045". **In checkout only; not applied.** |
+
+## Verifying 045 (duo quests)
+
+**Status: in checkout, text-checked only.** `apps/mobile/__tests__/party.test.js`
+checks the SQL text and pure lobby helpers. Nothing in 045 has been executed against a
+database. **Requires 043 and 044 applied.**
+
+### Structure and grants
+
+```sql
+SELECT has_column_privilege('authenticated', 'quests', 'min_party_size', 'SELECT') AS party_authed,
+       has_column_privilege('anon',          'quests', 'min_party_size', 'SELECT') AS party_anon;
+-- expect: true / true
+
+SELECT has_table_privilege('authenticated', 'quest_parties', 'SELECT') AS parties_read,
+       has_table_privilege('authenticated', 'quest_party_members', 'SELECT') AS members_read,
+       has_table_privilege('authenticated', 'quest_parties', 'INSERT') AS parties_insert;
+-- expect: true / true / false
+
+SELECT p.oid::regprocedure,
+       has_function_privilege('authenticated', p.oid, 'EXECUTE') AS authed,
+       has_function_privilege('anon', p.oid, 'EXECUTE') AS anon
+  FROM pg_proc p
+ WHERE p.proname IN (
+   'create_party', 'join_party', 'leave_party', 'own_party',
+   'normalize_completion_on_insert', 'apply_duo_party_on_completion',
+   'generate_party_code', 'enforce_party_member_cap'
+ );
+-- expect: create/join/leave/own true/false; normalize/apply/generate/enforce false/false
+
+-- Alphabet and length
+SELECT party_code_alphabet() AS alphabet;
+-- expect: ABCDEFGHJKMNPQRSTUVWXYZ23456789
+```
+
+### Behaviour (run in a transaction and roll back)
+
+```sql
+-- 1. One open party per creator; third member refused
+BEGIN;
+-- create_party as player A on a duo quest → code
+-- join_party as player B → ok
+-- join_party as player C → PARTY_FULL
+-- create_party again as A for another duo quest → previous closed, new code
+ROLLBACK;
+
+-- 2. Solo insert on a duo quest → PARTY_REQUIRED
+BEGIN;
+INSERT INTO completions (user_id, quest_id, photo_url, lat, lng, gps_accuracy)
+SELECT '<solo>', q.id, 'x', q.lat, q.lng, 5
+  FROM quests q WHERE q.min_party_size = 2 LIMIT 1;
+-- expect: check_violation, hint PARTY_REQUIRED
+ROLLBACK;
+
+-- 3. Two-member verify pays both +round(0.5*base); referral pays +base
+-- Create party, both join, both insert approved completions while open.
+-- Expect second insert xp_reason = 'duo' and first completion's xp_awarded
+-- bumped by the same bonus; profiles.total_xp moved for both.
+
+-- 4. Removal revokes the stored award (including the duo bump) via 043 revoke.
+
+-- 5. Recruiter: three distinct under-48h partners → badge unlocks for the creator.
+```
 
 ## Column grants: what a new column needs
 

@@ -14,7 +14,7 @@ import { createClient } from 'npm:@supabase/supabase-js@2'
  * SOCIAL_PUSH_WEBHOOK_SECRET function secret (verify_jwt is off in config.toml).
  */
 
-type NotificationType = 'like' | 'comment' | 'reply' | 'follow'
+type NotificationType = 'like' | 'comment' | 'reply' | 'follow' | 'duo_bonus'
 
 interface NotificationRecord {
   id: string
@@ -25,7 +25,7 @@ interface NotificationRecord {
   comment_id: string | null
 }
 
-const PUSH_TYPES: NotificationType[] = ['comment', 'reply', 'follow']
+const PUSH_TYPES: NotificationType[] = ['comment', 'reply', 'follow', 'duo_bonus']
 const BURST_WINDOW_MS = 10 * 60 * 1000
 const BURST_LIMIT = 5
 
@@ -44,6 +44,11 @@ function buildMessage(type: NotificationType, actor: string, commentBody: string
       return { title: `@${actor} replied to you`, body: text || 'Tap to see the reply.' }
     case 'follow':
       return { title: 'New follower', body: `@${actor} started following you.` }
+    case 'duo_bonus':
+      return {
+        title: 'Duo bonus',
+        body: `@${actor} finished your duo quest. You both got a bonus.`,
+      }
     default:
       return null
   }
