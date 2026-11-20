@@ -4,7 +4,7 @@ import { useRouter } from 'expo-router'
 import { Ionicons } from '@expo/vector-icons'
 import { Avatar } from '@/components/Avatar'
 import { CommentsSheet } from '@/components/CommentsSheet'
-import { Sticker } from '@/components/Sticker'
+import { Sticker, questStickerAlt } from '@/components/Sticker'
 import { PhotoViewer } from '@/components/PhotoViewer'
 import { Pillow, PILLOW_SIZES } from '@/components/Pillow'
 import { ReportPostSheet } from '@/components/ReportPostSheet'
@@ -239,7 +239,7 @@ export function FeedBubble({ post, currentUserId, zIndex, overlap = true, onRepo
           ) : null}
         </View>
       </View>
-      <Sticker uri={post.quest.cutout_url} size="row" />
+      <Sticker uri={post.quest.cutout_url} size="row" alt={questStickerAlt(post.quest)} />
       <PhotoViewer
         visible={viewerOpen}
         photos={[photo]}
@@ -275,7 +275,12 @@ export function FeedBubble({ post, currentUserId, zIndex, overlap = true, onRepo
         />
       ) : null}
       <Modal transparent visible={menuOpen} animationType="fade" onRequestClose={() => setMenuOpen(false)}>
-        <Pressable style={styles.backdrop} onPress={() => setMenuOpen(false)}>
+        <Pressable
+          style={styles.backdrop}
+          onPress={() => setMenuOpen(false)}
+          accessibilityRole="button"
+          accessibilityLabel="Dismiss post options"
+        >
           <View style={styles.sheet}>
             <Pressable
               style={styles.sheetRow}
@@ -284,10 +289,16 @@ export function FeedBubble({ post, currentUserId, zIndex, overlap = true, onRepo
                 setReportOpen(true)
               }}
               accessibilityRole="button"
+              accessibilityLabel="Report post"
             >
               <Body>Report post</Body>
             </Pressable>
-            <Pressable style={styles.sheetRow} onPress={handleBlock} accessibilityRole="button">
+            <Pressable
+              style={styles.sheetRow}
+              onPress={handleBlock}
+              accessibilityRole="button"
+              accessibilityLabel={`Block ${post.user.username}`}
+            >
               <Body>{`Block @${post.user.username}`}</Body>
             </Pressable>
           </View>

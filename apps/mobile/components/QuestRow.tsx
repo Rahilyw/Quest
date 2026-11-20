@@ -1,6 +1,6 @@
 import { Image, Pressable, StyleSheet, View } from 'react-native'
 import { endsThisSunday, isNewThisWeek } from '@quest/geofence'
-import { Sticker } from '@/components/Sticker'
+import { Sticker, questStickerAlt } from '@/components/Sticker'
 import { Micro, Name, Small } from '@/components/ui/Text'
 import { xpLabel } from '@/lib/copy'
 import { getQuestCoverImage } from '@/lib/constants'
@@ -52,7 +52,7 @@ export function QuestRow({ quest, onPress }: { quest: Quest; onPress: () => void
           </View>
         </View>
       </View>
-      <Sticker uri={quest.cutout_url} size="row" />
+      <Sticker uri={quest.cutout_url} size="row" alt={questStickerAlt(quest)} />
     </Pressable>
   )
 }

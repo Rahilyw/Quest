@@ -3,12 +3,11 @@
 Durable state for the Nov 2026 audit-and-implementation campaign. One current status per item.
 Updated at every phase boundary. Historical notes are labelled as history.
 
-## Current continuation (Nov 20, 2026) — card S stickers
+## Current continuation (Nov 20, 2026) — card E5 accessibility
 
-Card S on `cursor/s-stickers`: migration `044_stickers.sql` (renumbered from PR #16's 041),
-sticker grant/revoke hooked into 043's `apply_completion_rewards` / `revoke` without redefining
-`normalize_completion_on_insert`, admin sticker library + upload pipeline, mobile drawer/board/
-Verified stamp, Sprite/Cutout removed. SQL not executed. Status: in checkout, locally tested.
+Card E5 on `cursor/e5-a11y`: 48pt targets, Pressable labels/roles, sticker alts, 130% text caps,
+reduce-motion on tab/badge press, colour+icon/count signals (zone, chips, queue, XP banner).
+Findings in `docs/design/A11Y-PASS-2026-11.md`. Status: locally tested. SQL not executed.
 
 - Documentation reconciliation updated README, PRODUCT, ROADMAP, ARCHITECTURE, launch runbook,
   migration index, specs 01–07/index, UI overhaul plan, seed note and this ledger.
@@ -103,6 +102,27 @@ E1, E2, E5, then D on its own branch, held. It adds four cards:
 
 No new migrations beyond 044 and 045. Progress is logged in `docs/design/BIG-BUILD-LOG.md`, which
 the run creates. The Cursor rule now allows merging card branches into `cursor/big-build` only.
+
+### Continuation — November 20, 2026, build 2 plan
+
+Build 1 had merged R through E2 into `cursor/big-build` (log: [BIG-BUILD-LOG.md](BIG-BUILD-LOG.md)).
+E5 was in progress in the working tree and D had not started. The owner run sheet has nothing
+ticked, so **041–044 have never been executed anywhere**.
+
+[CURSOR-BUILD-2-2026-11-20.md](CURSOR-BUILD-2-2026-11-20.md) plans "prove the backend". It starts
+after build 1 finishes and has six cards:
+
+- M1: a throwaway local Supabase stack in GitHub Actions, using the DB-01 clean-install order and
+  running the verify files;
+- M2: pgTAP tests for 038–044;
+- M3: generated database types with a CI drift check;
+- M4: Deno tests for the edge functions;
+- Z: an independent security review;
+- M5: the same proof for 045, on the duo line.
+
+Owner recommendation: hold applying 041–044 to production until M2 is green, so any bug is fixed
+in place. O1, O7 and O8 can go ahead. The Cursor rule now allows in-place fixes to 041–045 only
+while unapplied, and SQL only on the CI local stack.
 
 The sections below preserve the Nov 10 campaign record and may contain facts that were true
 only for that session; use the continuation above and linked current docs for present status.

@@ -189,12 +189,17 @@ export default function EditProfile() {
                 style={[styles.cityRow, selected && styles.cityRowSelected]}
                 onPress={() => setCity(option)}
                 activeOpacity={0.7}
+                accessibilityRole="button"
+                accessibilityLabel={option}
+                accessibilityState={{ selected }}
               >
                 <Text style={[styles.cityLabel, selected && styles.cityLabelSelected]}>
                   {option}
                 </Text>
                 {selected && (
-                  <Text style={styles.cityCheck}>✓</Text>
+                  <Text style={styles.cityCheck} accessibilityElementsHidden>
+                    ✓
+                  </Text>
                 )}
               </TouchableOpacity>
             )
@@ -227,8 +232,8 @@ const styles = StyleSheet.create({
   backPill: {
     backgroundColor: withAlpha(COLOR.white, 0.9),
     borderRadius: 999,
-    width: 36,
-    height: 36,
+    width: 48,
+    height: 48,
     alignItems: 'center',
     justifyContent: 'center',
     shadowColor: COLOR.ink,

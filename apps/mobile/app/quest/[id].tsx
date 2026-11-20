@@ -14,7 +14,7 @@ import * as Location from 'expo-location'
 import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { endsThisSunday, formatDropLabel, isNewThisWeek, isQuestActive } from '@quest/geofence'
-import { Sticker } from '@/components/Sticker'
+import { Sticker, questStickerAlt } from '@/components/Sticker'
 import { PhotoViewer } from '@/components/PhotoViewer'
 import { Pillow, PILLOW_SIZES } from '@/components/Pillow'
 import { SkeletonFolder } from '@/components/ui/SkeletonFolder'
@@ -292,7 +292,14 @@ export default function QuestDetail() {
             >
               <Ionicons name="chevron-back" size={22} color={COLOR.ink} />
             </Pressable>
-            <View style={styles.catPill}>
+            <View style={styles.catPill} accessible accessibilityLabel={category.label}>
+              <Ionicons
+                name={category.icon as keyof typeof Ionicons.glyphMap}
+                size={14}
+                color={COLOR.ink}
+                accessibilityElementsHidden
+                importantForAccessibility="no"
+              />
               <Small>{category.label}</Small>
             </View>
           </View>
@@ -344,7 +351,7 @@ export default function QuestDetail() {
 
         <View style={styles.body}>
           <View pointerEvents="none" style={styles.cutout}>
-            <Sticker uri={quest.cutout_url} size={112} tilt={-6} />
+            <Sticker uri={quest.cutout_url} size={112} tilt={-6} alt={questStickerAlt(quest)} />
           </View>
 
           <View style={styles.copy}>
@@ -595,6 +602,9 @@ const styles = StyleSheet.create({
     borderRadius: RADIUS.pill,
     paddingHorizontal: SPACE.s3,
     paddingVertical: SPACE.s2,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: SPACE.s1,
     ...SHADOW.float,
   },
   stack: {

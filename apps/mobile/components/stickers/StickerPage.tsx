@@ -435,6 +435,7 @@ function DrawerItem({
         accessibilityState={earned ? { selected: picked } : { disabled: true }}
         style={[styles.drawerSlot, picked && styles.drawerSlotPicked]}
       >
+        {/* Decorative: Pressable accessibilityLabel already uses sticker.alt_text. */}
         <Sticker uri={sticker.image_url} size="drawer" locked={!earned} />
       </Pressable>
       {!earned && hint ? (

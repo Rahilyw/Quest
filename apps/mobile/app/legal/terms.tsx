@@ -35,6 +35,8 @@ export default function TermsOfService() {
         style={[styles.back, { top: insets.top + 12, left: SPACING.lg }]}
         onPress={() => router.back()}
         activeOpacity={0.8}
+        accessibilityRole="button"
+        accessibilityLabel="Go back"
       >
         <View style={styles.backPill}>
           <Text style={[styles.backText, { color: COLORS.accent }]}>←</Text>
@@ -121,8 +123,8 @@ const styles = StyleSheet.create({
   backPill: {
     backgroundColor: withAlpha(COLOR.white, 0.9),
     borderRadius: 999,
-    width: 36,
-    height: 36,
+    width: 48,
+    height: 48,
     alignItems: 'center',
     justifyContent: 'center',
     shadowColor: COLOR.ink,

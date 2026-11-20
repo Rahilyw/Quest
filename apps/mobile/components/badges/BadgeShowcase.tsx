@@ -137,7 +137,12 @@ export function BadgeShowcase({ spec, earned, earnedAt, onClose }: Props) {
   return (
     <Modal visible transparent animationType="fade" onRequestClose={onClose}>
       <GestureRoot style={styles.root}>
-        <Pressable style={StyleSheet.absoluteFill} onPress={onClose} accessibilityLabel="Close badge details" />
+        <Pressable
+          style={StyleSheet.absoluteFill}
+          onPress={onClose}
+          accessibilityRole="button"
+          accessibilityLabel="Close badge details"
+        />
 
         <View style={styles.content} pointerEvents="box-none">
           <View style={[styles.rarityPill, { borderColor: meta.color }]}>
@@ -262,9 +267,9 @@ const styles = StyleSheet.create({
     position: 'absolute',
     top: 56,
     right: 24,
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    width: 48,
+    height: 48,
+    borderRadius: 24,
     backgroundColor: withAlpha(COLOR.white, 0.1),
     alignItems: 'center',
     justifyContent: 'center',
