@@ -41,6 +41,7 @@ export type AnalyticsEvent =
   | 'proof_queue_sent'
   | 'proof_queue_dropped'
   | 'xp_boost_seen'
+  | 'feedback_sent'
 
 export type QuestSource =
   | 'explore'

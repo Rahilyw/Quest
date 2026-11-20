@@ -4,6 +4,7 @@ import { useRouter } from 'expo-router'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import AsyncStorage from '@react-native-async-storage/async-storage'
 import * as Application from 'expo-application'
+import { FeedbackSheet } from '@/components/FeedbackSheet'
 import { useAuth } from '@/hooks/useAuth'
 import { Row, ScreenHeader, Section, SwitchRow } from '@/components/ui/Screen'
 import { BodyStrong, Small } from '@/components/ui/Text'
@@ -26,6 +27,7 @@ export default function Settings() {
   const [pushSocial, setPushSocial] = useState(true)
   const [deleting, setDeleting] = useState(false)
   const [note, setNote] = useState<string | null>(null)
+  const [feedbackOpen, setFeedbackOpen] = useState(false)
 
   useEffect(() => {
     if (!session?.user?.id) return
@@ -203,7 +205,8 @@ export default function Settings() {
         </Section>
 
         <Section title="About">
-          <Row first label="Terms of service" onPress={() => router.push('/legal/terms')} />
+          <Row first label="Send feedback" onPress={() => setFeedbackOpen(true)} />
+          <Row label="Terms of service" onPress={() => router.push('/legal/terms')} />
           <Row label="Privacy policy" onPress={() => router.push('/legal/privacy')} />
           <Row
             label="Privacy policy on the web"
@@ -239,6 +242,7 @@ export default function Settings() {
           Deleting removes your profile, completions, XP, badges and photos for good.
         </Small>
       </ScrollView>
+      <FeedbackSheet visible={feedbackOpen} onClose={() => setFeedbackOpen(false)} />
     </View>
   )
 }
