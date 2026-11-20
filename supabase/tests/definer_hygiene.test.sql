@@ -2,6 +2,18 @@
 BEGIN;
 SELECT plan(4);
 
+-- Name any offenders so a failure is actionable (build-2 stop vs in-place fix).
+SELECT diag(format('missing search_path: %s(%s)', p.proname, pg_get_function_identity_arguments(p.oid)))
+  FROM pg_proc p
+  JOIN pg_namespace n ON n.oid = p.pronamespace
+ WHERE n.nspname = 'public'
+   AND p.prosecdef
+   AND NOT EXISTS (
+         SELECT 1
+           FROM unnest(coalesce(p.proconfig, ARRAY[]::text[])) cfg
+          WHERE cfg LIKE 'search_path=%'
+       );
+
 SELECT is(
   (
     SELECT count(*)::int

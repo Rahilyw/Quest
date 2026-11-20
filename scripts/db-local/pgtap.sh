@@ -26,6 +26,19 @@ fi
 echo "pgtap: enabling extension + loading helpers…"
 psql "$DB_URL" -v ON_ERROR_STOP=1 -c 'CREATE EXTENSION IF NOT EXISTS pgtap;'
 psql "$DB_URL" -v ON_ERROR_STOP=1 -f "$TESTS_SRC/00_helpers.sql"
+# Diagnose definers missing search_path (printed into CI logs before suites).
+psql "$DB_URL" -c "
+SELECT p.proname, pg_get_function_identity_arguments(p.oid) AS args
+  FROM pg_proc p
+  JOIN pg_namespace n ON n.oid = p.pronamespace
+ WHERE n.nspname = 'public'
+   AND p.prosecdef
+   AND NOT EXISTS (
+         SELECT 1 FROM unnest(coalesce(p.proconfig, ARRAY[]::text[])) cfg
+          WHERE cfg LIKE 'search_path=%'
+       )
+ ORDER BY 1;
+"
 
 rm -rf "$TESTS_DST"
 mkdir -p "$TESTS_DST"

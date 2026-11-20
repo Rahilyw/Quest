@@ -19,6 +19,7 @@ DO $$
 DECLARE
   u uuid;
   q uuid;
+  c uuid;
   awarded int;
   reason text;
 BEGIN
@@ -26,11 +27,10 @@ BEGIN
   q := tests.make_quest_none(100);
   INSERT INTO xp_events (kind, multiplier, label, starts_at, ends_at, created_by)
   VALUES ('multiplier', 2, 'pgtap global', now() - interval '1 minute', now() + interval '1 hour', 'pgtap');
-  SELECT c.xp_awarded, c.xp_reason INTO awarded, reason
-    FROM completions c
-   WHERE c.id = tests.insert_completion(u, q);
+  c := tests.insert_completion(u, q);
+  SELECT xp_awarded, xp_reason INTO awarded, reason FROM completions WHERE id = c;
   IF awarded IS DISTINCT FROM 200 THEN
-    RAISE EXCEPTION 'global x2 expected 200 got %', awarded;
+    RAISE EXCEPTION 'global x2 expected 200 got % (reason %)', awarded, reason;
   END IF;
   IF reason IS DISTINCT FROM 'weekend' THEN
     RAISE EXCEPTION 'global x2 reason expected weekend got %', reason;
@@ -43,6 +43,7 @@ DO $$
 DECLARE
   u uuid;
   q uuid;
+  c uuid;
   awarded int;
   reason text;
 BEGIN
@@ -52,10 +53,8 @@ BEGIN
   VALUES ('multiplier', 1.5, 'pgtap global', now() - interval '1 minute', now() + interval '1 hour', 'pgtap');
   INSERT INTO xp_events (kind, multiplier, quest_id, label, starts_at, ends_at, created_by)
   VALUES ('multiplier', 2, q, 'pgtap quest', now() - interval '1 minute', now() + interval '1 hour', 'pgtap');
-  SELECT c.xp_awarded, c.xp_reason INTO awarded, reason
-    FROM completions c
-   WHERE c.id = tests.insert_completion(u, q);
-  -- Max of 1.5 and 2 = 2, not product 3.
+  c := tests.insert_completion(u, q);
+  SELECT xp_awarded, xp_reason INTO awarded, reason FROM completions WHERE id = c;
   IF awarded IS DISTINCT FROM 200 THEN
     RAISE EXCEPTION 'quest x2 + global x1.5 expected max 200 got %', awarded;
   END IF;
@@ -70,15 +69,15 @@ DO $$
 DECLARE
   u uuid;
   q uuid;
+  c uuid;
   awarded int;
 BEGIN
   u := tests.make_user('xpcap');
   q := tests.make_quest_none(100);
   INSERT INTO xp_events (kind, multiplier, label, starts_at, ends_at, created_by)
   VALUES ('multiplier', 5, 'pgtap cap', now() - interval '1 minute', now() + interval '1 hour', 'pgtap');
-  SELECT c.xp_awarded INTO awarded
-    FROM completions c
-   WHERE c.id = tests.insert_completion(u, q);
+  c := tests.insert_completion(u, q);
+  SELECT xp_awarded INTO awarded FROM completions WHERE id = c;
   IF awarded IS DISTINCT FROM 300 THEN
     RAISE EXCEPTION 'cap 3 expected 300 got %', awarded;
   END IF;
@@ -91,6 +90,8 @@ DECLARE
   u1 uuid;
   u2 uuid;
   q uuid;
+  c1 uuid;
+  c2 uuid;
   a1 int;
   r1 text;
   a2 int;
@@ -99,10 +100,10 @@ BEGIN
   u1 := tests.make_user('ff1');
   u2 := tests.make_user('ff2');
   q := tests.make_quest_none(100, now() - interval '1 day');
-  SELECT c.xp_awarded, c.xp_reason INTO a1, r1
-    FROM completions c WHERE c.id = tests.insert_completion(u1, q);
-  SELECT c.xp_awarded, c.xp_reason INTO a2, r2
-    FROM completions c WHERE c.id = tests.insert_completion(u2, q);
+  c1 := tests.insert_completion(u1, q);
+  c2 := tests.insert_completion(u2, q);
+  SELECT xp_awarded, xp_reason INTO a1, r1 FROM completions WHERE id = c1;
+  SELECT xp_awarded, xp_reason INTO a2, r2 FROM completions WHERE id = c2;
   IF a1 IS DISTINCT FROM 150 OR r1 IS DISTINCT FROM 'first_finisher' THEN
     RAISE EXCEPTION 'first finisher expected 150/first_finisher got %/%', a1, r1;
   END IF;
@@ -118,6 +119,8 @@ DECLARE
   u uuid;
   q1 uuid;
   q2 uuid;
+  c1 uuid;
+  c2 uuid;
   a1 int;
   r1 text;
   a2 int;
@@ -129,11 +132,11 @@ BEGIN
   q2 := tests.make_quest_none(100);
   INSERT INTO xp_events (kind, multiplier, user_id, label, starts_at, ends_at, created_by)
   VALUES ('win_back', 2, u, 'pgtap wb', now() - interval '1 minute', now() + interval '7 days', 'pgtap');
-  SELECT c.xp_awarded, c.xp_reason INTO a1, r1
-    FROM completions c WHERE c.id = tests.insert_completion(u, q1);
+  c1 := tests.insert_completion(u, q1);
+  SELECT xp_awarded, xp_reason INTO a1, r1 FROM completions WHERE id = c1;
   SELECT consumed_at IS NOT NULL INTO consumed FROM xp_events WHERE user_id = u AND kind = 'win_back';
-  SELECT c.xp_awarded, c.xp_reason INTO a2, r2
-    FROM completions c WHERE c.id = tests.insert_completion(u, q2);
+  c2 := tests.insert_completion(u, q2);
+  SELECT xp_awarded, xp_reason INTO a2, r2 FROM completions WHERE id = c2;
   IF a1 IS DISTINCT FROM 200 OR r1 IS DISTINCT FROM 'win_back' THEN
     RAISE EXCEPTION 'win_back first expected 200/win_back got %/%', a1, r1;
   END IF;

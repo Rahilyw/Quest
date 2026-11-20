@@ -4,6 +4,10 @@
 CREATE EXTENSION IF NOT EXISTS pgtap;
 
 CREATE SCHEMA IF NOT EXISTS tests;
+GRANT USAGE ON SCHEMA tests TO postgres, authenticated, anon, service_role;
+-- act_as switches to authenticated; helpers must stay callable after that.
+ALTER DEFAULT PRIVILEGES IN SCHEMA tests
+  GRANT EXECUTE ON FUNCTIONS TO authenticated, anon, service_role;
 
 CREATE OR REPLACE FUNCTION tests.act_as(p_uid uuid)
 RETURNS void
@@ -179,3 +183,5 @@ BEGIN
   RETURN cid;
 END;
 $$;
+
+GRANT EXECUTE ON ALL FUNCTIONS IN SCHEMA tests TO authenticated, anon, service_role;
