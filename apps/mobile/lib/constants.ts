@@ -93,21 +93,6 @@ export const CITY = {
 /** Sentence case: "Rookie", "Legend". See lib/copy.js. */
 export const getLevelTitle = levelTitle
 
-/**
- * Interim difficulty label until quests carry distance and time (decision D5, Phase 2).
- * Sentence case; colours come from the theme.
- */
-export function getDifficulty(xp: number): { label: string; color: string } {
-  if (xp >= 300) return { label: 'Hard', color: COLORS.danger }
-  if (xp >= 150) return { label: 'Medium', color: COLORS.warning }
-  return { label: 'Easy', color: COLORS.success }
-}
-
-/** @deprecated Use getCategory(key).color from '@/lib/theme'. */
-export const CATEGORY_COLORS: Record<string, string> = Object.fromEntries(
-  Object.entries(CATEGORY).map(([key, c]) => [key, c.color]),
-)
-
 export const CATEGORY_IMAGES: Record<string, string> = {
   fitness: 'https://images.unsplash.com/photo-1629495063801-c1040fa82533?w=700&h=440&fit=crop&auto=format',
   social: 'https://images.unsplash.com/photo-1634709170162-23a76022e9c9?w=700&h=440&fit=crop&auto=format',
@@ -121,9 +106,6 @@ export function getQuestCoverImage(quest: { category: string; cover_image_url?: 
   if (quest.cover_image_url) return quest.cover_image_url
   return CATEGORY_IMAGES[quest.category] ?? CATEGORY_IMAGES.fitness
 }
-
-/** @deprecated Use quest.geofence_type + @quest/geofence instead. Kept for legacy tests. */
-export const PROOF_GEOFENCE_RADIUS = 300
 
 /** Dev-only; never active in production builds (Spec 02). */
 export const BYPASS_GEOFENCE =

@@ -48,7 +48,3 @@ export function useSignedSelfie(path: string | null | undefined): string | null 
   }, [path])
   return url
 }
-
-export function clearSelfieCache() {
-  cache.clear()
-}

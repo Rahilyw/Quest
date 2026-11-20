@@ -3,7 +3,6 @@
 import { useState } from 'react'
 import Link from 'next/link'
 import { adminAuthRedirectUrl, getSupabaseBrowser } from '@/lib/supabase-browser'
-import { theme } from '@/lib/theme'
 
 export default function ForgotPasswordPage() {
   const [email, setEmail] = useState('')

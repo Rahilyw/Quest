@@ -14,17 +14,6 @@ function showPermissionDeniedAlert(feature: string) {
   )
 }
 
-export async function ensureCameraPermission(): Promise<boolean> {
-  const current = await ImagePicker.getCameraPermissionsAsync()
-  if (current.granted) return true
-
-  const { granted } = await ImagePicker.requestCameraPermissionsAsync()
-  if (granted) return true
-
-  showPermissionDeniedAlert('camera')
-  return false
-}
-
 export async function ensureMediaLibraryPermission(): Promise<boolean> {
   const current = await ImagePicker.getMediaLibraryPermissionsAsync()
   if (current.granted) return true
