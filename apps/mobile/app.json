@@ -6,6 +6,9 @@
     "runtimeVersion": {
       "policy": "appVersion"
     },
+    "updates": {
+      "url": "https://u.expo.dev/31903b75-d817-4713-9211-a0cd8a167921"
+    },
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "automatic",
@@ -24,7 +27,8 @@
       "infoPlist": {
         "NSLocationWhenInUseUsageDescription": "Quest! uses your location to verify quest completions.",
         "NSCameraUsageDescription": "Quest! uses your camera to submit quest proof photos.",
-        "NSPhotoLibraryUsageDescription": "Quest! uses your photo library to set your avatar."
+        "NSPhotoLibraryUsageDescription": "Quest! uses your photo library to set your avatar.",
+        "ITSAppUsesNonExemptEncryption": false
       }
     },
     "android": {
@@ -36,7 +40,9 @@
       "permissions": [
         "android.permission.ACCESS_FINE_LOCATION",
         "android.permission.CAMERA",
-        "android.permission.ACCESS_COARSE_LOCATION",
+        "android.permission.ACCESS_COARSE_LOCATION"
+      ],
+      "blockedPermissions": [
         "android.permission.RECORD_AUDIO"
       ]
     },
@@ -60,7 +66,8 @@
       [
         "expo-camera",
         {
-          "cameraPermission": "Quest! uses your camera for quest proof photos."
+          "cameraPermission": "Quest! uses your camera for quest proof photos.",
+          "recordAudioAndroid": false
         }
       ],
       [
@@ -70,7 +77,8 @@
           "color": "#FFCE1F"
         }
       ],
-      "expo-localization"
+      "expo-localization",
+      "expo-updates"
     ],
     "owner": "rahil1"
   }

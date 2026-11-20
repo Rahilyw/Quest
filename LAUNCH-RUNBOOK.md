@@ -253,6 +253,20 @@ This is the only thing blocking a TestFlight build.
    ```
 7. In App Store Connect → TestFlight, add yourself as an internal tester.
 
+### OTA after the first build
+
+The first native build must include `expo-updates` (already in `app.json` after
+card R). Later JS-only fixes ship over the air on the production channel:
+
+```powershell
+cd apps\mobile
+npx eas-cli update --channel production --message "<what changed>"
+```
+
+Use the same command with `--channel preview` for internal builds. A native
+dependency change, a new Expo SDK module, or an `app.json` permission change
+still needs a new `npm run build:prod` — OTA cannot carry those.
+
 > Android note: `eas.json` expects `./google-service-account.json` for Play submits.
 > Defer until you start the Play Store track; TestFlight first.
 
