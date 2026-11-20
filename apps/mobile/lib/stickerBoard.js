@@ -1,7 +1,7 @@
 'use strict'
 
 /**
- * Sticker board rules (BRAND.md §6 Placement, §7 "Your page"; migration 041).
+ * Sticker board rules (BRAND.md §6 Placement, §7 "Your page"; migration 044).
  * Plain JS with no imports so __tests__/stickerBoard.test.js runs in Node.
  *
  * Placements are stored as fractions of the board (x, y = the sticker's

@@ -14,7 +14,7 @@ import {
 } from '@/lib/stickerBoard'
 
 /**
- * A player's sticker page (migration 041): their board placements, and for the
+ * A player's sticker page (migration 044): their board placements, and for the
  * owner, the drawer of earned and not-yet-earned stickers.
  *
  * `unavailable` means the database has no sticker tables yet (041 not applied)

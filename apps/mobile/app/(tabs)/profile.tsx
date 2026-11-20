@@ -6,6 +6,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { Avatar } from '@/components/Avatar'
 import { RewardsRow } from '@/components/RewardsRow'
 import { StickerPage } from '@/components/stickers/StickerPage'
+import { WaitingToSend } from '@/components/WaitingToSend'
 import { Body, Heading, Name, Small, Title } from '@/components/ui/Text'
 import { useAuth } from '@/hooks/useAuth'
 import { useFollow } from '@/hooks/useFollow'
@@ -209,6 +210,8 @@ export default function Profile() {
             <Small>Edit profile</Small>
           </Pressable>
         </View>
+
+        <WaitingToSend />
 
         <View style={styles.sectionHead}>
           <Heading>Badges and medals</Heading>
