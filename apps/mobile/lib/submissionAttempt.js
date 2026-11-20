@@ -35,20 +35,23 @@ function captureAttempt(coords, now = new Date(), makeId = newAttemptId) {
 
 /**
  * What a `completions` insert error means for the attempt:
- *  - 'duplicate'     23505, the player already has this quest
- *  - 'rate_limited'  retry later, keep the upload
- *  - 'outside_zone'  final for this capture, delete the upload
- *  - 'rejected'      any other server answer, the row was not written
- *  - 'network'       no server answer, the row may or may not exist
+ *  - 'duplicate'       23505, the player already has this quest
+ *  - 'rate_limited'    retry later, keep the upload
+ *  - 'party_required'  duo quest needs a full open party (045)
+ *  - 'outside_zone'    final for this capture, delete the upload
+ *  - 'rejected'        any other server answer, the row was not written
+ *  - 'network'         no server answer, the row may or may not exist
  *
- * RATE_LIMITED is raised with SQLSTATE 23514 (check_violation), the same code
- * as GEOFENCE_VIOLATION, so it has to be matched first.
+ * RATE_LIMITED / PARTY_REQUIRED are raised with SQLSTATE 23514
+ * (check_violation), the same code as GEOFENCE_VIOLATION, so they have to be
+ * matched first.
  */
 function classifyInsertError(error) {
   if (!error) return null
   const message = typeof error.message === 'string' ? error.message : ''
   if (error.code === '23505') return 'duplicate'
   if (message.includes('RATE_LIMITED') || error.hint === 'RATE_LIMITED') return 'rate_limited'
+  if (message.includes('PARTY_REQUIRED') || error.hint === 'PARTY_REQUIRED') return 'party_required'
   if (message.includes('GEOFENCE_VIOLATION') || error.code === '23514') return 'outside_zone'
   if (error.code) return 'rejected'
   return 'network'

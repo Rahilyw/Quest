@@ -6,7 +6,13 @@ export interface CapturedAttempt {
   capturedAt: string
 }
 
-export type InsertErrorKind = 'duplicate' | 'rate_limited' | 'outside_zone' | 'rejected' | 'network'
+export type InsertErrorKind =
+  | 'duplicate'
+  | 'rate_limited'
+  | 'party_required'
+  | 'outside_zone'
+  | 'rejected'
+  | 'network'
 
 export function newAttemptId(now?: number, random?: () => number): string
 export function placePhotoPath(userId: string, questId: string, attemptId: string): string

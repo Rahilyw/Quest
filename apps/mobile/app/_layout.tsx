@@ -10,6 +10,7 @@ import { SubmissionQueueBanner } from '@/components/SubmissionQueueBanner'
 import { registerForPushNotifications } from '@/lib/notifications'
 import { hasCompletedOnboarding } from '@/lib/onboarding'
 import { subscribeToAuthDeepLinks } from '@/lib/auth-linking'
+import { subscribeToPartyDeepLinks } from '@/lib/party-linking'
 import { mountPushListeners } from '@/lib/push-navigation'
 import { initSentry } from '@/lib/sentry'
 import { supabase } from '@/lib/supabase'
@@ -32,6 +33,8 @@ function RootLayoutNav() {
       router.push('/(auth)/reset-password')
     })
   }, [router])
+
+  useEffect(() => subscribeToPartyDeepLinks(router), [router])
 
   useEffect(() => {
     const { data: listener } = supabase.auth.onAuthStateChange((event) => {

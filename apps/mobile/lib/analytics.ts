@@ -42,6 +42,10 @@ export type AnalyticsEvent =
   | 'proof_queue_dropped'
   | 'xp_boost_seen'
   | 'feedback_sent'
+  | 'party_created'
+  | 'party_joined'
+  | 'party_expired'
+  | 'duo_completed'
 
 export type QuestSource =
   | 'explore'
@@ -77,8 +81,14 @@ export type SubmissionBlockReason =
   | 'no_photo'
   | 'no_gps'
   | 'rate_limited'
+  | 'party_required'
   | 'mock_location'
   | 'already_completed'
+
+/** Duo pair finished; `referral` when either account was under 48 h old. */
+export function trackDuoCompleted(props: { quest_id: string; referral: boolean }): void {
+  track('duo_completed', props)
+}
 
 export function setAnalyticsClient(next: PostHog | null): void {
   client = next

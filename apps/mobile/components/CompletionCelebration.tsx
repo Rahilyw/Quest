@@ -53,6 +53,8 @@ interface Props {
   sponsorReward?: string | null
   /** The badge this completion earned. Without one, the XP lands as a medal. */
   earnedBadge?: BadgeSpec | null
+  /** When a duo bonus lands, both usernames (self first). */
+  duoUsernames?: [string, string] | null
   onDone: () => void
   onShare?: () => void
 }
@@ -91,6 +93,7 @@ export default function CompletionCelebration({
   redemptionCode,
   sponsorReward,
   earnedBadge = null,
+  duoUsernames = null,
   onDone,
   onShare,
 }: Props) {
@@ -215,6 +218,9 @@ export default function CompletionCelebration({
             </Small>
             {reasonLine ? (
               <Small color={ink}>{reasonLine}</Small>
+            ) : null}
+            {duoUsernames ? (
+              <Small color={ink}>{`@${duoUsernames[0]} + @${duoUsernames[1]}`}</Small>
             ) : null}
             <Sentence color={ink} style={styles.line} accessibilityRole="header">
               {hasSticker ? `You ${phrase}. Its sticker is in your drawer.` : `You ${phrase}.`}

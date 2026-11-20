@@ -63,6 +63,7 @@ export type SubmitCompletionResult =
       ownCompletion: VerifiedCompletion | null
     })
   | (ResultBase & { kind: 'rate_limited' })
+  | (ResultBase & { kind: 'party_required' })
   | (ResultBase & { kind: 'outside_zone' })
   | (ResultBase & { kind: 'rejected' })
   | (ResultBase & { kind: 'network'; stage: 'upload' | 'insert' })

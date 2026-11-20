@@ -16,6 +16,8 @@ function notificationText(type) {
       return 'replied to your comment:'
     case 'follow':
       return 'started following you.'
+    case 'duo_bonus':
+      return 'finished your duo quest. You both got a bonus.'
     default:
       return 'interacted with you.'
   }
@@ -25,6 +27,9 @@ function notificationText(type) {
 function notificationRoute(type, completionId, actorId) {
   if (type === 'follow' || !completionId) {
     return actorId ? `/user/${actorId}` : null
+  }
+  if (type === 'duo_bonus') {
+    return `/completion/${completionId}`
   }
   return `/completion/${completionId}`
 }

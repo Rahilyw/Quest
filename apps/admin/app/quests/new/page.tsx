@@ -212,6 +212,13 @@ function NewQuestForm() {
             <label className="admin-label" htmlFor="xp_reward">XP reward</label>
             <input id="xp_reward" name="xp_reward" className="admin-input" type="number" defaultValue={150} min={25} max={1000} required />
           </div>
+          <div className="admin-field" style={{ marginTop: 16 }}>
+            <label className="admin-label" htmlFor="min_party_size">Party size</label>
+            <select id="min_party_size" name="min_party_size" className="admin-input" defaultValue="1">
+              <option value="1">Solo (1)</option>
+              <option value="2">Duo (2)</option>
+            </select>
+          </div>
         </section>
 
         <QuestScheduleFields

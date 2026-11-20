@@ -130,7 +130,7 @@ function remove(queue, id) {
  */
 function flushOutcome(kind) {
   if (kind === 'verified' || kind === 'duplicate') return 'sent'
-  if (kind === 'outside_zone' || kind === 'rejected') return 'drop'
+  if (kind === 'outside_zone' || kind === 'rejected' || kind === 'party_required') return 'drop'
   return 'retry'
 }
 

@@ -183,9 +183,15 @@ export default function QuestDetail() {
     trackXpBoostSeen(questEvent ? 'quest' : 'weekend')
   }, [quest?.id, boosts, questHasBoost])
 
+  const isDuo = (quest?.min_party_size ?? 1) >= 2
+
   const startQuest = useCallback(() => {
     if (!quest || !isQuestActive(quest, new Date())) return
     setViewerIndex(null)
+    if ((quest.min_party_size ?? 1) >= 2) {
+      router.push(`/party/new?questId=${quest.id}`)
+      return
+    }
     router.push(`/submit/${quest.id}`)
   }, [quest, router])
 
@@ -464,12 +470,27 @@ export default function QuestDetail() {
       </ScrollView>
 
       <View style={[styles.footer, { paddingBottom: footerPad }]}>
+        {isDuo && live ? (
+          <View style={styles.duoPanel}>
+            <Small tone="soft">Bring a friend. You both need to be here.</Small>
+          </View>
+        ) : null}
         <Pressable
           onPress={startQuest}
           disabled={outsideZone || !live}
           accessibilityRole="button"
-          accessibilityLabel={`Start quest: ${quest.title}`}
-          accessibilityHint={!live ? windowNote ?? 'Not available' : outsideZone ? zoneText : 'Takes you to the photo submission screen'}
+          accessibilityLabel={
+            isDuo ? `Start with a friend: ${quest.title}` : `Start quest: ${quest.title}`
+          }
+          accessibilityHint={
+            !live
+              ? windowNote ?? 'Not available'
+              : outsideZone
+                ? zoneText
+                : isDuo
+                  ? 'Opens a party lobby to invite a friend'
+                  : 'Takes you to the photo submission screen'
+          }
           accessibilityState={{ disabled: outsideZone || !live }}
           style={({ pressed }) => [
             styles.start,
@@ -478,10 +499,10 @@ export default function QuestDetail() {
           ]}
         >
           <BodyStrong color={outsideZone || !live ? COLOR.inkSoft : COLOR.white}>
-            {live ? 'Start quest' : 'Not available'}
+            {live ? (isDuo ? 'Start with a friend' : 'Start quest') : 'Not available'}
           </BodyStrong>
           <Ionicons
-            name="camera-outline"
+            name={isDuo ? 'people-outline' : 'camera-outline'}
             size={20}
             color={outsideZone || !live ? COLOR.inkSoft : COLOR.white}
             accessibilityElementsHidden
@@ -726,6 +747,10 @@ const styles = StyleSheet.create({
     paddingHorizontal: SPACE.s4,
     paddingTop: SPACE.s3,
     backgroundColor: COLOR.paper,
+  },
+  duoPanel: {
+    marginBottom: SPACE.s2,
+    alignItems: 'center',
   },
   start: {
     minHeight: 52,
