@@ -13,15 +13,18 @@ export interface Completion {
   user_id: string
   quest_id: string
   redemption_code: string | null
+  /** XP this completion paid (043). Replaces quests.xp_reward, which can change later. */
+  xp_awarded: number
+  xp_reason: string | null
   profiles: { username: string } | null
-  quests: { title: string; xp_reward: number; is_sponsored: boolean; geofence_type: string } | null
+  quests: { title: string; is_sponsored: boolean; geofence_type: string } | null
 }
 
 export async function getRecentCompletions(limit = 100): Promise<Completion[]> {
   await requireAdmin()
   const { data } = await supabaseAdmin
     .from('completions')
-    .select('*, profiles(username), quests(title, xp_reward, is_sponsored, geofence_type)')
+    .select('*, profiles(username), quests(title, is_sponsored, geofence_type)')
     .in('status', ['approved', 'removed'])
     .order('completed_at', { ascending: false })
     .limit(limit)

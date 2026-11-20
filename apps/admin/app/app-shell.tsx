@@ -14,6 +14,7 @@ function Sidebar() {
     { href: '/quests', label: 'Quests' },
     { href: '/quests/new', label: 'New quest' },
     { href: '/suggestions', label: 'Suggestions' },
+    { href: '/xp-events', label: 'XP events' },
     { href: '/badges', label: 'Badges' },
     { href: '/users', label: 'Users' },
     { href: '/sponsors', label: 'Sponsors' },

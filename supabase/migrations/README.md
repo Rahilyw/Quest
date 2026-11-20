@@ -1,7 +1,8 @@
 # Migration index and rollout notes
 
-The baseline schema is `20260619010246_initial_schema.sql`; numbered follow-ups are `002`–`041`.
-**041 is in the checkout only; it has not been applied anywhere.**
+The baseline schema is `20260619010246_initial_schema.sql`; numbered follow-ups are `002`–`043`.
+**041, 042 and 043 are in the checkout only; none has been applied anywhere. Apply them in order
+041 → 042 → 043, running each file's "Verifying" block before the next.**
 There is no `001_initial_schema.sql`. The Nov 10, 2026 runbook reports the existing Quest project
 has the baseline and migrations through 038 applied; that report was not independently re-queried.
 **039 and 040: Applied to production (`xuviwarpgvxzpouqesrv`) by the owner on Nov 11, 2026 with `npx supabase db push --remote --include-all`. The "Verifying 039" checks below have not been recorded as run.**
@@ -149,6 +150,159 @@ claimed_at = NULL WHERE id = '<id>';`
 
 The drain test with more than 100 rows is in `LAUNCH-RUNBOOK.md` Step 0c.
 
+## Verifying 043 (XP economy events)
+
+**Status: in checkout, text-checked only.** `apps/mobile/__tests__/xpEvents.test.js` checks the
+SQL text and mirrors the multiplier rule in JS. Nothing in 043 has been executed against a
+database. Apply 041 first: 043 redefines `enqueue_week_recap()` and writes `win_back` outbox rows.
+
+### Structure and grants
+
+```sql
+-- Backfill: no nulls, column is NOT NULL
+SELECT count(*) FROM completions WHERE xp_awarded IS NULL;                 -- expect 0
+SELECT is_nullable FROM information_schema.columns
+ WHERE table_name = 'completions' AND column_name = 'xp_awarded';          -- expect NO
+-- Existing rows match today's quest values (true right after applying; drifts by design later)
+SELECT count(*) FROM completions c JOIN quests q ON q.id = c.quest_id
+ WHERE c.xp_awarded <> q.xp_reward AND c.xp_reason IS NULL;                -- expect 0 right after apply
+
+-- Column grants (038 rule)
+SELECT has_column_privilege('authenticated', 'completions', 'xp_awarded', 'SELECT') AS awarded,
+       has_column_privilege('authenticated', 'completions', 'xp_reason',  'SELECT') AS reason,
+       has_column_privilege('anon',          'completions', 'xp_awarded', 'SELECT') AS anon_awarded;
+-- expect: true / true / true
+
+-- xp_events and win_back_sends are closed to clients
+SELECT has_table_privilege('authenticated', 'xp_events', 'SELECT') AS ev_read,
+       has_table_privilege('authenticated', 'xp_events', 'INSERT') AS ev_write,
+       has_table_privilege('authenticated', 'win_back_sends', 'SELECT') AS sends_read;
+-- expect: false / false / false
+SELECT relrowsecurity FROM pg_class WHERE relname IN ('xp_events', 'win_back_sends'); -- expect true, true
+SELECT count(*) FROM pg_policies WHERE tablename = 'xp_events';                       -- expect 0
+
+-- Old overload gone; new reward function and job are server-only
+SELECT to_regprocedure('apply_completion_rewards(uuid,uuid)');            -- expect NULL
+SELECT p.oid::regprocedure,
+       has_function_privilege('authenticated', p.oid, 'EXECUTE') AS authed,
+       has_function_privilege('anon', p.oid, 'EXECUTE') AS anon
+  FROM pg_proc p
+ WHERE p.proname IN ('apply_completion_rewards', 'enqueue_win_back', 'active_xp_boosts',
+                     'own_completion_reward', 'normalize_completion_on_insert');
+-- expect: apply_completion_rewards(uuid), enqueue_win_back(), normalize_completion_on_insert()
+--         false / false; active_xp_boosts() and own_completion_reward(uuid) true / false
+
+-- Schedules
+SELECT jobname, schedule, command FROM cron.job
+ WHERE jobname IN ('enqueue-win-back-0000', 'enqueue-win-back-0100');
+-- expect: 0 0 * * * and 0 1 * * *, both SELECT public.enqueue_win_back()
+```
+
+### Behaviour (run in a transaction and roll back)
+
+Use test accounts you own and a quest whose zone contains its own `lat`/`lng` (most circle
+quests). Each block inserts as `postgres`, so RLS is bypassed but every completion trigger runs.
+The rate limit allows two inserts per player per 10 minutes, so use a different test player per
+insert, or run each block on its own.
+
+```sql
+-- 1. One global ×2 event doubles the award.
+BEGIN;
+INSERT INTO xp_events (kind, multiplier, label, starts_at, ends_at, created_by)
+VALUES ('multiplier', 2, 'verify', now() - interval '1 minute', now() + interval '1 hour', 'verify');
+INSERT INTO completions (user_id, quest_id, photo_url, lat, lng, gps_accuracy)
+SELECT '<test-player-1>', q.id, 'verify', q.lat, q.lng, 5 FROM quests q WHERE q.id = '<old-quest-id>'
+RETURNING xp_awarded, xp_reason;
+-- expect: 2 × that quest's xp_reward, reason 'weekend'
+-- (pick a quest that started more than 7 days ago, or it may also get first-finisher)
+ROLLBACK;
+
+-- 2. Quest ×1.5 plus global ×2 gives the max (×2), not the product (×3).
+BEGIN;
+INSERT INTO xp_events (kind, multiplier, label, starts_at, ends_at, created_by) VALUES
+  ('multiplier', 2,   'verify global', now() - interval '1 minute', now() + interval '1 hour', 'verify');
+INSERT INTO xp_events (kind, multiplier, quest_id, label, starts_at, ends_at, created_by) VALUES
+  ('multiplier', 1.5, '<old-quest-id>', 'verify quest', now() - interval '1 minute', now() + interval '1 hour', 'verify');
+INSERT INTO completions (user_id, quest_id, photo_url, lat, lng, gps_accuracy)
+SELECT '<test-player-2>', q.id, 'verify', q.lat, q.lng, 5 FROM quests q WHERE q.id = '<old-quest-id>'
+RETURNING xp_awarded, xp_reason;   -- expect ×2, 'weekend'
+ROLLBACK;
+
+-- 3. Revoke subtracts the stored award, and a reinstate pays it back.
+BEGIN;
+INSERT INTO xp_events (kind, multiplier, label, starts_at, ends_at, created_by)
+VALUES ('multiplier', 3, 'verify', now() - interval '1 minute', now() + interval '1 hour', 'verify');
+SELECT total_xp FROM profiles WHERE id = '<test-player-3>';                       -- note T0
+INSERT INTO completions (user_id, quest_id, photo_url, lat, lng, gps_accuracy)
+SELECT '<test-player-3>', q.id, 'verify', q.lat, q.lng, 5 FROM quests q WHERE q.id = '<old-quest-id>'
+RETURNING id, xp_awarded;                                                          -- note A (= 3 × base)
+SELECT total_xp FROM profiles WHERE id = '<test-player-3>';                       -- expect T0 + A
+UPDATE completions SET status = 'removed' WHERE id = '<id from above>';
+SELECT total_xp FROM profiles WHERE id = '<test-player-3>';                       -- expect T0
+UPDATE completions SET status = 'approved' WHERE id = '<id from above>';
+SELECT total_xp FROM profiles WHERE id = '<test-player-3>';                       -- expect T0 + A
+ROLLBACK;
+
+-- 4. Win-back: personal ×2 is consumed by the next completion.
+BEGIN;
+INSERT INTO xp_events (kind, multiplier, user_id, label, starts_at, ends_at, created_by)
+VALUES ('win_back', 2, '<test-player-4>', 'verify', now() - interval '1 minute', now() + interval '7 days', 'verify');
+INSERT INTO completions (user_id, quest_id, photo_url, lat, lng, gps_accuracy)
+SELECT '<test-player-4>', q.id, 'verify', q.lat, q.lng, 5 FROM quests q WHERE q.id = '<old-quest-id>'
+RETURNING xp_awarded, xp_reason;   -- expect ×2, 'win_back'
+SELECT consumed_at IS NOT NULL FROM xp_events WHERE user_id = '<test-player-4>';   -- expect true
+ROLLBACK;
+```
+
+**First finisher under two concurrent inserts.** Needs two sessions (two SQL editor tabs, or
+two `psql` windows). Use a quest whose `coalesce(active_from, created_at)` is within the last
+7 days and that has no approved completion yet (create a throwaway test quest).
+
+```sql
+-- Session A
+BEGIN;
+INSERT INTO completions (user_id, quest_id, photo_url, lat, lng, gps_accuracy)
+SELECT '<test-player-5>', q.id, 'verify', q.lat, q.lng, 5 FROM quests q WHERE q.id = '<new-quest-id>'
+RETURNING xp_awarded, xp_reason;   -- expect round(base × 1.5), 'first_finisher'
+-- leave open
+
+-- Session B (it waits on the advisory lock)
+BEGIN;
+INSERT INTO completions (user_id, quest_id, photo_url, lat, lng, gps_accuracy)
+SELECT '<test-player-6>', q.id, 'verify', q.lat, q.lng, 5 FROM quests q WHERE q.id = '<new-quest-id>'
+RETURNING xp_awarded, xp_reason;
+
+-- Session A
+COMMIT;
+-- Session B now returns: base, reason NULL (A's row is visible after the lock)
+-- Session B
+ROLLBACK;
+-- Clean up A's row: UPDATE completions SET status = 'removed' WHERE ...; then delete the test quest.
+```
+
+### Totals
+
+```sql
+-- The leaderboard equals the stored awards for this Victoria week.
+WITH stored AS (
+  SELECT c.user_id, sum(c.xp_awarded)::integer AS xp
+    FROM completions c
+   WHERE c.status = 'approved'
+     AND c.reviewed_at >= (date_trunc('week', now() AT TIME ZONE 'America/Vancouver') AT TIME ZONE 'America/Vancouver')
+   GROUP BY c.user_id
+)
+SELECT count(*) FROM leaderboard l LEFT JOIN stored s ON s.user_id = l.user_id
+ WHERE l.weekly_xp <> coalesce(s.xp, 0);                                  -- expect 0
+
+-- Win-back guard: before 17:00 Victoria this returns 0 and writes nothing.
+SELECT enqueue_win_back();
+SELECT * FROM win_back_sends ORDER BY local_date DESC LIMIT 3;
+SELECT count(*) FILTER (WHERE consumed_at IS NULL AND ends_at > now()) AS open_win_backs,
+       count(*) FILTER (WHERE consumed_at IS NOT NULL) AS used
+  FROM xp_events WHERE kind = 'win_back';
+```
+
+
 | File | Description |
 |------|-------------|
 | `20260619010246_initial_schema.sql` | Core tables, XP trigger, storage bucket |
@@ -193,6 +347,7 @@ The drain test with more than 100 rows is in `LAUNCH-RUNBOOK.md` Step 0c.
 | `040_week_recap.sql` | Spec 06 §2. `own_week_recap(date)` returns the caller's rank, weekly XP, quest count, derived streak and best own place photo for one `America/Vancouver` week (current or previous only). Authenticated only. Recomputed from live rows; no snapshot table. **Applied to production Nov 11, 2026.** |
 | `041_push_outbox_draining.sql` | OPS-01/F-007 and Spec 06 §2. `push_outbox.attempts`, `last_error`, `claimed_at`, `next_attempt_at`; service-role `claim_push_outbox` (`FOR UPDATE SKIP LOCKED`, reclaims claims older than 10 min), `finish_push_outbox`, `release_push_outbox` (backoff, dead letter at 5 attempts). `kind` adds `week_recap`, `win_back`. `invoke_push_outbox_drain()` on a 5-minute pg_cron calls `send-push-outbox` through `pg_net` only when rows are claimable; URL and secret come from Vault (see "Verifying 041"). `week_recap_sends` + `enqueue_week_recap()` on Monday 01:00 and 02:00 UTC with a Sunday 18:00 Victoria guard. **In checkout only; not applied.** |
 | `042_proof_photo_owner_policies.sql` | Plan Phase 1d. UPDATE and DELETE policies on `proof-photos` for the caller's own folder, only for objects none of their completions reference. Lets the submit screen upsert to its fixed per-attempt path and delete a failed attempt's photo (both were RLS no-ops before). **Not applied.** |
+| `043_xp_events.sql` | Spec 06 §3, plan Phase 4a. **Requires 041.** `completions.xp_awarded` (backfilled to `xp_reward`, then NOT NULL) and `xp_reason`, both column-granted. `xp_events` (multiplier / win_back rows; RLS on, no client policies). `normalize_completion_on_insert` keeps 038's logic and stores the award: highest of global/quest event and personal win-back (consumed), first-finisher ×1.5 under an advisory lock, capped at ×3. `apply_completion_rewards(uuid)` pays the stored award (old `(uuid, uuid)` dropped); revoke, `leaderboard`, `own_week_recap`, `enqueue_week_recap` sum `coalesce(xp_awarded, xp_reward)`. `active_xp_boosts()` and `own_completion_reward` (+`xp_awarded`, `xp_reason`) for players. `enqueue_win_back()` + `win_back_sends` on 00:00 and 01:00 UTC with a 17:00 Victoria guard. See "Verifying 043". **In checkout only; not applied.** |
 
 ## Column grants: what a new column needs
 

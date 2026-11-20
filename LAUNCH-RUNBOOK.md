@@ -198,6 +198,35 @@ as a delivered notification: check the phone.
 
 ---
 
+## Step 0d — XP economy events (migration 043) 🟠
+
+**043 is in the checkout only (not applied, not device-verified).** It stores the XP each
+completion paid (`completions.xp_awarded`), adds admin double-XP events (`/xp-events` in the
+admin), a first-finisher bonus, and a daily win-back push. See plan Phase 4a in
+`docs/design/NEXT-BUILD-PLAN-2026-11-19.md`.
+
+**Apply order is fixed: 041 → 042 → 043.** 043 redefines `enqueue_week_recap()` from 041 and
+writes `win_back` push rows that only 041's CHECK allows. Run each file's "Verifying" block in
+`supabase/migrations/README.md` before pushing the next one.
+
+```powershell
+cd C:\Users\rahil\Documents\Projects\Quest
+npx supabase db push --remote --dry-run    # after 041 and 042 are applied and verified: expect exactly 043
+npx supabase db push --remote
+```
+
+Then run "Verifying 043" in `supabase/migrations/README.md`. Deploy the admin build that has
+`/xp-events` only after 043 is applied: its completions and moderation pages select
+`xp_awarded`, which does not exist before 043.
+
+**Schedules.** `enqueue_win_back()` runs at 00:00 and 01:00 UTC daily; a local-time guard only
+lets it run at 17:00 or later in Victoria, and `win_back_sends` stops a second run that day. It
+targets players whose last approved completion is 10–60 days old, with a push token, the Weekly
+digest toggle on, and no win-back in the last 30 days. Each gets a 7-day ×2 bonus on their next
+quest and the push "Victoria misses you. Double XP on your next quest this week."
+
+---
+
 ## Step 1 — Apple Developer + iOS submit credentials (30–60 min) 🔴
 
 This is the only thing blocking a TestFlight build.

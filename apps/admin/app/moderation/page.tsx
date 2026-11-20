@@ -106,7 +106,7 @@ export default function ModerationPage() {
                     : '—'}
                 </div>
                 <div style={{ color: theme.textDim, fontSize: 13, marginBottom: 6 }}>
-                  {item.open_report_count} open report{item.open_report_count === 1 ? '' : 's'}
+                  {item.xp_awarded} XP at stake · {item.open_report_count} open report{item.open_report_count === 1 ? '' : 's'}
                   {item.hidden_pending_review ? ' · hidden from feed pending review' : ''}
                 </div>
                 <div

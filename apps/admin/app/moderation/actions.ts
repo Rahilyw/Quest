@@ -23,8 +23,10 @@ export interface ModerationItem {
   open_report_count: number
   hidden_pending_review: boolean
   user_id: string
+  /** XP this completion paid (043); removal subtracts exactly this. */
+  xp_awarded: number
   profiles: { username: string; level: number; created_at: string } | null
-  quests: { title: string; geofence_type: string; xp_reward: number } | null
+  quests: { title: string; geofence_type: string } | null
   reports: ModerationReport[]
   geofenceEvidence: { inside?: boolean; geofence_type?: string; found?: boolean } | null
   removedCount: number
@@ -45,7 +47,7 @@ export async function getModerationQueue(): Promise<ModerationItem[]> {
   const { data: completions } = await supabaseAdmin
     .from('completions')
     .select(
-      'id, photo_url, lat, lng, completed_at, status, open_report_count, hidden_pending_review, user_id, profiles(username, level, created_at), quests(title, geofence_type, xp_reward)'
+      'id, photo_url, lat, lng, completed_at, status, open_report_count, hidden_pending_review, user_id, xp_awarded, profiles(username, level, created_at), quests(title, geofence_type)'
     )
     .gt('open_report_count', 0)
     .eq('status', 'approved')
@@ -118,8 +120,9 @@ export async function getModerationQueue(): Promise<ModerationItem[]> {
       open_report_count: number
       hidden_pending_review: boolean
       user_id: string
+      xp_awarded: number
       profiles: { username: string; level: number; created_at: string } | { username: string; level: number; created_at: string }[] | null
-      quests: { title: string; geofence_type: string; xp_reward: number } | { title: string; geofence_type: string; xp_reward: number }[] | null
+      quests: { title: string; geofence_type: string } | { title: string; geofence_type: string }[] | null
     }
 
     const profile = Array.isArray(c.profiles) ? c.profiles[0] ?? null : c.profiles
@@ -139,6 +142,7 @@ export async function getModerationQueue(): Promise<ModerationItem[]> {
       open_report_count: c.open_report_count,
       hidden_pending_review: c.hidden_pending_review,
       user_id: c.user_id,
+      xp_awarded: c.xp_awarded,
       profiles: profile,
       quests: quest,
       reports: reportsByCompletion.get(c.id) ?? [],
