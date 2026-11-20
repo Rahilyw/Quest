@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # Apply every migration in dependency order to a throwaway local Supabase stack.
 # Clean install order (DB-01): baseline, then 002..044 ascending, then seed.
+# Leaves the stack running for verify.sh; call stop.sh when finished.
 # See supabase/migrations/README.md.
 set -euo pipefail
 
@@ -8,25 +9,21 @@ ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
 MIG_DIR="$ROOT/supabase/migrations"
 SEED="$ROOT/supabase/seed.sql"
 TEMPLATE="$ROOT/scripts/db-local/config.toml.template"
-WORK="$(mktemp -d "${TMPDIR:-/tmp}/quest-db-local.XXXXXX")"
+# Stable path so verify.sh / stop.sh can find the same stack across CI steps.
+WORK="$ROOT/scripts/db-local/.stack"
 export WORK
 
-cleanup() {
-  if [[ -d "$WORK/supabase" ]]; then
-    (cd "$WORK" && supabase stop --no-backup >/dev/null 2>&1) || true
-  fi
-  rm -rf "$WORK"
-}
-trap cleanup EXIT
-
-echo "db-local: workdir $WORK"
-
+if [[ -d "$WORK/supabase" ]]; then
+  (cd "$WORK" && supabase stop --no-backup >/dev/null 2>&1) || true
+fi
+rm -rf "$WORK"
 mkdir -p "$WORK/supabase"
 cp "$TEMPLATE" "$WORK/supabase/config.toml"
 # No migrations/ directory and no seed.sql on purpose: supabase start must not
 # auto-apply filename-sorted migrations or seed into an empty schema.
 # Seed is applied below, after baseline + 002..044.
 
+echo "db-local: workdir $WORK"
 cd "$WORK"
 echo "db-local: starting local stack (no migrations auto-applied)…"
 supabase start -x studio,imgproxy,logflare,vector,supavisor
@@ -42,6 +39,10 @@ if [[ -z "${DB_URL}" ]]; then
   exit 1
 fi
 echo "db-local: DB URL acquired"
+echo "$DB_URL" > "$ROOT/scripts/db-local/.db-url"
+if [[ -n "${GITHUB_ENV:-}" ]]; then
+  echo "DB_URL=$DB_URL" >> "$GITHUB_ENV"
+fi
 
 # ---------------------------------------------------------------------------
 # Harness shims for extensions / roles hosted Supabase provides by default.
@@ -119,7 +120,6 @@ def repl(m):
     cols = m.group(1).strip()
     values = m.group(2).strip()
     col_list = [c.strip() for c in cols.split(",")]
-    # First column must be name for the existence check.
     name_idx = next(i for i, c in enumerate(col_list) if c.lower() == "name")
     aliases = ", ".join(f"c{i}" for i in range(len(col_list)))
     select_cols = ", ".join(f"v.c{i}" for i in range(len(col_list)))
@@ -132,6 +132,4 @@ open(dst, "w", encoding="utf-8").write(pat.sub(repl, text))
 PY
 apply_file "$SEED_CI"
 
-# Expose DB URL for verify.sh / later steps in the same job.
-echo "$DB_URL" > "$ROOT/scripts/db-local/.db-url"
-echo "db-local: apply complete"
+echo "db-local: apply complete (stack still running; run verify.sh then stop.sh)"

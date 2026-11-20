@@ -24,11 +24,15 @@ jobs:
       - name: Apply migrations (DB-01 order) + seed
         id: apply
         run: |
-          chmod +x scripts/db-local/apply.sh scripts/db-local/verify.sh
+          chmod +x scripts/db-local/apply.sh scripts/db-local/verify.sh scripts/db-local/stop.sh
           scripts/db-local/apply.sh
 
       - name: Run verify SQL pack
         run: scripts/db-local/verify.sh
+
+      - name: Stop local stack
+        if: always()
+        run: scripts/db-local/stop.sh
 
       - name: Upload psql output on failure
         if: failure()
