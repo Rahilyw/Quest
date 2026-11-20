@@ -21,8 +21,10 @@ import { Body, BodyStrong, Heading, Micro, Small } from '@/components/ui/Text'
 import { useGeofenceCheck } from '@/hooks/useGeofenceCheck'
 import { useQuest } from '@/hooks/useQuests'
 import { useQuestPhotos, type QuestPhoto } from '@/hooks/useQuestPhotos'
-import { questSourceFromParam, track } from '@/lib/analytics'
+import { useXpBoosts } from '@/hooks/useXpBoosts'
+import { questSourceFromParam, track, trackXpBoostSeen } from '@/lib/analytics'
 import { plural, xpLabel } from '@/lib/copy'
+import { formatRelativeTime } from '@/lib/relativeTime'
 import { BYPASS_GEOFENCE, getQuestCoverImage, TAB_BAR_CLEARANCE } from '@/lib/constants'
 import { ensureLocationPermission } from '@/lib/permissions'
 import { paramAsString } from '@/lib/routeParams'
@@ -67,9 +69,11 @@ export default function QuestDetail() {
   const { height: windowHeight } = useWindowDimensions()
   const { quest, loading } = useQuest(id)
   const { photos, weeklyCount, loading: photosLoading, refetch } = useQuestPhotos(questId, PHOTO_LIMIT)
+  const { questHasBoost, boosts } = useXpBoosts(!!questId)
   const [coords, setCoords] = useState<Coords | null>(null)
   const [permission, setPermission] = useState<Permission>('checking')
   const [viewerIndex, setViewerIndex] = useState<number | null>(null)
+  const boostSeen = useRef(false)
 
   const { insideGeofence, requiresLocation } = useGeofenceCheck(quest, coords, BYPASS_GEOFENCE)
 
@@ -167,6 +171,17 @@ export default function QuestDetail() {
     })
   }, [quest?.id, source])
 
+  useEffect(() => {
+    boostSeen.current = false
+  }, [quest?.id])
+
+  useEffect(() => {
+    if (!quest || !questHasBoost(quest.id) || boostSeen.current) return
+    boostSeen.current = true
+    const questEvent = boosts.events.find((e) => e.quest_id === quest.id)
+    trackXpBoostSeen(questEvent ? 'quest' : 'weekend')
+  }, [quest?.id, boosts, questHasBoost])
+
   const startQuest = useCallback(() => {
     if (!quest || !isQuestActive(quest, new Date())) return
     setViewerIndex(null)
@@ -224,7 +239,9 @@ export default function QuestDetail() {
   const heroHeight = Math.round(windowHeight * 0.46)
   const coverUri = sizedImageUrl(getQuestCoverImage(quest), { width: 1200, height: 800 })
   const meta = questMeta(quest)
-  const facts = meta ? `${meta}, ${xpLabel(quest.xp_reward)}` : xpLabel(quest.xp_reward)
+  const showBoost = questHasBoost(quest.id)
+  const xpFact = showBoost ? `${xpLabel(quest.xp_reward)}, 2x today` : xpLabel(quest.xp_reward)
+  const facts = meta ? `${meta}, ${xpFact}` : xpFact
   const description = quest.description?.trim()
   const layers = fanLayers(photos)
   const preview = photos.slice(0, 3)
@@ -381,12 +398,14 @@ export default function QuestDetail() {
                 showsHorizontalScrollIndicator={false}
                 contentContainerStyle={styles.photoRow}
               >
-                {preview.map((photo, index) => (
+                {preview.map((photo, index) => {
+                  const when = formatRelativeTime(photo.completed_at)
+                  return (
                   <Pressable
                     key={photo.id}
                     onPress={() => setViewerIndex(index)}
                     accessibilityRole="button"
-                    accessibilityLabel={`${photo.username}, ${plural(photo.like_count, 'like')}`}
+                    accessibilityLabel={`${photo.username}, ${when || plural(photo.like_count, 'like')}`}
                     style={({ pressed }) => [styles.photoCol, pressed && styles.pressed]}
                   >
                     <Pillow
@@ -396,20 +415,27 @@ export default function QuestDetail() {
                     <Small numberOfLines={1} style={styles.photoName}>
                       {photo.username}
                     </Small>
-                    <View style={styles.photoLikes}>
-                      <Ionicons
-                        name="heart-outline"
-                        size={12}
-                        color={COLOR.inkSoft}
-                        accessibilityElementsHidden
-                        importantForAccessibility="no"
-                      />
-                      <Micro tone="soft" tabular>
-                        {photo.like_count}
+                    {when ? (
+                      <Micro tone="soft" tabular style={styles.photoWhen}>
+                        {when}
                       </Micro>
-                    </View>
+                    ) : (
+                      <View style={styles.photoLikes}>
+                        <Ionicons
+                          name="heart-outline"
+                          size={12}
+                          color={COLOR.inkSoft}
+                          accessibilityElementsHidden
+                          importantForAccessibility="no"
+                        />
+                        <Micro tone="soft" tabular>
+                          {photo.like_count}
+                        </Micro>
+                      </View>
+                    )}
                   </Pressable>
-                ))}
+                  )
+                })}
                 <Pressable
                   onPress={startQuest}
                   accessibilityRole="button"
@@ -672,6 +698,10 @@ const styles = StyleSheet.create({
     gap: SPACE.s1,
   },
   photoName: {
+    alignSelf: 'stretch',
+    textAlign: 'center',
+  },
+  photoWhen: {
     alignSelf: 'stretch',
     textAlign: 'center',
   },
