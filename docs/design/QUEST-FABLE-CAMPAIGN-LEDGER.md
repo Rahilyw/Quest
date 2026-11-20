@@ -60,6 +60,9 @@ first; chains stay deferred (35 live quests); the plan carries an owner-only lau
   webhooks, and running the "Verifying 039/041/042" queries. Code work continues in parallel from
   [NEXT-BUILD-PLAN-2026-11-19.md](NEXT-BUILD-PLAN-2026-11-19.md): Lane A (Phase 3 offline queue,
   mobile only) and Lane B (Phase 4a XP events: migration 043 + admin), then 4b, then Phase 5 duo.
+- Nov 19: Lanes A and B are merged into this branch and locally tested (all mobile and geofence
+  tests, both `tsc`, admin `next build`). Migrations 041, 042 and 043 are written but not applied; apply them in
+  that order. Nothing in Phases 3–4a is device-tested. Next code: Phase 4b (card C), then Phase 5.
 
 The sections below preserve the Nov 10 campaign record and may contain facts that were true
 only for that session; use the continuation above and linked current docs for present status.

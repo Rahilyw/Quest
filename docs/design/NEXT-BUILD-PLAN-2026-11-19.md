@@ -46,7 +46,7 @@ Phase 6 polish: small slices between the above, never touching
 
 ## Phase 3 — Offline submission queue (Spec 06 §5) — Lane A, about 3 days
 
-**Status (Nov 19): in checkout and locally tested on `claude/objective-easley-4d2899`; not device-tested.** The runbook Step 5 checklist covers device testing. Deviations from this section are recorded in the Spec 06 §5 implementation note.
+**Status (Nov 19): merged into `cursor/cutouts-this-week-quests` and locally tested; not device-tested.** The runbook Step 5 checklist covers device testing. Deviations from this section are recorded in the Spec 06 §5 implementation note.
 
 **Goal.** A player who captures proof with no signal keeps it, and it gets sent later, without anyone pretending it was verified.
 
@@ -91,6 +91,8 @@ Phase 6 polish: small slices between the above, never touching
 ## Phase 4 — XP economy events (Spec 06 §3)
 
 ### 4a. Server and admin — Lane B, about 3 days
+
+**Status (Nov 19): merged into `cursor/cutouts-this-week-quests` and locally tested (26 tests in `xpEvents.test.js`, admin `tsc` and `next build`). Migration 043 is written, not executed or applied; it needs 041 and 042 applied first.**
 
 **Migration `043_xp_events.sql`.** Requires 041 to be applied first.
 

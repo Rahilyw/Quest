@@ -8,10 +8,10 @@ The agent must read the section for its card before writing code.
 
 | Card | Status on Nov 19, 2026 |
 |---|---|
-| A: Offline submission queue (Phase 3) | Started in a Claude Code session |
-| B: XP events server + admin (Phase 4a) | Started in a Claude Code session |
-| C: XP events mobile (Phase 4b) | Waiting on A and B |
-| D: Duo quests (Phase 5) | Waiting on B |
+| A: Offline submission queue (Phase 3) | Done: merged Nov 19, not device-tested |
+| B: XP events server + admin (Phase 4a) | Done: merged Nov 19, migration 043 not applied |
+| C: XP events mobile (Phase 4b) | Free. A and B are merged. |
+| D: Duo quests (Phase 5) | Free. B is merged; best after C so the submit pipeline settles. |
 | E1–E6: Cutouts/accessibility slices (Phase 6) | Free. They can start now. |
 
 Don't give the same card to two agents.
