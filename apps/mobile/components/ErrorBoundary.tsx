@@ -1,8 +1,9 @@
 import { Component, type ErrorInfo, type ReactNode } from 'react'
 import { Pressable, StyleSheet, View } from 'react-native'
+import { FeedbackSheet } from '@/components/FeedbackSheet'
 import { Body, BodyStrong, Heading, Small } from '@/components/ui/Text'
-import { COLOR, RADIUS, SPACE } from '@/lib/theme'
 import { captureException } from '@/lib/sentry'
+import { COLOR, RADIUS, SPACE } from '@/lib/theme'
 
 interface Props {
   children: ReactNode
@@ -11,22 +12,33 @@ interface Props {
 interface State {
   hasError: boolean
   error: Error | null
+  eventId?: string
+  feedbackOpen: boolean
 }
 
 export class ErrorBoundary extends Component<Props, State> {
-  state: State = { hasError: false, error: null }
+  state: State = { hasError: false, error: null, feedbackOpen: false }
 
-  static getDerivedStateFromError(error: Error): State {
+  static getDerivedStateFromError(error: Error): Partial<State> {
     return { hasError: true, error }
   }
 
   componentDidCatch(error: Error, info: ErrorInfo) {
     console.error('ErrorBoundary caught:', error, info.componentStack)
-    captureException(error, { componentStack: info.componentStack })
+    const eventId = captureException(error, { componentStack: info.componentStack })
+    this.setState({ eventId })
   }
 
   handleRetry = () => {
-    this.setState({ hasError: false, error: null })
+    this.setState({ hasError: false, error: null, eventId: undefined, feedbackOpen: false })
+  }
+
+  handleOpenFeedback = () => {
+    this.setState({ feedbackOpen: true })
+  }
+
+  handleCloseFeedback = () => {
+    this.setState({ feedbackOpen: false })
   }
 
   render() {
@@ -50,6 +62,19 @@ export class ErrorBoundary extends Component<Props, State> {
           >
             <BodyStrong color={COLOR.white}>Try again</BodyStrong>
           </Pressable>
+          <Pressable
+            onPress={this.handleOpenFeedback}
+            accessibilityRole="button"
+            accessibilityLabel="Tell us what happened"
+            style={({ pressed }) => [styles.secondary, pressed && styles.secondaryPressed]}
+          >
+            <BodyStrong>Tell us what happened</BodyStrong>
+          </Pressable>
+          <FeedbackSheet
+            visible={this.state.feedbackOpen}
+            onClose={this.handleCloseFeedback}
+            eventId={this.state.eventId}
+          />
         </View>
       )
     }
@@ -77,4 +102,13 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   buttonPressed: { backgroundColor: COLOR.inkPressed, transform: [{ scale: 0.97 }] },
+  secondary: {
+    minHeight: 48,
+    paddingHorizontal: SPACE.s5,
+    borderRadius: RADIUS.pill,
+    backgroundColor: COLOR.secondaryFill,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  secondaryPressed: { opacity: 0.7, transform: [{ scale: 0.97 }] },
 })
