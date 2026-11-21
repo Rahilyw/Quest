@@ -56,7 +56,7 @@ jobs:
         run: cd apps/mobile && npx expo config --type public > /dev/null
 
   edge-functions:
-    name: edge-functions (deno check)
+    name: edge-functions (deno check + test)
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -68,6 +68,8 @@ jobs:
           deno check
           supabase/functions/send-push-outbox/index.ts
           supabase/functions/send-social-push/index.ts
+      - name: Deno test push functions
+        run: deno test --allow-env supabase/functions
 
   typescript-check-admin:
     name: typescript-check (admin)
