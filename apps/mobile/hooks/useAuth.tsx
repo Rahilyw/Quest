@@ -32,7 +32,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       identify(data.id, {
         city: data.city,
         level: data.level,
-        created_at: data.created_at,
+        created_at: data.created_at ?? undefined,
       })
     }
     setLoading(false)

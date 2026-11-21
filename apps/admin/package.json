@@ -8,6 +8,7 @@
     "test": "node __tests__/pilotFallback.test.js"
   },
   "dependencies": {
+    "@quest/db-types": "1.0.0",
     "@quest/geofence": "1.0.0",
     "@supabase/ssr": "^0.5.2",
     "@supabase/supabase-js": "^2.39.0",

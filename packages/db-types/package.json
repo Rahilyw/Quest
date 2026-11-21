@@ -1,0 +1,10 @@
+{
+  "name": "@quest/db-types",
+  "version": "1.0.0",
+  "private": true,
+  "main": "src/database.ts",
+  "types": "src/database.ts",
+  "exports": {
+    ".": "./src/database.ts"
+  }
+}

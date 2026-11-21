@@ -117,7 +117,9 @@ test('no mobile query selects push_token or * from profiles', () => {
   assert.deepStrictEqual(offenders, [])
 })
 
-test('push_token appears only in the two own-row writes and their write-only types', () => {
+test('push_token appears only in the two own-row writes', () => {
+  // Write-only Update typing lives in @quest/db-types (generated). App code
+  // under apps/mobile must only touch push_token in these two updates.
   const uses = []
   for (const file of walk(path.join(ROOT, 'apps/mobile'))) {
     if (file.includes(`${path.sep}__tests__${path.sep}`)) continue
@@ -130,8 +132,6 @@ test('push_token appears only in the two own-row writes and their write-only typ
   assert.deepStrictEqual(uses, [
     "apps/mobile/lib/notifications.ts: await supabase.from('profiles').update({ push_token: token }).eq('id', userId)",
     "apps/mobile/lib/notifications.ts: await supabase.from('profiles').update({ push_token: null }).eq('id', userId)",
-    'apps/mobile/lib/types.ts: push_token?: string | null',
-    "apps/mobile/lib/types.ts: Update: Partial<Omit<UserProfile, 'id' | 'created_at'>> & { push_token?: string | null }",
   ])
 })
 
