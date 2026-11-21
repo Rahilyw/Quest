@@ -2,8 +2,11 @@
 
 import { revalidatePath } from 'next/cache'
 import { validatePolygonRing } from '@quest/geofence'
+import type { Database } from '@quest/db-types'
 import { supabaseAdmin } from '@/lib/supabase'
 import { requireAdmin } from '@/lib/require-admin'
+
+type QuestCategory = Database['public']['Enums']['quest_category']
 import { normalizeSchedule, scheduleFromForm } from '@/lib/schedule'
 import { sendExpoPush } from '@/lib/expo-push'
 import { processAndStoreSticker, removeStoredSticker, validateAltText } from '@/lib/sticker-storage'
@@ -345,7 +348,8 @@ export async function createQuest(formData: FormData): Promise<{ ok: true; quest
       .insert({
         title,
         description,
-        category,
+        // types: form field is string; constrained to quest_category enum values in UI.
+        category: category as QuestCategory,
         lat: insertLat,
         lng: insertLng,
         radius_meters,
@@ -568,7 +572,8 @@ export async function updateQuest(
       .update({
         title: title.trim(),
         description: description.trim(),
-        category,
+        // types: form field is string; constrained to quest_category enum values in UI.
+        category: category as QuestCategory,
         lat: updateLat,
         lng: updateLng,
         radius_meters: geofence_type === 'circle' ? radius_meters : 0,
