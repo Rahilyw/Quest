@@ -1,6 +1,6 @@
 -- 043 XP: awards, multipliers, first finisher, win_back, revoke, totals.
 BEGIN;
-SELECT plan(14);
+SELECT plan(13);
 
 SELECT is(
   (SELECT count(*)::int FROM completions WHERE xp_awarded IS NULL),
