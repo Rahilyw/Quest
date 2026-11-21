@@ -27,7 +27,11 @@ function test(name, fn) {
 }
 
 const sql = read('supabase/migrations/041_push_outbox_draining.sql').replace(/--.*$/gm, '')
-const fn = read('supabase/functions/send-push-outbox/index.ts')
+// Handler + shared drain logic (M4 moved pure code into _shared/pushOutbox.ts).
+const fn = [
+  read('supabase/functions/send-push-outbox/index.ts'),
+  read('supabase/functions/_shared/pushOutbox.ts'),
+].join('\n')
 const nav = read('apps/mobile/lib/push-navigation.ts')
 
 /** Body of one CREATE FUNCTION, from its header to the closing $$; */
@@ -166,9 +170,9 @@ test('every kind an enqueue writes has a tap route', () => {
 })
 
 test('the sender loops over claims within a batch and time cap', () => {
-  assert.ok(/admin\.rpc\('claim_push_outbox', \{ p_batch: BATCH \}\)/.test(fn))
+  assert.ok(/admin\.rpc\('claim_push_outbox', \{ p_batch: (BATCH|batchSize) \}\)/.test(fn))
   assert.strictEqual(/\.from\('push_outbox'\)/.test(fn), false, 'no direct outbox reads or writes')
-  assert.ok(/while \(totals\.batches < MAX_BATCHES\)/.test(fn))
+  assert.ok(/while \(totals\.batches < (MAX_BATCHES|maxBatches)\)/.test(fn))
   const batch = Number(/const BATCH = (\d+)/.exec(fn)[1])
   const budget = Number(/const TIME_BUDGET_MS = ([\d_]+)/.exec(fn)[1].replace(/_/g, ''))
   assert.ok(batch > 0 && batch <= 100, 'Expo takes at most 100 messages per request')
