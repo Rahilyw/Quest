@@ -2,12 +2,18 @@
 BEGIN;
 SELECT plan(4);
 
--- Name any offenders so a failure is actionable (build-2 stop vs in-place fix).
+-- App-owned definers only. PostGIS installs st_* into public as SECURITY DEFINER
+-- without search_path when the M1 harness enables the extension (not our SQL).
 SELECT diag(format('missing search_path: %s(%s)', p.proname, pg_get_function_identity_arguments(p.oid)))
   FROM pg_proc p
   JOIN pg_namespace n ON n.oid = p.pronamespace
  WHERE n.nspname = 'public'
    AND p.prosecdef
+   AND NOT EXISTS (
+         SELECT 1 FROM pg_depend d
+           JOIN pg_extension e ON d.refobjid = e.oid
+          WHERE d.objid = p.oid AND d.deptype = 'e'
+       )
    AND NOT EXISTS (
          SELECT 1
            FROM unnest(coalesce(p.proconfig, ARRAY[]::text[])) cfg
@@ -22,13 +28,18 @@ SELECT is(
      WHERE n.nspname = 'public'
        AND p.prosecdef
        AND NOT EXISTS (
+             SELECT 1 FROM pg_depend d
+               JOIN pg_extension e ON d.refobjid = e.oid
+              WHERE d.objid = p.oid AND d.deptype = 'e'
+           )
+       AND NOT EXISTS (
              SELECT 1
                FROM unnest(coalesce(p.proconfig, ARRAY[]::text[])) cfg
               WHERE cfg LIKE 'search_path=%'
            )
   ),
   0,
-  'every public SECURITY DEFINER function has search_path set'
+  'every app-owned public SECURITY DEFINER function has search_path set'
 );
 
 SELECT ok(

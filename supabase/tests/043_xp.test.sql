@@ -25,6 +25,7 @@ DECLARE
 BEGIN
   u := tests.make_user('xp2');
   q := tests.make_quest_none(100);
+  DELETE FROM xp_events;
   INSERT INTO xp_events (kind, multiplier, label, starts_at, ends_at, created_by)
   VALUES ('multiplier', 2, 'pgtap global', now() - interval '1 minute', now() + interval '1 hour', 'pgtap');
   c := tests.insert_completion(u, q);
@@ -49,6 +50,7 @@ DECLARE
 BEGIN
   u := tests.make_user('xpmax');
   q := tests.make_quest_none(100);
+  DELETE FROM xp_events;
   INSERT INTO xp_events (kind, multiplier, label, starts_at, ends_at, created_by)
   VALUES ('multiplier', 1.5, 'pgtap global', now() - interval '1 minute', now() + interval '1 hour', 'pgtap');
   INSERT INTO xp_events (kind, multiplier, quest_id, label, starts_at, ends_at, created_by)
@@ -74,6 +76,7 @@ DECLARE
 BEGIN
   u := tests.make_user('xpcap');
   q := tests.make_quest_none(100);
+  DELETE FROM xp_events;
   INSERT INTO xp_events (kind, multiplier, label, starts_at, ends_at, created_by)
   VALUES ('multiplier', 5, 'pgtap cap', now() - interval '1 minute', now() + interval '1 hour', 'pgtap');
   c := tests.insert_completion(u, q);
@@ -100,6 +103,7 @@ BEGIN
   u1 := tests.make_user('ff1');
   u2 := tests.make_user('ff2');
   q := tests.make_quest_none(100, now() - interval '1 day');
+  DELETE FROM xp_events;
   c1 := tests.insert_completion(u1, q);
   c2 := tests.insert_completion(u2, q);
   SELECT xp_awarded, xp_reason INTO a1, r1 FROM completions WHERE id = c1;
@@ -130,6 +134,7 @@ BEGIN
   u := tests.make_user('wb');
   q1 := tests.make_quest_none(100);
   q2 := tests.make_quest_none(100);
+  DELETE FROM xp_events;
   INSERT INTO xp_events (kind, multiplier, user_id, label, starts_at, ends_at, created_by)
   VALUES ('win_back', 2, u, 'pgtap wb', now() - interval '1 minute', now() + interval '7 days', 'pgtap');
   c1 := tests.insert_completion(u, q1);
@@ -162,6 +167,7 @@ DECLARE
 BEGIN
   u := tests.make_user('rev');
   q := tests.make_quest_none(100);
+  DELETE FROM xp_events;
   INSERT INTO xp_events (kind, multiplier, label, starts_at, ends_at, created_by)
   VALUES ('multiplier', 3, 'pgtap rev', now() - interval '1 minute', now() + interval '1 hour', 'pgtap');
   SELECT total_xp INTO t0 FROM profiles WHERE id = u;
@@ -190,6 +196,7 @@ DECLARE
 BEGIN
   u := tests.make_user('lb');
   q := tests.make_quest_none(100);
+  DELETE FROM xp_events;
   INSERT INTO xp_events (kind, multiplier, label, starts_at, ends_at, created_by)
   VALUES ('multiplier', 2, 'pgtap lb', now() - interval '1 minute', now() + interval '1 hour', 'pgtap');
   c := tests.insert_completion(u, q);
@@ -212,6 +219,7 @@ DECLARE
 BEGIN
   u := tests.make_user('recap');
   q := tests.make_quest_none(80);
+  DELETE FROM xp_events;
   PERFORM tests.insert_completion(u, q);
   week_start := date_trunc('week', now() AT TIME ZONE 'America/Vancouver')::date;
   PERFORM tests.act_as(u);
@@ -233,6 +241,7 @@ DECLARE
 BEGIN
   a := tests.make_user('boost_a');
   b := tests.make_user('boost_b');
+  DELETE FROM xp_events;
   INSERT INTO xp_events (kind, multiplier, user_id, label, starts_at, ends_at, created_by) VALUES
     ('win_back', 2, a, 'a', now() - interval '1 minute', now() + interval '7 days', 'pgtap'),
     ('win_back', 3, b, 'b', now() - interval '1 minute', now() + interval '7 days', 'pgtap');

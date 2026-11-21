@@ -34,6 +34,11 @@ SELECT p.proname, pg_get_function_identity_arguments(p.oid) AS args
  WHERE n.nspname = 'public'
    AND p.prosecdef
    AND NOT EXISTS (
+         SELECT 1 FROM pg_depend d
+           JOIN pg_extension e ON d.refobjid = e.oid
+          WHERE d.objid = p.oid AND d.deptype = 'e'
+       )
+   AND NOT EXISTS (
          SELECT 1 FROM unnest(coalesce(p.proconfig, ARRAY[]::text[])) cfg
           WHERE cfg LIKE 'search_path=%'
        )
