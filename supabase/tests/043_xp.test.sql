@@ -73,16 +73,18 @@ DECLARE
   q uuid;
   c uuid;
   awarded int;
+  reason text;
 BEGIN
+  -- Event rows max out at 3; first-finisher would make 3×1.5=4.5 without least(m,3).
   u := tests.make_user('xpcap');
-  q := tests.make_quest_none(100);
+  q := tests.make_quest_none(100, now() - interval '1 day');
   DELETE FROM xp_events;
   INSERT INTO xp_events (kind, multiplier, label, starts_at, ends_at, created_by)
-  VALUES ('multiplier', 5, 'pgtap cap', now() - interval '1 minute', now() + interval '1 hour', 'pgtap');
+  VALUES ('multiplier', 3, 'pgtap cap', now() - interval '1 minute', now() + interval '1 hour', 'pgtap');
   c := tests.insert_completion(u, q);
-  SELECT xp_awarded INTO awarded FROM completions WHERE id = c;
-  IF awarded IS DISTINCT FROM 300 THEN
-    RAISE EXCEPTION 'cap 3 expected 300 got %', awarded;
+  SELECT xp_awarded, xp_reason INTO awarded, reason FROM completions WHERE id = c;
+  IF awarded IS DISTINCT FROM 300 OR reason IS DISTINCT FROM 'first_finisher' THEN
+    RAISE EXCEPTION 'cap 3 expected 300/first_finisher got %/%', awarded, reason;
   END IF;
 END;
 $$;
