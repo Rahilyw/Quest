@@ -24,7 +24,7 @@ jobs:
       - name: Apply migrations (DB-01 order) + seed
         id: apply
         run: |
-          chmod +x scripts/db-local/apply.sh scripts/db-local/verify.sh scripts/db-local/stop.sh scripts/db-local/pgtap.sh
+          chmod +x scripts/db-local/apply.sh scripts/db-local/verify.sh scripts/db-local/stop.sh scripts/db-local/pgtap.sh scripts/db-local/types.sh
           scripts/db-local/apply.sh
 
       - name: Run verify SQL pack
@@ -32,6 +32,18 @@ jobs:
 
       - name: Run pgTAP behaviour tests
         run: scripts/db-local/pgtap.sh
+
+      - name: Generate database types + drift check
+        id: types
+        run: scripts/db-local/types.sh --check
+
+      - name: Upload generated types
+        if: always() && steps.apply.outcome == 'success'
+        uses: actions/upload-artifact@v4
+        with:
+          name: db-types
+          path: packages/db-types/src/database.ts
+          if-no-files-found: ignore
 
       - name: Stop local stack
         if: always()
