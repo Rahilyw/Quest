@@ -24,11 +24,14 @@ jobs:
       - name: Apply migrations (DB-01 order) + seed
         id: apply
         run: |
-          chmod +x scripts/db-local/apply.sh scripts/db-local/verify.sh scripts/db-local/stop.sh
+          chmod +x scripts/db-local/apply.sh scripts/db-local/verify.sh scripts/db-local/stop.sh scripts/db-local/pgtap.sh
           scripts/db-local/apply.sh
 
       - name: Run verify SQL pack
         run: scripts/db-local/verify.sh
+
+      - name: Run pgTAP behaviour tests
+        run: scripts/db-local/pgtap.sh
 
       - name: Stop local stack
         if: always()
