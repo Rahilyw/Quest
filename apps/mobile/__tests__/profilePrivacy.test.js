@@ -131,7 +131,7 @@ test('push_token appears only in the two own-row writes', () => {
   }
   assert.deepStrictEqual(uses, [
     "apps/mobile/lib/notifications.ts: await supabase.from('profiles').update({ push_token: token }).eq('id', userId)",
-    "apps/mobile/lib/notifications.ts: await supabase.from('profiles').update({ push_token: null }).eq('id', userId)",
+    "apps/mobile/lib/notifications.ts: const { error } = await supabase.from('profiles').update({ push_token: null }).eq('id', userId)",
   ])
 })
 

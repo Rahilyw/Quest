@@ -62,5 +62,23 @@ export async function registerForPushNotifications(userId: string): Promise<stri
 }
 
 export async function clearPushToken(userId: string): Promise<void> {
-  await supabase.from('profiles').update({ push_token: null }).eq('id', userId)
+  const { error } = await supabase.from('profiles').update({ push_token: null }).eq('id', userId)
+  if (error) throw error
+}
+
+/** Best-effort clear with short retries (C-3: don't leave the token on sign-out). */
+export async function clearPushTokenWithRetry(
+  userId: string,
+  attempts = 3,
+): Promise<{ ok: true } | { ok: false; error: unknown }> {
+  let last: unknown = null
+  for (let i = 0; i < attempts; i++) {
+    try {
+      await clearPushToken(userId)
+      return { ok: true }
+    } catch (err) {
+      last = err
+    }
+  }
+  return { ok: false, error: last }
 }

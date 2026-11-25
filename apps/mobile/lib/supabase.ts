@@ -12,5 +12,8 @@ export const supabase = createClient<Database>(supabaseUrl, supabaseAnonKey, {
     autoRefreshToken: true,
     persistSession: true,
     detectSessionInUrl: false,
+    // PKCE: auth emails return ?code=…; exchangeCodeForSession in auth-linking (C-2).
+    flowType: 'pkce',
   },
 })
+

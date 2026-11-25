@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useRouter } from 'expo-router'
 import { supabase } from '@/lib/supabase'
-import { passwordResetRedirectUrl } from '@/lib/auth-linking'
+import { markPendingAuthFlow, passwordResetRedirectUrl } from '@/lib/auth-linking'
 import {
   AuthScreen,
   Field,
@@ -31,6 +31,7 @@ export default function ForgotPassword() {
     }
     setError(null)
     setLoading(true)
+    await markPendingAuthFlow('recovery')
     const { error: resetError } = await supabase.auth.resetPasswordForEmail(trimmed, {
       redirectTo: passwordResetRedirectUrl(),
     })

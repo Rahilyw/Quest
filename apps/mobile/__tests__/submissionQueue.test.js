@@ -186,7 +186,7 @@ test('queued copy never claims the proof is verified', () => {
 })
 
 test('the queue is purged on sign-out and on account deletion', () => {
-  assert.ok(read('hooks/useAuth.tsx').includes('purgeQueue(session.user.id)'))
+  assert.ok(/purgeQueue\(\s*uid\s*\)|purgeQueue\(\s*session\.user\.id\s*\)/.test(read('hooks/useAuth.tsx')))
   const settings = read('app/settings.tsx')
   const deleteFlow = settings.slice(settings.indexOf("rpc('delete_own_account')"))
   assert.ok(deleteFlow.slice(0, 400).includes('purgeQueue('), 'purged right after the account is deleted')

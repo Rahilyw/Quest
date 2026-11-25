@@ -1,8 +1,8 @@
-import { createContext, useContext, useEffect, useState, type ReactNode } from 'react'
+import { createContext, useContext, useEffect, useRef, useState, type ReactNode } from 'react'
 import { Session } from '@supabase/supabase-js'
 import { supabase } from '@/lib/supabase'
 import { identify, resetAnalytics } from '@/lib/analytics'
-import { clearPushToken } from '@/lib/notifications'
+import { clearPushTokenWithRetry } from '@/lib/notifications'
 import { purgeQueue } from '@/lib/submissionQueueStore'
 import { ensureUserProfile } from '@/lib/profiles'
 import type { UserProfile } from '@/lib/types'
@@ -23,6 +23,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [profile, setProfile] = useState<UserProfile | null>(null)
   const [loading, setLoading] = useState(true)
   const [profileError, setProfileError] = useState<string | null>(null)
+  /** Survives SIGNED_OUT so we can still clear that user's push token (C-3). */
+  const lastUserIdRef = useRef<string | null>(null)
 
   async function loadProfile(activeSession: Session) {
     const { profile: data, error } = await ensureUserProfile(activeSession)
@@ -41,19 +43,29 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session: initialSession } }) => {
       setSession(initialSession)
+      lastUserIdRef.current = initialSession?.user.id ?? null
       if (initialSession) loadProfile(initialSession)
       else setLoading(false)
     })
 
-    const { data: listener } = supabase.auth.onAuthStateChange((_event, nextSession) => {
+    const { data: listener } = supabase.auth.onAuthStateChange((event, nextSession) => {
       setSession(nextSession)
       if (nextSession) {
+        lastUserIdRef.current = nextSession.user.id
         setLoading(true)
         loadProfile(nextSession)
-      } else {
-        setProfile(null)
-        setProfileError(null)
-        setLoading(false)
+        return
+      }
+
+      // SIGNED_OUT (or any path that clears the session): clear push before we forget the uid.
+      const uid = lastUserIdRef.current
+      lastUserIdRef.current = null
+      setProfile(null)
+      setProfileError(null)
+      setLoading(false)
+      // Any path that clears the session (SIGNED_OUT, expiry, revoke).
+      if (uid) {
+        void clearPushTokenWithRetry(uid)
       }
     })
 
@@ -68,10 +80,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }
 
   async function signOut() {
-    if (session?.user.id) {
+    const uid = session?.user.id ?? lastUserIdRef.current
+    if (uid) {
       // Queued proofs belong to this player only (plan Phase 3).
-      await purgeQueue(session.user.id)
-      await clearPushToken(session.user.id)
+      await purgeQueue(uid)
+      await clearPushTokenWithRetry(uid)
     }
     resetAnalytics()
     await supabase.auth.signOut()
