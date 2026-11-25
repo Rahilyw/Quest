@@ -111,7 +111,9 @@ BEGIN
   SELECT (create_party(q)->>'code') INTO code;
   PERFORM tests.clear_auth();
 
-  UPDATE quest_parties SET expires_at = now() - interval '1 minute' WHERE code = code;
+  UPDATE quest_parties
+     SET expires_at = now() - interval '1 minute'
+   WHERE quest_parties.code = code;
 
   PERFORM tests.act_as(b);
   BEGIN
@@ -339,22 +341,26 @@ DECLARE
   q uuid;
   i int;
   code text;
+  quests uuid[] := ARRAY[]::uuid[];
 BEGIN
   u := tests.make_user('rate');
 
-  PERFORM tests.act_as(u);
-  -- Each create must insert a new party_parties row (reuse on the same quest
-  -- would not bump the rate counter). Use a fresh duo quest each time.
-  FOR i IN 1..10 LOOP
+  -- Create quests as postgres (RLS); only RPCs run as the player.
+  FOR i IN 1..11 LOOP
     q := tests.make_quest_none(10);
     UPDATE quests SET min_party_size = 2 WHERE id = q;
-    SELECT (create_party(q)->>'code') INTO code;
+    quests := array_append(quests, q);
   END LOOP;
 
-  q := tests.make_quest_none(10);
-  UPDATE quests SET min_party_size = 2 WHERE id = q;
+  PERFORM tests.act_as(u);
+  -- Each create must insert a new quest_parties row (reuse on the same quest
+  -- would not bump the rate counter). Use a fresh duo quest each time.
+  FOR i IN 1..10 LOOP
+    SELECT (create_party(quests[i])->>'code') INTO code;
+  END LOOP;
+
   BEGIN
-    SELECT (create_party(q)->>'code') INTO code;
+    SELECT (create_party(quests[11])->>'code') INTO code;
     RAISE EXCEPTION 'PARTY_RATE_LIMITED expected on 11th create';
   EXCEPTION
     WHEN check_violation THEN
