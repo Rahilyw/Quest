@@ -33,7 +33,6 @@ flowchart TB
 
     Player["Player (mobile)"] --> Mobile
     Operator["Admin operator (web)"] --> Admin
-    Designer["Design reference"] --> Prototype
 
     Mobile --> Auth
     Mobile --> DB

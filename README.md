@@ -224,7 +224,7 @@ Quest! (monorepo root)
 
 | Technology | Version | Role |
 |-----------|---------|------|
-| Expo | 54 | Build toolchain, OTA updates, EAS |
+| Expo | SDK 58 | Build toolchain, OTA updates, EAS |
 | React Native | 0.81.5 | UI framework |
 | Expo Router | 6 | File-based navigation |
 | TypeScript | 5.9 | Type safety |

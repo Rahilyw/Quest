@@ -21,7 +21,7 @@ and the [migration index](supabase/migrations/README.md).
 | Area | State | Next step |
 |---|---|---|
 | Build 1 (`cursor/big-build`) | Cards R, Q, S, V, C, E4, P, F, E1, E2 and E5 merged. Locally tested: 290 mobile tests, 50 geofence tests plus redemption, both `tsc`, admin `next build`. Raw tokens are at 0 and the CI token job is strict. | Reaches `main` through PR #15 and the build chain (owner, O6). |
-| Build 2 (`cursor/build-2`) | M1–M4 merged with green CI: clean install on a local stack (M1), 53 pgTAP assertions (M2), generated `@quest/db-types` with a drift check (M3), Deno edge-function tests (M4). Z (security review) and M5 (prove 045) are in progress. The build-2 PR is not open. | Finish Z and M5, then open the build-2 PR (B2). |
+| Build 2 (`cursor/build-2`) | M1–M4 merged with green CI: clean install on a local stack (M1), 53 pgTAP assertions (M2), generated `@quest/db-types` with a drift check (M3), Deno edge-function tests (M4). Z (security review) is published in `docs/design/SECURITY-REVIEW-2026-11.md` with fixes pending; M5 (prove 045) is in progress. The build-2 PR is not open. | Finish Z and M5, then open the build-2 PR (B2). |
 | `main` | Still at `7f76a69`. PR #15 is open. Builds 1 and 2 are not on `main`. | Owner merges PR #15 (O6). |
 | Production database | The baseline and 002–040 are applied (repo-recorded: through 038 on Nov 10, 039 and 040 by the owner on Nov 11). The "Verifying 039" queries are not recorded as run. | O1: run `supabase/verify/039.sql`. |
 | Migrations 041–044 | In checkout. Locally tested on the CI local stack: clean install, verify SQL, pgTAP. **Not applied.** | O2, O3, O5, O9: apply in number order, one file per dry-run. |
@@ -102,7 +102,7 @@ locally tested, applied, deployed, device-verified), it is used strictly.
 | 0.12 | Definer-function lockdown + admin action auth | ✅ | Migration 030 (live) + `requireAdmin()` (#10) |
 | 0.13 | Nov 2026 audit fixes | ✅ | Migration 031 (rank snapshot cron, Pacific leaderboard week, RPC surface, FK indexes, RLS perf) applied; 038–039 secret-column fixes applied |
 | 0.14 | Admin on Vercel | ✅ | Env vars set, production live Nov 7. The build 1 admin pages (`/pilot`, `/stickers`, `/xp-events`) are not recorded as deployed |
-| 0.15 | Security review of 041–045 and admin actions | ⚠️ | Z, in progress. Forward fixes use migration 046 if 041–045 are applied first |
+| 0.15 | Security review of 041–045 and admin actions | ⚠️ | Z: review published, fixes pending. Forward fixes use migration 046 if 041–045 are applied first |
 | 0.16 | App Review pack: reviewer notes, demo account, privacy labels, screenshots, listing | ❌ | K2; owner O14 |
 | 0.17 | One device checklist for every phase | ❌ | K3; owner O10, O18 |
 
