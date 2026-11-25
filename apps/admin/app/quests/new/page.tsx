@@ -9,6 +9,7 @@ import { theme, VICTORIA_DEFAULT } from '@/lib/theme'
 import { QuestScheduleFields } from '@/components/QuestScheduleFields'
 import GeofenceEditor, { type GeofenceType } from '@/components/GeofenceEditor'
 import QuestCoverPicker, { type CoverPickerValue } from '@/components/QuestCoverPicker'
+import QuestPreview from '@/components/QuestPreview'
 import { areasToRpcPayload, validateMultiAreas, type MultiArea } from '@/lib/multiAreas'
 
 const CATEGORIES = Object.entries(theme.categories)
@@ -45,6 +46,8 @@ function NewQuestForm() {
   const [error, setError] = useState<string | null>(null)
   const [activeFrom, setActiveFrom] = useState('')
   const [activeUntil, setActiveUntil] = useState('')
+  const [title, setTitle] = useState('')
+  const [xpReward, setXpReward] = useState(150)
   const [prefill, setPrefill] = useState<{ title: string; description: string; category: string; lat: number | null; lng: number | null } | null>(null)
   const [prefillReady, setPrefillReady] = useState(!suggestionId)
 
@@ -58,6 +61,7 @@ function NewQuestForm() {
       if (row) {
         setPrefill(row)
         setCategory(row.category)
+        setTitle(row.title)
         if (row.lat != null && row.lng != null) {
           setLat(row.lat)
           setLng(row.lng)
@@ -153,7 +157,7 @@ function NewQuestForm() {
           <h2 style={{ margin: '0 0 16px', fontSize: 16, fontWeight: 800 }}>Quest details</h2>
           <div className="admin-field">
             <label className="admin-label" htmlFor="title">Title</label>
-            <input id="title" name="title" className="admin-input" placeholder="Run the Galloping Goose Trail" defaultValue={prefill?.title ?? ''} required />
+            <input id="title" name="title" className="admin-input" placeholder="Run the Galloping Goose Trail" value={title} onChange={(e) => setTitle(e.target.value)} required />
           </div>
           <div className="admin-field">
             <label className="admin-label" htmlFor="description">Description</label>
@@ -210,7 +214,7 @@ function NewQuestForm() {
           />
           <div className="admin-field" style={{ marginTop: 16 }}>
             <label className="admin-label" htmlFor="xp_reward">XP reward</label>
-            <input id="xp_reward" name="xp_reward" className="admin-input" type="number" defaultValue={150} min={25} max={1000} required />
+            <input id="xp_reward" name="xp_reward" className="admin-input" type="number" value={xpReward} onChange={(e) => setXpReward(Number(e.target.value) || 0)} min={25} max={1000} required />
           </div>
         </section>
 
@@ -317,6 +321,8 @@ function NewQuestForm() {
             Cancel
           </Link>
         </div>
+
+        <QuestPreview title={title} category={category} cutoutUrl={null} xpReward={xpReward} />
       </form>
       )}
     </div>

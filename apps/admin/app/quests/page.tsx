@@ -10,6 +10,7 @@ import { normalizeSchedule, vancouverInputToIso, vancouverInputValue } from '@/l
 import GeofenceEditor, { type GeofenceType } from '@/components/GeofenceEditor'
 import QuestCutoutUploader from '@/components/QuestCutoutUploader'
 import QuestCoverPicker, { type CoverPickerValue } from '@/components/QuestCoverPicker'
+import QuestPreview from '@/components/QuestPreview'
 import {
   areasToRpcPayload,
   newClientId,
@@ -78,6 +79,7 @@ function EditForm({ quest, onSave, onCancel }: { quest: Quest; onSave: (updated:
     previewUrl: quest.cover_image_url,
     remove: false,
   })
+  const [cutoutUrl, setCutoutUrl] = useState<string | null>(quest.cutout_url ?? null)
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -176,6 +178,7 @@ function EditForm({ quest, onSave, onCancel }: { quest: Quest; onSave: (updated:
             questTitle={quest.title}
             initialUrl={quest.cutout_url}
             initialAlt={quest.cutout_alt}
+            onChange={setCutoutUrl}
           />
         </div>
 
@@ -330,6 +333,13 @@ function EditForm({ quest, onSave, onCancel }: { quest: Quest; onSave: (updated:
             Cancel
           </button>
         </div>
+
+        <QuestPreview
+          title={form.title}
+          category={form.category}
+          cutoutUrl={cutoutUrl}
+          xpReward={parseInt(form.xp_reward, 10) || null}
+        />
       </div>
     </form>
   )
