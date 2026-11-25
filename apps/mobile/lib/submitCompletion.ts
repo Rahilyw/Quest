@@ -63,6 +63,7 @@ export type SubmitCompletionResult =
       ownCompletion: VerifiedCompletion | null
     })
   | (ResultBase & { kind: 'rate_limited' })
+  /** Only raised when 045 is applied; absent 045, insert never returns this. */
   | (ResultBase & { kind: 'party_required' })
   | (ResultBase & { kind: 'outside_zone' })
   | (ResultBase & { kind: 'rejected' })
@@ -155,16 +156,17 @@ export async function submitCompletion(input: SubmitCompletionInput): Promise<Su
   try {
     // Prefer the 043 columns; if they are missing, retry without them so
     // pre-043 environments still verify.
+    // types: Insert marks xp_awarded NOT NULL, but the server trigger owns it (043).
     let { data, error } = await supabase
       .from('completions')
-      .insert(insertRow)
+      .insert(insertRow as never)
       .select('id, completed_at, xp_awarded, xp_reason')
       .single()
 
     if (error && isMissingXpColumn(error)) {
       ;({ data, error } = await supabase
         .from('completions')
-        .insert(insertRow)
+        .insert(insertRow as never)
         .select('id, completed_at')
         .single())
     }

@@ -33,7 +33,7 @@ export default async function UsersPage() {
                 <td style={{ padding: '12px 16px', color: theme.primary, fontWeight: 700 }}>Lv {u.level}</td>
                 <td style={{ padding: '12px 16px' }}>{formatCount(u.total_xp)} XP</td>
                 <td style={{ padding: '12px 16px', color: theme.textMuted }}>
-                  {formatVictoriaDate(u.created_at)}
+                  {u.created_at ? formatVictoriaDate(u.created_at) : '—'}
                 </td>
               </tr>
             ))}

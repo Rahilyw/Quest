@@ -21,35 +21,44 @@ versions, and a renamed file would look like a new, unapplied migration there.
 The dependency order is fixed:
 
 1. `20260619010246_initial_schema.sql`
-2. `002` through `040`, ascending
+2. `002` through `044`, ascending (045 is proven separately on the duo line)
 
-To get that order on a **new, empty** database without touching history on the existing one,
-apply the baseline by hand and record it, then let the CLI do the rest:
+### Executed recipe (local / CI)
+
+**Executed in CI** by `.github/workflows/db-local.yml` → `scripts/db-local/apply.sh` then
+`scripts/db-local/verify.sh`. F-005 / DB-01 is **resolved for local stacks** once that workflow
+is green on the commit that lands this harness.
 
 ```bash
-# 1. Run the baseline against the new database (psql, or paste the file into the SQL editor).
+# Requires Docker. CI runners have it; a laptop only if the daemon is running.
+chmod +x scripts/db-local/apply.sh scripts/db-local/verify.sh
+scripts/db-local/apply.sh    # temp project, supabase start with NO migrations folder,
+                             # psql baseline → 002..044 → seed (badge upserts sanitized)
+scripts/db-local/verify.sh   # supabase/verify/*.sql (human placeholders stripped)
+```
+
+What the harness does:
+
+1. Copies `scripts/db-local/config.toml.template` + `seed.sql` into a temp project **without**
+   a `migrations/` folder, so `supabase start` does not replay filename order.
+2. Applies with `psql -v ON_ERROR_STOP=1`: baseline, then every `NNN_*.sql` with
+   `2 <= NNN <= 44`, then a seed copy that skips badge names already inserted by 019/020.
+3. Prints `applied <file> in <ms>` per file. Extension shims (`uuid-ossp`, `postgis`,
+   `pg_cron`) run first; they mirror what hosted Supabase provides. Migrations 002–040 are
+   never edited.
+
+### New hosted project (owner only, not the existing one)
+
+```bash
 psql "$NEW_DB_URL" -v ON_ERROR_STOP=1 -f supabase/migrations/20260619010246_initial_schema.sql
-
-# 2. Record that version as applied, so the CLI does not try it again after 040.
 npx supabase migration repair --status applied 20260619010246 --db-url "$NEW_DB_URL"
-
-# 3. Dry-run, read the list (it should be 002 to 040 in order), then apply.
 npx supabase db push --db-url "$NEW_DB_URL" --dry-run
 npx supabase db push --db-url "$NEW_DB_URL"
 ```
 
-The new database must start empty of these migrations. `supabase db reset` and a first
-`supabase start` replay the folder in filename order and stop at 002, so they are not a
-clean-install path as the files stand. A working local-stack recipe has not been established.
-
-**Status of this procedure: written from the file dependencies, not executed.** On Nov 11, 2026
-there was no Supabase CLI or `psql` on the working machine and the Docker daemon was not running,
-so no clean install was run and the CLI flags above were not checked against `--help`. Run it
-once against a throwaway database and correct this section if any step differs. Never run it
-against the existing hosted project; that project already has the baseline recorded.
-
-The existing project needs none of this. Its next step is an ordinary, owner-run
-`db push --remote --dry-run` that should list exactly 039 and 040.
+Never run the clean-install path against the existing hosted project; it already has the
+baseline recorded. Owner apply of 041–044 stays on `OWNER-RUNSHEET.md` (dry-run one file at a
+time) after db-local is green.
 
 ## Verifying 039 (profile token privacy)
 
@@ -427,9 +436,10 @@ ROLLBACK;
 
 ## Verifying 045 (duo quests)
 
-**Status: in checkout, text-checked only.** `apps/mobile/__tests__/party.test.js`
-checks the SQL text and pure lobby helpers. Nothing in 045 has been executed against a
-database. **Requires 043 and 044 applied.**
+**Status: in checkout; proven on a local stack in CI by card M5** (`cursor/m5-duo-proof`).
+`apps/mobile/__tests__/party.test.js` checks the SQL text and pure lobby helpers;
+`supabase/tests/045_duo.test.sql` is the behaviour suite. **Still not applied on
+hosted.** **Requires 043 and 044 applied.**
 
 ### Structure and grants
 

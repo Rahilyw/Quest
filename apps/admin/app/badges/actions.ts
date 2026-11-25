@@ -1,6 +1,7 @@
 'use server'
 
 import { revalidatePath } from 'next/cache'
+import type { Database, Json } from '@quest/db-types'
 import { supabaseAdmin } from '@/lib/supabase'
 import { requireAdmin } from '@/lib/require-admin'
 import {
@@ -10,6 +11,9 @@ import {
   type BadgeRarity,
   type UnlockRuleType,
 } from '@/lib/badge-rules'
+
+type BadgeInsert = Database['public']['Tables']['badges']['Insert']
+type BadgeUpdate = Database['public']['Tables']['badges']['Update']
 
 export interface BadgeRow {
   id: string
@@ -162,7 +166,7 @@ export async function getBadgeEarners(badgeId: string, limit = 25): Promise<Badg
   return (data ?? []).map((row) => ({
     user_id: row.user_id,
     username: (row.profile as { username?: string } | null)?.username ?? 'unknown',
-    earned_at: row.earned_at,
+    earned_at: row.earned_at ?? '',
   }))
 }
 
@@ -200,9 +204,16 @@ export async function createBadge(
       icon_url = uploaded.url
     }
 
+    // types: unlock_rule_config is Json in DB; form helper returns Record.
+    const insertRow = {
+      ...fields,
+      unlock_rule_config: fields.unlock_rule_config as Json,
+      icon_url,
+      updated_at: new Date().toISOString(),
+    } as BadgeInsert
     const { data, error } = await supabaseAdmin
       .from('badges')
-      .insert({ ...fields, icon_url, updated_at: new Date().toISOString() })
+      .insert(insertRow)
       .select('*')
       .single()
 
@@ -239,11 +250,13 @@ export async function updateBadge(
       icon_url = uploaded.url
     }
 
-    const patch: Record<string, unknown> = {
+    // types: same Json cast as createBadge.
+    const patch: BadgeUpdate = {
       ...fields,
+      unlock_rule_config: fields.unlock_rule_config as Json,
       updated_at: new Date().toISOString(),
+      ...(icon_url !== undefined ? { icon_url } : {}),
     }
-    if (icon_url !== undefined) patch.icon_url = icon_url
 
     const { data, error } = await supabaseAdmin
       .from('badges')

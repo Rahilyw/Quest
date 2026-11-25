@@ -97,8 +97,9 @@ export interface Badge {
   icon: string
   unlock_condition: string
   icon_url?: string | null
-  rarity?: 'common' | 'rare' | 'epic' | 'legendary'
-  art_style?: 'medal' | 'animated' | 'pixel'
+  /** DB column is free text; UI treats known values as a closed set. */
+  rarity?: string
+  art_style?: string
   locked_hint?: string | null
   is_secret?: boolean
   art_key?: string | null
@@ -136,7 +137,7 @@ export interface UserProfile {
   push_social: boolean
   /** Monday drop pushes (034). */
   push_drops?: boolean
-  created_at: string
+  created_at: string | null
 }
 
 export interface CompletionLike {
@@ -187,84 +188,3 @@ export interface LeaderboardEntry extends LeaderboardRow {
   rank: number
 }
 
-export type Database = {
-  public: {
-    Tables: {
-      quests: {
-        Row: Quest
-        Insert: Omit<Quest, 'id' | 'created_at' | 'boundary_geojson'>
-        Update: Partial<Omit<Quest, 'id' | 'created_at' | 'boundary_geojson'>>
-        Relationships: []
-      }
-      completions: {
-        Row: Completion
-        Insert: Omit<Completion, 'id'>
-        Update: Partial<Omit<Completion, 'id'>>
-        Relationships: []
-      }
-      profiles: {
-        Row: UserProfile
-        Insert: {
-          id: string
-          username: string
-          city: string
-          total_xp?: number
-          level?: number
-          avatar_url?: string | null
-          push_token?: string | null
-        }
-        /** `push_token` is write-only for clients: UPDATE is granted, SELECT is not (039). */
-        Update: Partial<Omit<UserProfile, 'id' | 'created_at'>> & { push_token?: string | null }
-        Relationships: []
-      }
-      badges: {
-        Row: Badge
-        Insert: Omit<Badge, 'id'>
-        Update: Partial<Omit<Badge, 'id'>>
-        Relationships: []
-      }
-      user_badges: {
-        Row: UserBadge
-        Insert: UserBadge
-        Update: Partial<UserBadge>
-        Relationships: []
-      }
-      completion_likes: {
-        Row: CompletionLike
-        Insert: Omit<CompletionLike, 'created_at'>
-        Update: never
-        Relationships: []
-      }
-      completion_comments: {
-        Row: CompletionComment
-        Insert: Omit<CompletionComment, 'id' | 'created_at' | 'hidden'> & { hidden?: boolean }
-        Update: Partial<Pick<CompletionComment, 'body' | 'hidden'>>
-        Relationships: []
-      }
-      follows: {
-        Row: Follow
-        Insert: Omit<Follow, 'created_at'>
-        Update: never
-        Relationships: []
-      }
-      notifications: {
-        Row: AppNotification
-        Insert: never
-        Update: Pick<AppNotification, 'read_at'>
-        Relationships: []
-      }
-    }
-    Views: {
-      leaderboard: {
-        Row: LeaderboardRow
-        Relationships: []
-      }
-    }
-    Functions: {
-      /** Whether the caller has a push token stored. Never returns the token (039). */
-      own_push_enabled: { Args: Record<string, never>; Returns: boolean }
-      /** The caller's rank, XP, streak and best own photo for one Victoria week (040). */
-      own_week_recap: { Args: { p_week_start: string }; Returns: unknown }
-    }
-  }
-}

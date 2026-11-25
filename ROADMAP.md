@@ -300,9 +300,9 @@ Decisions D1 to D8 are recorded in the plan (wordmark, tabs, category colours, d
 |---|---|---|
 | F.1 | First-quest onboarding: `is_starter` quest pinned post-signup; time-to-first-XP < 5 min | In repo (037 local); seed, admin designation and This week card implemented Nov 9 |
 | F.2 | Sunday recap share card (view-shot + native share) + Sunday push | Card and screen in repo; 040 applied to production Nov 11; not device-tested. Sunday push not built: waits on outbox draining (OPS-01). |
-| F.3 | XP economy events: `xp_events` table, double-XP weekends, first-finisher bonus, lapsed-player win-back | ❌ |
-| F.4 | Offline submission queue with retry | ❌ |
-| F.5 | Duo quests: `min_party_size`, party codes/QR, duo bonus, referral kicker + Recruiter badge, duo seed quests | ❌ |
+| F.3 | XP economy events: `xp_events` table, double-XP weekends, first-finisher bonus, lapsed-player win-back | **in checkout** / **locally tested** (043 + mobile card C on `cursor/big-build`; 043 not applied) |
+| F.4 | Offline submission queue with retry | **in checkout** / **locally tested** (Phase 3; needs 042 applied for device) |
+| F.5 | Duo quests: `min_party_size`, party codes/QR, duo bonus, referral kicker + Recruiter badge, duo seed quests | **in checkout** / **locally tested** on `cursor/d-duo` (045); held until R1 — not applied |
 
 ### Phase G — Sponsor Loop ([Spec 07](docs/specs/07-merchant-redemption.md)) — BEFORE SPONSOR RENEWALS
 

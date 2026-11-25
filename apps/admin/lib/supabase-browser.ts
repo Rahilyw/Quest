@@ -1,4 +1,5 @@
 import { createBrowserClient } from '@supabase/ssr'
+import type { Database } from '@quest/db-types'
 
 export function getSupabaseBrowser() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL
@@ -10,7 +11,7 @@ export function getSupabaseBrowser() {
     )
   }
 
-  return createBrowserClient(url, key)
+  return createBrowserClient<Database>(url, key)
 }
 
 export function adminAuthRedirectUrl(path = '/auth/confirm'): string {

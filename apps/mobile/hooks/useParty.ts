@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
 import { useFocusEffect } from 'expo-router'
+import { ensureDuoAvailable } from '@/hooks/useDuoAvailable'
 import { supabase } from '@/lib/supabase'
 import { track } from '@/lib/analytics'
 import {
@@ -83,11 +84,17 @@ export function useOwnParty(questId: string | null | undefined, enabled = true) 
       setParty(null)
       return
     }
+    // Dark-launch: never call party RPCs until min_party_size is readable.
+    if (!(await ensureDuoAvailable())) {
+      setParty(null)
+      setError(null)
+      setLoading(false)
+      return
+    }
     setLoading(true)
     setError(null)
     const { data, error: rpcError } = await supabase.rpc('own_party', { p_quest_id: questId })
     if (rpcError) {
-      // 045 not applied yet — treat as no party.
       setParty(null)
       setError(null)
       setLoading(false)
@@ -119,6 +126,9 @@ export function useOwnParty(questId: string | null | undefined, enabled = true) 
 export async function createParty(questId: string): Promise<
   { ok: true; code: string; expires_at: string } | { ok: false; error: string }
 > {
+  if (!(await ensureDuoAvailable())) {
+    return { ok: false, error: partyErrorCopy('PARTY_NOT_FOUND') }
+  }
   const { data, error } = await supabase.rpc('create_party', { p_quest_id: questId })
   if (error) {
     return { ok: false, error: partyErrorCopy(error.hint, error.message) }
@@ -136,6 +146,9 @@ export async function createParty(questId: string): Promise<
 export async function joinParty(rawCode: string): Promise<
   { ok: true; quest_id: string; partner_username: string | null } | { ok: false; error: string }
 > {
+  if (!(await ensureDuoAvailable())) {
+    return { ok: false, error: partyErrorCopy('PARTY_NOT_FOUND') }
+  }
   const code = normalizePartyCode(rawCode)
   if (!isValidPartyCode(code)) {
     return { ok: false, error: partyErrorCopy('PARTY_NOT_FOUND') }
@@ -158,6 +171,9 @@ export async function joinParty(rawCode: string): Promise<
 }
 
 export async function leaveParty(rawCode: string): Promise<{ ok: true } | { ok: false; error: string }> {
+  if (!(await ensureDuoAvailable())) {
+    return { ok: false, error: partyErrorCopy('PARTY_NOT_FOUND') }
+  }
   const code = normalizePartyCode(rawCode)
   if (!isValidPartyCode(code)) {
     return { ok: false, error: partyErrorCopy('PARTY_NOT_FOUND') }

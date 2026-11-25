@@ -115,6 +115,15 @@ Build 1 had merged R through E2 into `cursor/big-build` (log: [BIG-BUILD-LOG.md]
 E5 was in progress in the working tree and D had not started. The owner run sheet has nothing
 ticked, so **041–044 have never been executed anywhere**.
 
+### Continuation — November 20, 2026, big build finished
+
+- `cursor/big-build` tip `f215015` (plus Finish docs): cards R, Q, S, V, C, E4, P, F, E1, E2, E5
+  are merged and **locally tested**. Raw tokens **0**. Migration **044** is in checkout, **not applied**.
+- Card D (duo, migration **045**) is on `cursor/d-duo` tip `66ac0b3`, **PR open, held** — not merged
+  into big-build. SQL for 045 was not executed.
+- Owner track still: verify 039; apply 041 → 042 → 043 → 044; then TestFlight #1 from the
+  big-build PR after review. No hosted services were touched by this run.
+
 [CURSOR-BUILD-2-2026-11-20.md](CURSOR-BUILD-2-2026-11-20.md) plans "prove the backend". It starts
 after build 1 finishes and has six cards:
 
@@ -124,11 +133,41 @@ after build 1 finishes and has six cards:
 - M3: generated database types with a CI drift check;
 - M4: Deno tests for the edge functions;
 - Z: an independent security review;
+
+### Continuation — November 20, 2026, build 2 / card M1
+
+- Integration branch `cursor/build-2` cut from `cursor/big-build` @ `e3c8f42` (PR #15 still open to
+  `main`, so base is big-build, not main). Log: [BUILD-2-LOG.md](BUILD-2-LOG.md).
+- Card M1 adds `scripts/db-local/*` and `.github/workflows/db-local.yml`. Clean-install order is
+  the executed CI recipe. **F-005 / DB-01 resolved for local stacks** once that workflow is green;
+  041–044 remain **not applied** on production. No hosted SQL was run. Docker was not running on
+  the agent machine — CI is the evidence.
 - M5: the same proof for 045, on the duo line.
 
 Owner recommendation: hold applying 041–044 to production until M2 is green, so any bug is fixed
 in place. O1, O7 and O8 can go ahead. The Cursor rule now allows in-place fixes to 041–045 only
 while unapplied, and SQL only on the CI local stack.
+
+### Continuation — November 25, 2026, build 3 plan
+
+- Build 2 status: M1–M4 merged on `cursor/build-2` with green CI ([BUILD-2-LOG.md](BUILD-2-LOG.md)).
+  Z and M5 are not started, and the build-2 PR is not open. `main` is still at `7f76a69`.
+- New plan: [BUILD-3-PLAN-2026-11-25.md](BUILD-3-PLAN-2026-11-25.md). It runs in four waves:
+  - Wave 0 closes build 2, and M5 gains a duo dark-launch guard.
+  - Wave 1 is the launch pack: doc truth sweep, App Review pack, one device checklist, map tab
+    audit, admin preview.
+  - Wave 2 is the R1 retention features: flash quests, save for later, streak freeze, photo
+    pre-screen.
+  - Wave 3 is the data-gated work: chains at 35 live quests, leagues at WAU > 100, the quest-log
+    map, TanStack Query, universal links, Android, search and leaderboard scopes.
+- Roles: Claude Code coordinates and runs the SQL-heavy cards through the feature pipeline in
+  worktrees. Cursor builds the UI cards. Reviews run as a Workflow or a fresh chat.
+- Migration numbers reserved: 046 for Z forward fixes, 047 flash, 048 saved quests, 049 streak
+  freeze, 050 photo pre-screen, 051 chains, 052 leagues, 053 leaderboard scopes.
+- The hard-rules file is not updated yet. The coordinator points it at build 3 when Wave 1
+  starts, because Z and M5 still run under the build-2 rules.
+- Next concrete action: Wave 0. Run Z and M5 under the build-2 doc, then open the build-2 PR.
+  The owner answers DB3-1 to DB3-8 in plan §10.
 
 The sections below preserve the Nov 10 campaign record and may contain facts that were true
 only for that session; use the continuation above and linked current docs for present status.

@@ -20,6 +20,9 @@ import { validateSuggestion } from '@/lib/suggestionForm'
 import { supabase } from '@/lib/supabase'
 import { CATEGORY_KEYS, COLOR, getCategory, RADIUS, SPACE, TYPE, type CategoryKey } from '@/lib/theme'
 import type { QuestCategory } from '@/lib/types'
+import type { Database } from '@quest/db-types'
+
+type QuestSuggestionCategory = Database['public']['Enums']['quest_category']
 
 const OPEN_LIMIT = 3
 
@@ -91,7 +94,8 @@ export default function SuggestQuestScreen() {
       user_id: userId,
       title: parsed.title,
       description: parsed.description,
-      category: parsed.category,
+      // types: form parser returns string; DB enum matches quest_category.
+      category: parsed.category as QuestSuggestionCategory,
       lat: parsed.lat,
       lng: parsed.lng,
     })

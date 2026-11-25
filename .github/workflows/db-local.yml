@@ -1,0 +1,60 @@
+name: db-local
+
+# Throwaway local Supabase stack: clean-install migrations in dependency order,
+# then run supabase/verify/*.sql. Evidence for unapplied 041–044 before production.
+
+on:
+  push:
+    branches: [main, 'cursor/**', 'claude/**']
+  pull_request:
+    branches: [main]
+
+jobs:
+  db-local:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: supabase/setup-cli@v1
+        with:
+          # Pin so CI Postgres/image match across runs. Bump deliberately.
+          version: 2.20.5
+
+      - name: Apply migrations (DB-01 order) + seed
+        id: apply
+        run: |
+          chmod +x scripts/db-local/apply.sh scripts/db-local/verify.sh scripts/db-local/stop.sh scripts/db-local/pgtap.sh scripts/db-local/types.sh
+          scripts/db-local/apply.sh
+
+      - name: Run verify SQL pack
+        run: scripts/db-local/verify.sh
+
+      - name: Run pgTAP behaviour tests
+        run: scripts/db-local/pgtap.sh
+
+      - name: Generate database types + drift check
+        id: types
+        run: scripts/db-local/types.sh --check
+
+      - name: Upload generated types
+        if: always() && steps.apply.outcome == 'success'
+        uses: actions/upload-artifact@v4
+        with:
+          name: db-types
+          path: packages/db-types/src/database.ts
+          if-no-files-found: ignore
+
+      - name: Stop local stack
+        if: always()
+        run: scripts/db-local/stop.sh
+
+      - name: Upload psql output on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: db-local-logs
+          path: |
+            scripts/db-local/.verify-out/
+            scripts/db-local/.db-url
+          if-no-files-found: ignore

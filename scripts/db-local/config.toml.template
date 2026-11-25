@@ -1,0 +1,39 @@
+# Minimal local stack config for scripts/db-local/apply.sh.
+# Copied into a temp project that has NO migrations folder, so `supabase start`
+# brings up Postgres/auth/storage without replaying filename-sorted migrations.
+# Does not change the repo's supabase/config.toml (edge-function flags only).
+
+project_id = "quest-db-local"
+
+[api]
+enabled = true
+port = 54321
+schemas = ["public", "graphql_public"]
+extra_search_path = ["public", "extensions"]
+max_rows = 1000
+
+[db]
+port = 54322
+major_version = 15
+
+[db.seed]
+enabled = false
+
+[studio]
+enabled = false
+
+[inbucket]
+enabled = false
+
+[storage]
+enabled = true
+
+[auth]
+enabled = true
+site_url = "http://127.0.0.1:3000"
+additional_redirect_urls = ["http://127.0.0.1:3000"]
+enable_signup = true
+
+[auth.email]
+enable_signup = true
+enable_confirmations = false

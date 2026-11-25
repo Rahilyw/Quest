@@ -53,7 +53,10 @@ interface Props {
   sponsorReward?: string | null
   /** The badge this completion earned. Without one, the XP lands as a medal. */
   earnedBadge?: BadgeSpec | null
-  /** When a duo bonus lands, both usernames (self first). */
+  /**
+   * When a duo bonus lands, both usernames (self first).
+   * Callers only pass this after the dark-launch duo guard succeeds (045).
+   */
   duoUsernames?: [string, string] | null
   onDone: () => void
   onShare?: () => void

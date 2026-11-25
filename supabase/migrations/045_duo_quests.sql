@@ -235,9 +235,15 @@ SECURITY DEFINER
 SET search_path = public, pg_temp
 AS $$
 BEGIN
+  -- Keep expires_at > created_at (quest_parties_window). When now() equals
+  -- created_at in the same statement, LEAST(expires_at, now()) alone would
+  -- violate the check; bump by 1µs past created_at in that case.
   UPDATE quest_parties
      SET is_open = false,
-         expires_at = LEAST(expires_at, now())
+         expires_at = GREATEST(
+           created_at + interval '1 microsecond',
+           LEAST(expires_at, now())
+         )
    WHERE id = p_party_id
      AND is_open;
 END;
@@ -302,7 +308,10 @@ BEGIN
   -- Close any other open party this player holds.
   UPDATE quest_parties
      SET is_open = false,
-         expires_at = LEAST(expires_at, now())
+         expires_at = GREATEST(
+           created_at + interval '1 microsecond',
+           LEAST(expires_at, now())
+         )
    WHERE created_by = uid
      AND is_open;
 
@@ -402,7 +411,10 @@ BEGIN
   -- Close the joiner's other open party, if any.
   UPDATE quest_parties
      SET is_open = false,
-         expires_at = LEAST(expires_at, now())
+         expires_at = GREATEST(
+           created_at + interval '1 microsecond',
+           LEAST(expires_at, now())
+         )
    WHERE created_by = uid
      AND is_open
      AND id <> party.id;
