@@ -73,25 +73,23 @@ SELECT pass('one open party per creator; third member refused (PARTY_FULL)');
 DO $$
 DECLARE
   a uuid;
+  q uuid;
   code text;
 BEGIN
   a := tests.make_user('self');
+  q := tests.make_quest_none(50);
+  UPDATE quests SET min_party_size = 2 WHERE id = q;
+
   PERFORM tests.act_as(a);
+  SELECT (create_party(q)->>'code') INTO code;
   BEGIN
-    -- Join own party: create then join same code.
-    DECLARE
-      q uuid := tests.make_quest_none(50);
-    BEGIN
-      UPDATE quests SET min_party_size = 2 WHERE id = q;
-      SELECT (create_party(q)->>'code') INTO code;
-      PERFORM join_party(code);
-      RAISE EXCEPTION 'PARTY_SELF expected';
-    EXCEPTION
-      WHEN check_violation THEN
-        IF SQLERRM NOT ILIKE '%PARTY_SELF%' THEN
-          RAISE EXCEPTION 'expected PARTY_SELF, got %', SQLERRM;
-        END IF;
-    END;
+    PERFORM join_party(code);
+    RAISE EXCEPTION 'PARTY_SELF expected';
+  EXCEPTION
+    WHEN check_violation THEN
+      IF SQLERRM NOT ILIKE '%PARTY_SELF%' THEN
+        RAISE EXCEPTION 'expected PARTY_SELF, got %', SQLERRM;
+      END IF;
   END;
   PERFORM tests.clear_auth();
 END;
