@@ -10,8 +10,8 @@ SELECT is(
 
 SELECT is(
   length(party_code_alphabet()),
-  29,
-  'party code alphabet length is 29'
+  31,
+  'party code alphabet length is 31'
 );
 
 DO $$
