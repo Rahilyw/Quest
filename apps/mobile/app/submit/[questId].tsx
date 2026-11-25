@@ -10,6 +10,7 @@ import { ShareStoryModal } from '@/components/ShareStoryModal'
 import { Body, Small, Title } from '@/components/ui/Text'
 import { endsThisSunday, isNewThisWeek, isQuestActive } from '@quest/geofence'
 import { useAuth } from '@/hooks/useAuth'
+import { ensureDuoAvailable } from '@/hooks/useDuoAvailable'
 import { useGeofenceCheck } from '@/hooks/useGeofenceCheck'
 import { useLocation } from '@/hooks/useLocation'
 import { useQuest } from '@/hooks/useQuests'
@@ -365,7 +366,8 @@ export default function Submit() {
       }
 
       let duoUsernames: [string, string] | null = null
-      if (awardedReason === 'duo' && profile.username) {
+      // Dark-launch: never call own_party unless 045's min_party_size is readable.
+      if (awardedReason === 'duo' && profile.username && (await ensureDuoAvailable())) {
         const { data: partyPayload } = await supabase.rpc('own_party', { p_quest_id: questId })
         const members =
           partyPayload &&

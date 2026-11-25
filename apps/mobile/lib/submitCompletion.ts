@@ -63,6 +63,7 @@ export type SubmitCompletionResult =
       ownCompletion: VerifiedCompletion | null
     })
   | (ResultBase & { kind: 'rate_limited' })
+  /** Only raised when 045 is applied; absent 045, insert never returns this. */
   | (ResultBase & { kind: 'party_required' })
   | (ResultBase & { kind: 'outside_zone' })
   | (ResultBase & { kind: 'rejected' })

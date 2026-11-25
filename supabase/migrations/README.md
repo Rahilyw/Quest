@@ -436,9 +436,10 @@ ROLLBACK;
 
 ## Verifying 045 (duo quests)
 
-**Status: in checkout, text-checked only.** `apps/mobile/__tests__/party.test.js`
-checks the SQL text and pure lobby helpers. Nothing in 045 has been executed against a
-database. **Requires 043 and 044 applied.**
+**Status: in checkout; proven on a local stack in CI by card M5** (`cursor/m5-duo-proof`).
+`apps/mobile/__tests__/party.test.js` checks the SQL text and pure lobby helpers;
+`supabase/tests/045_duo.test.sql` is the behaviour suite. **Still not applied on
+hosted.** **Requires 043 and 044 applied.**
 
 ### Structure and grants
 

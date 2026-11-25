@@ -10,6 +10,7 @@ import { PenRing } from '@/components/scraps'
 import { Body, Heading, Sentence, Small, Title } from '@/components/ui/Text'
 import { useAuth } from '@/hooks/useAuth'
 import { useBlockedUsers } from '@/hooks/useBlockedUsers'
+import { useDuoAvailable } from '@/hooks/useDuoAvailable'
 import { useThisWeek } from '@/hooks/useThisWeek'
 import { useUnreadNotificationCount } from '@/hooks/useNotifications'
 import { useUserCompletions } from '@/hooks/useUserCompletions'
@@ -35,6 +36,7 @@ export default function ThisWeekScreen() {
   const router = useRouter()
   const insets = useSafeAreaInsets()
   const { profile } = useAuth()
+  const { available: duoAvailable } = useDuoAvailable()
   const { excludedQuestIds, loading: playedLoading } = useUserCompletions(profile?.id)
   const { blockedIds, loading: blockedLoading } = useBlockedUsers(profile?.id)
   const { count: unread } = useUnreadNotificationCount(profile?.id)
@@ -146,21 +148,23 @@ export default function ThisWeekScreen() {
           </Animated.View>
         ) : null}
 
-        <Pressable
-          onPress={() => router.push('/party/join')}
-          accessibilityRole="button"
-          accessibilityLabel="Have a code? Join a duo party"
-          style={({ pressed }) => [styles.dropLink, pressed && styles.dropPressed]}
-        >
-          <Ionicons
-            name="key-outline"
-            size={16}
-            color={COLOR.white}
-            accessibilityElementsHidden
-            importantForAccessibility="no"
-          />
-          <Small color={COLOR.white}>Have a code?</Small>
-        </Pressable>
+        {duoAvailable ? (
+          <Pressable
+            onPress={() => router.push('/party/join')}
+            accessibilityRole="button"
+            accessibilityLabel="Have a code? Join a duo party"
+            style={({ pressed }) => [styles.dropLink, pressed && styles.dropPressed]}
+          >
+            <Ionicons
+              name="key-outline"
+              size={16}
+              color={COLOR.white}
+              accessibilityElementsHidden
+              importantForAccessibility="no"
+            />
+            <Small color={COLOR.white}>Have a code?</Small>
+          </Pressable>
+        ) : null}
 
         {!week.loading && !week.error && week.starterQuest ? (
           <Pressable

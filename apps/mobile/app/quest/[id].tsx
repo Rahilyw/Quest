@@ -19,6 +19,7 @@ import { PhotoViewer } from '@/components/PhotoViewer'
 import { Pillow, PILLOW_SIZES } from '@/components/Pillow'
 import { SkeletonFolder } from '@/components/ui/SkeletonFolder'
 import { Body, BodyStrong, Heading, Micro, Small } from '@/components/ui/Text'
+import { useDuoAvailable } from '@/hooks/useDuoAvailable'
 import { useGeofenceCheck } from '@/hooks/useGeofenceCheck'
 import { useQuest } from '@/hooks/useQuests'
 import { useQuestPhotos, type QuestPhoto } from '@/hooks/useQuestPhotos'
@@ -68,6 +69,7 @@ export default function QuestDetail() {
   const router = useRouter()
   const insets = useSafeAreaInsets()
   const { height: windowHeight } = useWindowDimensions()
+  const { available: duoAvailable } = useDuoAvailable()
   const { quest, loading } = useQuest(id)
   const { photos, weeklyCount, loading: photosLoading, refetch } = useQuestPhotos(questId, PHOTO_LIMIT)
   const { questHasBoost, boosts } = useXpBoosts(!!questId)
@@ -183,17 +185,18 @@ export default function QuestDetail() {
     trackXpBoostSeen(questEvent ? 'quest' : 'weekend')
   }, [quest?.id, boosts, questHasBoost])
 
-  const isDuo = (quest?.min_party_size ?? 1) >= 2
+  // Duo UI stays dark until the schema probe finds min_party_size (045).
+  const isDuo = duoAvailable && (quest?.min_party_size ?? 1) >= 2
 
   const startQuest = useCallback(() => {
     if (!quest || !isQuestActive(quest, new Date())) return
     setViewerIndex(null)
-    if ((quest.min_party_size ?? 1) >= 2) {
+    if (duoAvailable && (quest.min_party_size ?? 1) >= 2) {
       router.push(`/party/new?questId=${quest.id}`)
       return
     }
     router.push(`/submit/${quest.id}`)
-  }, [quest, router])
+  }, [duoAvailable, quest, router])
 
   const footerPad = Math.max(insets.bottom, SPACE.s3)
   const footerHeight = SPACE.s3 + 52 + footerPad

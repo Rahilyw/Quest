@@ -766,6 +766,108 @@ export type Database = {
           },
         ]
       }
+      quest_parties: {
+        Row: {
+          code: string
+          created_at: string
+          created_by: string
+          expires_at: string
+          id: string
+          is_open: boolean
+          quest_id: string
+        }
+        Insert: {
+          code: string
+          created_at?: string
+          created_by: string
+          expires_at: string
+          id?: string
+          is_open?: boolean
+          quest_id: string
+        }
+        Update: {
+          code?: string
+          created_at?: string
+          created_by?: string
+          expires_at?: string
+          id?: string
+          is_open?: boolean
+          quest_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "quest_parties_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "leaderboard"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "quest_parties_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quest_parties_quest_id_fkey"
+            columns: ["quest_id"]
+            isOneToOne: false
+            referencedRelation: "quests"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      quest_party_members: {
+        Row: {
+          completion_id: string | null
+          joined_at: string
+          party_id: string
+          user_id: string
+        }
+        Insert: {
+          completion_id?: string | null
+          joined_at?: string
+          party_id: string
+          user_id: string
+        }
+        Update: {
+          completion_id?: string | null
+          joined_at?: string
+          party_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "quest_party_members_completion_id_fkey"
+            columns: ["completion_id"]
+            isOneToOne: false
+            referencedRelation: "completions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quest_party_members_party_id_fkey"
+            columns: ["party_id"]
+            isOneToOne: false
+            referencedRelation: "quest_parties"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quest_party_members_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "leaderboard"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "quest_party_members_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       quest_suggestions: {
         Row: {
           admin_notes: string | null
@@ -852,6 +954,7 @@ export type Database = {
           is_starter: boolean
           lat: number
           lng: number
+          min_party_size: number
           radius_meters: number
           sponsor_name: string | null
           sponsor_reward: string | null
@@ -881,6 +984,7 @@ export type Database = {
           is_starter?: boolean
           lat: number
           lng: number
+          min_party_size?: number
           radius_meters?: number
           sponsor_name?: string | null
           sponsor_reward?: string | null
@@ -910,6 +1014,7 @@ export type Database = {
           is_starter?: boolean
           lat?: number
           lng?: number
+          min_party_size?: number
           radius_meters?: number
           sponsor_name?: string | null
           sponsor_reward?: string | null
@@ -2119,6 +2224,12 @@ export type Database = {
         }
         Returns: boolean
       }
+      create_party: {
+        Args: {
+          p_quest_id: string
+        }
+        Returns: Json
+      }
       casts_are: {
         Args: {
           "": string[]
@@ -3271,6 +3382,12 @@ export type Database = {
         }
         Returns: string
       }
+      join_party: {
+        Args: {
+          p_code: string
+        }
+        Returns: Json
+      }
       json: {
         Args: {
           "": unknown
@@ -3294,6 +3411,12 @@ export type Database = {
           "": unknown[]
         }
         Returns: string
+      }
+      leave_party: {
+        Args: {
+          p_code: string
+        }
+        Returns: undefined
       }
       level_from_xp: {
         Args: {
@@ -3367,6 +3490,12 @@ export type Database = {
         }
         Returns: Json
       }
+      own_party: {
+        Args: {
+          p_quest_id: string
+        }
+        Returns: Json
+      }
       own_push_enabled: {
         Args: Record<PropertyKey, never>
         Returns: boolean
@@ -3380,6 +3509,10 @@ export type Database = {
           p_week_start: string
         }
         Returns: Json
+      }
+      party_code_alphabet: {
+        Args: Record<PropertyKey, never>
+        Returns: string
       }
       pass:
         | {

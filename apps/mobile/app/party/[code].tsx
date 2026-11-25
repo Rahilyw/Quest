@@ -12,6 +12,7 @@ import QRCode from 'react-native-qrcode-svg'
 import { Ionicons } from '@expo/vector-icons'
 import { Body, BodyStrong, Heading, Micro, Sentence, Small, Title } from '@/components/ui/Text'
 import { useAuth } from '@/hooks/useAuth'
+import { useDuoAvailable } from '@/hooks/useDuoAvailable'
 import { createParty, joinParty, leaveParty, useOwnParty } from '@/hooks/useParty'
 import { useQuest } from '@/hooks/useQuests'
 import { track } from '@/lib/analytics'
@@ -29,6 +30,7 @@ export default function PartyLobbyScreen() {
   const router = useRouter()
   const insets = useSafeAreaInsets()
   const { profile } = useAuth()
+  const { available: duoAvailable, loading: duoLoading } = useDuoAvailable()
   const params = useLocalSearchParams<{ code?: string; questId?: string }>()
   const rawCode = normalizePartyCode(
     typeof params.code === 'string' ? params.code : Array.isArray(params.code) ? params.code[0] : '',
@@ -49,7 +51,14 @@ export default function PartyLobbyScreen() {
   const [questId, setQuestId] = useState<string | null>(questIdParam)
 
   const { quest } = useQuest(questId ?? undefined)
-  const { party, state, refresh } = useOwnParty(questId, !!questId)
+  // Skip party RPCs until the schema probe passes.
+  const { party, state, refresh } = useOwnParty(questId, !!questId && duoAvailable)
+
+  useEffect(() => {
+    if (!duoLoading && !duoAvailable) {
+      router.replace('/(tabs)')
+    }
+  }, [duoAvailable, duoLoading, router])
 
   useEffect(() => {
     if (party?.code) setActiveCode(party.code)
@@ -125,6 +134,15 @@ export default function PartyLobbyScreen() {
   }, [questId, ready, router])
 
   const title = useMemo(() => quest?.title ?? 'Duo party', [quest?.title])
+
+  if (duoLoading || !duoAvailable) {
+    return (
+      <View
+        style={[styles.screen, { paddingTop: insets.top + SPACE.s3 }]}
+        accessibilityLabel="Party lobby unavailable"
+      />
+    )
+  }
 
   return (
     <View style={[styles.screen, { paddingTop: insets.top + SPACE.s3, paddingBottom: insets.bottom + SPACE.s4 }]}>
