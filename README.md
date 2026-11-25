@@ -46,7 +46,7 @@ The core loop is:
 6. Completion appears on the **public activity feed** — unless the player turned off feed publishing in Settings
 7. The community can **report** posts (3 independent reports auto-hide) and **block** users; the admin **moderation queue** reviews flagged posts with GPS evidence — removal revokes the XP
 
-The Spec 06 Sunday recap and the fix for the profile `push_token` read exposure (SEC-01) are in this checkout as migrations 039 and 040 plus mobile code. Both migrations were applied to production by the owner on Nov 11, 2026 (the 039 verification queries are not yet recorded) and neither feature has run on a device; see the [Nov 11 audit](docs/design/CODEBASE-AUDIT-2026-11-11.md) and [roadmap](ROADMAP.md). Hosted database, push delivery and store readiness are tracked separately in the [launch runbook](LAUNCH-RUNBOOK.md).
+**Status (Nov 25, 2026).** Production has the baseline and migrations 002–040 applied; the 039 verification queries are not yet recorded. Migrations 041–044 (push draining and recap push, proof-photo owner policies, XP events, stickers) are in this checkout and locally tested on a throwaway Supabase stack in CI; they are not applied. Migration 045 (duo quests) is on the `cursor/d-duo` branch, held for the pilot cohort. The two push functions are not deployed, and no feature is device-verified yet. The [roadmap](ROADMAP.md) has the full status table; the [owner run sheet](docs/design/OWNER-RUNSHEET.md) and [launch runbook](LAUNCH-RUNBOOK.md) cover the hosted steps.
 
 ---
 
@@ -104,31 +104,45 @@ Quest! (monorepo root)
 │       │   ├── completions/      Read-only completions log (spot-check + remove)
 │       │   ├── moderation/       Flagged-post queue — reports + GPS evidence
 │       │   ├── quests/           Quest management + GeofenceEditor (draw mode)
+│       │   ├── badges/           Badge CRUD and unlock rules
+│       │   ├── suggestions/      Community quest suggestion queue
+│       │   ├── stickers/         Sticker library (044)
+│       │   ├── xp-events/        XP multiplier events (043)
+│       │   ├── pilot/            Pilot dashboard (soft fallback without 043/044)
+│       │   ├── redeem/           Merchant redemption page (no login)
 │       │   ├── users/            User directory
 │       │   └── sponsors/         Sponsor completion reports
 │       ├── lib/                  Supabase clients (server + SSR), Expo push
 │       └── middleware.ts         Auth redirect guard
 │
 ├── packages/
-│   └── geofence/                 @quest/geofence — shared geofence and redemption logic
+│   ├── geofence/                 @quest/geofence — shared geofence and redemption logic
+│   └── db-types/                 @quest/db-types — Database types generated from the local stack
 │
 ├── docs/
 │   └── specs/                    Feature specs 01–07 (instant verification era)
 │
 ├── supabase/
-│   ├── migrations/               timestamped initial schema + 002–040 (see migration index)
+│   ├── migrations/               timestamped initial schema + 002–044 (see migration index;
+│   │                             045 duo is on cursor/d-duo, held)
+│   ├── tests/                    pgTAP suites, run on the CI local stack
+│   ├── verify/                   Per-migration verify SQL (039, 041–044)
 │   ├── functions/
+│   │   ├── _shared/              Push logic shared by both senders, with Deno tests
 │   │   ├── send-social-push/     Push for comments, replies and follows (webhook required)
-│   │   └── send-push-outbox/     Weekly-drop sender (webhook required)
+│   │   ├── send-push-outbox/     Outbox sender: weekly drops, recap, win-back (webhook or 041 cron)
+│   │   └── deno.json             Deno import map for the functions
 │   ├── seed.sql                  Victoria quests, badges and geofence examples
 │   └── config.toml               Edge function config
+│
+├── scripts/db-local/             Throwaway local Supabase stack: apply, verify, pgtap, types, stop
 │
 ├── docs/design/                  Cutouts brand spec (BRAND.md) + UI overhaul plan
 ├── DESIGN.md                     Earlier Harbour Electric spec (superseded)
 ├── ARCHITECTURE.md               Visual architecture maps
 ├── PRODUCT.md                    Product positioning, content engine, safety
 ├── ROADMAP.md                    Development status, phases, and blockers
-└── .github/workflows/ci.yml      GitHub Actions (tests + type checks)
+└── .github/workflows/            ci.yml (tests, tokens, type checks, Deno) and db-local.yml (local stack)
 ```
 
 ---
@@ -240,7 +254,7 @@ Quest! (monorepo root)
 | Supabase Auth | Email/password authentication |
 | Supabase Postgres | Primary database with RLS |
 | Supabase Storage | Photo proof, avatars, quest covers |
-| Supabase Edge Functions | Weekly rank snapshot (rewards + redemption codes run in DB triggers) |
+| Supabase Edge Functions | Push senders (`send-push-outbox`, `send-social-push`); rewards, redemption codes and the rank snapshot run in the database |
 | PostGIS | Geofence enforcement at insert (4 zone types) |
 | Row Level Security | Per-user data access enforced at DB layer |
 
@@ -407,16 +421,27 @@ same for `profiles.push_token` (SEC-01 in the [audit](docs/design/CODEBASE-AUDIT
 ### Migrations
 
 The initial schema is `20260619010246_initial_schema.sql`; numbered follow-ups run from
-`002` through `040`. There is no `001_initial_schema.sql`. Lexical ordering puts the timestamped
-baseline after the numbered migrations, so a naive clean-project push order is unsafe. Do not
-rename files already recorded in hosted history. For a new project, establish and verify a
-supported baseline/restore procedure first. See [the migration index](supabase/migrations/README.md)
-for schema details and the runbook's reported hosted state.
+`002` through `044` in this checkout. `045_duo_quests.sql` is on the `cursor/d-duo` branch and is
+held. There is no `001_initial_schema.sql`. Lexical ordering puts the timestamped baseline after
+the numbered migrations, so a naive clean-project push order is unsafe. Do not rename files
+already recorded in hosted history.
 
-The complete migration list and descriptions are maintained in
-[`supabase/migrations/README.md`](supabase/migrations/README.md). The project has migrations
-through 040 in this checkout; the runbook records 039 and 040 applied to production on Nov 11, 2026. Local migration presence does not prove remote application or
-function/webhook deployment.
+| Range | State |
+|---|---|
+| Baseline, 002–040 | Applied to production (039 and 040 by the owner on Nov 11, 2026; the 039 verify queries are not recorded) |
+| 041–044 | In checkout. Locally tested on the CI local stack. **Not applied.** Apply in order, one per dry-run ([run sheet](docs/design/OWNER-RUNSHEET.md)) |
+| 045 | On `cursor/d-duo`. Held for the pilot cohort. Not yet run on a local stack. Not applied |
+| 046–053 | Reserved by [build 3](docs/design/BUILD-3-PLAN-2026-11-25.md) §6 |
+
+The complete migration list, descriptions and "Verifying" blocks are maintained in
+[`supabase/migrations/README.md`](supabase/migrations/README.md). Most migrations from 039 on also
+have a verify file in `supabase/verify/` (039 and 041–044; 040 has none). Local migration presence does not prove remote application
+or function and webhook deployment.
+
+**Clean install (local stack).** `scripts/db-local/apply.sh` applies the baseline, then `002`–`044`
+in order, then the seed, on a throwaway Supabase stack. `.github/workflows/db-local.yml` runs it in
+CI, then the verify pack, the pgTAP suites in `supabase/tests/` and a drift check on
+`packages/db-types`. It needs Docker. See the migration index for the steps.
 
 ---
 
@@ -446,22 +471,22 @@ cd ../admin && npm install
 ### 2. Set up Supabase
 
 1. Create or select a Supabase project at [supabase.com](https://supabase.com).
-2. **Do not apply these files in naive filename order to a fresh project.** The baseline is timestamped `20260619010246_initial_schema.sql`, while numbered follow-ups begin at 002 and sort before it. A verified clean-bootstrap procedure is not yet documented; resolve that migration baseline before applying SQL. See [`supabase/migrations/README.md`](supabase/migrations/README.md).
+2. **Do not apply these files in naive filename order to a fresh project.** The baseline is timestamped `20260619010246_initial_schema.sql`, while numbered follow-ups begin at 002 and sort before it. For a local stack, use `scripts/db-local/apply.sh` (Docker required); CI runs the same script. For a new hosted project, follow "New hosted project" in [`supabase/migrations/README.md`](supabase/migrations/README.md).
 3. For the existing Quest project, consult [LAUNCH-RUNBOOK.md](LAUNCH-RUNBOOK.md) before touching its migration history. Do not reapply migrations already recorded there.
 4. Run `supabase/seed.sql` only after the complete schema is established.
-5. Go to **Project Settings → API** and copy your:
+5. Go to **Project Settings → API keys** (or the **Connect** dialog) and copy your:
    - Project URL
-   - `anon` public key
-   - `service_role` secret key
+   - publishable key (`sb_publishable_...`)
+   - secret key (`sb_secret_...`), for the admin server only
 
 ### 3. Configure environment variables
 
 ```bash
-cp .env.example apps/mobile/.env
-cp .env.example apps/admin/.env.local
+cp apps/mobile/.env.example apps/mobile/.env
+cp apps/admin/.env.example apps/admin/.env.local
 ```
 
-Fill in both files with your Supabase credentials (see [Environment Variables](#environment-variables) below).
+Fill in both files with your Supabase credentials (see [Environment Variables](#environment-variables) below). The root `.env.example` is only an index of every name the code reads; nothing loads a root `.env`.
 
 ### 4. Start the mobile app
 
@@ -520,18 +545,35 @@ Open [http://localhost:3000](http://localhost:3000). Sign in with an email liste
 | Variable | Required | Description |
 |----------|----------|-------------|
 | `EXPO_PUBLIC_SUPABASE_URL` | Yes | Your Supabase project URL |
-| `EXPO_PUBLIC_SUPABASE_ANON_KEY` | Yes | Supabase anon (public) key |
-| `EXPO_PUBLIC_BYPASS_GEOFENCE` | No | Set to `true` to skip GPS checks in development |
+| `EXPO_PUBLIC_SUPABASE_ANON_KEY` | Yes | The publishable key (`sb_publishable_...`). The name says ANON_KEY because `lib/supabase.ts` reads that name |
+| `EXPO_PUBLIC_EAS_PROJECT_ID` | No | Fallback only; `app.json` `extra.eas.projectId` is used first |
+| `EXPO_PUBLIC_POSTHOG_KEY` | No | PostHog project key; no events are sent without it |
+| `EXPO_PUBLIC_POSTHOG_HOST` | No | PostHog host, e.g. `https://us.i.posthog.com` |
+| `EXPO_PUBLIC_SENTRY_DSN` | No | Sentry DSN; Sentry starts in production builds only |
+| `EXPO_PUBLIC_BYPASS_GEOFENCE` | No | Set to `true` to skip GPS checks; honoured only in `__DEV__` builds |
 
 ### Admin (`apps/admin/.env.local`)
 
 | Variable | Required | Description |
 |----------|----------|-------------|
-| `NEXT_PUBLIC_SUPABASE_URL` | Yes | Your Supabase project URL |
-| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Yes | Supabase anon key (used for auth UI only) |
-| `SUPABASE_SERVICE_ROLE_KEY` | Yes | Service-role secret key — **never expose to browser** |
+| `SUPABASE_URL` | Yes | Your Supabase project URL (server clients and middleware) |
+| `SUPABASE_PUBLISHABLE_KEY` | Yes | Publishable key for the session client in server components and middleware |
+| `SUPABASE_SECRET_KEY` | Yes | Secret key with service-role access, server only — **never expose to browser** |
+| `NEXT_PUBLIC_SUPABASE_URL` | Yes | Project URL for the browser client (password reset) |
+| `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` | Yes | Publishable key for the browser client (password reset) |
 | `ADMIN_ALLOWED_EMAILS` | Yes | Comma-separated admin email allowlist (e.g. `you@example.com,ops@example.com`). Empty denies all logins in every environment |
 | `ADMIN_DEV_ALLOW_ALL` | No | Local dev only: `1` allows any email while the allowlist is empty. Ignored when `NODE_ENV=production`; never set on Vercel |
+
+`apps/admin/.env.example` also lists `SUPABASE_JWKS_URL` and a commented `ADMIN_SITE_URL`. The admin
+code in this checkout reads neither.
+
+### Edge functions (Supabase secrets)
+
+| Variable | Read by | Notes |
+|----------|---------|-------|
+| `DROP_PUSH_WEBHOOK_SECRET` | `send-push-outbox` | Set with `npx supabase secrets set`; the 041 cron sends it from Vault |
+| `SOCIAL_PUSH_WEBHOOK_SECRET` | `send-social-push` | Set with `npx supabase secrets set` |
+| `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY` | both | Provided by the Supabase functions runtime |
 
 ---
 
@@ -661,6 +703,12 @@ The admin dashboard lives at `apps/admin/` and is a standard Next.js 15 app with
 | `/completions` | Read-only completions log with spot-check Remove |
 | `/quests` | Quest list with edit + active toggle |
 | `/quests/new` | Create quest form (incl. geofence draw mode) |
+| `/badges` | Badge CRUD, art and unlock rules |
+| `/suggestions` | Community quest suggestion queue |
+| `/stickers` | Sticker library (needs 044) |
+| `/xp-events` | XP multiplier events (needs 043) |
+| `/pilot` | Pilot dashboard; falls back softly when 043 or 044 is missing |
+| `/redeem/[merchantKey]` | Merchant redemption page; the key in the URL is the credential, no login |
 | `/users` | User directory sorted by XP (ISR 60 s) |
 | `/sponsors` | Per-sponsor completion counts and export |
 
@@ -692,7 +740,18 @@ There is no approval step — completions verify instantly at submission. The ad
 
 Called by a Database Webhook on inserts into `notifications` (migration 029). Sends Expo pushes for
 comments, replies and follows; likes stay inbox-only. Authenticates with the `x-webhook-secret`
-header (`verify_jwt = false`). Not deployed yet: see LAUNCH-RUNBOOK.md Step 0b.
+header (`verify_jwt = false`). Not deployed yet: see LAUNCH-RUNBOOK.md Step 0b and run sheet O4.
+
+**`send-push-outbox`**
+
+Drains `push_outbox` (weekly drops from 034; recap and win-back pushes once 041 and 043 are
+applied). With 041, a 5-minute pg_cron job calls it through `pg_net` when rows are claimable, using
+a URL and secret from Vault. Authenticates with `x-webhook-secret`. Not deployed yet: run sheet O2
+and O4.
+
+Both functions keep their logic in `supabase/functions/_shared/` (`pushOutbox.ts`, `socialPush.ts`)
+with `fetch` and the Supabase client passed in, so `deno test` can fake them. CI runs `deno check`
+and `deno test` from `supabase/functions/`.
 
 **Weekly rank snapshot** now runs in the database: `snapshot_last_week_ranks()` scheduled by pg_cron
 (migration 031) every Monday just before midnight Pacific. The `snapshot-ranks` edge function it
@@ -705,24 +764,26 @@ migration 017. Both are still deployed on the hosted project and should be delet
 ### Deploying Edge Functions
 
 ```bash
-# With Supabase CLI
+# With Supabase CLI (owner only; see the run sheet for secrets and webhooks)
+npx supabase functions deploy send-push-outbox
 npx supabase functions deploy send-social-push
 ```
 
 ### Local Development with Supabase CLI
 
+Do not use `supabase db reset` or a plain `supabase start` with the migrations folder: filename
+order applies `002` before the baseline and fails. Use the db-local scripts instead (Docker
+required):
+
 ```bash
-# Start local Supabase stack
-supabase start
+scripts/db-local/apply.sh        # temp stack: baseline → 002..044 → seed
+scripts/db-local/verify.sh       # supabase/verify/*.sql
+scripts/db-local/pgtap.sh        # supabase/tests/*.test.sql
+scripts/db-local/types.sh        # regenerate packages/db-types (add --check to fail on drift)
+scripts/db-local/stop.sh         # tear the stack down
 
-# Apply migrations
-supabase db reset
-
-# Seed data
-supabase db seed --data supabase/seed.sql
-
-# Run edge functions locally
-supabase functions serve
+# Edge function tests (Deno)
+cd supabase/functions && deno test --allow-env
 ```
 
 ---
@@ -752,15 +813,16 @@ and the build plan is [docs/design/UI-OVERHAUL-PLAN.md](docs/design/UI-OVERHAUL-
 
 ### Unit Tests
 
-Logic tests live at `apps/mobile/__tests__/logic.test.js` (**159 assertions**). Quest-window tests are in `apps/mobile/__tests__/questWindow.test.js` (**9 cases**), recap tests in `recap.test.js` (**24 cases**) and the profile-token guard in `profilePrivacy.test.js` (**8 checks**, text only: it does not execute SQL). Geofence and redemption tests are in `packages/geofence/src/__tests__`; the geofence suite has **50 assertions**. CI currently runs geofence, mobile logic, recap, the profile-token guard, both TypeScript checks and a critical production dependency audit. It does not run the redemption or quest-window tests.
+`npm test --workspace mobile` runs every file in `apps/mobile/__tests__/` (logic, quest window, recap, profile privacy, push outbox, submission attempt, submission queue, XP events, sticker board, relative time, own selfie path, feedback). The build logs record **290** passing at the end of build 1. `npm test --workspace @quest/geofence` runs the geofence suite (**50 assertions**) and the redemption tests. The admin pilot fallback test is `node apps/admin/__tests__/pilotFallback.test.js`.
+
+Database behaviour is tested with pgTAP in `supabase/tests/` on the CI local stack: **53 assertions** at build 2 card M2 (insert normalisation, privacy, push outbox, storage, XP, stickers, definer hygiene). Edge function logic is tested with Deno in `supabase/functions/_shared/`.
 
 Coverage includes XP/level thresholds, celebration/level-up derivation, leaderboard logic, Haversine and polygon geofence checks, moderation logic, greeting text, and avatar URL helpers.
 
 ```bash
-node apps/mobile/__tests__/logic.test.js
-node apps/mobile/__tests__/questWindow.test.js
-node packages/geofence/src/__tests__/geofence.test.js
-node packages/geofence/src/__tests__/redemption.test.js
+npm test --workspace mobile --ignore-scripts
+npm test --workspace @quest/geofence --ignore-scripts
+cd apps/mobile && npm run lint:tokens -- --strict   # raw tokens must stay at 0
 ```
 
 ### Type Checking
@@ -775,13 +837,20 @@ cd apps/admin && npx tsc --noEmit
 
 ### CI (GitHub Actions)
 
-Every push to `main` and every pull request targeting `main` runs `.github/workflows/ci.yml`:
+Pushes to `main`, `cursor/**` and `claude/**`, and pull requests targeting `main`, run two workflows.
 
-1. **geofence-tests** — `geofence.test.js` in `packages/geofence`
-2. **logic-tests** — `logic.test.js` in `apps/mobile`
-3. **typescript-check-mobile** — `tsc --noEmit` on the mobile app
-4. **typescript-check-admin** — `tsc --noEmit` on the admin dashboard
-5. **dependency-audit** — `npm audit --omit=dev --audit-level=critical`
+`.github/workflows/ci.yml`:
+
+1. **geofence-tests** — the `@quest/geofence` workspace tests (geofence and redemption)
+2. **logic-tests** — the `mobile` workspace tests
+3. **token-report** — `check-tokens.js --strict` (fails on any raw token)
+4. **typescript-check-mobile** — `tsc --noEmit` and `expo config` on the mobile app
+5. **edge-functions** — `deno check` on both push functions, then `deno test`
+6. **typescript-check-admin** — `tsc --noEmit` and `next build` with placeholder env vars
+7. **dependency-audit** — `npm audit --omit=dev --audit-level=critical`
+
+`.github/workflows/db-local.yml`: apply the migrations to a throwaway local stack in dependency
+order, run the verify pack and the pgTAP suites, and check `packages/db-types` for drift.
 
 ---
 
@@ -826,11 +895,16 @@ npx vercel deploy
 Set the following environment variables in your Vercel project settings:
 
 ```
+SUPABASE_URL
+SUPABASE_PUBLISHABLE_KEY
+SUPABASE_SECRET_KEY
 NEXT_PUBLIC_SUPABASE_URL
-NEXT_PUBLIC_SUPABASE_ANON_KEY
-SUPABASE_SERVICE_ROLE_KEY
+NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY
 ADMIN_ALLOWED_EMAILS
 ```
+
+Never set `ADMIN_DEV_ALLOW_ALL` on Vercel. LAUNCH-RUNBOOK Step 4 lists what the production
+project has.
 
 The admin app uses Next.js ISR for the user directory page (60-second revalidation). All other pages are dynamically server-rendered.
 
@@ -840,14 +914,18 @@ The admin app uses Next.js ISR for the user directory page (60-second revalidati
 
 See [ROADMAP.md](ROADMAP.md) for the full phase plan and [docs/specs/README.md](docs/specs/README.md) for feature specs.
 
-**Implemented in this checkout:** geofence drawing and multi-geofences, instant verification,
-moderation/social, analytics SDK wrapper, weekly drops and suggestions, starter quest, merchant
-redemption, and most Cutouts screens/admin styling. This does not imply every migration or
-function is deployed. The Spec 06 Sunday recap (040) and the **P1 profile push-token fix** (039)
-are applied to production (Nov 11) but not verified or device-tested; clean-install migration ordering is documented but
-not verified. All three are tracked in the [audit](docs/design/CODEBASE-AUDIT-2026-11-11.md).
+**Applied (baseline and 002–040):** geofence drawing and multi-geofences, instant verification,
+moderation and the social layer, weekly drops and suggestions, starter quest, merchant
+redemption, the Sunday recap (040) and the profile push-token fix (039, verify queries not yet
+recorded). None of these is device-verified.
 
-**Operational state:** use the dated [launch runbook](LAUNCH-RUNBOOK.md) for repository-reported
-hosted migration history and remaining keys, webhooks, builds and device validation. Do not infer
-deployment from local source. XP events, offline submission queue and duo quests remain planned;
-quest chains remain deferred. Multi-city and a self-serve sponsor portal remain out of v1 scope.
+**In checkout and locally tested, not applied:** push draining and the recap push (041),
+proof-photo owner policies (042), XP events (043), stickers (044), the offline submission queue,
+the admin pilot dashboard, in-app feedback, and the build 1 polish cards. Duo quests (045) are on
+`cursor/d-duo`, held. The clean-install order is executed in CI by `scripts/db-local`.
+
+**Operational state:** use the [owner run sheet](docs/design/OWNER-RUNSHEET.md) and the dated
+[launch runbook](LAUNCH-RUNBOOK.md) for hosted migrations, keys, webhooks, builds and device
+validation. Do not infer deployment from local source. Next work is in the
+[build 3 plan](docs/design/BUILD-3-PLAN-2026-11-25.md). Quest chains wait for 35 live quests.
+Multi-city and a self-serve sponsor portal remain out of v1 scope.

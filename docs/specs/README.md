@@ -1,21 +1,29 @@
 # Quest! Feature Specs — Current Status
 
-The product specifications for Quest!'s verification, safety, analytics, content, growth and merchant flows. Status below describes implementation in this checkout; deployment is called out separately in the [launch runbook](../../LAUNCH-RUNBOOK.md).
+The product specifications for Quest!'s verification, safety, analytics, content, growth and merchant flows. Status below was reconciled on Nov 25, 2026. It uses the status words strictly: **in checkout**, **locally tested** (local checks or CI, including the CI local Supabase stack), **applied** (on the production database), **deployed**, **device-verified**. Deployment steps are in the [launch runbook](../../LAUNCH-RUNBOOK.md) and the [owner run sheet](../design/OWNER-RUNSHEET.md).
 
 | # | Spec | One-liner | Status |
 |---|---|---|---|
-| [01](01-geofence-drawing.md) | **Geofences** | Anywhere, circle, city, polygon and multi-area zones | Implemented in checkout (013–015, 022, 024–026); local tests pass |
-| [02](02-instant-verification.md) | **Instant Verification** | Server geofence validation; instant rewards and moderation removal | Implemented in checkout (016–017, later hardening) |
-| [03](03-report-moderation.md) | **Reports & Moderation** | Post/comment reports, blocking, feed privacy and admin moderation | Implemented in checkout (018, 028–030) |
-| [04](04-analytics-instrumentation.md) | **Analytics** | PostHog event wrapper and product event schema | Mobile wrapper present; production keys/dashboards are operational work |
-| [05](05-community-quests.md) | **Community Quests & Drops** | Suggestions, weekly drops and chains | Drops/suggestions implemented (034–035); push deployment remains; chains deferred |
-| [06](06-growth-engagement.md) | **Growth & Engagement** | Starter quest, recap, XP events, offline queue and duo loop | Starter quest implemented (037). Sunday recap implemented (040 applied Nov 11, not device-tested; no reminder push). Other features planned |
-| [07](07-merchant-redemption.md) | **Merchant Redemption** | No-login merchant validation and redemption reporting | Implemented in checkout (036); live counter flow unverified |
+| [01](01-geofence-drawing.md) | **Geofences** | Anywhere, circle, city, polygon and multi-area zones | Applied (013–015, 022, 024–026); local tests pass |
+| [02](02-instant-verification.md) | **Instant Verification** | Server geofence validation; instant rewards and moderation removal | Applied (016–017, hardening through 038); insert normalisation has pgTAP coverage |
+| [03](03-report-moderation.md) | **Reports & Moderation** | Post/comment reports, blocking, feed privacy and admin moderation | Applied (018, 028–030). Photo pre-screen auto-triage is build 3 card N4 |
+| [04](04-analytics-instrumentation.md) | **Analytics** | PostHog event wrapper and product event schema | Mobile wrapper in checkout. Keys and dashboards not set (owner O8). Wave 2 events and dashboard spec: card N0 |
+| [05](05-community-quests.md) | **Community Quests & Drops** | Suggestions, weekly drops and chains | Drops and suggestions applied (034–035). Drop push sender not deployed; its drain is 041 (not applied). Chains: card G1, gated on 35 live quests. Flash quests: card N1 |
+| [06](06-growth-engagement.md) | **Growth & Engagement** | Starter quest, recap, XP events, offline queue and duo loop | See the Spec 06 rows below |
+| 06 §4 | Starter quest | `is_starter` quest pinned after sign-up | 037 applied. Not device-verified |
+| 06 §2 | Sunday recap | Recap screen and share card; Sunday push | 040 applied Nov 11; not device-verified. The push (`enqueue_week_recap`) is in 041: in checkout, locally tested, not applied |
+| 06 §3 | XP events | Event multipliers, first-finisher bonus, win-back | In checkout and locally tested: 043 (13 pgTAP assertions), mobile card C, admin `/xp-events`. **Not applied** |
+| 06 §5 | Offline queue | Queue and retry a failed submission | In checkout and locally tested (mobile). Needs 042 applied (5 pgTAP assertions, not applied) before a device check |
+| 06 §1 | Duo quests | Party codes, duo bonus, referral | In checkout on `cursor/d-duo` (045). Held for R1. 045 has not run on a local stack yet (card M5). **Not applied** |
+| — | Stickers ([BRAND.md §6–§7](../design/BRAND.md), no spec) | Sticker collection and board, replacing sprites | In checkout and locally tested: 044 (7 pgTAP assertions), card S, admin `/stickers`. **Not applied** |
+| [07](07-merchant-redemption.md) | **Merchant Redemption** | No-login merchant validation and redemption reporting | Applied (036); live counter flow unverified |
 
-**Next build plan:** [NEXT-BUILD-PLAN-2026-11-19.md](../design/NEXT-BUILD-PLAN-2026-11-19.md) (Phases 3–6, Nov 19, 2026), following [NEXT-BUILD-PLAN-2026-11.md](../design/NEXT-BUILD-PLAN-2026-11.md) (Nov 17).
-Migrations through 040 are reported applied to production (039 and 040 by the owner on Nov 11);
-the 039 verification queries are not yet recorded and the recap is not device-tested. The plan
-puts pilot launch hardening first, then Spec 06 §5 (offline queue), §3 (XP events) and §1 (duo).
+**Next build plan:** [BUILD-3-PLAN-2026-11-25.md](../design/BUILD-3-PLAN-2026-11-25.md) (Nov 25, 2026).
+Earlier plans: [build 2](../design/CURSOR-BUILD-2-2026-11-20.md), [build 1](../design/CURSOR-BIG-BUILD-2026-11-20.md),
+[Nov 19](../design/NEXT-BUILD-PLAN-2026-11-19.md) and [Nov 17](../design/NEXT-BUILD-PLAN-2026-11.md).
+Production has the baseline and 002–040 applied (039 and 040 by the owner on Nov 11); the 039
+verification queries are not yet recorded. 041–044 are locally tested on the CI local stack and
+not applied. No Spec 06 feature is device-verified.
 
 **Design.** Cutouts is the approved visual direction in [`docs/design/BRAND.md`](../design/BRAND.md).
 The implementation snapshot and remaining founder-owned assets/device checks are in

@@ -63,15 +63,15 @@ The city writes the game. Quest content comes from three sources, in rising orde
 2. **Weekly drops** — new quests land Monday morning; expiring quests end Sunday night, bookending the leaderboard week. The rhythm is the product: Monday pulls you out, Sunday night settles the score.
 3. **Community-suggested quests** — locals submit ideas; admins curate and publish them with credit ("Quest by @sarah"). The people who know the streets write the streets. See `docs/specs/05-community-quests.md`.
 
-Weekly drops and community suggestions are implemented in this checkout; push delivery and
-hosted behavior are tracked separately in the launch runbook. Quest chains are deferred until
-the catalog and product decision support them.
+Weekly drops and community suggestions are applied on the production database (034–035); the
+drop push sender is not deployed yet, and push delivery is tracked in the launch runbook. Quest
+chains are deferred until the catalog reaches 35 live quests (build 3 card G1).
 
 Quest chains group existing quests into neighbourhood storylines ("The Old Town Trilogy") for progression depth without content volume.
 
 ## Playing together
 
-The mission is real-world connection, so the game can grow beyond single-player. Duo quests are specified but not yet implemented. The **Sunday recap card** (rank, XP, streak, best photo) is implemented in the checkout and opens from Rankings; its migration was applied Nov 11, 2026 and it has not been device-tested (see `docs/specs/06-growth-engagement.md`). The social layer has follows, likes, comments and an activity inbox (no DMs). The current proof flow supports a place photo and optional selfie; the selfie is private and not part of public sharing.
+The mission is real-world connection, so the game can grow beyond single-player. Duo quests are in checkout on the `cursor/d-duo` branch (migration 045), held until the closed pilot cohort starts; 045 is not applied. The **Sunday recap card** (rank, XP, streak, best photo) opens from Rankings; its migration was applied Nov 11, 2026 and it has not been device-verified (see `docs/specs/06-growth-engagement.md`). The social layer has follows, likes, comments and an activity inbox (no DMs). The current proof flow supports a place photo and optional selfie; the selfie is private and not part of public sharing.
 
 ## Safety, privacy & trust
 
