@@ -4,7 +4,8 @@
   "workspaces": [
     "apps/mobile",
     "apps/admin",
-    "packages/geofence"
+    "packages/geofence",
+    "packages/db-types"
   ],
   "scripts": {
     "mobile": "npm run start --workspace mobile",

@@ -14,8 +14,9 @@ export interface QuestPhoto {
   viewer_liked?: boolean
 }
 
+// !inner so we can filter on profiles.feed_public (completions has no such column).
 const PHOTO_SELECT =
-  'id, user_id, photo_url, selfie_url, completed_at, profile:profiles(username, avatar_url), likes:completion_likes(count)'
+  'id, user_id, photo_url, selfie_url, completed_at, profile:profiles!inner(username, avatar_url, feed_public), likes:completion_likes(count)'
 
 type PhotoRow = {
   id: string
@@ -56,7 +57,7 @@ export function useQuestPhotos(
       .select(PHOTO_SELECT)
       .eq('quest_id', questId)
       .eq('status', 'approved')
-      .eq('feed_public', true)
+      .eq('profile.feed_public', true)
       .eq('hidden_pending_review', false)
       .order('completed_at', { ascending: false })
       .limit(limit)
@@ -82,10 +83,10 @@ export function useQuestPhotos(
     const weekStart = currentWeekStart(new Date())
     const { count } = await supabase
       .from('completions')
-      .select('id', { count: 'exact', head: true })
+      .select('id, profile:profiles!inner(feed_public)', { count: 'exact', head: true })
       .eq('quest_id', questId)
       .eq('status', 'approved')
-      .eq('feed_public', true)
+      .eq('profile.feed_public', true)
       .gte('completed_at', weekStart.toISOString())
 
     setWeeklyCount(count ?? 0)
