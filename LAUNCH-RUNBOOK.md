@@ -255,6 +255,26 @@ This is the only thing blocking a TestFlight build.
    ```
 7. In App Store Connect → TestFlight, add yourself as an internal tester.
 
+### App Review
+
+Before you press **Submit for review** (card K2, Nov 25, 2026):
+
+1. **Fix or accept the K2 findings** in
+   [docs/design/reports/k2.md](docs/design/reports/k2.md). P1-1 (a starter quest with no zone
+   must be live on production) decides whether a reviewer outside Victoria can finish anything.
+2. **Create the demo account** on a TestFlight build, following
+   [docs/store/APP-REVIEW.md §2](docs/store/APP-REVIEW.md): a fresh account that has never done
+   the starter quest, a password from your password manager (never in the repo), and one example
+   post from a second account of yours so the reviewer can try Report and Block. Never use the
+   dev-only demo account in `app/(auth)/sign-in.tsx`.
+3. **Paste the reviewer notes** from [APP-REVIEW.md §1](docs/store/APP-REVIEW.md) into App Review
+   Information → Notes, and the demo credentials into the sign-in fields.
+4. **App Privacy:** answer from [docs/store/PRIVACY-LABELS.md](docs/store/PRIVACY-LABELS.md).
+5. **Listing and screenshots:** [docs/store/LISTING.md](docs/store/LISTING.md) and
+   [docs/store/SCREENSHOTS.md](docs/store/SCREENSHOTS.md).
+6. After each review round, dismiss the reviewer's reports in admin moderation, and make a new
+   demo account for the next submission.
+
 ### OTA after the first build
 
 The first native build must include `expo-updates` (already in `app.json` after
