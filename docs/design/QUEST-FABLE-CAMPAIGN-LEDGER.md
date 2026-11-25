@@ -142,6 +142,27 @@ Owner recommendation: hold applying 041–044 to production until M2 is green, s
 in place. O1, O7 and O8 can go ahead. The Cursor rule now allows in-place fixes to 041–045 only
 while unapplied, and SQL only on the CI local stack.
 
+### Continuation — November 25, 2026, build 3 plan
+
+- Build 2 status: M1–M4 merged on `cursor/build-2` with green CI ([BUILD-2-LOG.md](BUILD-2-LOG.md)).
+  Z and M5 are not started, and the build-2 PR is not open. `main` is still at `7f76a69`.
+- New plan: [BUILD-3-PLAN-2026-11-25.md](BUILD-3-PLAN-2026-11-25.md). It runs in four waves:
+  - Wave 0 closes build 2, and M5 gains a duo dark-launch guard.
+  - Wave 1 is the launch pack: doc truth sweep, App Review pack, one device checklist, map tab
+    audit, admin preview.
+  - Wave 2 is the R1 retention features: flash quests, save for later, streak freeze, photo
+    pre-screen.
+  - Wave 3 is the data-gated work: chains at 35 live quests, leagues at WAU > 100, the quest-log
+    map, TanStack Query, universal links, Android, search and leaderboard scopes.
+- Roles: Claude Code coordinates and runs the SQL-heavy cards through the feature pipeline in
+  worktrees. Cursor builds the UI cards. Reviews run as a Workflow or a fresh chat.
+- Migration numbers reserved: 046 for Z forward fixes, 047 flash, 048 saved quests, 049 streak
+  freeze, 050 photo pre-screen, 051 chains, 052 leagues, 053 leaderboard scopes.
+- The hard-rules file is not updated yet. The coordinator points it at build 3 when Wave 1
+  starts, because Z and M5 still run under the build-2 rules.
+- Next concrete action: Wave 0. Run Z and M5 under the build-2 doc, then open the build-2 PR.
+  The owner answers DB3-1 to DB3-8 in plan §10.
+
 The sections below preserve the Nov 10 campaign record and may contain facts that were true
 only for that session; use the continuation above and linked current docs for present status.
 
