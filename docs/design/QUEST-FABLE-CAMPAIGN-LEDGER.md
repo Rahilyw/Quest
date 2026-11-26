@@ -163,6 +163,30 @@ while unapplied, and SQL only on the CI local stack.
 - Next concrete action: Wave 0. Run Z and M5 under the build-2 doc, then open the build-2 PR.
   The owner answers DB3-1 to DB3-8 in plan §10.
 
+### Continuation — November 25, 2026, Wave 0/1 progress and owner decisions
+
+- Card Z review is published: [SECURITY-REVIEW-2026-11.md](SECURITY-REVIEW-2026-11.md), 32
+  findings. The P0s and P1s are C-1 (selfies), A-1 (proof-photo listing), C-2 (deep-link session
+  swap) and C-3 (shared push token). D-1, account deletion through direct `storage.objects`
+  deletes, is a P0 candidate that a pgTAP test will settle.
+- **Owner decisions, Nov 25, 2026:**
+  - DZ-1: selfies are owner only for R1.
+  - DZ-2: migration 046 is approved for storage and token hardening. It is applied before 045,
+    as a one-time order exception.
+  - DZ-3: the owner will confirm "Confirm email" is on and pre-create the allowlisted admin
+    accounts. Not yet confirmed done.
+- Wave 1 doc cards are done and pushed, not merged: K1 `claude/b3-k1-docs`, K2
+  `claude/b3-k2-review`, K3 `claude/b3-k3-devices`.
+- K2's App Review blockers became card K6 (build-3 plan §12).
+- Owner checks from K2:
+  - the starter quest is on production with no zone (the read-only query is in K2's report);
+  - the dev demo account doesn't exist on production;
+  - deletion has been tried on production before App Review.
+- Cursor is running M5 on `cursor/m5-duo-proof`, then K4, K5 and the Z fixes on
+  `cursor/z-security`.
+- Next concrete action: Cursor finishes the Z fixes and M5. Then the coordinator merges them,
+  opens the build-2 PR (B2), and cuts `cursor/build-3`.
+
 The sections below preserve the Nov 10 campaign record and may contain facts that were true
 only for that session; use the continuation above and linked current docs for present status.
 
