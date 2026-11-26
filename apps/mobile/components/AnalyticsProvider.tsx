@@ -1,6 +1,7 @@
 import { useEffect, type ReactNode } from 'react'
 import { PostHogProvider, usePostHog } from 'posthog-react-native'
 import { setAnalyticsClient } from '@/lib/analytics'
+import { applyAnalyticsPreference } from '@/lib/analyticsPreference'
 import { publicKey } from '@/lib/publicKey'
 
 const API_KEY = publicKey(process.env.EXPO_PUBLIC_POSTHOG_KEY)
@@ -11,6 +12,8 @@ function AnalyticsBridge({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     setAnalyticsClient(posthog)
+    // Honour a saved opt-out before anything else is captured.
+    void applyAnalyticsPreference()
     return () => setAnalyticsClient(null)
   }, [posthog])
 
@@ -25,6 +28,8 @@ export function AnalyticsProvider({ children }: { children: ReactNode }) {
       apiKey={API_KEY}
       options={{
         host: HOST,
+        // No IP-derived location on any event (security review C-9).
+        disableGeoip: true,
         captureAppLifecycleEvents: true,
       }}
       autocapture={false}

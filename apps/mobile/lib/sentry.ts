@@ -3,6 +3,7 @@ import * as Device from 'expo-device'
 import * as Sentry from '@sentry/react-native'
 import { clampFeedbackMessage } from '@/lib/feedback'
 import { publicKey } from '@/lib/publicKey'
+import { scrubBreadcrumb, scrubEvent } from '@/lib/sentryScrub'
 
 let sentryEnabled = false
 
@@ -17,6 +18,9 @@ export function initSentry(): void {
     dsn,
     enableAutoSessionTracking: true,
     tracesSampleRate: 0.2,
+    // Strip query strings, auth fragments and storage paths (security review C-11).
+    beforeBreadcrumb: scrubBreadcrumb,
+    beforeSend: scrubEvent,
   })
   sentryEnabled = true
 }

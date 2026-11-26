@@ -2,6 +2,7 @@
 
 import { supabaseAdmin } from '@/lib/supabase'
 import { requireAdmin } from '@/lib/require-admin'
+import { COMPLETION_COLUMNS, clampCompletionsLimit } from '@/lib/adminRules'
 
 export interface Completion {
   id: string
@@ -24,12 +25,13 @@ export async function getRecentCompletions(limit = 100): Promise<Completion[]> {
   await requireAdmin()
   const { data } = await supabaseAdmin
     .from('completions')
-    .select('*, profiles(username), quests(title, is_sponsored, geofence_type)')
+    .select(`${COMPLETION_COLUMNS.join(', ')}, profiles(username), quests(title, is_sponsored, geofence_type)`)
     .in('status', ['approved', 'removed'])
     .order('completed_at', { ascending: false })
-    .limit(limit)
+    .limit(clampCompletionsLimit(limit))
 
-  return (data as Completion[]) ?? []
+  // The column list is built at runtime, so the generated types can't parse it.
+  return (data as unknown as Completion[] | null) ?? []
 }
 
 export async function removeCompletion(id: string): Promise<void> {

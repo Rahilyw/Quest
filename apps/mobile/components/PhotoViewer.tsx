@@ -19,7 +19,9 @@ import { Pillow, PILLOW_SIZES } from '@/components/Pillow'
 import { BodyStrong, Micro, Name, Small } from '@/components/ui/Text'
 import { formatTimeAgo } from '@/hooks/useActivityFeed'
 import type { QuestPhoto } from '@/hooks/useQuestPhotos'
+import { useAuth } from '@/hooks/useAuth'
 import { plural } from '@/lib/copy'
+import { ownSelfiePath } from '@/lib/ownSelfiePath'
 import { useSignedSelfie } from '@/lib/selfieUrl'
 import { sizedImageUrl } from '@/lib/sizedImageUrl'
 import { COLOR, RADIUS, SPACE } from '@/lib/theme'
@@ -42,6 +44,7 @@ export function PhotoViewer({
   onStart,
 }: PhotoViewerProps) {
   const insets = useSafeAreaInsets()
+  const { session } = useAuth()
   const [index, setIndex] = useState(startIndex)
   const countRef = useRef(photos.length)
   countRef.current = photos.length
@@ -82,8 +85,12 @@ export function PhotoViewer({
   ).current
 
   const photo = photos[index]
-  // Hooks run before the early return. Signed only for viewers storage RLS allows.
-  const selfie = useSignedSelfie(visible ? photo?.selfie_url : null)
+  // Hooks run before the early return. Selfies are owner only (DZ-1 / C-1): other
+  // players' selfie paths are never requested, so nothing is signed for them.
+  const viewerId = session?.user.id
+  const selfie = useSignedSelfie(
+    visible ? ownSelfiePath(viewerId != null && photo?.user_id === viewerId, photo?.selfie_url) : null,
+  )
   if (!visible || !photo) return null
 
   const previous = photos[index - 1]

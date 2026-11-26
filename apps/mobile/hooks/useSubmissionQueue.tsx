@@ -23,6 +23,7 @@ import {
   saveQueue,
 } from '@/lib/submissionQueueStore'
 import { removeProofQuietly, submitCompletion } from '@/lib/submitCompletion'
+import { isQueueSealed, unsealQueue } from '@/lib/queueGuard'
 
 /**
  * Offline submission queue (plan Phase 3, Spec 06 §5).
@@ -79,16 +80,19 @@ export function SubmissionQueueProvider({ children }: { children: ReactNode }) {
   const refreshRef = useRef(refreshProfile)
   refreshRef.current = refreshProfile
 
-  const commit = useCallback(async (next: QueuedProof[]) => {
+  /**
+   * Applies a new queue for `owner`. Refuses when the signed-in player is no longer
+   * that owner, or the owner's queue was sealed by a sign-out or account deletion,
+   * so a flush that outlives sign-out can't write a purged queue back (C-7).
+   */
+  const commit = useCallback(async (next: QueuedProof[], owner: string) => {
+    if (userRef.current !== owner || isQueueSealed(owner)) return
     queueRef.current = next
     setItems(next)
-    const owner = userRef.current
-    if (owner) {
-      try {
-        await saveQueue(owner, next)
-      } catch {
-        // The in-memory queue still works for this session.
-      }
+    try {
+      await saveQueue(owner, next)
+    } catch {
+      // The in-memory queue still works for this session.
     }
   }, [])
 
@@ -122,18 +126,19 @@ export function SubmissionQueueProvider({ children }: { children: ReactNode }) {
             ? placePhotoPath(owner, item.questId, item.attempt.attemptId)
             : null,
         })
-        if (userRef.current !== owner) return
+        // Signed out, or sealed by a sign-out or deletion, while this was in flight (C-7).
+        if (userRef.current !== owner || isQueueSealed(owner)) return
 
         const outcome = flushOutcome(result.kind)
         if (outcome === 'retry') {
           let next = markAttempt(queueRef.current, item.id, result.kind, Date.now())
           if (result.uploadedPlacePath) next = markPlaceUploaded(next, item.id)
-          await commit(next)
+          await commit(next, owner)
           // No signal or rate limited: later items would fail the same way.
           return
         }
 
-        await commit(remove(queueRef.current, item.id))
+        await commit(remove(queueRef.current, item.id), owner)
         await deleteItemFiles(item)
 
         if (outcome === 'sent') {
@@ -193,6 +198,8 @@ export function SubmissionQueueProvider({ children }: { children: ReactNode }) {
     setItems([])
     setNotice(null)
     if (!userId) return
+    // This player is signed in again: reopen a queue that an earlier sign-out sealed.
+    unsealQueue(userId)
     let cancelled = false
     ;(async () => {
       await purgeOtherUsers(userId)
@@ -256,7 +263,7 @@ export function SubmissionQueueProvider({ children }: { children: ReactNode }) {
         await deleteItemFiles({ placeUri, selfieUri })
         return { accepted: false }
       }
-      await commit(result.queue)
+      await commit(result.queue, owner)
       await Promise.all([...result.replaced, ...result.expired].map(deleteItemFiles))
       reportExpired(result.expired)
       track('proof_queued', { quest_id: capture.questId })
@@ -267,10 +274,13 @@ export function SubmissionQueueProvider({ children }: { children: ReactNode }) {
 
   const sendNow = useCallback(
     (id: string) => {
+      const owner = userRef.current
+      if (!owner) return
       const now = Date.now()
-      void commit(queueRef.current.map((item) => (item.id === id ? { ...item, nextAttemptAt: now } : item))).then(() =>
-        flush(),
-      )
+      void commit(
+        queueRef.current.map((item) => (item.id === id ? { ...item, nextAttemptAt: now } : item)),
+        owner,
+      ).then(() => flush())
     },
     [commit, flush],
   )
@@ -280,7 +290,7 @@ export function SubmissionQueueProvider({ children }: { children: ReactNode }) {
       const owner = userRef.current
       const item = queueRef.current.find((entry) => entry.id === id)
       if (!owner || !item) return
-      await commit(remove(queueRef.current, id))
+      await commit(remove(queueRef.current, id), owner)
       await deleteItemFiles(item)
       if (item.placeUploaded) {
         // Storage policy 042 only lets this delete a photo no completion points at.

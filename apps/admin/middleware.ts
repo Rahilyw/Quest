@@ -1,6 +1,6 @@
 import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
-import { isAdminEmail } from '@/lib/admin-auth'
+import { isAdminUser } from '@/lib/admin-auth'
 
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl
@@ -54,7 +54,7 @@ export async function middleware(request: NextRequest) {
   }
 
   // Authenticated but not an allowed admin — still allow password reset in progress.
-  if (!isAdminEmail(user.email)) {
+  if (!isAdminUser(user)) {
     if (pathname === '/login/reset-password') {
       return supabaseResponse
     }

@@ -86,12 +86,11 @@ export default function PublicProfile() {
         .select('id, username, level, avatar_url, feed_public, last_week_rank')
         .eq('id', userId)
         .maybeSingle(),
-      // selfie_url is selected for typing; OwnProfileCompletionRow (and
-      // useSignedSelfie) only mount for the owner, so others never request a
-      // signed URL (card E4 / D6).
+      // Selfies are owner only (DZ-1 / C-1): selfie_url is selected only on your
+      // own profile, so another player's selfie path never reaches this screen.
       supabase
         .from('completions')
-        .select('id, photo_url, selfie_url', { count: 'exact' })
+        .select(isSelf ? 'id, photo_url, selfie_url' : 'id, photo_url', { count: 'exact' })
         .eq('user_id', userId)
         .eq('status', 'approved')
         .eq('hidden_pending_review', false)
@@ -115,10 +114,10 @@ export default function PublicProfile() {
     setBadges(earned)
 
     setUser((profileResult.data as ProfileHeader | null) ?? null)
-    setPosts((postsResult.data ?? []) as GridPost[])
+    setPosts((postsResult.data ?? []) as unknown as GridPost[])
     setPostCount(postsResult.count ?? 0)
     setLoading(false)
-  }, [userId])
+  }, [userId, isSelf])
 
   useEffect(() => {
     load()

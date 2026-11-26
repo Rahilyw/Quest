@@ -5,6 +5,7 @@ import { validatePolygonRing } from '@quest/geofence'
 import type { Database } from '@quest/db-types'
 import { supabaseAdmin } from '@/lib/supabase'
 import { requireAdmin } from '@/lib/require-admin'
+import { sniffCover } from '@/lib/coverImage'
 
 type QuestCategory = Database['public']['Enums']['quest_category']
 import { normalizeSchedule, scheduleFromForm } from '@/lib/schedule'
@@ -195,14 +196,16 @@ async function uploadQuestCover(
   coverFile: File
 ): Promise<{ ok: true; url: string } | { ok: false; error: string }> {
   if (!coverFile.size) return { ok: false, error: 'Cover file is empty.' }
-  const ext = coverFile.name.split('.').pop()?.toLowerCase() || 'jpg'
-  const safeExt = ['jpg', 'jpeg', 'png', 'webp'].includes(ext) ? ext : 'jpg'
-  const path = `${crypto.randomUUID()}.${safeExt}`
   const buffer = Buffer.from(await coverFile.arrayBuffer())
+  // The declared name and type are client-controlled; the bucket is public, so
+  // store what the bytes really are, and only png/jpeg/webp (B-2).
+  const detected = await sniffCover(buffer)
+  if (!detected) return { ok: false, error: 'Cover must be a PNG, JPEG or WebP image.' }
+  const path = `${crypto.randomUUID()}.${detected.ext}`
 
   const { error: uploadError } = await supabaseAdmin.storage
     .from('quest-covers')
-    .upload(path, buffer, { contentType: coverFile.type || 'image/jpeg', upsert: false })
+    .upload(path, buffer, { contentType: detected.contentType, upsert: false })
 
   if (uploadError) {
     return { ok: false, error: `Cover upload failed: ${uploadError.message}` }

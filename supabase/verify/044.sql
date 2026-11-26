@@ -50,7 +50,7 @@ SELECT pg_get_functiondef(p.oid) LIKE '%xp_awarded%' AS still_stores_award
 -- 1. Verify -> sticker granted (through apply_completion_rewards)
 BEGIN;
 INSERT INTO completions (user_id, quest_id, photo_url, lat, lng, gps_accuracy)
-SELECT '<test-player>', q.id, 'verify', q.lat, q.lng, 5
+SELECT '<test-player>', q.id, 'https://example.invalid/proof-photos/<test-player>/' || q.id || '/verify.jpg', q.lat, q.lng, 5
   FROM quests q WHERE q.cutout_url IS NOT NULL LIMIT 1
 RETURNING id, status, xp_awarded;
 SELECT us.* FROM user_stickers us

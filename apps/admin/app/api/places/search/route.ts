@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 
-import { isAdminEmail } from '@/lib/admin-auth'
+import { isAdminUser } from '@/lib/admin-auth'
 import { createServerClient } from '@/lib/supabase-server'
 
 /** Victoria, BC viewbox: left,top,right,bottom (lng/lat) for Nominatim */
@@ -16,7 +16,7 @@ export async function GET(req: NextRequest) {
   if (!user) {
     return NextResponse.json({ error: 'Unauthorized', results: [] }, { status: 401 })
   }
-  if (!isAdminEmail(user.email)) {
+  if (!isAdminUser(user)) {
     return NextResponse.json({ error: 'Forbidden', results: [] }, { status: 403 })
   }
 

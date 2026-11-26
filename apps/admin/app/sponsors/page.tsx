@@ -2,10 +2,12 @@ import { redemptionStats } from '@quest/geofence'
 import { supabaseAdmin } from '@/lib/supabase'
 import { formatVictoriaDateTime } from '@/lib/format'
 import { theme } from '@/lib/theme'
+import { summariseSponsoredQuest } from '@/lib/adminRules'
 import ExportButton from './ExportButton'
 import { MerchantLink } from './MerchantLink'
 
-export const revalidate = 60
+// Redemption codes are in this page's data: never cache it (B-5).
+export const dynamic = 'force-dynamic'
 
 interface SponsoredCompletion {
   id: string
@@ -94,7 +96,7 @@ export default async function SponsorsPage() {
                           <div style={{ color: theme.textMuted, marginTop: 4, fontSize: 13 }}>
                             {questStats.issued} issued · {questStats.redeemed} redeemed
                           </div>
-                          <ExportButton quest={quest} />
+                          <ExportButton summary={summariseSponsoredQuest(quest)} />
                         </div>
                         <div style={{ textAlign: 'right', flexShrink: 0 }}>
                           <div style={{ fontSize: 28, fontWeight: 800, color: theme.success }}>{approved}</div>

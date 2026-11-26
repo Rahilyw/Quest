@@ -13,7 +13,11 @@ BEGIN
   u := tests.make_user('norm');
   q := tests.make_quest_none();
   INSERT INTO completions (user_id, quest_id, photo_url, lat, lng, gps_accuracy, completed_at)
-  VALUES (u, q, 'https://example.invalid/p.jpg', 48.4284, -123.3656, 5, forged)
+  VALUES (
+    u, q,
+    'https://example.invalid/proof-photos/' || u::text || '/' || q::text || '/p.jpg',
+    48.4284, -123.3656, 5, forged
+  )
   RETURNING id, completed_at INTO c, stored_at;
 
   IF abs(extract(epoch FROM (stored_at - now()))) > 5 THEN

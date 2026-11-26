@@ -1,7 +1,7 @@
 'use server'
 
 import { createServerClient } from '@/lib/supabase-server'
-import { isAdminEmail } from '@/lib/admin-auth'
+import { isAdminUser } from '@/lib/admin-auth'
 import { redirect } from 'next/navigation'
 
 export async function signIn(formData: FormData) {
@@ -15,7 +15,7 @@ export async function signIn(formData: FormData) {
     return { error: error.message }
   }
 
-  if (!isAdminEmail(data.user?.email)) {
+  if (!isAdminUser(data.user)) {
     await supabase.auth.signOut()
     return { error: 'Access denied. Contact the Quest! team.' }
   }

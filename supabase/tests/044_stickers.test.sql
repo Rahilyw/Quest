@@ -1,6 +1,6 @@
 -- 044 stickers: grant/revoke, placement owner-write, public page visibility.
 BEGIN;
-SELECT plan(7);
+SELECT plan(12);
 
 DO $$
 DECLARE
@@ -138,6 +138,118 @@ SELECT ok(
   NOT has_function_privilege('anon', 'can_view_sticker_page(uuid)', 'EXECUTE'),
   'anon cannot EXECUTE can_view_sticker_page'
 );
+
+-- A-4: anon sees stickers of live quests only, never an unreleased quest's.
+DO $$
+DECLARE
+  live_q uuid;
+  future_q uuid;
+  n_live int;
+  n_future int;
+BEGIN
+  live_q := tests.make_quest_none(100, now() - interval '1 day', false, 'https://example.invalid/live.png');
+  future_q := tests.make_quest_none(100, now() + interval '3 days', false, 'https://example.invalid/future.png');
+
+  EXECUTE 'SET LOCAL ROLE anon';
+  SELECT count(*)::int INTO n_live FROM stickers WHERE quest_id = live_q;
+  SELECT count(*)::int INTO n_future FROM stickers WHERE quest_id = future_q;
+  PERFORM tests.clear_auth();
+
+  IF n_live <> 1 THEN
+    RAISE EXCEPTION 'anon should read the live quest sticker, got %', n_live;
+  END IF;
+  IF n_future <> 0 THEN
+    RAISE EXCEPTION 'anon read an unreleased quest sticker, got %', n_future;
+  END IF;
+END;
+$$;
+SELECT pass('anon reads a live quest sticker but not an unreleased one (A-4)');
+
+-- A-4: a sticker you earned stays readable after its quest's window ends.
+DO $$
+DECLARE
+  u uuid;
+  q uuid;
+  n int;
+BEGIN
+  u := tests.make_user('a4_ended');
+  q := tests.make_quest_none(100, now() - interval '30 days', false, 'https://example.invalid/ended.png');
+  PERFORM tests.insert_completion(u, q);
+  UPDATE quests SET active_until = now() - interval '1 day' WHERE id = q;
+
+  PERFORM tests.act_as(u);
+  SELECT count(*)::int INTO n FROM stickers WHERE quest_id = q;
+  PERFORM tests.clear_auth();
+  IF n <> 1 THEN
+    RAISE EXCEPTION 'earned sticker of an ended quest should stay readable, got %', n;
+  END IF;
+END;
+$$;
+SELECT pass('earned sticker of an ended quest stays readable to its owner');
+
+-- A-5: clients cannot write the drawer.
+DO $$
+DECLARE
+  u uuid;
+  q uuid;
+  sid uuid;
+BEGIN
+  u := tests.make_user('a5');
+  q := tests.make_quest_none(100, now() - interval '30 days', false, 'https://example.invalid/a5.png');
+  SELECT s.id INTO sid FROM stickers s WHERE s.quest_id = q;
+
+  PERFORM tests.act_as(u);
+  BEGIN
+    INSERT INTO user_stickers (user_id, sticker_id) VALUES (u, sid);
+    RAISE EXCEPTION 'client inserted into user_stickers';
+  EXCEPTION
+    WHEN insufficient_privilege THEN NULL;
+  END;
+  BEGIN
+    UPDATE stickers SET alt_text = 'hijacked sticker' WHERE id = sid;
+    RAISE EXCEPTION 'client updated stickers';
+  EXCEPTION
+    WHEN insufficient_privilege THEN NULL;
+  END;
+  PERFORM tests.clear_auth();
+END;
+$$;
+SELECT pass('clients cannot write user_stickers or stickers (A-5)');
+
+-- A-6: a retired (inactive) sticker is not granted on verify.
+DO $$
+DECLARE
+  u uuid;
+  q uuid;
+  n int;
+BEGIN
+  u := tests.make_user('a6');
+  q := tests.make_quest_none(100, now() - interval '30 days', false, 'https://example.invalid/a6.png');
+  UPDATE stickers SET is_active = false WHERE quest_id = q;
+  PERFORM tests.insert_completion(u, q);
+  SELECT count(*)::int INTO n FROM user_stickers WHERE user_id = u;
+  IF n <> 0 THEN
+    RAISE EXCEPTION 'retired sticker was granted, got %', n;
+  END IF;
+END;
+$$;
+SELECT pass('a retired sticker is not granted (A-6)');
+
+-- A-8: a 1-2 character cutout_alt falls back to the title instead of failing the save.
+DO $$
+DECLARE
+  q uuid;
+  alt text;
+BEGIN
+  q := tests.make_quest_none(100, now() - interval '30 days', false, 'https://example.invalid/a8.png');
+  UPDATE quests SET cutout_alt = 'ab' WHERE id = q;
+  SELECT s.alt_text INTO alt FROM stickers s WHERE s.quest_id = q;
+  IF alt IS DISTINCT FROM 'pgtap none sticker' THEN
+    RAISE EXCEPTION 'expected title fallback alt text, got %', alt;
+  END IF;
+END;
+$$;
+SELECT pass('a short cutout_alt falls back to the title (A-8)');
 
 SELECT * FROM finish();
 ROLLBACK;

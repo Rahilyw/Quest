@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # Apply every migration in dependency order to a throwaway local Supabase stack.
-# Clean install order (DB-01): baseline, then 002..044 ascending, then seed.
+# Clean install order (DB-01): baseline, then 002..046 ascending, then seed. 046 is applied before 045 in production (owner order
+# exception, DZ-2); a clean local install is just ascending.
 # Leaves the stack running for verify.sh; call stop.sh when finished.
 # See supabase/migrations/README.md.
 set -euo pipefail
@@ -21,7 +22,7 @@ mkdir -p "$WORK/supabase"
 cp "$TEMPLATE" "$WORK/supabase/config.toml"
 # No migrations/ directory and no seed.sql on purpose: supabase start must not
 # auto-apply filename-sorted migrations or seed into an empty schema.
-# Seed is applied below, after baseline + 002..044.
+# Seed is applied below, after baseline + 002..046.
 
 echo "db-local: workdir $WORK"
 cd "$WORK"
@@ -79,10 +80,11 @@ apply_file() {
   echo "applied $(basename "$file") in $((end_ms - start_ms))ms"
 }
 
-echo "db-local: applying baseline then 002..044…"
+echo "db-local: applying baseline then 002..046…"
 apply_file "$MIG_DIR/20260619010246_initial_schema.sql"
 
-# Numbered follow-ups through 044 (045 is proven on the duo line in card M5).
+# Numbered follow-ups through 046 (045 duo is proven on the duo line, card M5; this
+# loop applies whichever of 002..046 exist).
 NUMBERED=()
 while IFS= read -r f; do
   NUMBERED+=("$f")
@@ -92,7 +94,7 @@ done < <(
     base="$(basename "$f")"
     num="${base%%_*}"
     num=$((10#$num))
-    if (( num >= 2 && num <= 44 )); then
+    if (( num >= 2 && num <= 46 )); then
       printf '%03d\t%s\n' "$num" "$f"
     fi
   done | sort -n | cut -f2-

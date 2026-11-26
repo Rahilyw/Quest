@@ -4,7 +4,9 @@ import {
   deleteAsync,
   documentDirectory,
   makeDirectoryAsync,
+  readDirectoryAsync,
 } from 'expo-file-system/legacy'
+import { isQueueSealed, sealQueue, staleQueueFolders } from '@/lib/queueGuard'
 import {
   STORAGE_PREFIX,
   expire,
@@ -44,6 +46,8 @@ export async function persistPhoto(
   kind: 'place' | 'selfie',
   sourceUri: string,
 ): Promise<string> {
+  // A signing-out or deleted player's queue takes no new photos (C-7).
+  if (isQueueSealed(userId)) throw new Error('Queue is closed')
   const dir = queueDir(userId)
   if (!dir) throw new Error('No document directory on this device')
   await makeDirectoryAsync(dir, { intermediates: true }).catch(() => {})
@@ -60,6 +64,8 @@ export async function deleteItemFiles(item: Pick<QueuedProof, 'placeUri' | 'self
 }
 
 export async function saveQueue(userId: string, queue: readonly QueuedProof[]): Promise<void> {
+  // A flush that outlives sign-out must not write a purged queue back (C-7).
+  if (isQueueSealed(userId)) return
   const key = storageKey(userId)
   if (queue.length === 0) {
     await AsyncStorage.removeItem(key)
@@ -103,6 +109,8 @@ function safeLength(raw: string): number {
 
 /** Removes everything queued for one user: the stored list and the photo folder. */
 export async function purgeQueue(userId: string): Promise<void> {
+  // Seal first, before any await, so nothing in flight can save after this (C-7).
+  sealQueue(userId)
   try {
     await AsyncStorage.removeItem(storageKey(userId))
   } catch {
@@ -125,5 +133,25 @@ export async function purgeOtherUsers(userId: string): Promise<void> {
   const stale = staleQueueKeys(keys, userId)
   for (const key of stale) {
     await purgeQueue(key.slice(STORAGE_PREFIX.length))
+  }
+  await removeOrphanFolders(userId)
+}
+
+/**
+ * Removes every queue/<id>/ folder except the signed-in player's. A folder can be
+ * left behind with no stored list (a crash, an interrupted sign-out), and the
+ * list-based purge above never sees it (C-8).
+ */
+async function removeOrphanFolders(userId: string): Promise<void> {
+  const root = documentDirectory ? `${documentDirectory}queue/` : null
+  if (!root) return
+  let names: string[] = []
+  try {
+    names = await readDirectoryAsync(root)
+  } catch {
+    return // no queue folder yet
+  }
+  for (const name of staleQueueFolders(names, userId)) {
+    await deleteQuietly(`${root}${name}/`)
   }
 }

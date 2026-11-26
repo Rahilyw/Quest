@@ -3,6 +3,7 @@
 import { revalidatePath } from 'next/cache'
 import { supabaseAdmin } from '@/lib/supabase'
 import { requireAdmin } from '@/lib/require-admin'
+import { canGrantStickerByHand } from '@/lib/adminRules'
 import { processAndStoreSticker, removeStoredSticker, validateAltText } from '@/lib/sticker-storage'
 
 export type UnlockRule = 'quest' | 'badge' | 'season' | 'manual'
@@ -148,6 +149,17 @@ export async function grantSticker(stickerId: string, username: string): Promise
     .ilike('username', username.trim().replace(/[%_\\]/g, '\\$&'))
     .maybeSingle()
   if (!profile) return { ok: false, error: `No player called ${username.trim()}.` }
+  // Only manual and season stickers are handed out; quest and badge stickers are
+  // earned (B-7).
+  const { data: sticker } = await supabaseAdmin
+    .from('stickers')
+    .select('unlock_rule, quest_id, is_active')
+    .eq('id', stickerId)
+    .maybeSingle()
+  if (!sticker) return { ok: false, error: 'That sticker no longer exists.' }
+  if (!canGrantStickerByHand(sticker)) {
+    return { ok: false, error: 'Only active manual or season stickers can be given by hand.' }
+  }
   const { error } = await supabaseAdmin
     .from('user_stickers')
     .upsert({ user_id: profile.id, sticker_id: stickerId }, { onConflict: 'user_id,sticker_id', ignoreDuplicates: true })

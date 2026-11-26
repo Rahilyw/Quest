@@ -181,7 +181,7 @@ test('the sender loops over claims within a batch and time cap', () => {
 
 test('the sender checks HTTP status and ticket shape, and releases on failure', () => {
   assert.ok(/if \(!res\.ok\)/.test(fn))
-  assert.ok(/!Array\.isArray\(tickets\) \|\| tickets\.length !== messages\.length/.test(fn))
+  assert.ok(/!Array\.isArray\(tickets\) \|\| tickets\.length !== (messages|entries)\.length/.test(fn))
   assert.ok(/ticket\?\.status === 'ok'/.test(fn))
   assert.ok(/admin\.rpc\('release_push_outbox'/.test(fn))
   assert.ok(/admin\.rpc\('finish_push_outbox'/.test(fn))

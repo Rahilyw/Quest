@@ -1,6 +1,6 @@
 import 'server-only'
 
-import { isAdminEmail } from '@/lib/admin-auth'
+import { isAdminUser } from '@/lib/admin-auth'
 import { createServerClient } from '@/lib/supabase-server'
 
 /**
@@ -13,7 +13,8 @@ export async function requireAdmin(): Promise<string> {
   const {
     data: { user },
   } = await supabase.auth.getUser()
-  if (!user?.email || !isAdminEmail(user.email)) {
+  // An allowlisted email that the account has confirmed (B-1).
+  if (!user?.email || !isAdminUser(user)) {
     throw new Error('Unauthorized')
   }
   return user.email

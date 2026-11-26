@@ -12,7 +12,8 @@ BEGIN
   u := tests.make_user('del');
 
   INSERT INTO storage.objects (bucket_id, name, owner, metadata)
-  VALUES ('proof-photos', u::text || '/q/a.jpg', u, '{}'::jsonb);
+  VALUES ('proof-photos', u::text || '/q/a.jpg', u, '{}'::jsonb),
+         ('proof-selfies', u::text || '/q-a.jpg', u, '{}'::jsonb);
 
   PERFORM tests.act_as(u);
   PERFORM delete_own_account();
@@ -20,10 +21,10 @@ BEGIN
 
   SELECT count(*)::int INTO n
     FROM storage.objects
-   WHERE bucket_id = 'proof-photos'
+   WHERE bucket_id IN ('proof-photos', 'proof-selfies')
      AND name LIKE u::text || '/%';
   IF n <> 0 THEN
-    RAISE EXCEPTION 'proof-photos objects left after delete_own_account: %', n;
+    RAISE EXCEPTION 'proof photo or selfie objects left after delete_own_account: %', n;
   END IF;
 
   SELECT count(*)::int INTO n FROM auth.users WHERE id = u;
@@ -32,7 +33,7 @@ BEGIN
   END IF;
 END;
 $$;
-SELECT pass('delete_own_account removes proof-photos objects and the auth user');
+SELECT pass('delete_own_account removes proof-photos and proof-selfies objects and the auth user');
 
 DO $$
 DECLARE

@@ -1,6 +1,6 @@
 -- 042 storage: owner update/delete on unclaimed proof photos; other cannot.
 BEGIN;
-SELECT plan(5);
+SELECT plan(7);
 
 DO $$
 DECLARE
@@ -107,6 +107,78 @@ BEGIN
 END;
 $$;
 SELECT pass('owner cannot delete proof claimed by a completion');
+
+-- A-2: photo_url must be the canonical URL of the player's own upload for this quest.
+DO $$
+DECLARE
+  owner uuid;
+  other uuid;
+  q uuid;
+  base text;
+  bad text;
+  rejected int := 0;
+BEGIN
+  owner := tests.make_user('a2_o');
+  other := tests.make_user('a2_x');
+  q := tests.make_quest_none();
+  base := 'https://example.invalid/storage/v1/object/public/proof-photos/';
+
+  FOREACH bad IN ARRAY ARRAY[
+    base || owner::text || '/' || q::text || '/a.jpg?v=1',
+    base || owner::text || '/' || q::text || '/a.jpg#x',
+    base || other::text || '/' || q::text || '/a.jpg',
+    base || owner::text || '/' || gen_random_uuid()::text || '/a.jpg',
+    'https://example.invalid/p.jpg',
+    'verify'
+  ] LOOP
+    BEGIN
+      INSERT INTO completions (user_id, quest_id, photo_url, lat, lng, gps_accuracy)
+      VALUES (owner, q, bad, 48.4284, -123.3656, 5);
+    EXCEPTION
+      WHEN invalid_parameter_value THEN
+        rejected := rejected + 1;
+    END;
+  END LOOP;
+
+  IF rejected <> 6 THEN
+    RAISE EXCEPTION 'expected 6 non-canonical photo_url values rejected, got %', rejected;
+  END IF;
+END;
+$$;
+SELECT pass('non-canonical photo_url is rejected on insert (query, fragment, wrong user, wrong quest, other host path)');
+
+-- A-2: a stored URL with a suffix can't hide a claimed photo from the 042 guard.
+DO $$
+DECLARE
+  owner uuid;
+  q uuid;
+  c uuid;
+  obj_name text;
+  deleted int;
+BEGIN
+  owner := tests.make_user('a2_guard');
+  q := tests.make_quest_none();
+  obj_name := owner::text || '/' || q::text || '/guarded.jpg';
+  INSERT INTO storage.objects (bucket_id, name, owner, metadata)
+  VALUES ('proof-photos', obj_name, owner, '{}'::jsonb);
+
+  c := tests.insert_completion(owner, q);
+  UPDATE completions
+     SET photo_url = 'https://example.invalid/storage/v1/object/public/proof-photos/' || obj_name || '?v=1'
+   WHERE id = c;
+
+  PERFORM tests.act_as(owner);
+  DELETE FROM storage.objects
+   WHERE bucket_id = 'proof-photos' AND name = obj_name;
+  GET DIAGNOSTICS deleted = ROW_COUNT;
+  PERFORM tests.clear_auth();
+
+  IF deleted <> 0 THEN
+    RAISE EXCEPTION 'a ?v=1 photo_url hid a claimed photo from the guard';
+  END IF;
+END;
+$$;
+SELECT pass('a photo_url with a query string still blocks deleting the claimed photo');
 
 SELECT ok(
   EXISTS (SELECT 1 FROM storage.buckets WHERE id = 'proof-photos'),

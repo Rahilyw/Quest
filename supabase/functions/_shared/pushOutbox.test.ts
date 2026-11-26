@@ -7,6 +7,7 @@ import {
   drainPushOutbox,
   preferenceAllows,
   processBatch,
+  redactTokens,
   type OutboxRow,
   type ProfileRow,
   type PushOutboxAdmin,
@@ -214,3 +215,110 @@ Deno.test('more than 100 rows are drained across batches', async () => {
   assertEquals(result.pushed, 150)
   assertGreater(result.pushed, 100)
 })
+
+Deno.test('C-6: redactTokens strips push tokens from text', () => {
+  assertEquals(
+    redactTokens('"ExponentPushToken[abc-123]" and ExpoPushToken[zzz] failed'),
+    '"ExponentPushToken[redacted]" and ExponentPushToken[redacted] failed',
+  )
+  assertEquals(redactTokens('no token here'), 'no token here')
+})
+
+Deno.test('C-6: a request-level 400 is split so one bad token cannot fail the batch', async () => {
+  const rows = ['a', 'b', 'bad', 'd', 'e'].map((id) => row({ id, user_id: `u-${id}` }))
+  const profiles: ProfileRow[] = rows.map((r) => ({
+    id: r.user_id,
+    push_token: `ExponentPushToken[${r.id}]`,
+    push_drops: true,
+  }))
+  const { admin, rpcs } = makeAdmin({ profiles })
+  const requestSizes: number[] = []
+  const fetchImpl: typeof fetch = async (_url, init) => {
+    const body = JSON.parse(String(init?.body ?? '[]')) as { to: string }[]
+    requestSizes.push(body.length)
+    if (body.some((m) => m.to === 'ExponentPushToken[bad]')) {
+      return jsonResponse(400, {
+        errors: [{ message: '"ExponentPushToken[bad]" is not a valid Expo push token' }],
+      })
+    }
+    return jsonResponse(200, { data: body.map(() => ({ status: 'ok', id: 't' })) })
+  }
+
+  const { result } = await captureErrors(() => processBatch(admin, rows, fetchImpl))
+  assertEquals(result.pushed, 4)
+  assertEquals(result.failed, 1)
+  assertEquals(result.transportFailed, false)
+
+  const releases = rpcs.filter((c) => c.fn === 'release_push_outbox')
+  assertEquals(releases.length, 1)
+  assertEquals(releases[0].args.p_ids, ['bad'])
+  assertEquals(String(releases[0].args.p_error).includes('ExponentPushToken'), false)
+  assertEquals(String(releases[0].args.p_error).startsWith('rejected:'), true)
+
+  const finished = rpcs
+    .filter((c) => c.fn === 'finish_push_outbox' && c.args.p_note == null)
+    .flatMap((c) => c.args.p_ids as string[])
+    .sort()
+  assertEquals(finished, ['a', 'b', 'd', 'e'])
+  // The first request carried all five; the rest are halves of it.
+  assertEquals(requestSizes[0], 5)
+  assertEquals(requestSizes.every((n) => n <= 5), true)
+})
+
+Deno.test('C-6: last_error and logs never contain a push token', async () => {
+  const rows = [row({ id: 'e1', user_id: 'u1' }), row({ id: 'e2', user_id: 'u2' })]
+  const { admin, rpcs } = makeAdmin({
+    profiles: [
+      { id: 'u1', push_token: 'ExponentPushToken[one]', push_drops: true },
+      { id: 'u2', push_token: 'ExponentPushToken[two]', push_drops: true },
+    ],
+  })
+  const fetchImpl: typeof fetch = async () =>
+    jsonResponse(200, {
+      data: [
+        {
+          status: 'error',
+          message: '"ExponentPushToken[one]" is not a registered push notification recipient',
+        },
+        { status: 'error', message: 'Could not find "ExponentPushToken[two]" in project' },
+      ],
+    })
+
+  const { logged } = await captureErrors(() => processBatch(admin, rows, fetchImpl))
+  assertEquals(logged.includes('ExponentPushToken[one]'), false)
+  assertEquals(logged.includes('ExponentPushToken[two]'), false)
+  for (const call of rpcs.filter((c) => c.fn === 'release_push_outbox')) {
+    assertEquals(String(call.args.p_error).includes('PushToken[one]'), false)
+    assertEquals(String(call.args.p_error).includes('PushToken[two]'), false)
+  }
+})
+
+Deno.test('C-6: a network error with a token in its text is redacted in last_error', async () => {
+  const { admin, rpcs } = makeAdmin({
+    profiles: [{ id: 'u1', push_token: 'ExponentPushToken[net]', push_drops: true }],
+  })
+  const fetchImpl: typeof fetch = async () => {
+    throw new TypeError('socket closed sending ExponentPushToken[net]')
+  }
+  const { result } = await captureErrors(() =>
+    processBatch(admin, [row({ id: 'n1', user_id: 'u1' })], fetchImpl),
+  )
+  assertEquals(result.transportFailed, true)
+  const release = rpcs.find((c) => c.fn === 'release_push_outbox')
+  assertEquals(String(release?.args.p_error).startsWith('network:'), true)
+  assertEquals(String(release?.args.p_error).includes('PushToken[net]'), false)
+})
+
+/** Runs fn while capturing everything passed to console.error. */
+async function captureErrors<T>(fn: () => Promise<T>): Promise<{ result: T; logged: string }> {
+  const original = console.error
+  const lines: string[] = []
+  console.error = (...args: unknown[]) => {
+    lines.push(args.map((a) => (typeof a === 'string' ? a : JSON.stringify(a))).join(' '))
+  }
+  try {
+    return { result: await fn(), logged: lines.join('\n') }
+  } finally {
+    console.error = original
+  }
+}

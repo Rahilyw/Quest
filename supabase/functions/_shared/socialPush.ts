@@ -66,7 +66,8 @@ export interface SocialPushDeps {
   getActor(id: string): Promise<{ username: string } | null>
   getComment(id: string): Promise<{ body: string | null; hidden: boolean } | null>
   countRecentPushes(recipientId: string, sinceIso: string): Promise<number>
-  clearPushToken(userId: string): Promise<void>
+  /** Clears the token only while it still equals `pushToken` (C-13). */
+  clearPushToken(userId: string, pushToken: string): Promise<void>
   markPushed(notificationId: string): Promise<void>
   fetchImpl?: typeof fetch
 }
@@ -126,21 +127,38 @@ export async function deliverSocialPush(
       },
     }),
   }).catch((err) => {
-    console.error('[send-social-push] Expo request failed:', err)
+    // Log the error type only: Expo error text can quote the push token (C-4).
+    console.error('[send-social-push] Expo request failed:', err instanceof Error ? err.name : 'error')
     return null
   })
 
-  if (!res) return Response.json({ ok: false }, { status: 502 })
+  if (!res) return Response.json({ ok: false, error: 'push_failed' }, { status: 502 })
+
+  // A non-2xx reply is not a delivery: don't mark it pushed (C-5).
+  if (!res.ok) {
+    console.error('[send-social-push] Expo HTTP', res.status)
+    return Response.json({ ok: false, error: 'push_failed' }, { status: 502 })
+  }
 
   const ticket = await res.json().catch(() => null) as {
-    data?: { status?: string; message?: string; details?: { error?: string } }
+    data?: { status?: string; message?: string; id?: string; details?: { error?: string } }
   } | null
+
   if (ticket?.data?.status === 'error') {
-    if (ticket.data.details?.error === 'DeviceNotRegistered') {
-      await deps.clearPushToken(record.recipient_id)
+    const code = ticket.data.details?.error
+    if (code === 'DeviceNotRegistered') {
+      // Only clear the token we just sent to; the player may have registered a new one (C-13).
+      await deps.clearPushToken(record.recipient_id, recipient!.push_token!)
     }
-    console.error('[send-social-push] Expo ticket error:', ticket.data)
-    return Response.json({ ok: false, error: ticket.data.message })
+    // Log the error code and nothing else: `message` quotes the token (C-4).
+    console.error('[send-social-push] Expo ticket error:', code ?? 'unknown')
+    return Response.json({ ok: false, error: 'push_failed' })
+  }
+
+  // Only an explicit "ok" ticket counts as sent (C-5).
+  if (ticket?.data?.status !== 'ok') {
+    console.error('[send-social-push] unexpected Expo response')
+    return Response.json({ ok: false, error: 'push_failed' }, { status: 502 })
   }
 
   await deps.markPushed(record.id)

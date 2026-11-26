@@ -63,12 +63,21 @@ CREATE INDEX IF NOT EXISTS stickers_unlock_badge_idx
 
 ALTER TABLE stickers ENABLE ROW LEVEL SECURITY;
 
--- Anyone can read stickers (they are shown greyed in the drawer before you
--- earn them). Writes go through the admin service role only.
+-- Anyone can read active stickers (they are shown greyed in the drawer before
+-- you earn them), but a quest's sticker is only visible when the quest itself is
+-- visible to the caller. The subquery runs with the caller's rights, so the
+-- quests row policies (drafts, weekly drops that haven't opened yet, 034) decide.
+-- Writes go through the admin service role only. (Security review A-4.)
 DROP POLICY IF EXISTS "Anyone can read stickers" ON stickers;
 CREATE POLICY "Anyone can read stickers"
   ON stickers FOR SELECT
-  USING (true);
+  USING (
+    is_active
+    AND (
+      quest_id IS NULL
+      OR EXISTS (SELECT 1 FROM quests q WHERE q.id = stickers.quest_id)
+    )
+  );
 
 -- ─── C. USER_STICKERS (the drawer) ───────────────────────────────────────────
 
@@ -174,7 +183,13 @@ BEGIN
     RETURN NEW;
   END IF;
 
-  v_alt := COALESCE(NULLIF(btrim(NEW.cutout_alt), ''), NEW.title || ' sticker');
+  -- stickers.alt_text must be 3..140 characters after trimming. A 1 or 2
+  -- character cutout_alt falls back to the title instead of failing the quest
+  -- save. (Security review A-8.)
+  v_alt := btrim(COALESCE(NEW.cutout_alt, ''));
+  IF char_length(v_alt) < 3 THEN
+    v_alt := NEW.title || ' sticker';
+  END IF;
   IF char_length(v_alt) > 140 THEN
     v_alt := left(v_alt, 140);
   END IF;
@@ -270,6 +285,7 @@ BEGIN
       FROM stickers s
      WHERE s.quest_id = v_quest_id
        AND s.unlock_rule = 'quest'
+       AND s.is_active
     ON CONFLICT (user_id, sticker_id) DO NOTHING;
   END IF;
 END;
@@ -417,6 +433,20 @@ CREATE POLICY "Visible pages show their drawer"
   TO authenticated
   USING (can_view_sticker_page(user_id));
 
+-- A sticker someone has earned stays readable wherever their drawer is readable
+-- (own drawer, or a page the viewer may see; the policy above decides, because
+-- the subquery runs with the caller's rights). Without this, a weekly quest that
+-- has ended, or a retired sticker, would blank out earned stickers on drawers and
+-- boards. Nobody can earn a sticker before its quest is live, so this does not
+-- reopen A-4.
+DROP POLICY IF EXISTS "Earned stickers stay readable" ON stickers;
+CREATE POLICY "Earned stickers stay readable"
+  ON stickers FOR SELECT
+  TO authenticated
+  USING (
+    EXISTS (SELECT 1 FROM user_stickers us WHERE us.sticker_id = stickers.id)
+  );
+
 -- Board: readable on visible pages; the owner places, moves and removes.
 DROP POLICY IF EXISTS "Visible pages show their board" ON sticker_placements;
 CREATE POLICY "Visible pages show their board"
@@ -445,12 +475,16 @@ CREATE POLICY "Owners remove their stickers"
 
 -- Only the placement fields are writable by clients; user_id and sticker_id
 -- are fixed at insert (and the composite FK proves ownership).
-REVOKE INSERT, UPDATE ON sticker_placements FROM anon, authenticated;
+--
+-- New tables get Supabase's default ALL grants, so only RLS would stop a client
+-- write. Revoke everything first, then grant back exactly what clients need.
+-- (Security review A-5.)
+REVOKE ALL ON stickers, user_stickers, sticker_placements FROM PUBLIC, anon, authenticated;
+GRANT SELECT ON stickers TO anon, authenticated;
+GRANT SELECT ON user_stickers TO authenticated;
+GRANT SELECT, DELETE ON sticker_placements TO authenticated;
 GRANT INSERT (user_id, sticker_id, x, y, tilt, scale, z) ON sticker_placements TO authenticated;
 GRANT UPDATE (x, y, tilt, scale, z) ON sticker_placements TO authenticated;
-GRANT SELECT, DELETE ON sticker_placements TO authenticated;
-GRANT SELECT ON user_stickers TO authenticated;
-GRANT SELECT ON stickers TO anon, authenticated;
 
 -- ─── BACKFILL ────────────────────────────────────────────────────────────────
 

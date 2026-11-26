@@ -45,8 +45,13 @@ function depsFromAdmin(admin: SupabaseClient): SocialPushDeps {
         .gte('pushed_at', sinceIso)
       return count ?? 0
     },
-    async clearPushToken(userId) {
-      await admin.from('profiles').update({ push_token: null }).eq('id', userId)
+    async clearPushToken(userId, pushToken) {
+      // Match the token we sent to, so a token registered in the meantime survives (C-13).
+      await admin
+        .from('profiles')
+        .update({ push_token: null })
+        .eq('id', userId)
+        .eq('push_token', pushToken)
     },
     async markPushed(notificationId) {
       await admin

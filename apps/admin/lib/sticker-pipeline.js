@@ -31,6 +31,10 @@ const PAD = 20
 
 const ACCEPTED_TYPES = ['image/png', 'image/jpeg', 'image/webp']
 const MAX_INPUT_BYTES = 15 * 1024 * 1024
+// A small file can decode to a huge bitmap (decompression bomb). 40 megapixels
+// is well above any phone photo and bounded at about 160 MB of RGBA (B-3).
+const MAX_INPUT_PIXELS = 40_000_000
+const SHARP_INPUT_OPTIONS = { limitInputPixels: MAX_INPUT_PIXELS }
 
 class StickerError extends Error {}
 
@@ -270,7 +274,7 @@ async function processSticker(input) {
 
   let meta
   try {
-    meta = await sharp(input).metadata()
+    meta = await sharp(input, SHARP_INPUT_OPTIONS).metadata()
   } catch {
     throw new StickerError('That file is not an image we can read. Use a PNG, JPEG or WebP photo.')
   }
@@ -282,7 +286,7 @@ async function processSticker(input) {
   if (longSide < 1500) warnings.push(`The photo is ${longSide}px on its long side; 1500px or more gives a crisper sticker.`)
 
   // 1. Decode at a working size (EXIF-rotated), as straight RGBA.
-  const work = await sharp(input)
+  const work = await sharp(input, SHARP_INPUT_OPTIONS)
     .rotate()
     .resize({ width: WORK_LONG_SIDE, height: WORK_LONG_SIDE, fit: 'inside', withoutEnlargement: true })
     .ensureAlpha()
@@ -488,4 +492,12 @@ async function processSticker(input) {
   return { buffer: result.data, width: result.info.width, height: result.info.height, warnings }
 }
 
-module.exports = { processSticker, StickerError, ACCEPTED_TYPES, MAX_INPUT_BYTES, OUTPUT_LONG_SIDE }
+module.exports = {
+  processSticker,
+  StickerError,
+  ACCEPTED_TYPES,
+  MAX_INPUT_BYTES,
+  MAX_INPUT_PIXELS,
+  SHARP_INPUT_OPTIONS,
+  OUTPUT_LONG_SIDE,
+}

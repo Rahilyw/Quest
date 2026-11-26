@@ -1,6 +1,6 @@
 # Migration index and rollout notes
 
-The baseline schema is `20260619010246_initial_schema.sql`; numbered follow-ups are `002`–`044`.
+The baseline schema is `20260619010246_initial_schema.sql`; numbered follow-ups are `002`–`046` (`045` duo is on the duo line).
 **041–044 are in the checkout only; none has been applied anywhere. Apply them in order
 041 → 042 → 043 → 044, running each file's "Verifying" block before the next.**
 There is no `001_initial_schema.sql`. The Nov 10, 2026 runbook reports the existing Quest project
@@ -21,7 +21,7 @@ versions, and a renamed file would look like a new, unapplied migration there.
 The dependency order is fixed:
 
 1. `20260619010246_initial_schema.sql`
-2. `002` through `044`, ascending (045 is proven separately on the duo line)
+2. `002` through `046`, ascending (045 is proven separately on the duo line). In production the owner applies 046 before 045 (the one approved order exception, DZ-2); 046 needs only the baseline, 023, 032, 033, 037 and 039
 
 ### Executed recipe (local / CI)
 
@@ -33,7 +33,7 @@ is green on the commit that lands this harness.
 # Requires Docker. CI runners have it; a laptop only if the daemon is running.
 chmod +x scripts/db-local/apply.sh scripts/db-local/verify.sh
 scripts/db-local/apply.sh    # temp project, supabase start with NO migrations folder,
-                             # psql baseline → 002..044 → seed (badge upserts sanitized)
+                             # psql baseline → 002..046 → seed (badge upserts sanitized)
 scripts/db-local/verify.sh   # supabase/verify/*.sql (human placeholders stripped)
 ```
 
@@ -42,7 +42,7 @@ What the harness does:
 1. Copies `scripts/db-local/config.toml.template` + `seed.sql` into a temp project **without**
    a `migrations/` folder, so `supabase start` does not replay filename order.
 2. Applies with `psql -v ON_ERROR_STOP=1`: baseline, then every `NNN_*.sql` with
-   `2 <= NNN <= 44`, then a seed copy that skips badge names already inserted by 019/020.
+   `2 <= NNN <= 46`, then a seed copy that skips badge names already inserted by 019/020.
 3. Prints `applied <file> in <ms>` per file. Extension shims (`uuid-ossp`, `postgis`,
    `pg_cron`) run first; they mirror what hosted Supabase provides. Migrations 002–040 are
    never edited.
@@ -220,7 +220,7 @@ BEGIN;
 INSERT INTO xp_events (kind, multiplier, label, starts_at, ends_at, created_by)
 VALUES ('multiplier', 2, 'verify', now() - interval '1 minute', now() + interval '1 hour', 'verify');
 INSERT INTO completions (user_id, quest_id, photo_url, lat, lng, gps_accuracy)
-SELECT '<test-player-1>', q.id, 'verify', q.lat, q.lng, 5 FROM quests q WHERE q.id = '<old-quest-id>'
+SELECT '<test-player-1>', q.id, 'https://example.invalid/proof-photos/<test-player-1>/' || q.id || '/verify.jpg', q.lat, q.lng, 5 FROM quests q WHERE q.id = '<old-quest-id>'
 RETURNING xp_awarded, xp_reason;
 -- expect: 2 × that quest's xp_reward, reason 'weekend'
 -- (pick a quest that started more than 7 days ago, or it may also get first-finisher)
@@ -233,7 +233,7 @@ INSERT INTO xp_events (kind, multiplier, label, starts_at, ends_at, created_by) 
 INSERT INTO xp_events (kind, multiplier, quest_id, label, starts_at, ends_at, created_by) VALUES
   ('multiplier', 1.5, '<old-quest-id>', 'verify quest', now() - interval '1 minute', now() + interval '1 hour', 'verify');
 INSERT INTO completions (user_id, quest_id, photo_url, lat, lng, gps_accuracy)
-SELECT '<test-player-2>', q.id, 'verify', q.lat, q.lng, 5 FROM quests q WHERE q.id = '<old-quest-id>'
+SELECT '<test-player-2>', q.id, 'https://example.invalid/proof-photos/<test-player-2>/' || q.id || '/verify.jpg', q.lat, q.lng, 5 FROM quests q WHERE q.id = '<old-quest-id>'
 RETURNING xp_awarded, xp_reason;   -- expect ×2, 'weekend'
 ROLLBACK;
 
@@ -243,7 +243,7 @@ INSERT INTO xp_events (kind, multiplier, label, starts_at, ends_at, created_by)
 VALUES ('multiplier', 3, 'verify', now() - interval '1 minute', now() + interval '1 hour', 'verify');
 SELECT total_xp FROM profiles WHERE id = '<test-player-3>';                       -- note T0
 INSERT INTO completions (user_id, quest_id, photo_url, lat, lng, gps_accuracy)
-SELECT '<test-player-3>', q.id, 'verify', q.lat, q.lng, 5 FROM quests q WHERE q.id = '<old-quest-id>'
+SELECT '<test-player-3>', q.id, 'https://example.invalid/proof-photos/<test-player-3>/' || q.id || '/verify.jpg', q.lat, q.lng, 5 FROM quests q WHERE q.id = '<old-quest-id>'
 RETURNING id, xp_awarded;                                                          -- note A (= 3 × base)
 SELECT total_xp FROM profiles WHERE id = '<test-player-3>';                       -- expect T0 + A
 UPDATE completions SET status = 'removed' WHERE id = '<id from above>';
@@ -257,36 +257,28 @@ BEGIN;
 INSERT INTO xp_events (kind, multiplier, user_id, label, starts_at, ends_at, created_by)
 VALUES ('win_back', 2, '<test-player-4>', 'verify', now() - interval '1 minute', now() + interval '7 days', 'verify');
 INSERT INTO completions (user_id, quest_id, photo_url, lat, lng, gps_accuracy)
-SELECT '<test-player-4>', q.id, 'verify', q.lat, q.lng, 5 FROM quests q WHERE q.id = '<old-quest-id>'
+SELECT '<test-player-4>', q.id, 'https://example.invalid/proof-photos/<test-player-4>/' || q.id || '/verify.jpg', q.lat, q.lng, 5 FROM quests q WHERE q.id = '<old-quest-id>'
 RETURNING xp_awarded, xp_reason;   -- expect ×2, 'win_back'
 SELECT consumed_at IS NOT NULL FROM xp_events WHERE user_id = '<test-player-4>';   -- expect true
 ROLLBACK;
 ```
 
-**First finisher under two concurrent inserts.** Needs two sessions (two SQL editor tabs, or
-two `psql` windows). Use a quest whose `coalesce(active_from, created_at)` is within the last
-7 days and that has no approved completion yet (create a throwaway test quest).
+**First finisher.** Only the first approved completion of a new quest gets the bonus. One
+session, rolled back, so nothing is left in production. Use a quest whose
+`coalesce(active_from, created_at)` is within the last 7 days and that has no approved
+completion yet, and two different test players (the rate limit is per player). The two-session
+race isn't run here: the advisory lock that serialises it is proven by reading the function, and
+`supabase/tests/043_xp.test.sql` covers first finisher in pgTAP.
 
 ```sql
--- Session A
 BEGIN;
 INSERT INTO completions (user_id, quest_id, photo_url, lat, lng, gps_accuracy)
-SELECT '<test-player-5>', q.id, 'verify', q.lat, q.lng, 5 FROM quests q WHERE q.id = '<new-quest-id>'
+SELECT '<test-player-5>', q.id, 'https://example.invalid/proof-photos/<test-player-5>/' || q.id || '/verify.jpg', q.lat, q.lng, 5 FROM quests q WHERE q.id = '<new-quest-id>'
 RETURNING xp_awarded, xp_reason;   -- expect round(base × 1.5), 'first_finisher'
--- leave open
-
--- Session B (it waits on the advisory lock)
-BEGIN;
 INSERT INTO completions (user_id, quest_id, photo_url, lat, lng, gps_accuracy)
-SELECT '<test-player-6>', q.id, 'verify', q.lat, q.lng, 5 FROM quests q WHERE q.id = '<new-quest-id>'
-RETURNING xp_awarded, xp_reason;
-
--- Session A
-COMMIT;
--- Session B now returns: base, reason NULL (A's row is visible after the lock)
--- Session B
+SELECT '<test-player-6>', q.id, 'https://example.invalid/proof-photos/<test-player-6>/' || q.id || '/verify.jpg', q.lat, q.lng, 5 FROM quests q WHERE q.id = '<new-quest-id>'
+RETURNING xp_awarded, xp_reason;   -- expect base, reason NULL
 ROLLBACK;
--- Clean up A's row: UPDATE completions SET status = 'removed' WHERE ...; then delete the test quest.
 ```
 
 ### Totals
@@ -363,7 +355,7 @@ SELECT pg_get_functiondef(p.oid) LIKE '%xp_awarded%' AS still_stores_award
 -- 1. Verify -> sticker granted (through apply_completion_rewards)
 BEGIN;
 INSERT INTO completions (user_id, quest_id, photo_url, lat, lng, gps_accuracy)
-SELECT '<test-player>', q.id, 'verify', q.lat, q.lng, 5
+SELECT '<test-player>', q.id, 'https://example.invalid/proof-photos/<test-player>/' || q.id || '/verify.jpg', q.lat, q.lng, 5
   FROM quests q WHERE q.cutout_url IS NOT NULL LIMIT 1
 RETURNING id, status, xp_awarded;
 SELECT us.* FROM user_stickers us
@@ -432,7 +424,37 @@ ROLLBACK;
 | `042_proof_photo_owner_policies.sql` | Plan Phase 1d. UPDATE and DELETE policies on `proof-photos` for the caller's own folder, only for objects none of their completions reference. Lets the submit screen upsert to its fixed per-attempt path and delete a failed attempt's photo (both were RLS no-ops before). **Not applied.** |
 | `043_xp_events.sql` | Spec 06 §3, plan Phase 4a. **Requires 041.** `completions.xp_awarded` (backfilled to `xp_reward`, then NOT NULL) and `xp_reason`, both column-granted. `xp_events` (multiplier / win_back rows; RLS on, no client policies). `normalize_completion_on_insert` keeps 038's logic and stores the award: highest of global/quest event and personal win-back (consumed), first-finisher ×1.5 under an advisory lock, capped at ×3. `apply_completion_rewards(uuid)` pays the stored award (old `(uuid, uuid)` dropped); revoke, `leaderboard`, `own_week_recap`, `enqueue_week_recap` sum `coalesce(xp_awarded, xp_reward)`. `active_xp_boosts()` and `own_completion_reward` (+`xp_awarded`, `xp_reason`) for players. `enqueue_win_back()` + `win_back_sends` on 00:00 and 01:00 UTC with a 17:00 Victoria guard. See "Verifying 043". **In checkout only; not applied.** |
 | `044_stickers.sql` | Card S / BRAND.md §6–§7. **Requires 043.** `quests.cutout_alt` (column-granted); `stickers`, `user_stickers`, `sticker_placements`; sync from `quests.cutout_url`; grant/revoke hooked into 043's `apply_completion_rewards` / `revoke_completion_rewards` (does not redefine `normalize_completion_on_insert` or change `xp_awarded`); badge/season/manual library stickers; placement RLS (owner writes, public pages honour `feed_public` and blocks); 60-sticker board cap. See "Verifying 044". **In checkout only; not applied.** |
+| `046_storage_and_token_hardening.sql` | Security review A-1, A-3, C-1, C-3, C-6, K2 (owner approved, DZ-2). **Requires the baseline, 023, 032, 033, 037, 039; independent of 041–045.** Drops the open `proof-photos` SELECT policy (owners only can read or list their own folder; public URLs keep working); proof-photos uploads only into the caller's own folder; `proof-selfies` readable by the owner folder only (drops the 033 viewer policy, revokes client EXECUTE on `can_view_selfie_object`); `profiles.push_token` trigger that rejects anything but `ExponentPushToken[...]` and takes the same token off every other profile; `set_starter_quest` refuses non-anywhere quests. Applied before 045. See "Verifying 046". **In checkout only; not applied.** |
 
+## Verifying 046 (storage and token hardening)
+
+**Requires:** the baseline, 023, 032, 033, 037 and 039. It does not need 041–045. The owner
+applies it before TestFlight build #1, which is before 045 (O9b in `OWNER-RUNSHEET.md`).
+**Status: in checkout, proven on the CI local stack only** (`supabase/tests/046_hardening.test.sql`
+and the read-only `supabase/verify/046.sql`). Nothing has been run against production.
+
+Paste `supabase/verify/046.sql` into the Supabase SQL editor after applying 046. It only reads
+the catalog. What each check should show:
+
+- `Anyone can view proof photos` is gone; `Owners can view own proof photos` exists for
+  `authenticated`. No SELECT policy on `storage.objects` mentions `proof-photos` without a
+  folder check.
+- The proof-photos INSERT policy has the folder check.
+- `Viewers can view permitted proof selfies` is gone; `Owners can view own selfie folder`
+  exists. Neither `authenticated` nor `anon` can EXECUTE `can_view_selfie_object`.
+- `trg_profile_push_token` is enabled on `profiles`; its function is a definer with
+  `search_path` set and no client EXECUTE. Clients can still UPDATE `profiles.push_token` and
+  still cannot SELECT it.
+- `set_starter_quest` contains the anywhere-quest guard, stays service-role only, and the
+  current starter has `geofence_type = 'none'`.
+
+Two counts are informational: profiles that already hold a malformed token, and tokens held by
+more than one profile. The trigger checks new writes only, so old rows clear on the next
+registration.
+
+After applying, check the app in this order (runbook Step 5): sign in, submit a quest with a
+photo and a selfie, and open the photo on the quest page. Another player's selfie must not
+show.
 ## Column grants: what a new column needs
 
 `completions` (038) and `profiles` (039) have no table-level SELECT for client roles. A

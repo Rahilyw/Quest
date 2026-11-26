@@ -159,8 +159,7 @@ export async function processBatch(
   )
   const noToken: string[] = []
   const prefOff: string[] = []
-  const messages: ExpoMessage[] = []
-  const sentRows: { row: OutboxRow; token: string }[] = []
+  const sentRows: SentEntry[] = []
 
   for (const row of rows) {
     const profile = byId.get(row.user_id)
@@ -172,85 +171,67 @@ export async function processBatch(
       prefOff.push(row.id)
       continue
     }
-    messages.push({
-      to: profile.push_token,
-      title: row.title,
-      body: row.body,
-      sound: 'default',
-      data: { ...(row.data ?? {}), outbox_id: row.id },
+    sentRows.push({
+      row,
+      token: profile.push_token,
+      message: {
+        to: profile.push_token,
+        title: row.title,
+        body: row.body,
+        sound: 'default',
+        data: { ...(row.data ?? {}), outbox_id: row.id },
+      },
     })
-    sentRows.push({ row, token: profile.push_token })
   }
 
   await finish(admin, noToken, 'skipped: no push token')
   await finish(admin, prefOff, 'skipped: preference off')
   result.skipped = noToken.length + prefOff.length
 
-  if (messages.length === 0) return result
+  if (sentRows.length === 0) return result
 
-  const allIds = sentRows.map((entry) => entry.row.id)
-  let res: Response
-  try {
-    res = await fetchImpl(EXPO_URL, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
-      body: JSON.stringify(messages),
-    })
-  } catch (err) {
-    console.error('[send-push-outbox] Expo request failed:', err)
-    await release(admin, allIds, `network: ${String(err).slice(0, 200)}`)
-    result.failed = allIds.length
-    result.transportFailed = true
-    return result
-  }
-
-  const payload = await res.json().catch(() => null) as {
-    data?: unknown
-    errors?: unknown
-  } | null
-
-  if (!res.ok) {
-    const detail = payload?.errors ? JSON.stringify(payload.errors).slice(0, 200) : ''
-    console.error('[send-push-outbox] Expo HTTP', res.status, detail)
-    await release(admin, allIds, `HTTP ${res.status}${detail ? `: ${detail}` : ''}`)
-    result.failed = allIds.length
-    result.transportFailed = true
-    return result
-  }
-
-  const tickets = payload?.data
-  if (!Array.isArray(tickets) || tickets.length !== messages.length) {
-    console.error('[send-push-outbox] unexpected Expo response shape')
-    await release(admin, allIds, 'unexpected Expo response shape')
-    result.failed = allIds.length
-    result.transportFailed = true
-    return result
-  }
+  const outcomes = await sendEntries(sentRows, fetchImpl, { requests: 0 })
 
   const okIds: string[] = []
   const deadIds: string[] = []
   const deadTokens: { userId: string; token: string }[] = []
   const failures = new Map<string, string[]>()
+  const fail = (reason: string, id: string) => {
+    const list = failures.get(reason) ?? []
+    list.push(id)
+    failures.set(reason, list)
+  }
 
-  sentRows.forEach(({ row, token }, index) => {
-    const ticket = tickets[index] as ExpoTicket | null
+  for (const outcome of outcomes) {
+    const { row, token } = outcome.entry
+    if (outcome.kind === 'transport') {
+      result.transportFailed = true
+      fail(outcome.reason, row.id)
+      continue
+    }
+    if (outcome.kind === 'rejected') {
+      fail(outcome.reason, row.id)
+      continue
+    }
+    const ticket = outcome.ticket
     if (ticket?.status === 'ok') {
       okIds.push(row.id)
-      return
+      continue
     }
     if (ticket?.status === 'error' && ticket.details?.error === 'DeviceNotRegistered') {
       deadIds.push(row.id)
       deadTokens.push({ userId: row.user_id, token })
-      return
+      continue
     }
-    const reason = ticket?.status === 'error'
-      ? `ticket: ${ticket.details?.error ?? ticket.message ?? 'error'}`
-      : 'ticket: missing or unknown status'
+    // Expo's message text can quote the token, so keep it out of the log and last_error.
+    const reason = redactTokens(
+      ticket?.status === 'error'
+        ? `ticket: ${ticket.details?.error ?? ticket.message ?? 'error'}`
+        : 'ticket: missing or unknown status',
+    )
     console.error('[send-push-outbox] Expo ticket error:', row.id, reason)
-    const list = failures.get(reason) ?? []
-    list.push(row.id)
-    failures.set(reason, list)
-  })
+    fail(reason, row.id)
+  }
 
   await finish(admin, okIds, null)
   await finish(admin, deadIds, 'DeviceNotRegistered')
@@ -273,6 +254,93 @@ export async function processBatch(
   return result
 }
 
+interface SentEntry {
+  row: OutboxRow
+  token: string
+  message: ExpoMessage
+}
+
+type SendOutcome =
+  | { kind: 'ticket'; entry: SentEntry; ticket: ExpoTicket | null }
+  /** Expo refused this one message (HTTP 400 on its own). Released for retry or dead letter. */
+  | { kind: 'rejected'; entry: SentEntry; reason: string }
+  /** No usable answer: the whole request failed. The caller stops draining. */
+  | { kind: 'transport'; entry: SentEntry; reason: string }
+
+/** Most Expo requests one batch may spend finding a bad message by splitting. */
+const MAX_SPLIT_REQUESTS = 40
+
+/** Replaces any Expo push token in a string, so tokens never reach a log or last_error. */
+export function redactTokens(text: string): string {
+  return text.replace(/Expo(?:nent)?PushToken\[[^\]]*\]/g, 'ExponentPushToken[redacted]')
+}
+
+/**
+ * Sends entries to Expo in one request. A request-level 400 usually means one bad
+ * message (for example a token from another Expo project) rejected the whole batch of
+ * 100, so split in half and retry until the bad message stands alone. Everything else
+ * in the batch still goes out (C-6).
+ */
+async function sendEntries(
+  entries: SentEntry[],
+  fetchImpl: typeof fetch,
+  budget: { requests: number },
+): Promise<SendOutcome[]> {
+  const transportAll = (reason: string): SendOutcome[] =>
+    entries.map((entry): SendOutcome => ({ kind: 'transport', entry, reason }))
+
+  if (budget.requests >= MAX_SPLIT_REQUESTS) {
+    return transportAll('split budget exhausted')
+  }
+  budget.requests += 1
+
+  let res: Response
+  try {
+    res = await fetchImpl(EXPO_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+      body: JSON.stringify(entries.map((entry) => entry.message)),
+    })
+  } catch (err) {
+    const text = redactTokens(String(err))
+    console.error('[send-push-outbox] Expo request failed:', text)
+    return transportAll(`network: ${text.slice(0, 200)}`)
+  }
+
+  const payload = await res.json().catch(() => null) as {
+    data?: unknown
+    errors?: unknown
+  } | null
+
+  if (res.status === 400) {
+    if (entries.length === 1) {
+      console.error('[send-push-outbox] Expo rejected message', entries[0].row.id)
+      return [{ kind: 'rejected', entry: entries[0], reason: 'rejected: Expo returned HTTP 400 for this message' }]
+    }
+    const middle = Math.ceil(entries.length / 2)
+    const first = await sendEntries(entries.slice(0, middle), fetchImpl, budget)
+    const second = await sendEntries(entries.slice(middle), fetchImpl, budget)
+    return [...first, ...second]
+  }
+
+  if (!res.ok) {
+    const detail = payload?.errors ? redactTokens(JSON.stringify(payload.errors)).slice(0, 200) : ''
+    console.error('[send-push-outbox] Expo HTTP', res.status, detail)
+    return transportAll(`HTTP ${res.status}${detail ? `: ${detail}` : ''}`)
+  }
+
+  const tickets = payload?.data
+  if (!Array.isArray(tickets) || tickets.length !== entries.length) {
+    console.error('[send-push-outbox] unexpected Expo response shape')
+    return transportAll('unexpected Expo response shape')
+  }
+
+  return entries.map((entry, index): SendOutcome => ({
+    kind: 'ticket',
+    entry,
+    ticket: (tickets[index] ?? null) as ExpoTicket | null,
+  }))
+}
 export async function drainPushOutbox(
   admin: PushOutboxAdmin,
   opts: {

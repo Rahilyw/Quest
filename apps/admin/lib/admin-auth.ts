@@ -1,3 +1,5 @@
+import { hasConfirmedEmail } from '@/lib/adminIdentity'
+
 export function getAdminAllowlist(): string[] {
   const raw = process.env.ADMIN_ALLOWED_EMAILS ?? ''
   return raw
@@ -27,4 +29,15 @@ export function isAdminEmail(email: string | undefined): boolean {
   }
 
   return allowlist.includes(email.toLowerCase())
+}
+
+/**
+ * The one admin check: an allowlisted email that the account has also confirmed
+ * (security review B-1). Use this, not `isAdminEmail`, wherever a user is at hand.
+ */
+export function isAdminUser(
+  user: { email?: string | null; email_confirmed_at?: string | null } | null | undefined
+): boolean {
+  if (!user || !hasConfirmedEmail(user)) return false
+  return isAdminEmail(user.email ?? undefined)
 }

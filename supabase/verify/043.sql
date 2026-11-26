@@ -4,9 +4,9 @@
 --       old apply_completion_rewards(uuid,uuid) gone; schedules for win-back present;
 --       behaviour blocks match expected multipliers / revoke / win_back consume;
 --       leaderboard totals match stored awards; enqueue_win_back guard holds.
--- Read-only pack: behaviour blocks already use BEGIN ... ROLLBACK. The concurrent
--- first-finisher block (Session A COMMIT) is copied as-is from the README — clean up
--- that test quest/row by hand if you run it.
+-- Read-only pack: every behaviour block, including first finisher, is BEGIN ... ROLLBACK, so
+-- it leaves no completion behind. photo_url must be the canonical proof-photos URL for the
+-- player and quest (043 rejects anything else), so each block builds one.
 -- Paste into the Supabase SQL editor after applying 041 and 043 (043 requires 041).
 
 -- Structure and grants
@@ -60,7 +60,7 @@ BEGIN;
 INSERT INTO xp_events (kind, multiplier, label, starts_at, ends_at, created_by)
 VALUES ('multiplier', 2, 'verify', now() - interval '1 minute', now() + interval '1 hour', 'verify');
 INSERT INTO completions (user_id, quest_id, photo_url, lat, lng, gps_accuracy)
-SELECT '<test-player-1>', q.id, 'verify', q.lat, q.lng, 5 FROM quests q WHERE q.id = '<old-quest-id>'
+SELECT '<test-player-1>', q.id, 'https://example.invalid/proof-photos/<test-player-1>/' || q.id || '/verify.jpg', q.lat, q.lng, 5 FROM quests q WHERE q.id = '<old-quest-id>'
 RETURNING xp_awarded, xp_reason;
 -- expect: 2 × that quest's xp_reward, reason 'weekend'
 -- (pick a quest that started more than 7 days ago, or it may also get first-finisher)
@@ -73,7 +73,7 @@ INSERT INTO xp_events (kind, multiplier, label, starts_at, ends_at, created_by) 
 INSERT INTO xp_events (kind, multiplier, quest_id, label, starts_at, ends_at, created_by) VALUES
   ('multiplier', 1.5, '<old-quest-id>', 'verify quest', now() - interval '1 minute', now() + interval '1 hour', 'verify');
 INSERT INTO completions (user_id, quest_id, photo_url, lat, lng, gps_accuracy)
-SELECT '<test-player-2>', q.id, 'verify', q.lat, q.lng, 5 FROM quests q WHERE q.id = '<old-quest-id>'
+SELECT '<test-player-2>', q.id, 'https://example.invalid/proof-photos/<test-player-2>/' || q.id || '/verify.jpg', q.lat, q.lng, 5 FROM quests q WHERE q.id = '<old-quest-id>'
 RETURNING xp_awarded, xp_reason;   -- expect ×2, 'weekend'
 ROLLBACK;
 
@@ -83,7 +83,7 @@ INSERT INTO xp_events (kind, multiplier, label, starts_at, ends_at, created_by)
 VALUES ('multiplier', 3, 'verify', now() - interval '1 minute', now() + interval '1 hour', 'verify');
 SELECT total_xp FROM profiles WHERE id = '<test-player-3>';                       -- note T0
 INSERT INTO completions (user_id, quest_id, photo_url, lat, lng, gps_accuracy)
-SELECT '<test-player-3>', q.id, 'verify', q.lat, q.lng, 5 FROM quests q WHERE q.id = '<old-quest-id>'
+SELECT '<test-player-3>', q.id, 'https://example.invalid/proof-photos/<test-player-3>/' || q.id || '/verify.jpg', q.lat, q.lng, 5 FROM quests q WHERE q.id = '<old-quest-id>'
 RETURNING id, xp_awarded;                                                          -- note A (= 3 × base)
 SELECT total_xp FROM profiles WHERE id = '<test-player-3>';                       -- expect T0 + A
 UPDATE completions SET status = 'removed' WHERE id = '<id from above>';
@@ -97,34 +97,25 @@ BEGIN;
 INSERT INTO xp_events (kind, multiplier, user_id, label, starts_at, ends_at, created_by)
 VALUES ('win_back', 2, '<test-player-4>', 'verify', now() - interval '1 minute', now() + interval '7 days', 'verify');
 INSERT INTO completions (user_id, quest_id, photo_url, lat, lng, gps_accuracy)
-SELECT '<test-player-4>', q.id, 'verify', q.lat, q.lng, 5 FROM quests q WHERE q.id = '<old-quest-id>'
+SELECT '<test-player-4>', q.id, 'https://example.invalid/proof-photos/<test-player-4>/' || q.id || '/verify.jpg', q.lat, q.lng, 5 FROM quests q WHERE q.id = '<old-quest-id>'
 RETURNING xp_awarded, xp_reason;   -- expect ×2, 'win_back'
 SELECT consumed_at IS NOT NULL FROM xp_events WHERE user_id = '<test-player-4>';   -- expect true
 ROLLBACK;
 
--- First finisher under two concurrent inserts. Needs two sessions (two SQL editor tabs, or
--- two psql windows). Use a quest whose coalesce(active_from, created_at) is within the last
--- 7 days and that has no approved completion yet (create a throwaway test quest).
-
--- Session A
+-- 5. First finisher: only the first approved completion of a new quest gets the bonus.
+-- One session, rolled back, so nothing is left in production. Use a quest whose
+-- coalesce(active_from, created_at) is within the last 7 days and that has no approved
+-- completion yet, and two different test players (the rate limit is per player).
+-- The two-session race test is not run here: the advisory lock that serialises it is proven by
+-- reading the function, and supabase/tests/043_xp.test.sql covers first finisher in pgTAP.
 BEGIN;
 INSERT INTO completions (user_id, quest_id, photo_url, lat, lng, gps_accuracy)
-SELECT '<test-player-5>', q.id, 'verify', q.lat, q.lng, 5 FROM quests q WHERE q.id = '<new-quest-id>'
+SELECT '<test-player-5>', q.id, 'https://example.invalid/proof-photos/<test-player-5>/' || q.id || '/verify.jpg', q.lat, q.lng, 5 FROM quests q WHERE q.id = '<new-quest-id>'
 RETURNING xp_awarded, xp_reason;   -- expect round(base × 1.5), 'first_finisher'
--- leave open
-
--- Session B (it waits on the advisory lock)
-BEGIN;
 INSERT INTO completions (user_id, quest_id, photo_url, lat, lng, gps_accuracy)
-SELECT '<test-player-6>', q.id, 'verify', q.lat, q.lng, 5 FROM quests q WHERE q.id = '<new-quest-id>'
-RETURNING xp_awarded, xp_reason;
-
--- Session A
-COMMIT;
--- Session B now returns: base, reason NULL (A's row is visible after the lock)
--- Session B
+SELECT '<test-player-6>', q.id, 'https://example.invalid/proof-photos/<test-player-6>/' || q.id || '/verify.jpg', q.lat, q.lng, 5 FROM quests q WHERE q.id = '<new-quest-id>'
+RETURNING xp_awarded, xp_reason;   -- expect base, reason NULL
 ROLLBACK;
--- Clean up A's row: UPDATE completions SET status = 'removed' WHERE ...; then delete the test quest.
 
 -- Totals
 

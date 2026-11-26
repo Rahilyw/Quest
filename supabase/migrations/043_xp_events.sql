@@ -154,6 +154,25 @@ DECLARE
   m numeric;
   reason text;
 BEGIN
+  -- photo_url must be the canonical public URL of this player's own upload for
+  -- this quest: .../proof-photos/<user_id>/<quest_id>/<file>, with no query
+  -- string or fragment. Without this, '?v=1' keeps the photo displaying but
+  -- slips past the 042 "claimed photo" guard, so the owner could swap the image
+  -- after approval. A plain check_violation would read as GEOFENCE_VIOLATION to
+  -- the client, so this uses a different SQLSTATE. (Security review A-2.)
+  IF NOT COALESCE(
+       NEW.photo_url ~ (
+         '^https?://[^/?#]+(/[^?#]*)?/proof-photos/'
+         || NEW.user_id::text || '/' || NEW.quest_id::text || '/[^/?#]+$'
+       ),
+       false
+     )
+  THEN
+    RAISE EXCEPTION 'INVALID_PHOTO_URL'
+      USING ERRCODE = 'invalid_parameter_value',
+            HINT   = 'INVALID_PHOTO_URL';
+  END IF;
+
   NEW.completed_at := now();
 
   SELECT count(*)::integer INTO recent_10min

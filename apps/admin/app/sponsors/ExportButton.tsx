@@ -1,35 +1,19 @@
 'use client'
 
 import { theme } from '@/lib/theme'
+import type { SponsorExportSummary } from '@/lib/adminRules'
 
 interface ExportButtonProps {
-  quest: {
-    title: string
-    sponsor_name: string | null
-    sponsor_reward: string | null
-    completions: Array<{
-      status: string
-      redemption_code?: string | null
-      redeemed_at?: string | null
-    }> | null
-  }
+  /** Counts only (B-5): redemption codes never reach the browser. */
+  summary: SponsorExportSummary
 }
 
-export default function ExportButton({ quest }: ExportButtonProps) {
+export default function ExportButton({ summary }: ExportButtonProps) {
+  const quest = summary
   const handleExport = () => {
-    const total = quest.completions?.length ?? 0
-    const approved = quest.completions?.filter((c) => c.status === 'approved').length ?? 0
-    const pending = quest.completions?.filter((c) => c.status === 'pending').length ?? 0
-    const rejected = quest.completions?.filter((c) => c.status === 'rejected').length ?? 0
-    const issued = quest.completions?.filter((c) => c.redemption_code).length ?? 0
-    const redeemed = quest.completions?.filter((c) => c.redeemed_at).length ?? 0
+    const { total, approved, pending, rejected, issued, redeemed } = summary
     const rate = issued === 0 ? '0' : String(Math.round((redeemed / issued) * 100))
-    const last = quest.completions
-      ?.map((c) => c.redeemed_at)
-      .filter((value): value is string => Boolean(value))
-      .sort()
-      .at(-1) ?? ''
-
+    const last = summary.lastRedemption
     const headers = [
       'Quest Title',
       'Sponsor Name',

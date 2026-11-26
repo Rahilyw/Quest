@@ -10,7 +10,8 @@
 --   * client deletes silently removed nothing (no DELETE policy).
 --
 -- Both policies are limited to the caller's own folder and to objects that no
--- completion of theirs points at. Without the second condition a player could
+-- completion of theirs points at (an exact path match, ignoring any '?query' or
+-- '#fragment' on the stored URL, so a suffixed URL can't hide a claimed photo). Without the second condition a player could
 -- replace or remove the photo behind an approved, possibly reported, completion.
 -- Admin moderation and account deletion keep using the service role.
 
@@ -25,7 +26,7 @@ CREATE POLICY "Owners can update unclaimed proof photos"
       SELECT 1
         FROM public.completions c
        WHERE c.user_id = auth.uid()
-         AND c.photo_url LIKE '%/proof-photos/' || name
+         AND split_part(split_part(split_part(c.photo_url, '#', 1), '?', 1), '/proof-photos/', 2) = name
     )
   )
   WITH CHECK (
@@ -44,6 +45,6 @@ CREATE POLICY "Owners can delete unclaimed proof photos"
       SELECT 1
         FROM public.completions c
        WHERE c.user_id = auth.uid()
-         AND c.photo_url LIKE '%/proof-photos/' || name
+         AND split_part(split_part(split_part(c.photo_url, '#', 1), '?', 1), '/proof-photos/', 2) = name
     )
   );

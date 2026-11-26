@@ -13,6 +13,8 @@ import { supabase } from '@/lib/supabase'
 import { registerForPushNotifications, clearPushToken } from '@/lib/notifications'
 import { track, resetAnalytics } from '@/lib/analytics'
 import { purgeQueue } from '@/lib/submissionQueueStore'
+import { sealQueue, unsealQueue } from '@/lib/queueGuard'
+import { loadAnalyticsEnabled, setAnalyticsEnabled } from '@/lib/analyticsPreference'
 import { COLOR, RADIUS, SPACE } from '@/lib/theme'
 
 const WEEKLY_DIGEST_KEY = 'pref_weekly_digest'
@@ -25,6 +27,7 @@ export default function Settings() {
   const [weeklyDigest, setWeeklyDigest] = useState(true)
   const [feedPublic, setFeedPublic] = useState(true)
   const [pushSocial, setPushSocial] = useState(true)
+  const [shareUsage, setShareUsage] = useState(true)
   const [deleting, setDeleting] = useState(false)
   const [note, setNote] = useState<string | null>(null)
   const [feedbackOpen, setFeedbackOpen] = useState(false)
@@ -48,6 +51,8 @@ export default function Settings() {
         if (data?.push_social != null) setPushSocial(data.push_social)
         if (data?.push_drops != null) setWeeklyDigest(data.push_drops)
       })
+
+    loadAnalyticsEnabled().then(setShareUsage)
 
     // Restore weekly digest preference
     AsyncStorage.getItem(WEEKLY_DIGEST_KEY).then((val) => {
@@ -100,6 +105,16 @@ export default function Settings() {
     }
   }
 
+  async function handleShareUsageToggle(enabled: boolean) {
+    setShareUsage(enabled)
+    try {
+      await setAnalyticsEnabled(enabled)
+    } catch {
+      setShareUsage(!enabled)
+      notSaved()
+    }
+  }
+
   async function handleFeedPublicToggle(enabled: boolean) {
     if (!session?.user?.id) return
     setNote(null)
@@ -132,11 +147,18 @@ export default function Settings() {
 
   async function handleDeleteAccount() {
     setDeleting(true)
+    const uid = session?.user.id
+    let serverRefused = false
+    // Close the queue first, so a flush in flight can't save while the account goes (C-7, C-8).
+    if (uid) sealQueue(uid)
     try {
       track('account_deleted')
       const { error } = await supabase.rpc('delete_own_account')
-      if (error) throw error
-      if (session?.user.id) await purgeQueue(session.user.id)
+      if (error) {
+        // An error code means the server answered no. No code means we never heard back.
+        serverRefused = Boolean(error.code)
+        throw error
+      }
       resetAnalytics()
       // The auth user no longer exists, so a global sign-out would 403:
       // clear the local session only.
@@ -144,10 +166,15 @@ export default function Settings() {
       router.replace('/(auth)/sign-in')
     } catch {
       setDeleting(false)
+      if (uid && serverRefused) unsealQueue(uid)
       Alert.alert(
         'Your account wasn’t deleted',
         'Check your connection and try again.'
       )
+    } finally {
+      // Purge on success, and when the reply never arrived (the account may be gone
+      // anyway). Keep the queue only when the server said the account stays (C-8).
+      if (uid && !serverRefused) await purgeQueue(uid)
     }
   }
 
@@ -200,6 +227,12 @@ export default function Settings() {
             hint="When off, your proof photos stay on your profile and off the public feed."
             value={feedPublic}
             onValueChange={handleFeedPublicToggle}
+          />
+          <SwitchRow
+            label="Share usage data"
+            hint="Counts of which screens and quests people use. Never your photos, and no location."
+            value={shareUsage}
+            onValueChange={handleShareUsageToggle}
           />
           <Row label="Blocked accounts" onPress={() => router.push('/blocked-users')} />
         </Section>

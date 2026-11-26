@@ -189,7 +189,9 @@ test('the queue is purged on sign-out and on account deletion', () => {
   assert.ok(/purgeQueue\(\s*uid\s*\)|purgeQueue\(\s*session\.user\.id\s*\)/.test(read('hooks/useAuth.tsx')))
   const settings = read('app/settings.tsx')
   const deleteFlow = settings.slice(settings.indexOf("rpc('delete_own_account')"))
-  assert.ok(deleteFlow.slice(0, 400).includes('purgeQueue('), 'purged right after the account is deleted')
+  // C-8: the purge sits in a finally, so a reply that never arrives still purges.
+  assert.ok(/finally\s*\{[\s\S]*purgeQueue\(/.test(deleteFlow), 'purged in a finally after the delete call')
+  assert.ok(/serverRefused/.test(deleteFlow), 'a server refusal keeps the queue')
 })
 
 test('queue analytics carry no coordinates or photo paths', () => {
